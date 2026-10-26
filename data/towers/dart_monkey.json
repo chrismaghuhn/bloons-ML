@@ -1,0 +1,226 @@
+{
+  "name": "Dart Monkey",
+  "category": "primary",
+  "cost": 200,
+  "footprint_radius": 6,
+  "placement": "land",
+  "range": 32,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "dart",
+      "damage": 1,
+      "pierce": 2,
+      "cooldown": 0.95,
+      "damage_type": "sharp",
+      "projectiles": 1,
+      "blast_radius": null,
+      "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Super Monkey Fan Club",
+      "cooldown": 50,
+      "description": "Unlocked by Super Monkey Fan Club (middle path tier 4). In-game text: Super Monkey Fan Club Ability: Converts up to 10 nearby Dart Monkeys including itself into Super Monkeys for 15 seconds. Regular attack speed also increased. wiki stats: Buff {Cooldown modifier: ×0.0632; Projectile radius override: 2 unit(s); Lifespan: 15s}"
+    },
+    {
+      "name": "Plasma Monkey Fan Club",
+      "cooldown": 50,
+      "description": "Unlocked by Plasma Monkey Fan Club (middle path tier 5). In-game text: Elite membership of this club grants the Dart Monkeys even more power! wiki stats: Buff {Cooldown modifier: ×0.0316; Damage bonus: +1; Pierce bonus: +3; Damage type override: Plasma [Cannot damage Purple or Glass]; Projectile radius override: 6 unit(s); Lifespan: 15s}"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Sharp Shots",
+        "cost": 140,
+        "description": "Can pop 1 extra Bloon per shot.",
+        "changes": {
+          "pierce": 3,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 3; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Razor Sharp Shots",
+        "cost": 200,
+        "description": "Can pop 2 more Bloons per shot.",
+        "changes": {
+          "pierce": 5,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 5; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Spike-o-pult",
+        "cost": 320,
+        "description": "Converts the Dart Monkey into a slower attacking Spike-o-pult that hurls large spiked balls. Each ball can pop lots of Bloons and rebounds off obstacles.",
+        "changes": {
+          "range": 36.8,
+          "damage": 2,
+          "pierce": 18,
+          "cooldown": 1.15,
+          "damage_type": "shatter",
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1.15s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 18; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 150 units/s; Lifespan: 1s; Radius: 5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Juggernaut",
+        "cost": 1800,
+        "description": "Hurls a giant spiked ball that pops Lead and excels at crushing Ceramic and Fortified Bloons.",
+        "changes": {
+          "pierce": 60,
+          "cooldown": 1,
+          "damage_type": "normal",
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 60; Damage: 2; Damage to Ceramic: +3; Damage to Fortified: +2; Damage type: Normal [Can damage any Bloon type]; Speed: 300 units/s; Lifespan: 1s; Radius: 7 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.15s}}"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Ultra-Juggernaut",
+        "cost": 15000,
+        "description": "Gigantic spiked ball splits twice into 6 Juggernaut balls for even more destructive power against Ceramic, Fortified and Lead Bloons.",
+        "changes": {
+          "damage": 5,
+          "pierce": 210,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 210; Damage: 5; Damage to Lead: +20; Damage to Ceramic: +8; Damage to Fortified: +5; Damage type: Normal [Can damage any Bloon type]; Speed: 300 units/s; Lifespan: 1s; Radius: 9 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.15s}}; Mini-projectile {Count: 6; Angle: 360°; Pierce: 50; Damage: 2; Damage to Ceramic: +3; Damage to Fortified: +2; Damage type: Normal [Can damage any Bloon type]; Speed: 150 units/s; Lifespan: 1s; Radius: 7 units; Filters: Cannot hit Camo}"
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Quick Shots",
+        "cost": 100,
+        "description": "Shoots 15% faster.",
+        "changes": {
+          "cooldown": 0.8075,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.8075s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Very Quick Shots",
+        "cost": 190,
+        "description": "Shoots 33% faster!",
+        "changes": {
+          "cooldown": 0.6365,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.6365s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Triple Shot",
+        "cost": 450,
+        "description": "Throws 3 darts at a time instead of 1.",
+        "changes": {
+          "cooldown": 0.4774,
+          "projectiles": 3,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.4774s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 30°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Super Monkey Fan Club",
+        "cost": 7200,
+        "description": "Super Monkey Fan Club Ability: Converts up to 10 nearby Dart Monkeys including itself into Super Monkeys for 15 seconds. Regular attack speed also increased.",
+        "changes": {
+          "cooldown": 0.2387,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.2387s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 30°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
+          "abilities": [
+            {
+              "name": "Super Monkey Fan Club",
+              "cooldown": 50,
+              "description": "wiki stats: Buff {Cooldown modifier: ×0.0632; Projectile radius override: 2 unit(s); Lifespan: 15s}"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Plasma Monkey Fan Club",
+        "cost": 45000,
+        "description": "Elite membership of this club grants the Dart Monkeys even more power!",
+        "changes": {
+          "abilities": [
+            {
+              "name": "Plasma Monkey Fan Club",
+              "cooldown": 50,
+              "description": "wiki stats: Buff {Cooldown modifier: ×0.0316; Damage bonus: +1; Pierce bonus: +3; Damage type override: Plasma [Cannot damage Purple or Glass]; Projectile radius override: 6 unit(s); Lifespan: 15s}"
+            }
+          ]
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Long Range Darts",
+        "cost": 90,
+        "description": "Makes the Dart Monkey shoot further than normal.",
+        "changes": {
+          "range": 40,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.3375s; Radius: 2 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Enhanced Eyesight",
+        "cost": 200,
+        "description": "Shoots even further and can detect Camo Bloons.",
+        "changes": {
+          "range": 48,
+          "targeting_options": "First; Last; Close; Strong; Camo Prioritization",
+          "camo": true,
+          "notes": "can target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 48 units; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 350 units/s; Lifespan: 0.3616s; Radius: 2 units}"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Crossbow",
+        "cost": 575,
+        "description": "Uses a long range Crossbow that can pop 3 layers of Bloon for every hit.",
+        "changes": {
+          "range": 60,
+          "damage": 3,
+          "pierce": 4,
+          "notes": "can target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 60 units; Projectile {Pierce: 4; Damage: 3; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 400 units/s; Lifespan: 0.3164s; Radius: 2 units}"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Sharp Shooter",
+        "cost": 2050,
+        "description": "Sharp Shooter attacks faster and does powerful Crit shots every few shots that do a lot more damage.",
+        "changes": {
+          "damage": 6,
+          "cooldown": 0.475,
+          "notes": "can target Camo; wiki stats: Cooldown: 0.475s; Targeting range: 60 units; Projectile {Pierce: 4; Damage: 6; Crit damage: 50; Shots to crit: 10; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 600 units/s; Lifespan: 0.2109s; Radius: 2 units}"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Crossbow Master",
+        "cost": 21500,
+        "description": "Crossbow Master shoots really fast and devastates most Bloon types with ease.",
+        "changes": {
+          "range": 80,
+          "damage": 8,
+          "pierce": 8,
+          "cooldown": 0.2375,
+          "damage_type": "normal",
+          "notes": "can target Camo; wiki stats: Cooldown: 0.2375s; Targeting range: 80 units; Projectile {Pierce: 8; Damage: 8; Crit damage: 80; Shots to crit: 5; Damage type: Normal [Can damage any Bloon type]; Speed: 600 units/s; Lifespan: 0.2109s; Radius: 2 units}"
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Dart_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Dart_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Special:CargoTables/btd6_upgrades"
+  ],
+  "game_version": "stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4"
+}

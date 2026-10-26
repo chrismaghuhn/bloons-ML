@@ -1,0 +1,277 @@
+{
+  "name": "Spike Factory",
+  "category": "support",
+  "cost": 1000,
+  "footprint_radius": 8,
+  "placement": "land",
+  "range": 34,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "spike_pile",
+      "damage": 1,
+      "pierce": 5,
+      "cooldown": 1.75,
+      "damage_type": "sharp",
+      "projectiles": 1,
+      "blast_radius": null,
+      "notes": "Places spike pile on track within range; lifespan 50s or end of round; pile radius 6; cannot target Camo; cannot pop Lead or Frozen (they destroy the pile)"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Spike Storm",
+      "cooldown": 50,
+      "description": "Granted by Spike Storm (0-4-0); kept at 0-5-0. Clusters of 4 spike piles every 0.04s for 2s (~204 piles) randomly across all track; same spike stats as main attack (1 dmg, 5 pierce, +7 MOAB at 0-4-0); spikes last 9-11s and persist 1 round."
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Bigger Stacks",
+        "cost": 800,
+        "description": "Creates larger piles of spikes per shot. Wiki: This upgrade increases the pierce of new spike piles. For most Spike Factories, the pierce increases from 5 to 10. The pierce of Carpet of Spikes increases from 10 to 15, while the pierce bonus of Perma-Spike is +35, from 50 to 85. Despite its name, the spike piles don't have a larger radius.",
+        "changes": {
+          "pierce": "+5",
+          "note": "5->10 (Carpet of Spikes 10->15, Perma-Spike 50->85)"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "White Hot Spikes",
+        "cost": 600,
+        "description": "Cuts through Lead Bloons and Frozen Bloons. Wiki: The damage type of newly placed spikes are changed from sharp to normal, allowing them to pop Frozen and Lead Bloons.",
+        "changes": {
+          "damage_type": "normal",
+          "can_pop_lead": true,
+          "can_pop_frozen": true
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Spiked Balls",
+        "cost": 2300,
+        "description": "Produces spiked balls that do extra damage to Ceramic and Fortified Bloons. Wiki: Instead of spike piles, it dispenses spiked balls that deal 2 Normal-type damage, +3 Ceramic damage, and +1 Fortified damage, and have 11 pierce.",
+        "changes": {
+          "replace_attack": {
+            "name": "spiked_ball",
+            "damage": 2,
+            "pierce": 11,
+            "cooldown": 1.75,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "+3 damage to Ceramic (excl. Ceramic Armor Shell), +1 to Fortified; lifespan 50s"
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Spiked Mines",
+        "cost": 9500,
+        "description": "Spiked mines explode violently when they lose all their spikes. Wiki: Instead of spiked balls, it dispenses spiked mines that explode after expiring. Each spiked mine has 18 pierce, dealing 2 Normal-type damage, +6 Ceramic damage, and +3 Fortified damage. After losing all spikes or expiring naturally, the spiked mine explodes over 30 blast radius (40 with Long Reach). The explosion has 30 pierce and deals 10 Explosion-type damage, deals +2 Ceramic and +3 Fortified damage, and ignites Bloons without Purple Bloon properties with a burning damage-over-time effect that inflicts 10 damage every 2 seconds for up to 6.05 seconds.",
+        "changes": {
+          "replace_attack": {
+            "name": "spiked_mine",
+            "damage": 2,
+            "pierce": 18,
+            "cooldown": 1.75,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "+6 Ceramic, +3 Fortified; lifespan 50s; explodes when depleted or expired"
+          },
+          "new_attack": {
+            "name": "mine_explosion",
+            "damage": 10,
+            "pierce": 30,
+            "cooldown": null,
+            "damage_type": "explosion",
+            "projectiles": 1,
+            "blast_radius": 30,
+            "notes": "+2 Ceramic, +3 Fortified; blast radius 40 with Long Reach; burn DoT 10 fire damage every 2s for 6.05s (not Purple)"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Super Mines",
+        "cost": 125000,
+        "description": "Creates gigantic exploding spiked mines that can wipe out almost anything. Wiki: This upgrade dispenses super mines half as quickly (every 3.5 seconds), but the mines deal much more damage and have many more explosions that can pop any Bloon type. Each super mine has 18 pierce, dealing 50 Normal-type damage, +30 Ceramic damage, and +15 Fortified damage. Every time a spike is depleted, a non-burning mini-explosion is produced, dealing 20 damage, with +15 Ceramic damage and +5 Fortified damage, to up to 30 non-Purple Bloon Bloons within 30 radius. If the super mine expires, it generates a huge burning explosion that deals 1,000 Normal-type damage, plus +500 Ceramic and +250 Fortified damage, to up to 60 Bloons within 100 radius (133 with 5-0-1). The burn damage-over-time is increased from 10 damage to 2,500 damage every 2 seconds for up to 6.05 seconds.",
+        "changes": {
+          "cooldown": 3.5,
+          "replace_attack": {
+            "name": "super_mine",
+            "damage": 50,
+            "pierce": 18,
+            "cooldown": 3.5,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "+30 Ceramic, +15 Fortified; lifespan 50s"
+          },
+          "new_attacks": [
+            {
+              "name": "mini_explosion",
+              "damage": 20,
+              "pierce": 30,
+              "cooldown": null,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 30,
+              "notes": "per spike depleted; +15 Ceramic, +5 Fortified; no burn"
+            },
+            {
+              "name": "super_explosion",
+              "damage": 1000,
+              "pierce": 60,
+              "cooldown": null,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 100.2,
+              "notes": "on expiry; +500 Ceramic, +250 Fortified; 133 radius with 5-0-1; burn DoT 2500 fire damage every 2s for 6.05s"
+            }
+          ]
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Faster Production",
+        "cost": 600,
+        "description": "Rapidly increases production rate. Wiki: This upgrade reduces the attack cooldown of the Spike Factory's attack by 20%, increasing its attack speed by +25%. For most Spike Factories, except Super Mines and Perma-Spike, attack cooldown is reduced from 1.75 seconds to 1.4 seconds.",
+        "changes": {
+          "cooldown": "x0.8",
+          "note": "1.75s -> 1.4s"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Even Faster Production",
+        "cost": 800,
+        "description": "Increases production rate even more. Wiki: This upgrade reduces the attack cooldown of the Spike Factory's attack by 25%, increasing its attack speed by about +33.33%. In total, combined with the Faster Production upgrade, the total cooldown reduction is 40%, for a total attack speed bonus of about +66.67%. For most Spike Factories except Super Mines and Perma-Spike, attack cooldown reduces from 1.4 seconds to 1.05 seconds.",
+        "changes": {
+          "cooldown": "x0.75",
+          "note": "1.4s -> 1.05s"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "MOAB SHREDR",
+        "cost": 2500,
+        "description": "Super-Hard-Rending-Engine-Driven-Razors shred MOAB-Class Bloons. Wiki: This upgrade increases the damage the Spike Factory's spikes deal to MOAB-Class Bloons by +7, for a total of 40 damage per pile (54 with [img:One More Spike] One More Spike and [img:Very Shreddy] Very Shreddy) and 80 damage when crosspathed with Bigger Stacks (99 with [img:One More Spike] One More Spike and [img:Very Shreddy] Very Shreddy).",
+        "changes": {
+          "moab_damage": "+7"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Spike Storm",
+        "cost": 7000,
+        "description": "Spike Storm ability: Shoots out a thick layer of spikes over the entire track. Wiki: This upgrade grants the Spike Storm ability, and does not change the Spike Factory's main attack. When the ability is activated, spike piles are scattered over all available lanes, launching clusters of 4 spike piles every 0.04 seconds for 2 seconds, resulting in up to 204 spike piles per ability (208 on every 4th use). This attack has a minimum cooldown equal to its base cooldown, meaning it does not benefit from any attack speed buffs unless its attack speed is being reduced by something like a Jar of Pickles. Storm spikes are distributed randomly across available lanes (based on the amount of track area; longer lanes and overlapping areas will get a proportionately larger share of the spikes) and they last 9–11 seconds. Each group of 4 simultaneous spike pile launches is considered 4 separate attacks rather than 1, limiting the uptime of buffs that use a shot counter (e.g. Berserker Brew). The ability has a cooldown of 50 seconds. Crosspaths affect the Spike Storm ability. Storm spikes gain +5 pierce in the same way as the main spikes when given Bigger Stacks, and change from Sharp to Normal damage type if given White Hot Spikes. With Long Reach, storm spikes last +100% longer (18–22 seconds), and with Smart Spikes the ability will only send spikes to the active lanes of the current round.",
+        "changes": {
+          "ability": "Spike Storm"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Carpet of Spikes",
+        "cost": 41000,
+        "description": "Regularly sets a carpet of spikes over the whole track. Wiki: This upgrade grants a passive Spike Storm ability every 15 seconds, behaving identically to its activated Spike Storm ability, which is mechanically unchanged from the previous tier (only the spike stats are changed). Notably, this attack's minimum cooldown is the same as its default cooldown (both 0.04 seconds), meaning it does not benefit from any attack speed buffs unless its attack speed is being reduced by something like a Jar of Pickles. The passive and activated Spike Storms cannot both fire simultaneously. Additionally, all of the Spike Factory's spikes deal +2 damage and have +5 pierce, and the main attack gains +100% increased attack speed (0.525-second attack cooldown) and more range (50 instead of 34). Both the main and ability spikes deal 3 damage, +7 to MOAB-Class. Each spike pile has 10 pierce, or 15 with the 1-5-0 crosspath. Passive and active Spike Storm spikes last for 18-22 seconds (36-44 seconds with 0-5-1) and can persist across 1 round.",
+        "changes": {
+          "cooldown": 0.525,
+          "range": 50,
+          "damage": "+2",
+          "pierce": "+5",
+          "note": "main spikes 3 dmg (+7 MOAB), 10 pierce; passive Spike Storm every 15s; storm spikes last 18-22s and persist 1 round",
+          "new_attack": {
+            "name": "carpet_of_spikes_passive",
+            "damage": 3,
+            "pierce": 10,
+            "cooldown": 15,
+            "damage_type": "sharp",
+            "projectiles": 204,
+            "blast_radius": null,
+            "notes": "passive Spike Storm every 15s: 4 piles every 0.04s for 2s (~204 piles) randomly over all track; +7 MOAB damage; lifespan 18-22s; persists 1 round"
+          }
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Long Reach",
+        "cost": 150,
+        "description": "Increases range for spike pile drops, plus piles last longer. Wiki: This upgrade increases the Spike Factory's range by 8 distance units (from 34 to 42) and increases the lifespan of its spike piles during a round from 50 to 100 seconds. It also has the following benefits when given as a crosspath: Spike Storm and Carpet of Spikes — Their spikes from the ability, and the passive for the latter upgrade, last twice as long. Spiked Mines and Super Mines — Blast radius of all their explosions increased by ~33%",
+        "changes": {
+          "range": "+8",
+          "spike_lifespan": 100,
+          "note": "range 34->42, lifespan 50->100s; mines' blast radius ~+33%"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Smart Spikes",
+        "cost": 400,
+        "description": "Spike Factory gains special targeting priority and accelerated production at the start of each round. Wiki: This upgrade gains a tower buff at the start of each round that quadruples its attack speed for 3 seconds. If crosspathed with Spike Storm and Carpet of Spikes, their abilities will only dispense spikes on paths that currently have Bloons on them, and their abilities will dispense more spikes if they're triggered while the buff is still active. The buff can be absorbed by Lych. The Spike Factory also gains four new targeting options in addition to the default random behavior, which is labeled as Normal in the options: Close — Dispenses spikes on the nearest section of track within range. Smart — Targets whichever track has the Bloons that are closest to reaching the exit (or has Bloons at all), and dispenses spikes on the point closest to the end of that track. If it cannot reach any paths that have Bloons on them, it will dispense spikes on the points closest to the ends of each track within its range, keeping their coverage roughly even. Set Target — Dispenses spikes to any location within range, the target point can be selected by clicking the Set Target button on the tower's menu and it can be set outside the track. Automatic — Changes behavior depending if there are Bloons in range, if there are, the Spike Factory will target its spikes towards the Bloon that is closest to the exit (\"First\" targeting). Otherwise it will drop the spikes in the closest point to the front of the track within range, also, if there is more than one track in range, the spikes will be divided in a similar way to the Smart targeting.",
+        "changes": {
+          "targeting_options": [
+            "Normal",
+            "Close",
+            "Smart",
+            "Automatic",
+            "Set Target"
+          ],
+          "buff": {
+            "start_of_round_cooldown": "x0.25",
+            "duration_s": 3
+          }
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Long Life Spikes",
+        "cost": 1300,
+        "description": "Spikes last much longer and can carry over one round. Wiki: Newly placed blue caltrop-like spike piles last for up to 140 seconds and can carry over 1 round, lasting up to 2 rounds. Like Smart Spikes, its predecessor, its attack speed quadruples at the start of each round, and has four additional targeting options (Close, Smart, Set Target, Automatic).",
+        "changes": {
+          "spike_lifespan": 140,
+          "persists_rounds": 1
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Deadly Spikes",
+        "cost": 3600,
+        "description": "Extra deadly spikes can pop through 3 layers per spike and last another round. Wiki: This upgrade increases damage of newly placed spike piles from 1 to 3, and they carry over 2 rounds instead of 1, lasting up to 3 rounds instead of 2. Spikes still last for up to 140 seconds.",
+        "changes": {
+          "damage": 3,
+          "persists_rounds": 2
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Perma-Spike",
+        "cost": 30000,
+        "description": "High damage spikes become almost permanent. Wiki: Spike piles are produced about 3.46× slower (without crosspaths, attack cooldown is increased from 1.75 to 6.06 seconds), but they now deal 10 damage per spike, have 50 pierce (85 with 1-0-5), last up to 300 seconds, and carry over up to 3 rounds. Additionally, the 4× start-of-round speed boost now lasts for 10 seconds. Unlike other Spike Factories (except the), spikes placed by a Perma-Spike are preserved when loading a save, though any buffs the spikes had will be lost.",
+        "changes": {
+          "cooldown": 6.0625,
+          "damage": 10,
+          "pierce": 50,
+          "spike_lifespan": 300,
+          "persists_rounds": 3,
+          "buff": {
+            "start_of_round_cooldown": "x0.25",
+            "duration_s": 10
+          }
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Spike_Factory_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Spike_Factory_(BTD6)"
+  ],
+  "game_version": "55.1 (stats page last updated); main page last updated 55.2"
+}

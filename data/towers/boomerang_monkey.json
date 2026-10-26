@@ -1,0 +1,240 @@
+{
+  "name": "Boomerang Monkey",
+  "category": "primary",
+  "cost": 315,
+  "footprint_radius": 7,
+  "placement": "land",
+  "range": 43,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "boomerang",
+      "damage": 1,
+      "pierce": 4,
+      "cooldown": 1.2,
+      "damage_type": "sharp",
+      "projectiles": 1,
+      "blast_radius": null,
+      "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 4; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 175 units/s; Max travel distance: 53.4155 units; Lifespan: 5s; Radius: 5 units; Filters: Cannot hit Camo}"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Turbo Charge",
+      "cooldown": 45,
+      "description": "Unlocked by Turbo Charge (middle path tier 4). In-game text: Turbo Charge ability: Makes this Monkey attack incredibly fast for 10 seconds. wiki stats: Buff {Cooldown modifier: ×0.2; Projectile radius modifier: +0%; Damage bonus: +1; Lifespan: 10s}"
+    },
+    {
+      "name": "Perma Charge",
+      "cooldown": 45,
+      "description": "Unlocked by Perma Charge (middle path tier 5). In-game text: Perma Charge has permanent super fast attack speed. Ability increases the lethality even more. wiki stats: Buff {Damage bonus: +10; Lifespan: 15s}"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Improved Rangs",
+        "cost": 200,
+        "description": "Can pop up to 8 Bloons per throw.",
+        "changes": {
+          "pierce": 8,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 8; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 175 units/s; Max travel distance: 53.4155 units; Lifespan: 5s; Radius: 5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Glaives",
+        "cost": 280,
+        "description": "Throws glaives instead of boomerangs. Glaives are bigger and faster, hitting more Bloons with each throw.",
+        "changes": {
+          "pierce": 13,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 13; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 175 units/s; Max travel distance: 53.4155 units; Lifespan: 5s; Radius: 7.5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Glaive Ricochet",
+        "cost": 600,
+        "description": "Glaives will bounce from Bloon to Bloon automatically and aggressively.",
+        "changes": {
+          "pierce": 15,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 15; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 220 units/s; Bounce distance: 80 units; Bounce targeting: Close; Lifespan: 2s; Radius: 7.5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "M.O.A.R Glaives",
+        "cost": 2000,
+        "description": "Multiple Object Advanced Ricochet greatly enhances the already extraordinary powers of the Glaive Ricochet Monkey.",
+        "changes": {
+          "pierce": 60,
+          "cooldown": 0.4,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.4s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 60; Damage: 1; Damage to Ceramic: +1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Bounce distance: 180 units; Bounce targeting: Close; Lifespan: 2s; Radius: 7.5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Glaive Lord",
+        "cost": 32500,
+        "description": "Glaive Lord surrounds itself in 3 special glaives that shred anything that comes near. Glaive Lord's glaives now rip through MOAB-class Bloons, slowly tearing them apart from the inside.",
+        "changes": {
+          "damage": 6,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.4s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 60; Damage: 6; Damage to Ceramic: +10; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Bounce distance: ∞ units; Bounce targeting: Close; Lifespan: 2s; Radius: 7.5 units; Rehit interval: 0.6s; Filters: Cannot hit Camo; Damage over time {Damage: 100; Damage type: Normal; Duration: 10.1s; Interval: 1s; Layers: 1}}",
+          "new_attack": {
+            "name": "orbital_glaives",
+            "damage": 4,
+            "pierce": 200,
+            "cooldown": 0.05,
+            "damage_type": "sharp",
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "targeting range ∞ units; can target Camo; wiki stats: Cooldown: 0.05s; Targeting range: ∞ units; Projectile {Pierce: 200; Damage: 4; Damage to Ceramic: +4; Damage type: Sharp [Cannot damage Lead or frozen]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 30 units}"
+          }
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Faster Throwing",
+        "cost": 175,
+        "description": "Throws boomerangs faster.",
+        "changes": {
+          "cooldown": 0.9,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.9s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 4; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 175 units/s; Max travel distance: 53.4155 units; Lifespan: 5s; Radius: 5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Faster Rangs",
+        "cost": 250,
+        "description": "Boomerangs fire and travel faster.",
+        "changes": {
+          "cooldown": 0.6,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.6s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 4; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 227.5 units/s; Max travel distance: 53.4155 units; Lifespan: 5s; Radius: 5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Bionic Boomerang",
+        "cost": 1250,
+        "description": "Replaces arm with a strong bionic arm that can throw boomerangs extremely fast and do more damage to MOAB class Bloons.",
+        "changes": {
+          "cooldown": 0.15,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.15s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 4; Damage: 1; Damage to MOAB-Class: +1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 227.5 units/s; Max travel distance: 53.4155 units; Lifespan: 5s; Radius: 5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Turbo Charge",
+        "cost": 4200,
+        "description": "Turbo Charge ability: Makes this Monkey attack incredibly fast for 10 seconds.",
+        "changes": {
+          "abilities": [
+            {
+              "name": "Turbo Charge",
+              "cooldown": 45,
+              "description": "wiki stats: Buff {Cooldown modifier: ×0.2; Projectile radius modifier: +0%; Damage bonus: +1; Lifespan: 10s}"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Perma Charge",
+        "cost": 35000,
+        "description": "Perma Charge has permanent super fast attack speed. Ability increases the lethality even more.",
+        "changes": {
+          "damage": 4,
+          "cooldown": 0.03,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.03s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 4; Damage: 4; Damage to MOAB-Class: +1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 227.5 units/s; Max travel distance: 53.4155 units; Lifespan: 5s; Radius: 5 units; Filters: Cannot hit Camo}",
+          "abilities": [
+            {
+              "name": "Perma Charge",
+              "cooldown": 45,
+              "description": "wiki stats: Buff {Damage bonus: +10; Lifespan: 15s}"
+            }
+          ]
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Long Range Rangs",
+        "cost": 100,
+        "description": "Can throw boomerangs further than normal.",
+        "changes": {
+          "range": 57.19,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 57.19 units; Filters: Cannot target Camo; Projectile {Pierce: 4; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 175 units/s; Max travel distance: 74.427 units; Lifespan: 5s; Radius: 5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Red Hot Rangs",
+        "cost": 300,
+        "description": "Boomerangs now pop Frozen and Lead Bloons and do more damage to all.",
+        "changes": {
+          "damage": 2,
+          "damage_type": "normal",
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 57.19 units; Filters: Cannot target Camo; Projectile {Pierce: 4; Damage: 2; Damage type: Normal [Can damage any Bloon type]; Speed: 175 units/s; Max travel distance: 74.427 units; Lifespan: 5s; Radius: 5 units; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Kylie Boomerang",
+        "cost": 1300,
+        "description": "Throws heavy Kylie boomerangs that follow a straight path instead of curved.",
+        "changes": {
+          "pierce": 18,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 57.19 units; Filters: Cannot target Camo; Projectile {Pierce: 18; Damage: 2; Damage type: Normal [Can damage any Bloon type]; Speed: 175 units/s; Max travel distance: 80.8 units; Lifespan: 5s; Radius: 8 units; Rehit interval: 0.3s; Filters: Cannot hit Camo}"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "MOAB Press",
+        "cost": 2700,
+        "description": "Heavy Kylie boomerang hits MOAB-Class Bloons multiple times per throw and sometimes knocks them back a short way along the path.",
+        "changes": {
+          "new_attack": {
+            "name": "moab_press",
+            "damage": 1,
+            "pierce": 200,
+            "cooldown": 10,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "cannot target Camo; wiki stats: Cooldown: 10s; Targeting: First / Last / Close / Strong; Targeting range: 57.19 units; Filters: Cannot target Camo; Cannot target BADs; Can only target MOAB-Class; Projectile {Pierce: 200; Damage: 1; Damage to MOAB-Class: +4; Damage type: Normal [Can damage any Bloon type]; Pushback: 2 units; Pushback for MOABs: ×1; Pushback for BFBs: ×0.5; Pushback for ZOMGs: ×0.25; Pushback for DDTs: ×0.25; Radius: 10 units; Rehit interval: 0.1s; Filters: Cannot hit Camo; Cannot hit BADs}"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "MOAB Domination",
+        "cost": 50000,
+        "description": "Special knockback kylies trigger more often and do lots of extra damage.",
+        "changes": {
+          "damage": 12,
+          "pierce": 54,
+          "cooldown": 0.6,
+          "notes": "cannot target Camo; wiki stats: Cooldown: 0.6s; Targeting range: 57.19 units; Filters: Cannot target Camo; Projectile {Pierce: 54; Damage: 12; Damage type: Normal [Can damage any Bloon type]; Speed: 175 units/s; Max travel distance: 80.8 units; Lifespan: 5s; Radius: 8 units; Rehit interval: 0.3s; Filters: Cannot hit Camo}",
+          "modified_attacks": {
+            "moab_press": {
+              "pierce": 300,
+              "cooldown": 4,
+              "blast_radius": 50,
+              "notes": "targeting range 100 units; cannot target Camo; wiki stats: Cooldown: 4s; Targeting: First / Last / Close / Strong; Targeting range: 100 units; Filters: Cannot target Camo; Can only target MOAB-Class; Projectile {Pierce: 300; Damage: 1; Damage to MOAB-Class: +24; Damage type: Normal [Can damage any Bloon type]; Pushback: 2 units; Pushback for MOABs: ×1; Pushback for BFBs: ×0.5; Pushback for ZOMGs: ×0.25; Pushback for DDTs: ×0.25; Radius: 10 units; Rehit interval: 0.1s; Filters: Cannot hit Camo; Stun {Multiplier for MOAB-Class: ×0; Duration for MOAB-Class: 0.25s; Layers: 1}}; Explosion {Pierce: 40; Damage: 100; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.1s; Radius: 50 units; Filters: Cannot hit Camo; Damage over time {Damage: 50; Damage type: Fire; Duration: 4s; Interval: 1s; Layers: ∞}}"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Boomerang_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Boomerang_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Special:CargoTables/btd6_upgrades"
+  ],
+  "game_version": "stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4"
+}

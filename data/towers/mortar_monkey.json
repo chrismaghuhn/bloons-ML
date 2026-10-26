@@ -1,0 +1,304 @@
+{
+  "name": "Mortar Monkey",
+  "category": "military",
+  "cost": 600,
+  "footprint_radius": 11,
+  "placement": "land",
+  "range": 30,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "Attack/Explosion",
+      "damage": 2,
+      "pierce": 25,
+      "cooldown": 2,
+      "damage_type": "explosion",
+      "projectiles": 1,
+      "blast_radius": 20,
+      "notes": "cannot hit Camo; target spread 18"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Ability (Artillery Battery)",
+      "cooldown": 60,
+      "description": "Unlocked by Artillery Battery (middle tier 4): Bombardment Ability: Unleashes a rapid fire attack in a slightly wider area. Upgrades to 3 barrels for incredibly fast attacks. Data: maxActivationsPerRound=9999999; buff Buff: rateMultiplier=0.25, damageAdditive=0, lifespan=8, radiusPercentage=0.15"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Bigger Blast",
+        "cost": 300,
+        "description": "Bigger shells deliver a bigger blast radius. Wiki: This upgrade increases the pierce of Mortar Monkey's shells by +20 and increases the radius of all attacks by 1.4×. The main blast increases radius from 20 to 28. Certain crosspaths receive additional benefits from Bigger Blast: Signal Flare: the decamo blast's pierce is increased by +40. Shattering Shells: pierce of the de-regrow and de-fortify by +20. Blooncineration: pierce of its walls of fire increase by +16 and each have a larger radius.",
+        "changes": {
+          "Attack/Explosion.pierce": "+20",
+          "Attack/Explosion.blast_radius": "+8"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Bloon Buster",
+        "cost": 500,
+        "description": "Smash through 3 layers of Bloons at once! Wiki: This upgrade increases the damage of Mortar Monkey's shells from 2 to 3. Crosspaths also provide additional benefits for path 3, such as increasing the damage-over-time's tick damage: Shattering Shells: damage per tick increases from from 5 to 8, and the MOAB-Class Bloons damage per tick increases from 20 to 25. Blooncineration: damage per tick on MOAB-Class Bloons increases from 100 to 150, increases the damage of its walls of fire from 1 to 3.",
+        "changes": {
+          "Attack/Explosion.damage": "+1"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Shell Shock",
+        "cost": 825,
+        "description": "Blast shockwave stuns Bloons at impact, pops bloons in a wider area, and increases Burny Stuff damage. Wiki: Shell Shock increases its blast radius by 10 (28 to 38) and creates additional explosions: a stunning blast that affects Bloons in a small area, and a shockwave that deals damage in a wider radius. The shockwave deals 1 damage (but cannot damage multiple layers, even if given damage buffs) within 57 radius, but can not hit Bloons within 50% of its blast radius, or DDTs. The stunning blast has 19 radius and stuns Bloons for 0.5 seconds except for Black and Zebra Bloons, even if given a Black-popping buff. With the Burny Stuff crosspath Shell Shock gains the following improvements: +1 damage to burn (from 1 to 2) Tick cooldown decreased from 1.25 seconds to 0.625 seconds (0.375 seconds with Extra Burny Stuff)",
+        "changes": {
+          "Attack/Explosion.blast_radius": "+10",
+          "new_attacks": [
+            {
+              "name": "Attack/Shockwave",
+              "damage": 1,
+              "pierce": 45,
+              "cooldown": 2,
+              "damage_type": "explosion",
+              "projectiles": 1,
+              "blast_radius": 57,
+              "notes": "cannot hit DDT; cannot hit Camo; target spread 18"
+            },
+            {
+              "name": "Attack/Stun",
+              "damage": null,
+              "pierce": 45,
+              "cooldown": 2,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 19,
+              "notes": "cannot hit MOAB-class; cannot hit Camo; Stun(layers=9999999, isUnique=True, dontRefreshDuration=False, cascadeMutators=False, removeMutatorIfNotMatching=False, matchLayersWithDamage=False, mutationId=Stun:Shockwave, lifespan=0.5, multiplier=0, multiplierForBlack=0, lifespanForBlack=0, multiplierForZebra=0, lifespanForZebra=0); target spread 18"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 4,
+        "name": "The Big One",
+        "cost": 7000,
+        "description": "Devastating explosions pop 10 layers. Increases Burny Stuff damage further. Wiki: This upgrade creates much larger explosions that do more damage, pop more Bloons, and stun longer. The outer shockwave's damage type is changed to Normal, popping all visible Bloon types, but the other explosions remain unable to pop Black Bloons. Main explosion: Radius is increased by 20 (38 to 58), pierce increased from 45 to 85, and damage from 3 to 10. Shockwave: Radius is increased by 30 (57 to 87), pierce increased from 45 to 85, and damage from 1 to 2 (with another +2 damage to Ceramics). Can also target visible DDTs. Stun blast: Radius increased by 10 (19 to 29), pierce increased from 45 to 85, and stun duration increased from 0.5 seconds to 0.75 seconds. With the 4-0-2 crosspath, the Burny Stuff burn damage is increased from 2 to 12. It still burns every 0.625 seconds (0.375 seconds with Extra Burny Stuff) and lasts up to 3.85 seconds.",
+        "changes": {
+          "Attack/Shockwave.damage": "+1",
+          "Attack/Shockwave.pierce": "+40",
+          "Attack/Shockwave.damage_type": "normal",
+          "Attack/Shockwave.blast_radius": "+30",
+          "Attack/Shockwave.notes": "+2 damage vs Ceramic; cannot hit Camo; target spread 18",
+          "Attack/Stun.pierce": "+40",
+          "Attack/Stun.blast_radius": "+10",
+          "Attack/Stun.notes": "cannot hit MOAB-class; cannot hit Camo; Stun(layers=9999999, isUnique=True, dontRefreshDuration=False, cascadeMutators=False, removeMutatorIfNotMatching=False, matchLayersWithDamage=False, mutationId=Stun:Shockwave, lifespan=0.75, multiplier=0, multiplierForBlack=0, lifespanForBlack=0, multiplierForZebra=0, lifespanForZebra=0); target spread 18",
+          "Attack/Explosion.damage": "+7",
+          "Attack/Explosion.pierce": "+40",
+          "Attack/Explosion.blast_radius": "+20"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "The Biggest One",
+        "cost": 36000,
+        "description": "Blasts deeply through Bloons and layers over a huge area, plus powerful Burny Stuff damage. Wiki: All of its explosions have increased radius, the main explosion and shockwave deal more damage, and pierce is increased from 85 to 200. Additionally, the stun blast can affect blimps for a shorter duration. Main explosion: Damage from 10 to 25, plus an additional +30 bonus to Ceramics and MOAB-Class. Radius is increased by 16, from 58 to 74. Shockwave: Ceramic bonus damage from +2 to +20. Radius is increased by 24, from 87 to 111. Stun blast: MOABs are stunned for 0.4 seconds, BFBs and DDTs for 0.2 seconds, and ZOMGs for 0.1 seconds. Radius is increased by 8, from 29 to 37. With the 5-0-2 crosspath, the Burny Stuff burn damage is increased from 12 to 65. It still burns every 0.625 seconds (0.375 seconds with Extra Burny Stuff) and lasts up to 3.85 seconds.",
+        "changes": {
+          "Attack/Shockwave.pierce": "+115",
+          "Attack/Shockwave.blast_radius": "+24",
+          "Attack/Shockwave.notes": "+20 damage vs Ceramic; cannot hit Camo; target spread 18",
+          "Attack/Stun.pierce": "+115",
+          "Attack/Stun.blast_radius": "+8",
+          "Attack/Stun.notes": "cannot hit Camo; Stun(layers=9999999, isUnique=True, dontRefreshDuration=False, cascadeMutators=False, removeMutatorIfNotMatching=False, matchLayersWithDamage=False, mutationId=Stun:Shockwave, lifespan=0.75, multiplier=0, multiplierForBlack=0, lifespanForBlack=0, multiplierForZebra=0, lifespanForZebra=0, lifespanForMoab=0.4, lifespanForBfb=0.2, lifespanForDdt=0.2, lifespanForZomg=0.1); target spread 18",
+          "Attack/Explosion.damage": "+15",
+          "Attack/Explosion.pierce": "+115",
+          "Attack/Explosion.blast_radius": "+16",
+          "Attack/Explosion.notes": "+30 damage vs CeramicOrMoabs; cannot hit Camo; target spread 18"
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Faster Reload",
+        "cost": 400,
+        "description": "Increases the attack speed of the Mortar. Wiki: The Mortar Monkey's attack cooldown decreases by 25%, increasing its attack speed by ~33%. It attacks every 1.5 seconds instead of 2 seconds.",
+        "changes": {
+          "Attack/Explosion.cooldown": "x0.75 (2 -> 1.5)"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Rapid Reload",
+        "cost": 500,
+        "description": "Even faster reload. Wiki: This upgrade further reduces its attack cooldown by 28% compared to Faster Reload, increasing the attack speed by approximately +38.89%. It attacks every 1.08 seconds instead of every 1.5 seconds. The total attack speed bonus compared to base Mortar is approximately +85.18%.",
+        "changes": {
+          "Attack/Explosion.cooldown": "x0.72 (1.5 -> 1.08)"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Heavy Shells",
+        "cost": 900,
+        "description": "Heavy shells do extra damage to Ceramic, Lead, Fortified, MOABs, and stunned Bloons. Attacks faster and can also pop Black Bloons. Wiki: This upgrade increases its attack speed by approximately 33% and deals Normal damage type, allowing each shot to damage all visible Bloons. Shots also gain +1 damage to Leads (including visible DDTs), MOAB-Class Bloons, and Fortified Bloons, +2 damage to all Bloons that are stunned, and +3 damage to Ceramics. These bonuses can stack. With Burny Stuff, it deals 4 damage per tick instead of 1.",
+        "changes": {
+          "Attack/Explosion.cooldown": "x0.75 (1.08 -> 0.81)",
+          "Attack/Explosion.damage_type": "normal",
+          "Attack/Explosion.notes": "+3 damage vs Ceramic; +1 damage vs Moabs; +2 damage vs Stunned; +1 damage vs LeadOrDdt; +1 damage vs Fortified; cannot hit Camo; target spread 18"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Artillery Battery",
+        "cost": 6500,
+        "description": "Bombardment Ability: Unleashes a rapid fire attack in a slightly wider area. Upgrades to 3 barrels for incredibly fast attacks. Wiki: This upgrade gains triple attack speed (attacking every 0.27 seconds) and an ability that applies a further 4× attack speed bonus and +15% blast radius bonus for 8 seconds, with a cooldown of 60 seconds. With the ability active, it attacks every 0.0675 seconds. With the Burny Stuff crosspath, the burn damage per tick increases from 4 to 6.",
+        "changes": {
+          "Attack/Explosion.cooldown": "x0.333 (0.81 -> 0.27)",
+          "new_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 60,
+              "description": "maxActivationsPerRound=9999999; buff Buff: rateMultiplier=0.25, damageAdditive=0, lifespan=8, radiusPercentage=0.15"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Pop and Awe",
+        "cost": 38000,
+        "description": "Pop and Awe has permanent rapid attack speed. Pop and Awe Ability: rains explosions over the whole screen, damaging Bloons and stunning them periodically. Wiki: This upgrade replaces Artillery Battery's Bombardment ability with the Pop and Awe ability, which stuns all Bloons and blimps (excluding BADs and Bosses, while allowing all others to inch forward), does 20 damage per second to everything on the screen and immediately to any newly spawned Bloon, has a cooldown of 60 seconds, and lasts for 8 seconds. With the 0-5-2 crosspath, the ability also applies Burny Stuff that deals 36 damage per tick of every 1.25 seconds for up to 7.5 seconds. Pop and Awe also gains a permanent 4× attack speed compared to Artillery Battery (with the ability inactive). In addition, bonus damage against stunned targets is increased (+2 → +8), and the blast radius is increased from 20 to 23 (28 to 32.2 with 1/2-5-0). With the 0-5-2 crosspath, the Burny Stuff's damage per tick is increased from 6 to 20 and its duration is increased from 3.75 seconds to 7.5 seconds. Pop and Awe also grants all Artillery Batteries +1 BAD/Boss damage but it does not give this buff to itself.",
+        "changes": {
+          "Attack/Explosion.cooldown": "x0.25 (0.27 -> 0.0675)",
+          "Attack/Explosion.blast_radius": "+3",
+          "Attack/Explosion.notes": "+3 damage vs Ceramic; +1 damage vs Moabs; +8 damage vs Stunned; +1 damage vs LeadOrDdt; +1 damage vs Fortified; cannot hit Camo; target spread 18",
+          "changed_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 60,
+              "description": "attack Attack/Projectile: dmg 20, pierce infinite, cd None, type normal, x1, lifespan 8s; Stun(layers=9999999, isUnique=True, dontRefreshDuration=False, cascadeMutators=False, removeMutatorIfNotMatching=False, matchLayersWithDamage=False, mutationId=Stun:Strong, lifespan=1, multiplier=0)"
+            }
+          ],
+          "buff:Buff": {
+            "isGlobal": true,
+            "customRadius": 0,
+            "appliesToOwningTower": false,
+            "maxStackSize": 0,
+            "filterInBaseTowerId": "Mortar Monkey",
+            "filterInTowerTiers": "X-4+-X",
+            "damageAdditiveForBad": 1
+          }
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Increased Accuracy",
+        "cost": 200,
+        "description": "Makes the shots more accurate, enough to hit Camo Bloons! Wiki: This upgrade lowers the spread of the Mortar Monkey's projectiles from 18 to 8, making them land closer to the target. The Mortar also gains camo detection. [Note: Wiki upgrade text states the Mortar gains camo detection at this tier; the wiki stats module (filterInvisible) only shows camo from Signal Flare (0-0-3). Camo set true here following the upgrade text.]",
+        "changes": {
+          "camo": true,
+          "Attack/Explosion.notes": "cannot hit Camo; target spread 8"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Burny Stuff",
+        "cost": 400,
+        "description": "Damaged Bloons are set ablaze momentarily with each hit. Wiki: This upgrade lets the Mortar's attacks inflict a damage-over-time effect onto damaged Bloons, dealing 1 Fire-type damage once every 1.25 seconds (1 second with Extra Burny Stuff) and lasts for 3.85 seconds on each Bloon that they hit (triggering up to 3 times for this duration). Visually, Bloons are set on fire while affected by this effect. All Tier 3+ Mortars apply a stronger burn effect that can override weaker variants.",
+        "changes": {
+          "Attack/Explosion.notes": "cannot hit Camo; Damage over time(layers=9999999, lifespan=3.85, applyOnlyIfDamaged=True, damage=1, damage_type=fire, interval=1.25, initialDelay=0, distributeToChildren=True); target spread 8"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Signal Flare",
+        "cost": 1100,
+        "description": "Camo Bloons popped by flares lose their camouflage permanently. Wiki: This upgrade adds a new wider explosion that removes the Camo property of any Bloon, including DDTs, that it hits, dealing zero damage. This secondary explosion has 50 pierce and 52 radius (90 pierce and 72.8 radius with 1-0-3).",
+        "changes": {
+          "Attack/Explosion.notes": "Damage over time(layers=9999999, lifespan=3.85, applyOnlyIfDamaged=True, damage=1, damage_type=fire, interval=1.25, initialDelay=0, distributeToChildren=True); target spread 8",
+          "new_attack": {
+            "name": "Attack/Decamo projectile",
+            "damage": null,
+            "pierce": 50,
+            "cooldown": 2,
+            "damage_type": null,
+            "projectiles": 1,
+            "blast_radius": 52,
+            "notes": "removes Camo; target spread 8"
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Shattering Shells",
+        "cost": 9500,
+        "description": "Shattering shells strip special Bloon properties off all but the biggest bloons. Burny stuff melts through 5 layers with each shot and burns MOAB-class Bloons for extra damage. Wiki: Each shot removes all Camo and Regrow modifiers (including from Boss Bloons), and all Fortified modifiers from up to BFB (plus DDT with Paint Stripper). Its main explosion strips Regrow and Fortified modifiers, and its secondary no-damage blast strips both Camo and Regrow. The burn effect from Shattering Shells is improved to deal 5 damage per tick, and gains an additional burn that only targets MOAB-class, dealing 20 damage per tick. This blimp-only burn also affects DDTs. On any non-DDT blimp, it effectively does 25 damage per tick. Both the ordinary burn and blimp-only burn are affected by Extra Burny Stuff. Crosspathing with 2-0-4 further increases the burn effect to 8 damage and its blimp-only burn to 25, totalling 33 per tick on any non-DDT.",
+        "changes": {
+          "Attack/Explosion.notes": "removes Fortified (excl. ZOMG, BAD, DDT); Damage over time(layers=9999999, lifespan=3.85, applyOnlyIfDamaged=True, damage=5, damage_type=fire, interval=1.25, initialDelay=0, distributeToChildren=True); target spread 8",
+          "new_attacks": [
+            {
+              "name": "Attack/MOAB burn projectile",
+              "damage": null,
+              "pierce": 25,
+              "cooldown": 2,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 20,
+              "notes": "hits MOAB-class only; Damage over time(layers=9999999, lifespan=3.85, applyOnlyIfDamaged=True, damage=20, damage_type=normal, interval=1.25, initialDelay=0, distributeToChildren=True); target spread 8"
+            },
+            {
+              "name": "Attack/DDT defort projectile",
+              "damage": null,
+              "pierce": 25,
+              "cooldown": 2,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 20,
+              "notes": "removes Regen (excl. ZOMG, BAD, DDT); removes Fortified (excl. ZOMG, BAD, DDT); target spread 8"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Blooncineration",
+        "cost": 40000,
+        "description": "Superhot burny stuff that incinerates MOAB-Class Bloons with ease. Wiki: Each explosion leaves a Wall of Fire that deals 1 damage, has 20 pierce, rehits every 0.1 seconds, and lasts 4.5 seconds. Additionally Blooncineration applies a much stronger burn effect that burns every 0.75 seconds (0.5 with Extra Burny Stuff). The burn effect deals 5 damage, and 100 MOAB-class damage. It can also defortify DDTs without the need for Paint Stripper. Crosspathing with path 1 improves the Wall of Fire and burn effects: 1-0-5: Newly dropped walls of fire gain increased radius (15 to 21) and pierce (20 to 36). 2-0-5: Increases the damage per tick versus Bloons from 5 to 8, damage per tick versus MOAB-class damage from 100 to 150, and wall of fire damage from 1 to 3.",
+        "changes": {
+          "Attack/MOAB burn projectile.notes": "hits MOAB-class only; Damage over time(layers=9999999, lifespan=3.85, applyOnlyIfDamaged=True, damage=100, damage_type=normal, interval=0.75, initialDelay=0, distributeToChildren=True); target spread 8",
+          "Attack/Explosion.damage_type": "normal",
+          "Attack/Explosion.notes": "removes Fortified (excl. ZOMG, BAD, DDT); target spread 8",
+          "Attack/DDT defort projectile.notes": "removes Regen (excl. ZOMG, BAD); removes Fortified (excl. ZOMG, BAD); target spread 8",
+          "new_attacks": [
+            {
+              "name": "Attack/Wall of Fire",
+              "damage": 1,
+              "pierce": 20,
+              "cooldown": 2,
+              "damage_type": "fire",
+              "projectiles": 1,
+              "blast_radius": 15,
+              "notes": "lifespan 4.5s; target spread 8"
+            },
+            {
+              "name": "Attack/Burn projectile",
+              "damage": null,
+              "pierce": 25,
+              "cooldown": 2,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 20,
+              "notes": "cannot hit MOAB-class; Damage over time(layers=9999999, lifespan=3.85, applyOnlyIfDamaged=True, damage=5, damage_type=normal, interval=0.75, initialDelay=0, distributeToChildren=True); target spread 8"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Mortar_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Mortar_Monkey/new",
+    "https://www.bloonswiki.com/api.php?action=cargoquery&tables=btd6_upgrades (tower=Mortar Monkey)"
+  ],
+  "game_version": "55.1"
+}

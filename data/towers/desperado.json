@@ -1,0 +1,298 @@
+{
+  "name": "Desperado",
+  "category": "primary",
+  "cost": 300,
+  "footprint_radius": 7,
+  "placement": "land",
+  "range": 60,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "revolver",
+      "damage": 1,
+      "pierce": 1,
+      "cooldown": 1.2,
+      "damage_type": "sharp",
+      "projectiles": 1,
+      "blast_radius": null,
+      "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Take Aim",
+      "cooldown": 30,
+      "description": "Unlocked by Deadeye (middle path tier 3). In-game text: Take Aim ability: target Monkey gains improved range, accuracy, and Camo detection. Desperado gains a long range rifle to use against distant targets. Rifle shots excel against Fortified targets and can pop Lead Bloons. wiki stats: Buff {Range modifier: ×1.25; Spread modifier: ×0.5; Lifespan: 15s}"
+    },
+    {
+      "name": "Take Aim",
+      "cooldown": 30,
+      "description": "Unlocked by Bounty Hunter (middle path tier 4). In-game text: Marked to Pop ability: Marks extra Bloons, then proceeds to attack all Marked Bloons. Marked Bloons take more damage and give more cash. All Desperados can target Marked Bloons. wiki stats: Buff {Range modifier: ×1.5; Spread modifier: ×0.2; Immunity override: Purple, Black, White; Lifespan: 15s}"
+    },
+    {
+      "name": "Marked to Pop",
+      "cooldown": 45,
+      "description": "Unlocked by Bounty Hunter (middle path tier 4). In-game text: Marked to Pop ability: Marks extra Bloons, then proceeds to attack all Marked Bloons. Marked Bloons take more damage and give more cash. All Desperados can target Marked Bloons. wiki stats: Lifespan: 3s; Marking attack {Cooldown: 0.2s; Targeting range: ∞ units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 1; Max pierce: 1; Radius: 2 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}}; Execution attack {Cooldown: 0.05s; Targeting range: ∞ units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 1; Max pierce: 1; Damage: 30; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}}"
+    },
+    {
+      "name": "Marked to Pop",
+      "cooldown": 45,
+      "description": "Unlocked by Golden Justice (middle path tier 5). In-game text: They say Desperado's longarm can hit clean through an army of Bloons. wiki stats: Lifespan: 3s; Marking attack {Cooldown: 0.2s; Targeting range: ∞ units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 1; Max pierce: 1; Radius: 2 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}}; Execution attack {Cooldown: 0.05s; Targeting range: ∞ units; Crit multiplier: ×8; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 1; Max pierce: 1; Damage: 300; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}}"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Quickdraw",
+        "cost": 200,
+        "description": "Attacks faster the further Bloons are from Desperado.",
+        "changes": {
+          "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Standoff",
+        "cost": 200,
+        "description": "Attacks faster the fewer Bloons are in range.",
+        "changes": {
+          "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +60%; Penalty per additional Bloon in range: -15%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Big Iron",
+        "cost": 1200,
+        "description": "Upgrades pistol to a 6-shot revolver that can pop Lead Bloons. Attacks even faster the fewer Bloons are in range.",
+        "changes": {
+          "damage": 2,
+          "notes": "cannot target Camo; wiki stats: Burst count: 6; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 2; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Twin Sixes",
+        "cost": 5800,
+        "description": "Gains twin higher damage revolvers.",
+        "changes": {
+          "damage": 6,
+          "notes": "cannot target Camo; wiki stats: Burst count: 12; Burst interval: 0.05s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 6; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "The Blazing Sun",
+        "cost": 16500,
+        "description": "They say Desperado shoots so fast them revolvers catch alight.",
+        "changes": {
+          "damage": 20,
+          "cooldown": 0.3,
+          "damage_type": "normal",
+          "notes": "cannot target Camo; wiki stats: Burst count: 12; Burst interval: 0.05s; Cooldown: 0.3s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Area of effect {Pierce: 8; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo; Damage over time {Damage: 75; Damage type: Fire; Duration: 12.05s; Interval: 1.5s; Layers: ∞}}; Projectile {Pierce: 1; Damage: 20; Damage to Ceramic: +40; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}"
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Eagle Eye",
+        "cost": 150,
+        "description": "Desperado can see Camo Bloons.",
+        "changes": {
+          "camo": true,
+          "notes": "can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Bullseye",
+        "cost": 350,
+        "description": "Shots get a chance to Crit. Chance to Crit goes up when target Bloon is further away.",
+        "changes": {
+          "notes": "can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Deadeye",
+        "cost": 3000,
+        "description": "Take Aim ability: target Monkey gains improved range, accuracy, and Camo detection. Desperado gains a long range rifle to use against distant targets. Rifle shots excel against Fortified targets and can pop Lead Bloons.",
+        "changes": {
+          "range": 80,
+          "damage": 6,
+          "damage_type": "normal",
+          "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 6; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}",
+          "abilities": [
+            {
+              "name": "Take Aim",
+              "cooldown": 30,
+              "description": "wiki stats: Buff {Range modifier: ×1.25; Spread modifier: ×0.5; Lifespan: 15s}"
+            }
+          ],
+          "new_attack": {
+            "name": "rifle",
+            "damage": 10,
+            "pierce": 4,
+            "cooldown": 1.59,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "can target Camo; wiki stats: Cooldown: 1.59s; Targeting range: 80 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 4; Damage: 10; Damage to Fortified: +10; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}"
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Bounty Hunter",
+        "cost": 6000,
+        "description": "Marked to Pop ability: Marks extra Bloons, then proceeds to attack all Marked Bloons. Marked Bloons take more damage and give more cash. All Desperados can target Marked Bloons.",
+        "changes": {
+          "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 6; Damage to Ceramic: +6; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}",
+          "modified_attacks": {
+            "rifle": {
+              "notes": "can target Camo; wiki stats: Cooldown: 1.59s; Targeting range: 80 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 4; Damage: 10; Damage to Ceramic or Fortified: +10; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}"
+            }
+          },
+          "abilities": [
+            {
+              "name": "Take Aim",
+              "cooldown": 30,
+              "description": "wiki stats: Buff {Range modifier: ×1.5; Spread modifier: ×0.2; Immunity override: Purple, Black, White; Lifespan: 15s}"
+            },
+            {
+              "name": "Marked to Pop",
+              "cooldown": 45,
+              "description": "wiki stats: Lifespan: 3s; Marking attack {Cooldown: 0.2s; Targeting range: ∞ units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 1; Max pierce: 1; Radius: 2 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}}; Execution attack {Cooldown: 0.05s; Targeting range: ∞ units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 1; Max pierce: 1; Damage: 30; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}}"
+            }
+          ],
+          "new_attack": {
+            "name": "mark",
+            "damage": 0,
+            "pierce": 2,
+            "cooldown": 6,
+            "damage_type": null,
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "no direct damage listed on wiki; can target Camo; wiki stats: Cooldown: 6s; Min. cooldown: 3s; Targeting range: 80 units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 2; Max pierce: 2; Radius: 18 units; Mark {Duration: ∞s; Layers: 1}}"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Golden Justice",
+        "cost": 42000,
+        "description": "They say Desperado's longarm can hit clean through an army of Bloons.",
+        "changes": {
+          "damage": 24,
+          "blast_radius": 0,
+          "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×8; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 24; Damage to Ceramic: +24; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}; Explosion {Pierce: 8; Damage: 24; Damage to Ceramic: +24; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 0 units}",
+          "modified_attacks": {
+            "rifle": {
+              "damage": 280,
+              "pierce": 9999999,
+              "cooldown": 3.18,
+              "notes": "can target Camo; wiki stats: Cooldown: 3.18s; Targeting range: 80 units; Crit multiplier: ×8; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 9,999,999; Damage: 280; Damage to Ceramic or Fortified: +280; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}"
+            },
+            "mark": {
+              "cooldown": 3,
+              "notes": "no direct damage listed on wiki; can target Camo; wiki stats: Cooldown: 3s; Min. cooldown: 1s; Targeting range: 80 units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 2; Max pierce: 2; Radius: 18 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}"
+            }
+          },
+          "abilities": [
+            {
+              "name": "Marked to Pop",
+              "cooldown": 45,
+              "description": "wiki stats: Lifespan: 3s; Marking attack {Cooldown: 0.2s; Targeting range: ∞ units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 1; Max pierce: 1; Radius: 2 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}}; Execution attack {Cooldown: 0.05s; Targeting range: ∞ units; Crit multiplier: ×8; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 1; Max pierce: 1; Damage: 300; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}}"
+            }
+          ]
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Wanderer",
+        "cost": 220,
+        "description": "A Wanderer works best alone. Desperado attacks much faster, but less so when more Monkeys are in each weapon's attack range.",
+        "changes": {
+          "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Nomad",
+        "cost": 280,
+        "description": "Attacks faster the more Bloons are in range. When lives are lost gets temporary range and attack speed increase, plus a small amount of cash if a Bloon leaked.",
+        "changes": {
+          "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
+          "passive_effects": [
+            {
+              "name": "Nomad buff",
+              "notes": "wiki stats: Cooldown modifier: ×0.6; Range bonus: +16; Lifespan: 15s; Cooldown: 60s"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Enforcer",
+        "cost": 2100,
+        "description": "Uses a shotgun that can knock back Bloons when they get within close range.",
+        "changes": {
+          "damage": 6,
+          "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 6; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
+          "new_attack": {
+            "name": "shotgun",
+            "damage": 3,
+            "pierce": 3,
+            "cooldown": 1.97,
+            "damage_type": "shatter",
+            "projectiles": 3,
+            "blast_radius": null,
+            "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 3; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-1; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.2s}}"
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Avenger",
+        "cost": 9500,
+        "description": "Shotgun hits release shrapnel and can even knock back MOABs. When lives are lost, weaker Bloons only take 1 life each for a short time.",
+        "changes": {
+          "damage": 18,
+          "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 18; Damage to Ceramic: +18; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
+          "modified_attacks": {
+            "shotgun": {
+              "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 3; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-2; Multiplier for Lead: ×-2; Multiplier for Ceramic: ×-2; Multiplier for MOAB-Class: ×-0.5; Duration: 0.2s}}; Shrapnel {Count: 3; Angle: 120°; Pierce: 6; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.1067s; Radius: 0.2 units; Filters: Cannot hit Camo}"
+            }
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "The Desert Phantom",
+        "cost": 31000,
+        "description": "They say Desperado hits so hard it's like a mine blast.",
+        "changes": {
+          "damage": 50,
+          "cooldown": 0.6,
+          "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 0.6s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 50; Damage to Ceramic: +50; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
+          "modified_attacks": {
+            "shotgun": {
+              "damage": 10,
+              "blast_radius": 8,
+              "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 10; Damage to MOAB-Class: +40; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-3; Multiplier for Ceramic: ×-3; Multiplier for MOAB-Class: ×-2; Duration: 0.2s}}; Shrapnel {Count: 3; Angle: 120°; Pierce: 10; Damage: 3; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.2133s; Radius: 0.2 units; Filters: Cannot hit Camo; Damage over time {Damage: 10; Damage to Ceramic: +10; Damage type: Fire; Duration: 9.05s; Interval: 1.5s; Layers: ∞}}; Explosion {Pierce: 3; Max pierce: 3; Damage: 5; Damage to Ceramic: +15; Damage type: Fire [Cannot damage Purple]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 8 units; Filters: Cannot hit Camo}"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Desperado_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Desperado_(BTD6)",
+    "https://www.bloonswiki.com/Special:CargoTables/btd6_upgrades"
+  ],
+  "game_version": "stats last updated for 55.2 per wiki Stats page; latest BTD6 version on wiki: 57.4"
+}

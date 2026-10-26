@@ -1,0 +1,344 @@
+{
+  "name": "Heli Pilot",
+  "category": "military",
+  "cost": 1500,
+  "footprint_radius": null,
+  "placement": "land",
+  "range": 22,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "Attack/Projectile",
+      "damage": 1,
+      "pierce": 3,
+      "cooldown": 0.57,
+      "damage_type": "sharp",
+      "projectiles": 2,
+      "blast_radius": null,
+      "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Redeploy (Support Chinook)",
+      "cooldown": 45,
+      "description": "Unlocked by Support Chinook (middle tier 4): Blows back many more Bloons and gains abilities: Drops lives and cash crates, and can pick up and redeploy most Monkey types. Data: maxActivationsPerRound=-1"
+    },
+    {
+      "name": "Support Drop (Support Chinook)",
+      "cooldown": 90,
+      "description": "Unlocked by Support Chinook (middle tier 4): Blows back many more Bloons and gains abilities: Drops lives and cash crates, and can pick up and redeploy most Monkey types. Data: maxActivationsPerRound=2; collectable Cash crate: collectRadius=50, cashMinimum=1550, cashMaximum=1550, lifespan=15; collectable Life crate: collectRadius=50, livesMinimum=10, livesMaximum=10, lifespan=15"
+    },
+    {
+      "name": "Special Poperations (Special Poperations)",
+      "cooldown": 25,
+      "description": "Unlocked by Special Poperations (middle tier 5): Deploys a powerful special Monkey Marine with a machine gun. Data: maxActivationsPerRound=-1"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Quad Darts",
+        "cost": 800,
+        "description": "Shoots 4 darts per volley instead of 2. Wiki: This upgrade actually grants Heli Pilot a new attack which has identical stats to its standard attack, and which fires simultaneously.[fn 1] In effect, this increases the number of darts fired per shot from 2 to 4. If Comanche Defense is purchased, this upgrade increases the number of darts fired by mini-comanches from 3 to 5 per shot.",
+        "changes": {
+          "Attack/Projectile.projectiles": "+2"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Pursuit",
+        "cost": 500,
+        "description": "A new targeting option enables Heli to seek and pursue the Bloons automatically. Wiki: This upgrade grants Heli Pilot a new Pursuit targeting option. When selected, Heli Pilot tries to move just in front of the farthest Bloon on the track. If set to Patrol Points, the Heli Pilot with the Pursuit upgrade acts in Pursuit targeting if bloons are between the two points.",
+        "changes": {
+          "new_targeting_options": [
+            "Pursuit"
+          ]
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Razor Rotors",
+        "cost": 1450,
+        "description": "Razor Rotor blades rip up Bloons on contact, including Lead and Frozen Bloons. Wiki: This upgrade grants Heli Pilot a new razor rotor attack, which has the Normal damage type. This attack is a damage aura with a radius of 35 units around the Heli Pilot. It deals 2 damage, has 10 pierce, and has an attack cooldown of 0.45 seconds (0.3 seconds with Rapid Razors). Exclusive to this upgrade, the Pursuit targeting option causes this Heli to move closer to the Bloons so it can take advantage of the rotors.",
+        "changes": {
+          "new_attack": {
+            "name": "Rotors/Projectile",
+            "damage": 2,
+            "pierce": 10,
+            "cooldown": 0.45,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": 35,
+            "notes": "cannot hit Camo; attack range 2000"
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Apache Dartship",
+        "cost": 20000,
+        "description": "Adds a large missile array and powerful machine guns. Wiki: This upgrade grants Heli Pilot two new attacks, a machine gun and a missile launcher, and enhances its existing attacks. Additionally its base flight speed increases by 25%. The machine gun fires darts which deal 1 damage, have 7 pierce, and have an attack cooldown of 0.05 seconds. These darts cannot damage Lead or Frozen Bloons. The missile launcher fires 4 homing rockets per shot which deal 2 damage, have 40 pierce, and have an attack cooldown of 1 second. These rockets cannot damage Black Bloons. The missile launcher has a range of 84 units, twice that of Heli Pilot's other attacks. The quad darts has 25% reduced attack cooldown, for an attack speed increase of ~33.33%, and the razor rotors attack is improved to deal 4 damage (instead of 2) and have 20 pierce (instead of 10).",
+        "changes": {
+          "Attack/Projectile.cooldown": "x0.75 (0.57 -> 0.4275)",
+          "Rotors/Projectile.damage": "+2",
+          "Rotors/Projectile.pierce": "+10",
+          "new_attacks": [
+            {
+              "name": "Machine gun/Projectile",
+              "damage": 1,
+              "pierce": 7,
+              "cooldown": 0.05,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "notes": "cannot hit Camo; speed 375; collision radius 3; spread angle 8; attack range 42"
+            },
+            {
+              "name": "Missile array/Explosion",
+              "damage": 2,
+              "pierce": 40,
+              "cooldown": 1,
+              "damage_type": "explosion",
+              "projectiles": 1,
+              "blast_radius": 25,
+              "notes": "cannot hit Camo; attack range 84"
+            }
+          ],
+          "movement_speed": "+10"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Apache Prime",
+        "cost": 45000,
+        "description": "The Apache Prime leaves most Bloons wishing they'd never been inflated. Wiki: This upgrade significantly improves all of the attacks of the Apache Dartship, dealing significantly more damage and often more pierce. All of its darts are replaced by red and purple lasers. The quad darts are replaced with quad lasers. These lasers have increased damage from 1 to 6 and increased pierce from 3 to 23 compared to darts. They can damage Frozen Bloons but cannot damage Lead or Purple Bloons. The machine gun fires thin plasma lasers instead of darts. They increased damage from 1 to 5 and increased pierce from 7 to 11, and can damage all Bloon types except for Purple. Rockets deal +15 MOAB-Class damage. The razor rotor attack has its damage increased from 4 to 8 and its pierce from 20 to 40.",
+        "changes": {
+          "Attack/Projectile.damage": "+5",
+          "Attack/Projectile.pierce": "+20",
+          "Attack/Projectile.damage_type": "energy",
+          "Machine gun/Projectile.damage": "+4",
+          "Machine gun/Projectile.pierce": "+4",
+          "Machine gun/Projectile.damage_type": "plasma",
+          "Missile array/Explosion.notes": "+15 damage vs Moabs; cannot hit Camo; attack range 84",
+          "Rotors/Projectile.damage": "+4",
+          "Rotors/Projectile.pierce": "+20"
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Bigger Jets",
+        "cost": 300,
+        "description": "Powerful jets make Heli move much faster. Wiki: This upgrade increases the movement speed of Heli Pilot by 30 units per second. If MOAB Shove is purchased, this upgrade enhances the power of its shove attack.",
+        "changes": {
+          "movement_speed": "+30"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "IFR",
+        "cost": 600,
+        "description": "Allows Heli Pilot to detect and shoot Camo Bloons. Wiki: This upgrade grants Camo detection to the Heli Pilot, allowing all of its attacks to target and pop Camo Bloons.",
+        "changes": {
+          "camo": true,
+          "Attack/Projectile.notes": "speed 260; collision radius 3; lifespan 1s; attack range 42"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Downdraft",
+        "cost": 3500,
+        "description": "Blows Bloons away from the Heli, back toward the entrance. Wiki: This upgrade grants Heli Pilot a new downdraft aura attack. This new attack deals no damage, but sends Bloons backwards 32-150 units. This attack has a cooldown of 0.18 seconds, and a pierce of 2. Blowing back a Ceramic Bloon uses up 2 pierce. The downdraft cannot affect MOAB-Class Bloons or Lead Bloons[fn 2]. Bloons which get blown back lose their glued and frozen properties if they had it.",
+        "changes": {
+          "new_attack": {
+            "name": "Downdraft/Projectile",
+            "damage": null,
+            "pierce": 2,
+            "cooldown": 0.18,
+            "damage_type": null,
+            "projectiles": 1,
+            "blast_radius": 32,
+            "notes": "cannot hit MOAB-class; cannot hit Lead; Blowback(distanceMin=32, distanceMax=150, chance=1, affectMoab=False); attack range 2000"
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Support Chinook",
+        "cost": 9500,
+        "description": "Blows back many more Bloons and gains abilities: Drops lives and cash crates, and can pick up and redeploy most Monkey types. Wiki: This upgrade grants Heli Pilot two new abilities: Reposition, and Supply Crate. Reposition allows the Chinook to pick up a \"non-heavy\" tower to a new location. Supply Crate simultaneously drops two crates containing cash and lives. Additionally, this upgrade increases the damage of Heli Pilot's darts from 1 to 2, dart projectile size from 3 to 6, reduces the attack cooldown of downdraft from 0.18 to 0.15 seconds, increases downdraft's pierce from 2 to 4, minimum blowback distance from 32 to 64 units, and flight speed from 70 to 80 units per second.",
+        "changes": {
+          "Attack/Projectile.damage": "+1",
+          "Attack/Projectile.notes": "speed 260; collision radius 6; lifespan 1s; attack range 42",
+          "Downdraft/Projectile.pierce": "+2",
+          "Downdraft/Projectile.cooldown": "x0.833 (0.18 -> 0.15)",
+          "Downdraft/Projectile.notes": "cannot hit MOAB-class; cannot hit Lead; Blowback(distanceMin=64, distanceMax=150, chance=1, affectMoab=False); attack range 2000",
+          "new_ability": [
+            {
+              "name": "Redeploy",
+              "cooldown": 45,
+              "description": "maxActivationsPerRound=-1"
+            },
+            {
+              "name": "Support Drop",
+              "cooldown": 90,
+              "description": "maxActivationsPerRound=2; collectable Cash crate: collectRadius=50, cashMinimum=1550, cashMaximum=1550, lifespan=15; collectable Life crate: collectRadius=50, livesMinimum=10, livesMaximum=10, lifespan=15"
+            }
+          ],
+          "movement_speed": "+10"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Special Poperations",
+        "cost": 30000,
+        "description": "Deploys a powerful special Monkey Marine with a machine gun. Wiki: This upgrade improves Support Chinook's abilities, and grants a new Monkey Marine ability which drops a marine sub-tower. With Door Gunner, this upgrade also grants an ability which allows the Heli Pilot to hold a tower inside it, allowing it to continue attacking. This upgrade also increases the movement speed of the Heli Pilot by 25% and reduces Downdraft attack cooldown from 0.15 seconds to 0.075 seconds.",
+        "changes": {
+          "Downdraft/Projectile.cooldown": "x0.5 (0.15 -> 0.075)",
+          "new_attack": {
+            "name": "[Marine] Attack/Projectile",
+            "damage": 6,
+            "pierce": 20,
+            "cooldown": 0.05,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "subtower Marine (range 50); speed 300; collision radius 2; attack range 50"
+          },
+          "changed_ability": [
+            {
+              "name": "Redeploy",
+              "cooldown": 15,
+              "description": "maxActivationsPerRound=-1"
+            },
+            {
+              "name": "Support Drop",
+              "cooldown": 90,
+              "description": "maxActivationsPerRound=2; collectable Cash crate: collectRadius=50, cashMinimum=4500, cashMaximum=4500, lifespan=15; collectable Life crate: collectRadius=50, livesMinimum=25, livesMaximum=25, lifespan=15"
+            }
+          ],
+          "new_ability": [
+            {
+              "name": "Special Poperations",
+              "cooldown": 25,
+              "description": "maxActivationsPerRound=-1"
+            }
+          ],
+          "movement_speed": "+20"
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Faster Darts",
+        "cost": 250,
+        "description": "Darts are propelled much faster through the air. Wiki: This upgrade increases the projectile speed and lifespan of Heli Pilot's main darts, and the helicopter's range increases by +30% (from 42 to 54.6). The projectile speed, lifespan, and range of other weapons don't increase.",
+        "changes": {
+          "Attack/Projectile.notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Faster Firing",
+        "cost": 350,
+        "description": "Faster attack speed for all Heli attacks. Wiki: This upgrade reduces the attack cooldown of all of Heli Pilot's attacks by 20%, for an attack speed increase of 25%.",
+        "changes": {
+          "Attack/Projectile.cooldown": "x0.8 (0.57 -> 0.456)"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "MOAB Shove",
+        "cost": 3400,
+        "description": "Can collide with and shove MOAB-class Bloons, reversing or slowing their movement. Shove is amplified by Bigger Jets and IFR upgrades. Wiki: This upgrade grants Heli Pilot a new shove attack, which can slow or reverse the movement of MOAB-Class Bloons below ZOMG. This attack deals no damage, and has 1 pierce that cannot be buffed. Bigger Jets enhances the shove's strength. This upgrade also grants Heli Pilot a new homing missile attack. This attack deals 2 damage with +2 Ceramic damage, +5 MOAB-Class damage, 10 pierce, and a 3 second attack cooldown. Missiles have infinite range, unlike Heli Pilot's other attacks. These missiles cannot damage Black Bloons. This upgrade's description is misleading: the shove is not amplified by the IFR upgrade except that it gains Camo detection.",
+        "changes": {
+          "new_attack": {
+            "name": "Ballistic Missile/Explosion",
+            "damage": 2,
+            "pierce": 10,
+            "cooldown": 3,
+            "damage_type": "explosion",
+            "projectiles": 1,
+            "blast_radius": 18,
+            "notes": "+5 damage vs Moabs; +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000"
+          },
+          "zone:MOAB Shove": {
+            "radius": 42,
+            "multiplierForMoab": -0.3,
+            "multiplierForBfb": 0.11,
+            "multiplierForZomg": 0.75,
+            "multiplierForDdt": 0.75,
+            "filterInvisible": true
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Comanche Defense",
+        "cost": 8500,
+        "description": "Automatically calls in mini Comanches when they're most needed. Wiki: This upgrade grants Heli Pilot the ability to summon mini Comanche sub-towers when Bloons reach certain thresholds along the track. Mini Comanches fly fast towards its targets, spawning from the edge of the map closest to them, and are equipped with faster-firing darts and high-damage missiles. This upgrade also increases the damage of Heli Pilot's main darts from 1 to 2. The missile granted by MOAB Shove is enhanced, increasing its damage from 2 to 3, increasing the missile's pierce from 10 to 30, and reducing its attack cooldown by 66.67%, effectively tripling its attack speed. Comanche Defense also enhances the MOAB knockback of MOAB Shove and can affect ZOMGs.",
+        "changes": {
+          "Attack/Projectile.damage": "+1",
+          "Ballistic Missile/Explosion.damage": "+1",
+          "Ballistic Missile/Explosion.pierce": "+20",
+          "Ballistic Missile/Explosion.cooldown": "x0.333 (3 -> 1)",
+          "new_attacks": [
+            {
+              "name": "[Mini-Comanche] Attack/Projectile",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.228,
+              "damage_type": "sharp",
+              "projectiles": 3,
+              "blast_radius": null,
+              "notes": "subtower Mini-Comanche (range 54.6); cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
+            },
+            {
+              "name": "[Mini-Comanche] Ballistic Missile/Explosion",
+              "damage": 4,
+              "pierce": 60,
+              "cooldown": 3,
+              "damage_type": "explosion",
+              "projectiles": 1,
+              "blast_radius": 18,
+              "notes": "subtower Mini-Comanche (range 54.6); +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000"
+            }
+          ],
+          "zone:MOAB Shove": {
+            "radius": 42,
+            "multiplierForMoab": -0.4,
+            "multiplierForBfb": 0,
+            "multiplierForZomg": 0.2,
+            "multiplierForDdt": 0.2,
+            "filterInvisible": true
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Comanche Commander",
+        "cost": 35000,
+        "description": "Upgraded weapons. Also automatically calls in 3 more Comanches. Permanently. Wiki: This upgrade improves most of Heli Pilot's attacks, and summons 3 mini-Comanches permanently, instead of summoning them as Bloons reach different parts of the track. Upon purchase, the mini-Comanches spawn from the main helipad. This upgrade also increases the damage of Heli Pilot's main darts from 2 to 4. The damage of its MOAB Shove missile is increased from 3 to 13, and its MOAB-Class damage from +5 to +8. All of its mini-Comanche's attack are improved, the damage of darts goes from 1 to 3, the damage of their rockets goes from 2 to 15 and the rockets' Ceramic damage from +2 to +10. The Heli Pilot's movement speed is increased by 10, including mini-Commanches.",
+        "changes": {
+          "Attack/Projectile.damage": "+1",
+          "Ballistic Missile/Explosion.damage": "+12",
+          "Ballistic Missile/Explosion.notes": "+8 damage vs Moabs; +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000",
+          "[Mini-Comanche] Attack/Projectile.damage": "+2",
+          "[Mini-Comanche] Ballistic Missile/Explosion.damage": "+11",
+          "[Mini-Comanche] Ballistic Missile/Explosion.notes": "subtower Mini-Comanche (range 54.6); +10 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000",
+          "movement_speed": "+10"
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Heli_Pilot_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Heli_Pilot/new",
+    "https://www.bloonswiki.com/api.php?action=cargoquery&tables=btd6_upgrades (tower=Heli Pilot)"
+  ],
+  "game_version": "55.1"
+}

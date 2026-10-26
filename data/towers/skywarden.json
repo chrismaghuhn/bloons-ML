@@ -1,0 +1,225 @@
+{
+  "name": "Skywarden",
+  "category": "magic",
+  "cost": 205,
+  "footprint_radius": 6,
+  "placement": "land",
+  "range": 48,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "Attack",
+      "damage": 1,
+      "pierce": 4,
+      "cooldown": 1.55,
+      "damage_type": "sharp",
+      "projectiles": 1,
+      "blast_radius": null,
+      "notes": "arrow; random spread 12 deg; speed 450 decelerating (-20 units/s^2); max travel 75 units; lifespan 0.16s; projectile radius 2; self attack-speed buff +5% per damaging hit, max 10 stacks (+50%), resets after 2s without dealing damage (multi-damage hit counts once); Stats for upgrades come from the wiki's upgrade prose (no structured stats module for Skywarden yet)."
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Thunder's Decree (Thunder Charge)",
+      "cooldown": 45,
+      "description": "Towers in range get +200 projectile speed, can pop Frozen, projectiles ricochet twice (to Bloons within 100 units, 0.05s after hit; already-ricocheting projectiles get +2 bounces). Duration 9s. Cooldown becomes 30s with Stormwrath Archon, which also adds a lightning bolt every 0.25s (40 damage, 50 pierce, 35% chance to stun 2s) jumping between lightning rods. [unlocked by middle path tier 4; values from wiki upgrade text]"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Aerial Attunement",
+        "cost": 140,
+        "description": "Greatly increases own range, and the range for nearby Monkeys up to 1 tier higher, stacking up to 3 times.",
+        "changes": {
+          "range": "+10",
+          "buff_nearby_range": "+3 per stack, max 3 stacks (+9), to towers up to 1 tier above this Skywarden's highest tier (up to tier 5 once it has a tier 4+ upgrade)"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Zephyr Sense",
+        "cost": 175,
+        "description": "Can detect Camo Bloons, and can toggle long-range stance to attack slower with pinpoint accuracy over great distance.",
+        "changes": {
+          "camo": true,
+          "long_range_stance": "toggle (Monkey Special, ~5s cooldown): cooldown x1.25, range x1.35, projectile lifespan x1.1, no deceleration, homing on target; spread unchanged"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Wind Weaver",
+        "cost": 1200,
+        "description": "Wind Combo attack first causes Bloons to periodically be blown back, then produces extra arrows from the target, then pulls other Bloons backwards to the target.",
+        "changes": {
+          "wind_combo": "mark on damaged Bloons lasts 3s, re-hit advances combo (up to stage 3); stage 1: first Bloon hit by each arrow is blown back 10-20 units every 0.5s while marked (not MOABs); stage 2 (3rd hit): each arrow spawns 2 extra arrows 90 deg apart with same damage/pierce; stage 3 (4th hit): vortex on path, 4 pierce, 20-40 units blowback, lasts up to 0.8333s"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Galesage",
+        "cost": 3000,
+        "description": "Attacks in quick volleys and disables Camo from Bloons within radius. [Wiki details, paraphrased: arrows deal 2 damage each; the cooldown between bursts is not stated on the wiki page, so cooldown is null]",
+        "changes": {
+          "damage": "+1",
+          "projectiles_per_attack": "burst of 3 arrows, 0.15s apart",
+          "cooldown": null,
+          "camo_disable_zone": "disables Camo property of Bloons while inside its attack range (not permanent)"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Farwind Seer",
+        "cost": 19000,
+        "description": "True mastery of the wind knows no bounds. The arrow's sting grows deadlier the further the air currents reach. [Wiki details, paraphrased: base arrow damage becomes 5; in long-range stance with no other buffs it deals 7]",
+        "changes": {
+          "damage": "+3",
+          "range_damage_bonus": "+1 damage at 70 range, then +1 per 5 range above 70, cap +20",
+          "wind_combo_stage2_extra_arrows": 4
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Storm's Pulse",
+        "cost": 175,
+        "description": "Arrows pulse with Energy, flying faster, and building even more attack speed from successfully hitting Bloons.",
+        "changes": {
+          "damage_type": "energy",
+          "projectile_speed": "x1.5",
+          "max_attack_speed_bonus": "+100% (was +50%), reached after 20 shots"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Thundering Arc",
+        "cost": 275,
+        "description": "Arrows unleash a thunderous explosion that grows in size over distance. Can fire over walls and be set to target a location.",
+        "changes": {
+          "new_attack": {
+            "name": "Arc blast",
+            "damage": 1,
+            "pierce": 4,
+            "cooldown": 1.55,
+            "damage_type": "plasma",
+            "projectiles": 1,
+            "blast_radius": 10,
+            "notes": "arrow now produces a delayed blast at the target; +1 pierce and +1 blast radius per 10 units travelled; ignores obstacles; gains Set Target targeting. Cooldown assumed same as main attack (not restated on wiki)"
+          }
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Galvanic Conduit",
+        "cost": 2500,
+        "description": "Lightning Combo attack charges hit Bloons to attract Energy and Plasma Projectiles, then to produce chain lightning when hit by Sharp or Shatter damage, then strikes the target with high damage stun.",
+        "changes": {
+          "damage_bonus": "+3 vs MOAB-class, Ceramic, Lead (non-stacking)",
+          "lightning_combo": "mark on one Bloon at a time, 3s; marked Bloons attract energy/plasma projectiles within 30 units; stage 2: sharp/shatter hits on marked Bloon create chain lightning (4 pierce, splits once, 3 damage, +4 vs frozen); stage 4 (4th hit): arrow +10 damage and stuns 3s (1s MOAB/DDT, 0.5s BFB, not ZOMG)"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Thunder's Decree",
+        "cost": 3500,
+        "description": "Combo attacks can stun ZOMGs. Thunder Charge Ability: Electrically charges nearby Monkeys, granting them faster, ricocheting projectiles that can pop Frozen Bloons.",
+        "changes": {
+          "combo_stun": "MOAB/DDT 2s, BFB 1s, ZOMG 0.5s",
+          "Arc blast.pierce_per_10_units": "+1.5 (was +1)",
+          "new_ability": {
+            "name": "Thunder Charge",
+            "cooldown": 45,
+            "effect_stats": "9s duration; see abilities"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Stormwrath Archon",
+        "cost": 32000,
+        "description": "Spent arrows serve as volatile conduits, lashing out in crackling fury when nearby Bloons are struck by Energy or Plasma. Thunder Charge weaves a lethal web of lightning between all conduits, obliterating anything caught in the crossfire.",
+        "changes": {
+          "damage_bonus": "+9 vs MOAB-class, Ceramic, Lead (was +3)",
+          "combo_lightning_damage": 50,
+          "combo_stun_extra_damage": 100,
+          "new_attack": {
+            "name": "Lightning rod",
+            "damage": 40,
+            "pierce": 5,
+            "cooldown": 0.5,
+            "damage_type": null,
+            "projectiles": 1,
+            "blast_radius": 26,
+            "notes": "rods placed on track near target every 3s, last 12s, min 10 units apart; zap when a Bloon within 26 units is hit by energy/plasma; max pierce 5; damage type not stated on wiki"
+          },
+          "ability.Thunder Charge.cooldown": 30
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Shatterpoint",
+        "cost": 150,
+        "description": "Improved pierce and accuracy. Low tier Frozen Bloons are shattered instantly.",
+        "changes": {
+          "pierce": "+2",
+          "spread": "x0.25 (75% less)",
+          "frozen": "ignores frozen immunity (still sharp); instantly pops frozen Bloons Pink or lower"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Icebore",
+        "cost": 250,
+        "description": "Arrows of ice more easily pierce through and deal bonus damage to Frozen Bloons.",
+        "changes": {
+          "damage_vs_frozen": "+1",
+          "self_buff": "popping a frozen Bloon gives +50% projectile pierce for 1s (not refreshed while active)"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Coldchain",
+        "cost": 1500,
+        "description": "Ice Combo attack first slows targets, then causes Bloons to slow other nearby Bloons, then will produce freezing shrapnel from the target.",
+        "changes": {
+          "slow": "first Bloon hit by each arrow slowed 25% for 3s (not MOABs)",
+          "ice_combo": "mark 3s on damaged Bloons; marked Bloons consume 1 less pierce from all projectiles; stage 3: 20% slow to other Bloons within 8 units; stage 4: 2 shrapnel to nearest Bloons within 300 units, 3 pierce, 3 frigid damage, +3 vs frozen, 35% chance to freeze non-MOABs 1.5s"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Frozen Verdict",
+        "cost": 3900,
+        "description": "Destroying a Frozen Bloon leaves volatile icesplosive remains on the track to slow Bloons and explode in an icy burst when they expire.",
+        "changes": {
+          "damage": "+1",
+          "damage_vs_frozen": "+4 (was +1)",
+          "shrapnel_damage": "6 (+6 vs frozen)",
+          "icesplosive_remains": "on popping a frozen Bloon: remain lasts 2-4s, slows up to 6 Bloons (incl. MOABs) 50% for 3s, then explodes: 3 pierce, 3 frigid damage, radius 12, freezes 6 non-MOAB layers 1s",
+          "moab_slow": "combo slows MOAB-class 10% (+5% area); shrapnel can freeze MOABs"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Winter's Mercy",
+        "cost": 20000,
+        "description": "Winter's bite deepens in the presence of more frozen Bloons, drawing a brief surge of damage from shattered foes. Frozen MOABs burst in ruinous iceplosions.",
+        "changes": {
+          "damage": "+2",
+          "damage_vs_frozen": "+8 (was +4)",
+          "shrapnel_bonus_vs_frozen": "+12",
+          "frozen_count_bonus": "+1 damage per 3 frozen Bloons in range (cap +8); +1 damage for 6s per 3 frozen Bloons popped",
+          "icesplosive_remains": "radius 24, damage 10; bonus from popped MOABs: MOAB +50, BFB +150, DDT +100, ZOMG +400, BAD +10000"
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Skywarden_(BTD6)"
+  ],
+  "game_version": "56.3"
+}

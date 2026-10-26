@@ -1,0 +1,1 @@
+{"upgrades": {"bottom": {"2": {"changes_merge": {"attack_speed_bonus": "+10% attack speed, plus +1% per life lost since purchase (lives above the starting value don't count), max +50%; diminishes if lives are regained (wiki upgrade text; not in stats data)"}}}}}

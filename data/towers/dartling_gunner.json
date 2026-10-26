@@ -1,0 +1,249 @@
+{
+  "name": "Dartling Gunner",
+  "category": "military",
+  "cost": 850,
+  "footprint_radius": 7,
+  "placement": "land",
+  "range": 20,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "Attack/Projectile",
+      "damage": 1,
+      "pierce": 1,
+      "cooldown": 0.2,
+      "damage_type": "sharp",
+      "projectiles": 1,
+      "blast_radius": null,
+      "notes": "cannot hit Camo; speed 350; collision radius 2; lifespan 1.1429s; spread angle 23; turret rotation 180 deg/s"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Ability (Rocket Storm)",
+      "cooldown": 45,
+      "description": "Unlocked by Rocket Storm (middle tier 4): Rocket Storm ability: Launches a powerful storm of rockets in a wide cone. Data: lifespan=7.5; maxActivationsPerRound=-1; attack Attack/Explosion: dmg 5, pierce 8, cd 0.5, type normal, x1, +1 damage vs Ceramic"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Focused Firing",
+        "cost": 300,
+        "description": "Increases accuracy of the Dartling Gun. Wiki: This upgrade reduces the spread of the Dartling Gunner's shots by 60% and increases the lifespan of its projectiles by 40%. Crosspathing with Rocket Storm reduces the spread of the ability's rockets by 60%, but does not improve their lifespan.",
+        "changes": {
+          "Attack/Projectile.notes": "cannot hit Camo; speed 350; collision radius 2; lifespan 1.6s; spread angle 9.2; turret rotation 180 deg/s"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Laser Shock",
+        "cost": 900,
+        "description": "Laser tipped shots shock Bloons into popping again 1 second after being struck. Wiki: Each of its projectiles now apply a damage-over-time shock effect that lasts for 1 second and deals 1 damage. Additionally, shocked Bloons take a bonus +1 damage from all other Dartling Gunners with any path 1 upgrades. When crosspathed with Hydra Rocket Pods, the shock is only applied by missile contacts (not the explosions), and does not do bonus shock damage. Crosspathing with Buckshot, Bloon Area Denial System, and Bloon Exclusion Zone increases both shock and bonus damage to 2, 2, and 4, respectively.",
+        "changes": {
+          "Attack/Projectile.notes": "+1 damage vs Shocked1; cannot hit Camo; speed 350; collision radius 2; lifespan 1.6s; spread angle 9.2; Laser Shock(layers=9999999, lifespan=1, applyOnlyIfDamaged=False, damage=1, damage_type=sharp, interval=0.95, initialDelay=0, distributeToChildren=True); turret rotation 180 deg/s"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Laser Cannon",
+        "cost": 3000,
+        "description": "Rapidly fires much more powerful laser blasts that can pop Frozen Bloons, and deal increased MOAB damage. Wiki: Instead of darts, it fires lasers that deal 2 Energy-type damage (can pop Frozen Bloons but not Purple Bloons and Glass Bloons) with 6 pierce, faster projectile speed, and +2 MOAB damage. Additionally, shock duration is increased by 1 second. Powerful Darts grants +3 pierce instead of +2 (from 6 to 9).",
+        "changes": {
+          "Attack/Projectile.damage": "+1",
+          "Attack/Projectile.pierce": "+5",
+          "Attack/Projectile.damage_type": "energy",
+          "Attack/Projectile.notes": "+1 damage vs Shocked2; +2 damage vs Moabs; cannot hit Camo; speed 500; collision radius 3; lifespan 1.12s; spread angle 9.2; Laser Shock(layers=9999999, lifespan=2, applyOnlyIfDamaged=False, damage=1, damage_type=energy, interval=0.95, initialDelay=0, distributeToChildren=True); turret rotation 180 deg/s"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Plasma Accelerator",
+        "cost": 11750,
+        "description": "Concentrates a powerful beam of energy to a single point. Wiki: This upgrade replaces its lasers with a continuous beam that extends to the tower's target location. The beam continuously attacks every 0.2 seconds with 1 damage and 50 pierce. The tip of the beam is wider and deals 2 damage, with +10 MOAB damage. The shock debuff is applied to Bloons hit by any part of the beam and its duration is increased to 5 seconds. The damage type of all of its attacks are changed to Plasma type, letting it affect Lead Bloons. Crosspathing with Powerful Darts increases the beam's pierce by 100 and its radius by 50%.",
+        "changes": {
+          "Attack/Projectile.damage": "-1",
+          "Attack/Projectile.pierce": "+44",
+          "Attack/Projectile.damage_type": "plasma",
+          "Attack/Projectile.notes": "+1 damage vs Shocked3; cannot hit Camo; speed 360; collision radius 2; Laser Shock(layers=9999999, lifespan=5, applyOnlyIfDamaged=False, damage=1, damage_type=plasma, interval=0.95, initialDelay=0, distributeToChildren=True); turret rotation 180 deg/s",
+          "new_attack": {
+            "name": "Attack/Projectile at tip",
+            "damage": 2,
+            "pierce": 50,
+            "cooldown": 0.2,
+            "damage_type": "plasma",
+            "projectiles": 1,
+            "blast_radius": 4,
+            "notes": "+10 damage vs Moabs; +1 damage vs Shocked3; cannot hit Camo; Laser Shock(layers=9999999, lifespan=5, applyOnlyIfDamaged=False, damage=1, damage_type=plasma, interval=0.95, initialDelay=0, distributeToChildren=True); turret rotation 180 deg/s"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Ray of Doom",
+        "cost": 75000,
+        "description": "Creates a solid line of annihilation. You can erase most Bloons at your leisure. Wiki: This upgrade constantly fires a larger constant laserbeam with 30 Normal-type damage (instead of 1 and +10 MOAB-class damage), +110 bonus damage to the first target, 999 pierce. The shock damage bonus and damage-over-time are both increased (20 instead of 1), and duration is increased from 5 to 30 seconds. The laserbeam no longer extends until the Dartling Gunner's target, instead continuing on indefinitely until it hits an obstacle or exits the map. With 5-0-2, the beam radius is increased from 6 to 9, and pierce increased from 999 to 1025.",
+        "changes": {
+          "Attack/Projectile.damage": "+29",
+          "Attack/Projectile.pierce": "+949",
+          "Attack/Projectile.damage_type": "normal",
+          "Attack/Projectile.notes": "+20 damage vs Shocked4; cannot hit Camo; speed 360; collision radius 6; Laser Shock(layers=9999999, lifespan=30, applyOnlyIfDamaged=False, damage=20, damage_type=normal, interval=0.95, initialDelay=0, distributeToChildren=True); turret rotation 180 deg/s",
+          "new_attack": {
+            "name": "Attack/Initial hit",
+            "damage": 140,
+            "pierce": 1,
+            "cooldown": 0.2,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": 6,
+            "notes": "+20 damage vs Shocked4; cannot hit Camo; max pierce 1; Laser Shock(layers=9999999, lifespan=30, applyOnlyIfDamaged=False, damage=20, damage_type=normal, interval=0.95, initialDelay=0, distributeToChildren=True); turret rotation 180 deg/s"
+          },
+          "removed_attacks": [
+            "Attack/Projectile at tip"
+          ]
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Advanced Targeting",
+        "cost": 250,
+        "description": "Allows Dartling Gunner to hit Camo Bloons. Wiki: This upgrade grants Camo detection, allowing its darts to pop Camo Bloons.",
+        "changes": {
+          "camo": true,
+          "Attack/Projectile.notes": "speed 350; collision radius 2; lifespan 1.1429s; spread angle 23; turret rotation 180 deg/s"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Faster Barrel Spin",
+        "cost": 950,
+        "description": "Makes gun fire much faster. Wiki: The Dartling Gunner's attack cooldown reduces by 33%, gaining roughly +51.52% attack speed. Without additional upgrades, it attacks every 0.132 seconds instead of 0.2 seconds.",
+        "changes": {
+          "Attack/Projectile.cooldown": "x0.66 (0.2 -> 0.132)"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Hydra Rocket Pods",
+        "cost": 4500,
+        "description": "Shoots depleted bloontonium missiles that can damage all Bloon types and trigger multiple explosions. Wiki: Instead of darts, it fires missiles that produce multiple explosions that damage all Bloon types. Each missile does zero damage and consumes 2 pierce every time it hits a new target, creating an explosion that deals 2 damage, has 6 pierce (8 with 0-3-2), and 8 blast radius (12 with 0-3-2). The missile itself has 6 pierce, creating explosions up to 3 times, and can create an extra explosion if it has non-whole pierce. Both the missile and explosions can gain extra pierce, allowing missiles to explode more times. When crosspathed with Laser Shock, the shock only is applied by the missile, and does not do extra shocked damage. Powerful Darts increases pierce of both missiles and explosions by +2, essentially adding an extra explosion plus an extra 2 pierce per explosion, plus increased blast radius.",
+        "changes": {
+          "new_attack": {
+            "name": "Attack/Explosion",
+            "damage": 2,
+            "pierce": 6,
+            "cooldown": 0.132,
+            "damage_type": "normal",
+            "projectiles": 1,
+            "blast_radius": 8,
+            "notes": "turret rotation 180 deg/s"
+          },
+          "removed_attacks": [
+            "Attack/Projectile"
+          ]
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Rocket Storm",
+        "cost": 5000,
+        "description": "Rocket Storm ability: Launches a powerful storm of rockets in a wide cone. Wiki: In addition to +2 pierce to both its Hydra missiles and explosions, it gains the Rocket Storm ability, which creates persistent waves of purple missiles that move erratically and deal high damage but low pierce. Focused Firing increases accuracy of all of its attacks by 60%. With Laser Shock, the shock only is applied by the main missile, and does not do extra shocked damage. Powerful Darts increases pierce of both missiles and explosions by +2; the Hydra missile essentially gains an extra explosion plus an extra 2 pierce per explosion, blast radius increased from 8 to 12 for all main missiles, and the ability missiles gain +4 pierce.",
+        "changes": {
+          "Attack/Explosion.pierce": "+2",
+          "new_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 45,
+              "description": "lifespan=7.5; maxActivationsPerRound=-1; attack Attack/Explosion: dmg 5, pierce 8, cd 0.5, type normal, x1, +1 damage vs Ceramic"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "M.A.D",
+        "cost": 65000,
+        "description": "MOAB Assured Destroyer. Slower firing mega missiles deal extreme damage to MOAB-class Bloons. Wiki: The Dartling Gunner fires mega missiles that alternate between its left and right arms from a wide distance from its center, and has slightly higher elevation than Rocket Storm. M.A.D attacks 3× slower (from 0.132 to 0.396 seconds) but deals 3 damage with each explosion instead of 2, and deals a massive +450 damage to MOAB-Class Bloons hit directly by the missiles (the explosions have no bonus MOAB-class damage, only the missiles). The pierce of each missile increases from 8 to 20, allowing them to create up to ten explosions instead of four, but each explosion still has 8 pierce. Powerful Darts no longer increases missile pierce but will increase explosion pierce by +2 (10 pierce). Additionally, its Rocket Storm ability is improved - pierce of each of these missile explosions increase from 8 to 18, and deals +5 Ceramic damage and +250 MOAB damage. The ability button for M.A.D is separated from other Rocket Storm abilities. Despite visually being much larger, the main attack's rockets and explosions have exactly the same projectile size as the previous upgrade. Only its Rocket Storm rockets have a larger hitbox.",
+        "changes": {
+          "Attack/Explosion.damage": "+1",
+          "Attack/Explosion.cooldown": "x3.0 (0.132 -> 0.396)",
+          "changed_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 45,
+              "description": "lifespan=7.5; maxActivationsPerRound=-1; attack Attack/Explosion: dmg 5, pierce 18, cd 0.5, type normal, x1, +250 damage vs Moabs; +5 damage vs Ceramic"
+            }
+          ]
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Faster Swivel",
+        "cost": 150,
+        "description": "Barrel can swivel much faster. Wiki: This upgrade increases the rotation of speed of the Dartling Gunner from 180° to 440° per second.",
+        "changes": {
+          "Attack/Projectile.notes": "cannot hit Camo; speed 350; collision radius 2; lifespan 1.1429s; spread angle 23; turret rotation 440 deg/s"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Powerful Darts",
+        "cost": 1200,
+        "description": "Darts move faster, can pop frozen Bloons and can pop 3 Bloons each. Wiki: The Dartling Gunner gains +2 pierce, increases speed and radius of its projectiles, and, if it doesn't already pop Frozen Bloons, changes its damage type to Shatter. Powerful Darts also improves the pierce of higher-tier upgrades, and for Hydra Rocket Pods and above improves blast radius too.",
+        "changes": {
+          "Attack/Projectile.pierce": "+2",
+          "Attack/Projectile.damage_type": "shatter",
+          "Attack/Projectile.notes": "cannot hit Camo; speed 470; collision radius 3; lifespan 0.8511s; spread angle 23; turret rotation 440 deg/s"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Buckshot",
+        "cost": 3000,
+        "description": "Shoots blasts of deadly buckshot instead of darts. Wiki: Instead of rapid-fire darts, it slowly shoots 6 buckshots per shot with more damage and pierce, faster projectile speed, and knockback on non-blimps, but much shorter projectile lifespan and increased projectile deviation. Each buckshot does 3 damage, 4 pierce, roughly +10% projectile speed (470 to 520), but lasts for 0.25 seconds (0.35 seconds with 1-0-3) and all its projectile are randomly spread within 46° (18.6° with 1-0-3), plus a random 0.9×-1.1× projectile speed modifier. The knockback lasts for 0.2 seconds and applies 150% speed against Ceramics and damaged Leads, 300% speed against all other non-blimps. It attacks every 1.2 seconds (0.792 seconds with 0-2-3). 2-0-3 Buckshot does +2 shocked damage and applies shock damage-over-time that deals 2 damage every 0.95 seconds for 1 second.",
+        "changes": {
+          "Attack/Projectile.damage": "+2",
+          "Attack/Projectile.pierce": "+1",
+          "Attack/Projectile.cooldown": "x6.0 (0.2 -> 1.2)",
+          "Attack/Projectile.projectiles": "+5",
+          "Attack/Projectile.notes": "cannot hit Camo; speed 520; collision radius 3; spread angle 46; Knockback(multiplier=-2, multiplierForLead=-0.5, multiplierForCeramic=-0.5, multiplierForMoabs=1, mutationId=Knockback, lifespan=0.2); turret rotation 440 deg/s"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Bloon Area Denial System",
+        "cost": 12000,
+        "description": "4-barreled auto-cannon that can be set to attack automatically. Wiki: The Dartling Gunner fires from a four-barrelled turret, each barrel attacking from different heights (22.56, 16.52, 10.36, and 4.33), and alternating their attacks from top to bottom, effectively granting 4× attack speed (from 1.2 to 0.3 seconds). The increased height allows some barrels to pass over certain obstacles. Additionally, this Dartling gains the \"Target Independent\" targeting option. When set to this targeting option, it no longer passively shoots, instead it has a large non-dummy range and independently targets bloons within the range in the order of First, Last, Close, Strong. If crosspathed with Laser Shock, the bonus shocked damage and damage-over-time is increased from +1 to +2 (same as Buckshot).",
+        "changes": {
+          "Attack/Projectile.projectiles": "+18",
+          "Attack/Projectile.notes": "cannot hit Camo; speed 520; spread angle 46; Knockback(multiplier=-2, multiplierForLead=-0.5, multiplierForCeramic=-0.5, multiplierForMoabs=1, mutationId=Knockback, lifespan=0.2); attack range 130; turret rotation 440 deg/s",
+          "new_targeting_options": [
+            "TargetIndependant"
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Bloon Exclusion Zone",
+        "cost": 58000,
+        "description": "Upgraded to 6 barrels and massively increased damage. Bloons are excluded from existence. Wiki: This upgrade grants the Dartling Gunner two extra turrets for the total of 6, effectively granting it 1.5× attack speed (from 0.3s to 0.2s) compared to Bloon Area Denial System. Additionally, the tower now has even more pierce (4 to 6), damage (3 to 6), and projectiles per shot (6 to 12). All barrels are even taller than the predecessor, the tallest at 42 z-units. The increased height allows some barrels to pass over certain obstacles. The \"Target Independent\" targeting option is modified to target First, Last, Close, Strong, First, Strong.",
+        "changes": {
+          "Attack/Projectile.damage": "+3",
+          "Attack/Projectile.pierce": "+2",
+          "Attack/Projectile.projectiles": "+48"
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Dartling_Gunner_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Dartling_Gunner/new",
+    "https://www.bloonswiki.com/api.php?action=cargoquery&tables=btd6_upgrades (tower=Dartling Gunner)"
+  ],
+  "game_version": "55.1"
+}

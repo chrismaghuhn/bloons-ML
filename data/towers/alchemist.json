@@ -1,0 +1,275 @@
+{
+  "name": "Alchemist",
+  "category": "magic",
+  "cost": 550,
+  "footprint_radius": 6,
+  "placement": "land",
+  "range": 45,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "Attack",
+      "damage": 1,
+      "pierce": 15,
+      "cooldown": 2,
+      "damage_type": "acid",
+      "projectiles": 1,
+      "blast_radius": null,
+      "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=14"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Transforming Tonic (Ability)",
+      "cooldown": 60,
+      "description": "Transformation ability: Turns Alchemist into powerful attack Monster for 20 seconds. [unlocked by middle path tier 4] Effect stats (wiki data at unlock tier): Transformed attack: damage 3, pierce 6, type plasma, count 1 (lifespan=0.6s; speed=280; attack range=45; projectile radius=6); lifespan=20; buff 'Range buff': rangeAdditive=27, lifespan=20"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Larger Potions",
+        "cost": 250,
+        "description": "Potions splash over more Bloons in a larger area.",
+        "changes": {
+          "pierce": "+5",
+          "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Acidic Mixture Dip",
+        "cost": 350,
+        "description": "Throws a helpful potion at nearby Monkeys that allows them to pop Lead Bloons and do extra damage to Ceramic and MOAB-class Bloons. Wears off after several attacks.",
+        "changes": {
+          "new_attack": {
+            "name": "Acidic Mixture Dip",
+            "damage": 0,
+            "pierce": null,
+            "cooldown": 10,
+            "damage_type": null,
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=10, maxCharges=30}, count=1, range=45"
+          }
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Berserker Brew",
+        "cost": 1400,
+        "description": "Throws special brew to a nearby Monkey giving it increased damage, range, and attack speed briefly. Multiple Monkeys can be buffed at once.",
+        "changes": {
+          "new_attack": {
+            "name": "Berserker Brew",
+            "damage": 0,
+            "pierce": null,
+            "cooldown": 8,
+            "damage_type": null,
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "no projectile data; rate=8, buff 'Buff' {lifespan=5, damageAdditive=1, pierceAdditive=2, ratePercentage=0.1, rangePercentage=0.1, charges=25, rebuffCooldown=5}, count=1, range=45"
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Stronger Stimulant",
+        "cost": 2850,
+        "description": "Extra strong berserker brew has even more powerful effect on the target. Lasts even longer.",
+        "changes": {
+          "Berserker Brew.notes": "no projectile data; rate=8, buff 'Buff' {lifespan=12, damageAdditive=1, pierceAdditive=3, ratePercentage=0.15, rangePercentage=0.15, charges=40, rebuffCooldown=5}, count=1, range=45"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Permanent Brew",
+        "cost": 48000,
+        "description": "Berserker brew becomes PERMANENT on Monkeys who drink it.",
+        "changes": {
+          "Acidic Mixture Dip.notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=9999999, maxCharges=9999999}, count=1, range=45",
+          "Berserker Brew.notes": "no projectile data; rate=8, buff 'Buff' {lifespan=-1, damageAdditive=1, pierceAdditive=3, ratePercentage=0.15, rangePercentage=0.15, charges=9999999, rebuffCooldown=-1}, count=1, range=45"
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Stronger Acid",
+        "cost": 250,
+        "description": "Acid potions dissolve Bloons faster.",
+        "changes": {
+          "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Perishing Potions",
+        "cost": 475,
+        "description": "Attack potions deal more damage to MOAB-class Bloons and strip Fortified off smaller Bloons. Buff potions last longer.",
+        "changes": {
+          "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Unstable Concoction",
+        "cost": 2800,
+        "description": "Coats MOAB-Class in an explosive substance that causes a large explosion when they are popped.",
+        "changes": {
+          "new_attacks": [
+            {
+              "name": "Unstable Concoction/Splash",
+              "damage": 0,
+              "pierce": 3,
+              "cooldown": 6,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "notes": "filterOutNonMoabs=True; lifespan=0.05s; attack range=67.5; projectile radius=14"
+            },
+            {
+              "name": "Unstable Concoction/Explosion",
+              "damage": 0,
+              "pierce": 50,
+              "cooldown": 6,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 40,
+              "notes": "flag damageModifierUnstableConcoction=true; lifespan=0.05s; attack range=67.5"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Transforming Tonic",
+        "cost": 4200,
+        "description": "Transformation ability: Turns Alchemist into powerful attack Monster for 20 seconds.",
+        "changes": {
+          "new_ability": {
+            "name": "Ability",
+            "cooldown": 60,
+            "effect_stats": "Transformed attack: damage 3, pierce 6, type plasma, count 1 (lifespan=0.6s; speed=280; attack range=45; projectile radius=6); lifespan=20; buff 'Range buff': rangeAdditive=27, lifespan=20"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Total Transformation",
+        "cost": 45000,
+        "description": "Transforms five Monkeys nearby into crazy attack monsters for 20 seconds.",
+        "changes": {
+          "new_attack": {
+            "name": "Transformed Monkey: Attack",
+            "damage": 2,
+            "pierce": 10,
+            "cooldown": 0.03,
+            "damage_type": "plasma",
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "attack of sub-tower 'Transformed Monkey'; lifespan=0.6s; speed=280; targeting: Depends on targeting option; attack range=72; projectile radius=6"
+          },
+          "ability.Ability.cooldown": 40
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Faster Throwing",
+        "cost": 650,
+        "description": "Throws potions and attacks faster.",
+        "changes": {
+          "cooldown": "x0.8"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Acid Pool",
+        "cost": 450,
+        "description": "Every few attacks spills an acid pool on the track, and if no Bloons are nearby Alchemist can drench nearby track with acid.",
+        "changes": {
+          "new_attacks": [
+            {
+              "name": "Attack/Acid Pool",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 1.6,
+              "damage_type": "acid",
+              "projectiles": 1,
+              "blast_radius": null,
+              "notes": "lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=7"
+            },
+            {
+              "name": "Attack/Splash",
+              "damage": 1,
+              "pierce": 15,
+              "cooldown": 1.6,
+              "damage_type": "acid",
+              "projectiles": 1,
+              "blast_radius": null,
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=14"
+            }
+          ],
+          "removed_attacks": [
+            "Attack"
+          ]
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Lead to Gold",
+        "cost": 1000,
+        "description": "Converts Lead Bloons to GOLD! Special solvents do extra damage to Lead Bloons, destroying them in one shot and generating cash.",
+        "changes": {
+          "Attack/Acid Pool.notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=7",
+          "Attack/Splash.notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=14"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Rubber to Gold",
+        "cost": 2750,
+        "description": "Converts all Bloons partially into gold, disabling Bloon immunity and getting more cash per pop from affected Bloons.",
+        "changes": {
+          "new_attack": {
+            "name": "Rubber to Gold",
+            "damage": 0,
+            "pierce": 15,
+            "cooldown": 2,
+            "damage_type": null,
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "no direct damage listed; filterOutBad=True; increaseBloonWorthMultiplier=2; lifespan=0.05s; attack range=45; effect 'Rubber to Gold': cashMultiplier=2, lifespan=14, mutationId=RubberToGold; projectile radius=21"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Bloon Master Alchemist",
+        "cost": 40000,
+        "description": "Secret shrink potion converts all affected Bloons to Red Bloons.",
+        "changes": {
+          "new_attack": {
+            "name": "Shrink Potion",
+            "damage": 0,
+            "pierce": 200,
+            "cooldown": 10,
+            "damage_type": null,
+            "projectiles": 1,
+            "blast_radius": null,
+            "notes": "no direct damage listed; lifespan=0.05s; targeting: Strong; attack range=999; projectile radius=25"
+          }
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Alchemist_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Alchemist_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Alchemist/new"
+  ],
+  "game_version": "55.1"
+}

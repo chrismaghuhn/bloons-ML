@@ -1,0 +1,15 @@
+{"upgrades": {
+  "top": {
+    "4": {"changes_merge": {"footprint": "rectangle 37x40 (footprintX/footprintY in wiki data; was circle radius 11)", "sacrifices": null},
+          "description_append": "[Sim note: when bought, all towers in range are sacrificed; sacrificed cash per category (primary/military/magic/support, thresholds from $10,001 up to $50,001 in $5000 steps, top 3 categories only) buffs/adds attacks. Those sacrifice-dependent stats are NOT included here; the attack listed is the no-sacrifice sunbeam (5 dmg, 20 pierce, 0.05s per wiki text).]"},
+    "5": {"changes_merge": {"sacrifices": null},
+          "description_append": "[Sim note: sacrifices again on upgrade and can take benefits from all four categories; sacrifice-dependent stats NOT included. Sunbeam damage 15 per wiki text.]"}
+  },
+  "bottom": {
+    "3": {"description_append": "[Darkshift ability: teleport to a nearby location, cooldown 20s per wiki data.]"},
+    "5": {"changes_merge": {"new_ability": {"name": "Black Hole (passive)", "cooldown": 180, "effect_stats": "per wiki text (not in stats data): triggers automatically when a Bloon leaks, prevents all life loss from leaks (except Bosses) for 8s, max 2 activations per round"}}}
+  }
+},
+"abilities_append": [
+  {"name": "Legend of the Night (Black Hole, passive)", "cooldown": 180, "description": "Passive: activates when a Bloon leaks; prevents life loss from leaked Bloons (except Bosses) for 8 seconds; max 2 activations per round. Values from wiki upgrade text; not present in the wiki stats data. [unlocked by bottom path tier 5]"}
+]}

@@ -1,0 +1,246 @@
+{
+  "name": "Sniper Monkey",
+  "category": "military",
+  "cost": 350,
+  "footprint_radius": 6,
+  "placement": "land",
+  "range": 20,
+  "camo": false,
+  "attacks": [
+    {
+      "name": "Attack/Projectile",
+      "damage": 2,
+      "pierce": 1,
+      "cooldown": 1.59,
+      "damage_type": "sharp",
+      "projectiles": 1,
+      "blast_radius": null,
+      "notes": "cannot hit Camo; hits only target (instant)"
+    }
+  ],
+  "abilities": [
+    {
+      "name": "Ability (Supply Drop)",
+      "cooldown": 90,
+      "description": "Unlocked by Supply Drop (middle tier 4): Supply Drop Ability: toggles either a crate full of cash, or a special ammo crate that grants improved shrapnel that can pop all Bloon types for the next few shots. Data: maxActivationsPerRound=3; collectable Collectable: collectRadius=100, cashMinimum=1100, cashMaximum=1100, lifespan=15"
+    },
+    {
+      "name": "Ability (Elite Defender)",
+      "cooldown": 10,
+      "description": "Unlocked by Elite Defender (bottom tier 5): Fires super fast and does more damage to MOAB-class Bloons. Fires faster the further the Bloons are along the track. Gains 4x attack speed briefly on losing lives. Data: maxActivationsPerRound=-1; buff Buff: rateMultiplier=0.25, damageAdditive=0, lifespan=7, radiusPercentage=0"
+    }
+  ],
+  "upgrades": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Full Metal Jacket",
+        "cost": 350,
+        "description": "Shots pop through 4 layers of Bloon, and both bullets and shrapnel can pop Lead and Frozen Bloons. Wiki: The Sniper's shots deal Normal-type damage, letting it pop Lead and Frozen Bloons, and increases damage of its bullet from 2 to 4. With Shrapnel Shot, the shrapnel each deals 2 damage and also pops Lead and Frozen.",
+        "changes": {
+          "Attack/Projectile.damage": "+2",
+          "Attack/Projectile.damage_type": "normal"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Large Caliber",
+        "cost": 1300,
+        "description": "Shots can pop through 7 layers of Bloon. Wiki: This upgrade increases the damage of its bullet attack from 4 to 7. With the Shrapnel Shot crosspath, the shrapnels gain +1 damage for a total of 3. With Bouncing Bullet and its subsequent upgrades, the bounce distance is increased from 40 to 80.",
+        "changes": {
+          "Attack/Projectile.damage": "+3"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Deadly Precision",
+        "cost": 2200,
+        "description": "20 damage per shot, plus bonus damage to ceramics. Wiki: This upgrade increases the Sniper Monkey's damage from 7 to 20, and grants +50 Ceramic damage. With the Shrapnel Shot Crosspath, this upgrade increases shrapnel damage from 3 to 4.",
+        "changes": {
+          "Attack/Projectile.damage": "+13",
+          "Attack/Projectile.notes": "+50 damage vs Ceramic; cannot hit Camo; hits only target (instant)"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Maim MOAB",
+        "cost": 6300,
+        "description": "Deals much more damage and projectiles immobilize MOAB-Class Bloons for a short time. Wiki: This upgrade increases the damage of Sniper Monkey's bullets from 20 to 30, and applies a stun to MOAB-Class Bloons except BADs and Boss Bloons, preventing them from moving for a short time. With the Shrapnel Shot crosspath, shrapnel can also stun MOAB-Class Bloons for 66% the normal duration, and shrapnel damage increases from 4 to 6.",
+        "changes": {
+          "Attack/Projectile.damage": "+10",
+          "Attack/Projectile.notes": "+50 damage vs Ceramic; cannot hit Camo; hits only target (instant); Maim MOAB(multiplier=0, lifespanForMoab=3, lifespanForBfb=1.5, lifespanForZomg=0.75, lifespanForDdt=0.75, lifespanForBad=0, addDamagePerHit=0)"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Cripple MOAB",
+        "cost": 32000,
+        "description": "Crippled MOABs are immobilized for longer and take extra damage from all other attacks. Wiki: This upgrade increases the stun duration on MOAB-Class Bloons, as well as causing them to receive a cripple debuff. While crippled, targets take +5 damage from all sources. The damage of Sniper Monkey's bullets increases from 30 to 140, and grants bullets an Explosion-type area of effect that deals 28 damage to up to 10 Bloons near the impact location (up to a distance of 8 units). This effect does not stun or cripple blimps. With the Shrapnel Shot crosspath, shrapnel can now stun and debuff MOAB-Class Bloons for roughly 66% of the normal duration. Additionally, shrapnel damage is increased from 6 to 12 and pierce increased from 2 to 6, plus extra projectile speed and lifespan.",
+        "changes": {
+          "Attack/Projectile.damage": "+110",
+          "Attack/Projectile.notes": "+50 damage vs Ceramic; cannot hit Camo; hits only target (instant); Maim MOAB(multiplier=0, lifespanForMoab=7, lifespanForBfb=6, lifespanForZomg=3, lifespanForDdt=4, lifespanForBad=0.75, addDamagePerHit=5)",
+          "new_attack": {
+            "name": "Attack/Explosion",
+            "damage": 28,
+            "pierce": 10,
+            "cooldown": 1.59,
+            "damage_type": "explosion",
+            "projectiles": 1,
+            "blast_radius": 8,
+            "notes": "cannot hit Camo"
+          }
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Night Vision Goggles",
+        "cost": 250,
+        "description": "Allows Sniper to detect and do an additional 2 damage to Camo Bloons. Wiki: This upgrade allows the Sniper Monkey's attacks to target Camo Bloons and increases its bonus Camo damage by +2.",
+        "changes": {
+          "camo": true,
+          "Attack/Projectile.notes": "+2 damage vs Camo; hits only target (instant)"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Shrapnel Shot",
+        "cost": 450,
+        "description": "Damaged Bloons spray out a cone of sharp shrapnel. Wiki: With this upgrade, each shot from the Sniper Monkey emits 5 shrapnel projectiles from behind the target in a 45° angle spread. Each shrapnel projectile deals 1 damage, +2 damage to Camo Bloons (inherited from Night Vision Goggles), and can pop up to 2 Bloons. Shrapnel does not deal damage to the target initially hit by the bullet.",
+        "changes": {
+          "new_attack": {
+            "name": "Attack/Shrapnel",
+            "damage": 1,
+            "pierce": 2,
+            "cooldown": 1.59,
+            "damage_type": "sharp",
+            "projectiles": 5,
+            "blast_radius": null,
+            "notes": "+2 damage vs Camo; speed 160; collision radius 0.2; spread angle 45"
+          }
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Bouncing Bullet",
+        "cost": 2100,
+        "description": "Shots bounce to new targets up to 2 times. Wiki: This upgrade allows the Sniper Monkey's bullets to bounce up to 2 times, hitting up to 3 Bloons per shot. Each bullet impact retains the Shrapnel Shot attack, triggering 5 shrapnel in a cone formation parallel to the direction of the bullet, with 2 pierce per shrapnel. Bullets can bounce to other Bloons within a 40 unit radius of a target, always bounces towards the closest targets, and the bounces can ignore obstacles. Crosspathing with Full Metal Jacket increases shrapnel damage to 2 and grants Normal-type damage to its shrapnel. With Large Calibre, the bounce distance increases from 40 to 80 units and shrapnel damage increases to 3.",
+        "changes": {
+          "Attack/Projectile.pierce": "+2",
+          "Attack/Projectile.notes": "+2 damage vs Camo; hits only target (instant); max pierce 3; bounces 9999999 times (range 40); lifespan 2s"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Supply Drop",
+        "cost": 7600,
+        "description": "Supply Drop Ability: toggles either a crate full of cash, or a special ammo crate that grants improved shrapnel that can pop all Bloon types for the next few shots. Wiki: This upgrade grants the Sniper Monkey an Activated Ability that spawns a collectable crate after a short delay. The ability can be toggled to drop cash worth $1100 or grant a buff to itself, gaining +3 pierce, 2× damage, 2× projectile lifespan, and Normal damage type for all its attacks for up to 6 shots. Additionally, the maximum bounces per bullet increases from 2 to 4 (hitting up to 5 Bloons), and the pierce of each shrapnel increases from 2 to 5.",
+        "changes": {
+          "Attack/Projectile.pierce": "+2",
+          "Attack/Projectile.damage_type": "normal",
+          "Attack/Projectile.notes": "+2 damage vs Camo; hits only target (instant); max pierce 5; bounces 9999999 times (range 40); lifespan 2s",
+          "Attack/Shrapnel.pierce": "+3",
+          "new_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 90,
+              "description": "maxActivationsPerRound=3; collectable Collectable: collectRadius=100, cashMinimum=1100, cashMaximum=1100, lifespan=15"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Elite Sniper",
+        "cost": 12000,
+        "description": "Cash Supply Drop gives much more cash. Ammo Supply Drop buffs up to 2 other nearby Snipers. Grants Elite targeting prio and faster reload to all snipers. Wiki: This upgrade increases Sniper Monkey's attack speed (x0.4 attack cooldown or +150% more attack speed). Elite Sniper also grants a global attack speed buff to all other Sniper Monkeys (x0.75 attack cooldown, equal to about +33% attack speed). Additionally, all Sniper Monkeys including itself gain a new \"Elite\" targeting option, which the Elite Sniper automatically switches to after upgrading. Elite Sniper's cash crate ability generates $3000 instead of $1100, and the ammo crate also buffs up to 2 of the closest non-Paragon Snipers with Shrapnel Shot or above. Upon upgrading, this ability's cooldown is reset to 90 seconds.",
+        "changes": {
+          "Attack/Projectile.cooldown": "x0.4 (1.59 -> 0.636)",
+          "Attack/Shrapnel.cooldown": "x0.4 (1.59 -> 0.636)",
+          "changed_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 90,
+              "description": "maxActivationsPerRound=3; collectable Collectable: collectRadius=100, cashMinimum=3000, cashMaximum=3000, lifespan=15"
+            }
+          ],
+          "buff:Attack speed buff": {
+            "isGlobal": true,
+            "customRadius": 0,
+            "appliesToOwningTower": false,
+            "maxStackSize": 0,
+            "rateMultiplier": 0.75,
+            "filterInBaseTowerId": "Sniper Monkey"
+          },
+          "new_targeting_options": [
+            "Elite"
+          ]
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Fast Firing",
+        "cost": 450,
+        "description": "Shoots faster than normal. Wiki: This upgrade reduces Sniper Monkey's attack cooldown by 30%, for a ~42.9% attack speed increase. Without additional upgrades, its attack cooldown is 1.113 seconds.",
+        "changes": {
+          "Attack/Projectile.cooldown": "x0.7 (1.59 -> 1.113)"
+        }
+      },
+      {
+        "tier": 2,
+        "name": "Even Faster Firing",
+        "cost": 450,
+        "description": "Shoots even faster! Wiki: This upgrade reduces Sniper Monkey's attack cooldown by 30%, for a ~42.9% attack speed increase compared to the previous tier or a ~2.04x attack speed increase compared to base. Without additional upgrades, its attack cooldown is 0.7791 seconds.",
+        "changes": {
+          "Attack/Projectile.cooldown": "x0.7 (1.113 -> 0.7791)"
+        }
+      },
+      {
+        "tier": 3,
+        "name": "Semi-Automatic",
+        "cost": 2700,
+        "description": "Attacks 3x as fast! Wiki: This upgrade reduces the Sniper Monkey's attack cooldown by ~66.67%, effectively tripling its attack speed. With this upgrade, Sniper Monkey shoots ~6.12× faster than if it had no upgrades. It has an attack cooldown of 0.2597 seconds.",
+        "changes": {
+          "Attack/Projectile.pierce": "+4",
+          "Attack/Projectile.cooldown": "x0.333 (0.7791 -> 0.2597)"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Full Auto Rifle",
+        "cost": 4100,
+        "description": "Fully automatic weapon with incredible popping power. Wiki: This upgrade reduces Sniper Monkey's attack cooldown by 50%, making it twice as fast as Semi-Automatic and ~12.25× faster than a base Sniper Monkey. It has an attack cooldown of 0.1298 seconds. Additionally, this upgrade grants +2 MOAB-Class damage to its bullets. With Shrapnel Shot, Shrapnel gains +1 bonus damage to Ceramic Bloons.",
+        "changes": {
+          "Attack/Projectile.cooldown": "x0.5 (0.2597 -> 0.1298)",
+          "Attack/Projectile.notes": "+2 damage vs Moabs; cannot hit Camo; hits only target (instant)"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Elite Defender",
+        "cost": 14900,
+        "description": "Fires super fast and does more damage to MOAB-class Bloons. Fires faster the further the Bloons are along the track. Gains 4x attack speed briefly on losing lives. Wiki: This upgrade reduces Sniper Monkey's attack cooldown by 50%, effectively doubling its attack speed, and increases the bullets' MOAB-Class damage from +2 to +4. Additionally, it gains more attack speed equal to the percentage of the track that the furthest Bloon is at, up to +100%, in increments of 1%. Its base attack cooldown is reduced to 0.0649 seconds. Elite Defender also has a passive ability that grants 4× faster attack speed for 7 seconds upon losing lives. This ability has a 10-second cooldown (5-second cooldown with Master Defender). At its maximum attack speed, Elite Defender attacks 16× faster than Full Auto Rifle.",
+        "changes": {
+          "Attack/Projectile.cooldown": "x0.5 (0.1298 -> 0.0649)",
+          "Attack/Projectile.notes": "+4 damage vs Moabs; cannot hit Camo; hits only target (instant)",
+          "new_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 10,
+              "description": "maxActivationsPerRound=-1; buff Buff: rateMultiplier=0.25, damageAdditive=0, lifespan=7, radiusPercentage=0"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "source_urls": [
+    "https://www.bloonswiki.com/Sniper_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Sniper_Monkey/new",
+    "https://www.bloonswiki.com/api.php?action=cargoquery&tables=btd6_upgrades (tower=Sniper Monkey)"
+  ],
+  "game_version": "55.1"
+}

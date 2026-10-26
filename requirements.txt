@@ -1,0 +1,6 @@
+numpy
+gymnasium
+stable-baselines3
+sb3-contrib
+tensorboard
+torch  # CPU: --index-url https://download.pytorch.org/whl/cpu
