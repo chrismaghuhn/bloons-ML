@@ -324,12 +324,15 @@ impl Env {
 
     /// Neue Episode ab einem festen Startzustand (ohne Störung), z.B. für die Auswertung.
     /// Bei ungültigem Zustand bleibt die Env im normalen Startzustand.
-    /// Ohne Replay (es ließe sich nicht ab Runde 1 nachspielen).
+    /// Ohne Replay (es ließe sich nicht ab Runde 1 nachspielen) und ohne Turm-Sperren (die
+    /// Auswertung soll nur den Zustand messen, nicht zusätzlich gewürfelte Sperren).
     pub fn reset_from(&mut self, obs: &mut [f32], state: &StartState) -> Result<(), String> {
         self.reset_inner(false);
+        self.banned.fill(false);
         let res = state.build(&mut self.game);
         if res.is_err() {
             self.reset_inner(false);
+            self.banned.fill(false);
         } else {
             self.start = EpisodeStart { kind: StartKind::Pool, ..EpisodeStart::default() };
             self.recorder = None;

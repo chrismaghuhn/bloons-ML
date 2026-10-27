@@ -36,6 +36,8 @@ def main():
     states = [s for f in args.replays for s in states_from_replay(Path(f).read_text())
               if args.min_round <= s["round"] <= end - 3]
     rng = np.random.default_rng(args.seed)
+    if not states:
+        ap.error(f"keine Zustände in Runde {args.min_round}..{end - 3} in den Replays")
     by_round: dict[int, list] = {}
     for s in states:
         by_round.setdefault(s["round"], []).append(s)

@@ -120,3 +120,17 @@ gewechselt, nicht vervielfacht.
 Runde 36, r60_base bis 3); ohne Bomb gewinnt r60_bans stochastisch 10/10, deterministisch aber nur bis
 Runde 29. Fazit: Sperren machen robuster, aber nicht vielfältiger. Nächster Hebel: Startzustände
 (docs/design-start-states.md).
+
+## 2026-10-27: Startzustände (Schritt 1+2 umgesetzt), Vorher-Werte
+
+Eval-Satz "Erholung": 50 gestörte Zustände (Runde 3-57, Ø 29,3) aus eigenen Eval-Replays von
+r60_base/r60_bans (nicht die Trainings-Replays der Quelle B), Seed 2026.
+
+| Modell | deterministisch | stochastisch |
+|---|---|---|
+| r60_base | 34/50 Siege, Ø 21,2 Runden weiter | 37/50, Ø 22,0 |
+| r60_bans | (39/50, ungültig: zufällige Sperren mitgewürfelt, Neumessung folgt) | (40/50) |
+
+Bekannte Grenze der Gewichtung: Bei ~7 000 Pool-Zuständen wird jeder Zustand nur selten gezogen,
+A-Zustände fallen nach 2 000 neuen wieder raus. Die 3-Runden-Gewichtung greift daher kaum; der Anteil
+"sofort verloren" wird vor allem von den Störungen bestimmt (geloggt unter `starts/`).

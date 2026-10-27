@@ -333,3 +333,15 @@ fn perturbed_state_is_reproducible_and_buildable() {
     let mut obs = vec![0.0; f.layout.obs_size];
     f.reset_from(&mut obs, &a).unwrap();
 }
+
+#[test]
+fn reset_from_has_no_bans() {
+    let base = StartState::from_game(&played().game);
+    let mut e = Env::new(spec(), EnvConfig { max_banned_towers: 2, seed: 9, ..Default::default() }).unwrap();
+    let mut obs = vec![0.0; e.layout.obs_size];
+    for _ in 0..20 {
+        e.reset_from(&mut obs, &base).unwrap();
+        assert!(e.banned().iter().all(|&b| !b));
+        assert!(obs[e.layout.obs_size - 4..].iter().all(|&v| v == 1.0), "alle verfügbar in der Observation");
+    }
+}

@@ -37,6 +37,8 @@ def states_from_replay(text: str, end_round: int | None = None) -> list[dict]:
         return min(range(len(towers)), key=lambda i: (towers[i]["x"] - x) ** 2 + (towers[i]["y"] - y) ** 2)
 
     for line in text.splitlines():
+        if not line.strip():
+            continue
         r = json.loads(line)
         if r.get("type") != "round":
             continue
@@ -57,13 +59,15 @@ def states_from_replay(text: str, end_round: int | None = None) -> list[dict]:
 
 
 def budget_curve(states: list[dict], data: dict) -> list[float]:
-    """Median-Gesamtwert je Anzahl geschaffter Runden (0..Endrunde), Lücken linear interpoliert."""
+    """Median-Gesamtwert je Anzahl geschaffter Runden (0..Endrunde), Lücken linear interpoliert.
+    Vor der ersten Runde (start_round - 1) zählt das Startgeld."""
     end = data["rules"]["end_round"]
+    first = data["rules"].get("start_round", 1) - 1
     by_round: dict[int, list[float]] = {}
     for s in states:
         value = s["cash"] + sum(_tower_value(data, t["tower"], t["tiers"]) for t in s["towers"])
         by_round.setdefault(s["round"], []).append(value)
-    by_round.setdefault(0, [float(data["rules"]["start_cash"])])
+    by_round.setdefault(first, [float(data["rules"]["start_cash"])])
     xs = sorted(by_round)
     ys = [float(np.median(by_round[x])) for x in xs]
     return list(np.interp(np.arange(end + 1), xs, ys))
@@ -142,7 +146,8 @@ class StartStatesCallback(BaseCallback):
         self.steps += np.bincount(kinds, minlength=3)[:3]
         for i, info in enumerate(self.locals["infos"]):
             if "episode" in info:
-                self.episodes[KINDS[kinds[i]]].append((info["episode"]["r"], info.get("round", 0)))
+                ep = info["episode"]
+                self.episodes[KINDS[kinds[i]]].append((ep["r"], info.get("round", 0), ep["l"]))
         return True
 
     def _on_rollout_end(self):
@@ -159,9 +164,10 @@ class StartStatesCallback(BaseCallback):
         for k, name in enumerate(KINDS):
             self.logger.record(f"starts/schritte_{name}", self.steps[k] / total)
             if self.episodes[name]:
-                r, rnd = zip(*self.episodes[name])
+                r, rnd, length = zip(*self.episodes[name])
                 self.logger.record(f"starts/{name}_return", float(np.mean(r)))
                 self.logger.record(f"starts/{name}_round", float(np.mean(rnd)))
+                self.logger.record(f"starts/{name}_length", float(np.mean(length)))
         for name, c in self.checks.items():
             if c:
                 self.logger.record(f"starts/sofort_verloren_{name}", 1.0 - float(np.mean(c)))
