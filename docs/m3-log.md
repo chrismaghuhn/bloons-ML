@@ -84,3 +84,21 @@ compile, GPU für sich); der f32-Lauf brauchte 57 min, teilte sich die GPU aber 
 Python-Header (`sudo apt install python3.12-dev`); ohne sie rechnet `train.py` mit einer Warnung
 unkompiliert weiter. Schneller ginge es nur noch mit weniger Epochen oder kleinerem Netz, was das
 Lernen verändert.
+
+## 2026-10-27: Festhäng-Metrik (vor der Auswertung festgelegt)
+
+Frage: Erzeugen die Turm-Sperren (`--ban-towers 2`) echte Vielfalt oder nur Notfallpläne je
+Sperr-Kombination? Gemessen in Spielen **ohne Sperre** (k = 0), stochastische Policy, 64 Episoden je
+Modell, gleiche Daten (Medium R60):
+
+- Je Episode ein Schlüssel = (erster gebauter Turmtyp, Menge der (Turmtyp, Haupt-Upgrade-Pfad) aller
+  gebauten Türme). Haupt-Pfad = Pfad mit der höchsten Stufe, bei Gleichstand der kleinere Index,
+  "-" ohne Upgrade.
+- Kennzahl: Shannon-Entropie H (bit) der Verteilung dieser Schlüssel.
+- **Kriterium:** Ist H beim Sperren-Lauf nicht mindestens **0,5 bit** höher als bei der Baseline
+  (`r60_base`), werten wir die Sperren als "nur Notfallpläne".
+- Zusätzlich berichtet (nicht Teil des Kriteriums): Verteilung erster Turm, Haupt-Pfade, Runde des
+  ersten Turms je Typ, belegte Zellen.
+
+Überleben je Sperr-Kombination (keine, 6 Einzel-, 15 Zweier-Sperren): erreichte Runde und Leben
+deterministisch (1 Spiel) sowie Ø Runde und Siegquote stochastisch (10 Spiele).
