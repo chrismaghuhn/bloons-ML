@@ -32,7 +32,8 @@ class RustBTDEnv(gym.Env):
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
-        obs = self.env.reset()
+        # options={"banned": [bool je Turmtyp]} setzt die Turm-Sperren fest (Auswertung je Sperre)
+        obs = self.env.reset((options or {}).get("banned"))
         return obs, self._info()
 
     def step(self, action):
@@ -44,7 +45,7 @@ class RustBTDEnv(gym.Env):
 
     def _info(self):
         e = self.env
-        return {"round": e.round, "lives": e.lives, "cash": e.cash, "towers": e.towers}
+        return {"round": e.round, "lives": e.lives, "cash": e.cash, "towers": e.towers, "banned": e.banned}
 
     # Spielprotokolle
     def save_replay(self, path: str, last: bool = False):

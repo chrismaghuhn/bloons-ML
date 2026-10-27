@@ -61,6 +61,11 @@ pub struct EnvConfig {
     /// Runden-Vorschau in der Observation: so viele kommende Runden plus "Runden bis zum
     /// nächsten Spezial-Bloon" (0 = aus, wie die Python-Env).
     pub preview_rounds: usize,
+    /// Bis zu so viele Turmtypen werden je Episode zufällig gesperrt (0 = aus, wie die
+    /// Python-Env). Die Observation bekommt dann je Turm einen Wert "verfügbar".
+    pub max_banned_towers: usize,
+    /// Seed für die Sperren (VecEnv leitet daraus je Env einen eigenen ab).
+    pub seed: u64,
 }
 
 impl Default for EnvConfig {
@@ -75,6 +80,8 @@ impl Default for EnvConfig {
             reward_tower: 0.0,
             record: false,
             preview_rounds: 0,
+            max_banned_towers: 0,
+            seed: 0,
         }
     }
 }
@@ -114,7 +121,7 @@ pub enum CellAction {
 }
 
 impl Layout {
-    pub fn new(data: &GameV1, preview_rounds: usize) -> Self {
+    pub fn new(data: &GameV1, preview_rounds: usize, tower_bans: bool) -> Self {
         let g = &data.map.grid;
         let cells = g.w * g.h;
         let towers = data.towers.len();
@@ -131,7 +138,7 @@ impl Layout {
         let a_sell = a_upgrade + paths * cells;
         let n_channels = 2 + towers + paths; // Pfad, baubar, Turmtyp one-hot, Tier je Pfad
         let preview = if preview_rounds > 0 { RoundPreview::len(preview_rounds) } else { 0 };
-        let n_scalars = 4 + preview;
+        let n_scalars = 4 + preview + if tower_bans { towers } else { 0 };
         Layout {
             grid_w: g.w,
             grid_h: g.h,
@@ -202,6 +209,9 @@ pub struct Env {
     preview: Option<RoundPreview>,
     /// Karten-Bebaubarkeit je (Turm, Zelle), einmal vorberechnet (Polygon-Tests sind teuer).
     map_ok: Arc<Vec<bool>>,
+    /// In dieser Episode gesperrte Turmtypen (`EnvConfig::max_banned_towers`).
+    banned: Vec<bool>,
+    rng: u64,
     recorder: Option<Recorder>,
     last_replay: Option<Replay>,
 }
@@ -212,7 +222,12 @@ impl Env {
             return Err(DataError::Invalid("max_builds_per_round muss > 0 sein".into()));
         }
         let game = Game::new(Arc::clone(&spec.data))?;
-        let layout = Layout::new(&spec.data, cfg.preview_rounds);
+        if cfg.max_banned_towers >= spec.data.towers.len().max(1) {
+            return Err(DataError::Invalid(
+                "max_banned_towers muss kleiner als die Zahl der Türme sein".into(),
+            ));
+        }
+        let layout = Layout::new(&spec.data, cfg.preview_rounds, cfg.max_banned_towers > 0);
         let preview = (cfg.preview_rounds > 0).then(|| RoundPreview::new(&spec.data, cfg.preview_rounds));
         let recorder = cfg.record.then(|| Recorder::new(&spec, &cfg));
         let map_ok = (0..layout.towers * layout.cells)
@@ -223,6 +238,8 @@ impl Env {
             .collect();
         Ok(Env {
             map_ok: Arc::new(map_ok),
+            banned: vec![false; layout.towers],
+            rng: splitmix64(cfg.seed),
             builds_left: cfg.max_builds_per_round,
             game,
             layout,
@@ -238,7 +255,26 @@ impl Env {
         &self.spec
     }
 
+    /// Neuer Seed für die Sperren (VecEnv: je Env ein eigener).
+    pub fn reseed(&mut self, seed: u64) {
+        self.rng = splitmix64(seed);
+    }
+
+    /// Gesperrte Turmtypen der laufenden Episode.
+    pub fn banned(&self) -> &[bool] {
+        &self.banned
+    }
+
+    /// Reset mit festen Sperren statt gewürfelten (Auswertung je Sperre).
+    pub fn reset_with_bans(&mut self, obs: &mut [f32], banned: &[bool]) {
+        assert_eq!(banned.len(), self.layout.towers, "eine Sperre je Turmtyp");
+        self.reset(obs);
+        self.banned.copy_from_slice(banned);
+        self.observe(obs);
+    }
+
     pub fn reset(&mut self, obs: &mut [f32]) {
+        self.draw_bans();
         self.game.reset();
         self.builds_left = self.cfg.max_builds_per_round;
         if self.recorder.is_some() {
@@ -268,7 +304,9 @@ impl Env {
                 r.round_played(round, &self.game, &report);
             }
         } else {
-            match self.layout.decode(action).and_then(|ca| self.to_action(ca)) {
+            let banned = matches!(self.layout.decode(action),
+                Some(CellAction::Place { kind, .. }) if self.banned.get(kind as usize) == Some(&true));
+            match self.layout.decode(action).filter(|_| !banned).and_then(|ca| self.to_action(ca)) {
                 Some(a) => {
                     let described = replay::describe(&self.game, a);
                     match self.game.apply(a) {
@@ -296,6 +334,30 @@ impl Env {
         }
         self.observe(obs);
         info
+    }
+
+    /// Würfelt 0..=max_banned_towers verschiedene gesperrte Turmtypen (ohne Sperren: nichts).
+    fn draw_bans(&mut self) {
+        let max = self.cfg.max_banned_towers;
+        if max == 0 {
+            return;
+        }
+        let n = self.banned.len();
+        let k = (self.next_rand() % (max as u64 + 1)) as usize;
+        let mut order: Vec<usize> = (0..n).collect();
+        for i in 0..k {
+            let j = i + (self.next_rand() % (n - i) as u64) as usize; // Fisher-Yates, nur k Schritte
+            order.swap(i, j);
+        }
+        self.banned.fill(false);
+        for &t in &order[..k] {
+            self.banned[t] = true;
+        }
+    }
+
+    fn next_rand(&mut self) -> u64 {
+        self.rng = splitmix64(self.rng);
+        self.rng
     }
 
     /// Der Turm, der für eine Zelle steht: der erste (in Bau-Reihenfolge), dessen Mittelpunkt in
@@ -346,7 +408,7 @@ impl Env {
         let g = &self.game;
         let data = g.data();
         for (k, t) in data.towers.iter().enumerate() {
-            if g.cash < g.price(t.cost) {
+            if self.banned[k] || g.cash < g.price(t.cost) {
                 continue;
             }
             let base = l.a_place + k * l.cells;
@@ -389,8 +451,15 @@ impl Env {
         obs[s + 1] = (g.lives as f64 / data.rules.start_lives as f64) as f32;
         obs[s + 2] = (g.round as f64 / g.max_round() as f64) as f32;
         obs[s + 3] = (self.builds_left as f64 / self.cfg.max_builds_per_round as f64) as f32;
+        let mut o = s + 4;
         if let Some(p) = &self.preview {
-            p.write(g.round as usize, &mut obs[s + 4..]);
+            p.write(g.round as usize, &mut obs[o..]);
+            o += RoundPreview::len(self.cfg.preview_rounds);
+        }
+        if self.cfg.max_banned_towers > 0 {
+            for (k, &b) in self.banned.iter().enumerate() {
+                obs[o + k] = if b { 0.0 } else { 1.0 };
+            }
         }
     }
 
@@ -452,8 +521,11 @@ impl VecEnv {
     pub fn new(spec: EnvSpec, cfg: EnvConfig, n: usize) -> Result<Self, DataError> {
         // frische Envs sind identisch: einmal anlegen (inkl. Vorberechnung), dann klonen
         let env = Env::new(spec.clone(), cfg.clone())?;
-        let envs = vec![env; n];
-        let layout = Layout::new(&spec.data, cfg.preview_rounds);
+        let mut envs = vec![env; n];
+        for (i, e) in envs.iter_mut().enumerate() {
+            e.reseed(cfg.seed ^ splitmix64(i as u64 + 1)); // eigene Sperren je Env
+        }
+        let layout = Layout::new(&spec.data, cfg.preview_rounds, cfg.max_banned_towers > 0);
         Ok(VecEnv { envs, layout })
     }
 
@@ -504,4 +576,12 @@ impl VecEnv {
         assert_eq!(masks.len(), self.envs.len() * n, "Masken-Buffer: n_envs * n_actions");
         self.envs.par_iter().zip(masks.par_chunks_mut(n)).for_each(|(e, m)| e.action_mask(m));
     }
+}
+
+/// SplitMix64: kleiner, schneller Zufallsgenerator, reicht für die Sperren.
+fn splitmix64(x: u64) -> u64 {
+    let mut z = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
 }

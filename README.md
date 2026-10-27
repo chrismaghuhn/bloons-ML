@@ -35,6 +35,7 @@ Spielkonfiguration für die Engine. Sie bleibt wie der Dump lokal (`data/local/`
 
 ```bash
 .venv/bin/python -I tools/build_game_v1.py                  # Monkey Meadow, Medium, Runde 1-40
+.venv/bin/python -I tools/build_game_v1.py --preset medium60 # Medium bis Runde 60 (Benchmark b)
 cd engine
 cargo run --release -p btd-tools -- demo --data ../data/local/game_v1_tutorial_medium.json
 # Benchmark (a): fester Bau-Plan (crates/btd-tools/src/meadow_plan.txt) schafft Runde 40
@@ -47,11 +48,16 @@ cd .. && .venv/bin/python train.py --data data/local/game_v1_tutorial_medium.jso
 
 Standard-Policy ist die Faltungs-Policy aus `btd_sim/policy.py`: Raster und Skalare gehen durch
 Residual-Faltungen, die Logits für Bauen/Upgrade/Verkaufen kommen pro Zelle direkt aus dem Netz.
-Nach 3M Schritten (~1 h) gewann sie Monkey Meadow Medium bis Runde 40 in allen Testspielen (bisher
-ein Seed), das flache MLP (`--arch mlp`) knapp die Hälfte bzw. 80 % (zwei Seeds) (Details in `docs/m3-log.md`). Die erreichte Runde steht
-in Tensorboard unter `btd/`. Auf CUDA rechnet sie in bf16 und mit `torch.compile` (abschaltbar mit
-`--no-amp`/`--no-compile`; compile braucht `python3.12-dev`), gemessen ~2 200 Schritte/s auf einer RTX 4060 Ti
-(3M Schritte also rund 25 min).
+Nach 3M Schritten gewann sie Monkey Meadow Medium bis Runde 40 in allen Testspielen (bisher ein
+Seed), das flache MLP (`--arch mlp`) knapp die Hälfte bzw. 80 % (zwei Seeds); Details in
+`docs/m3-log.md`. Die erreichte Runde steht in Tensorboard unter `btd/`. Auf CUDA rechnet sie in
+bf16 und mit `torch.compile` (abschaltbar mit `--no-amp`/`--no-compile`; compile braucht
+`python3.12-dev`), gemessen ~2 200 Schritte/s auf einer RTX 4060 Ti (3M Schritte rund 25 min).
+
+`--reward-tower -0.5` bestraft jeden neu gebauten Turm (Upgrades frei), damit die Policy wenige
+Türme hochlevelt statt viele kleine zu bauen. `--ban-towers 2` sperrt je Episode bis zu zwei
+zufällige Turmtypen (Seed aus `--seed`, je Env ein eigener); die Observation zeigt, welche Türme
+verfügbar sind. Auswerten je Sperre: `evaluate.py … --ban-towers 2 --per-ban`.
 
 Der Konverter schreibt neben der Datei einen Abdeckungs-Report (`*_coverage.md`): welche der 384
 Upgrade-Kombinationen der 6 Primary-Türme die Engine simuliert und was den übrigen fehlt.

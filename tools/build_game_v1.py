@@ -75,6 +75,9 @@ PRESETS = {
     # Medium-Standard; Benchmark (a): Runde 1-40
     "medium": dict(start_cash=650, start_lives=150, start_round=1, end_round=40, selling=True,
                    cost_multiplier=1.0),
+    # Medium bis zum regulären Ende; Benchmark (b): Runde 1-60
+    "medium60": dict(start_cash=650, start_lives=150, start_round=1, end_round=60, selling=True,
+                     cost_multiplier=1.0),
     # CHIMPS (Werte aus dem Dump: matches/Standard_Clicks_Hard_Tutorial.json)
     "chimps": dict(start_cash=650, start_lives=1, start_round=6, end_round=100, selling=False,
                    cost_multiplier=1.08),

@@ -53,6 +53,8 @@ if __name__ == "__main__":
                     help="Reward je gebautem Turm, z.B. -0.5 für möglichst wenige Türme (nur Rust)")
     ap.add_argument("--arch", choices=["mlp", "conv"], default=None,
                     help="conv: btd_sim.policy.GridPolicy (Standard mit --engine rust), mlp: flaches MLP")
+    ap.add_argument("--ban-towers", type=int, default=0,
+                    help="je Episode bis zu so viele Turmtypen zufällig sperren (nur Rust)")
     ap.add_argument("--conv-width", type=int, default=32, help="Kanäle der Faltungs-Policy")
     ap.add_argument("--conv-blocks", type=int, default=4, help="Residual-Blöcke der Faltungs-Policy")
     ap.add_argument("--amp", action=argparse.BooleanOptionalAction, default=True,
@@ -63,8 +65,9 @@ if __name__ == "__main__":
     args = ap.parse_args()
     if args.arch is None:
         args.arch = "conv" if args.engine == "rust" else "mlp"
-    if args.engine != "rust" and (args.data or args.preview or args.arch == "conv" or args.reward_tower):
-        ap.error("--data/--preview/--arch conv/--reward-tower gibt es nur mit --engine rust")
+    if args.engine != "rust" and (args.data or args.preview or args.arch == "conv" or args.reward_tower
+                                   or args.ban_towers):
+        ap.error("--data/--preview/--arch conv/--reward-tower/--ban-towers gibt es nur mit --engine rust")
     if args.resume:
         print("--resume: Architektur und Seed kommen aus dem Modell, --arch/--conv-*/--seed werden ignoriert "
               "(--amp/--compile gelten)")
@@ -72,7 +75,8 @@ if __name__ == "__main__":
     if args.engine == "rust":
         from btd_sim.rust_env import DEFAULT_DATA, RustVecEnv
         env = RustVecEnv(args.envs, args.data or DEFAULT_DATA, preview_rounds=args.preview,
-                         reward_tower=args.reward_tower)
+                         reward_tower=args.reward_tower, max_banned_towers=args.ban_towers,
+                         seed=args.seed or 0)
     else:
         env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
     if args.resume:

@@ -56,6 +56,7 @@ fn config(
         reward_tower,
         record,
         preview_rounds,
+        ..EnvConfig::default()
     })
 }
 
@@ -83,7 +84,8 @@ struct PyEnv {
 impl PyEnv {
     #[new]
     #[pyo3(signature = (data_path, max_builds_per_round=6, reward_round=1.0, reward_life=-0.02,
-                        reward_win=10.0, reward_loss=-5.0, record=false, preview_rounds=0, reward_tower=0.0))]
+                        reward_win=10.0, reward_loss=-5.0, record=false, preview_rounds=0, reward_tower=0.0,
+                        max_banned_towers=0, seed=0))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         data_path: &str,
@@ -95,8 +97,10 @@ impl PyEnv {
         record: bool,
         preview_rounds: usize,
         reward_tower: f64,
+        max_banned_towers: usize,
+        seed: u64,
     ) -> PyResult<Self> {
-        let cfg = config(
+        let mut cfg = config(
             max_builds_per_round,
             reward_round,
             reward_life,
@@ -106,6 +110,7 @@ impl PyEnv {
             record,
             preview_rounds,
         )?;
+        (cfg.max_banned_towers, cfg.seed) = (max_banned_towers, seed);
         let env = Env::new(load_spec(data_path)?, cfg).map_err(data_err)?;
         let (obs, mask) = (vec![0.0; env.layout.obs_size], vec![false; env.layout.n_actions]);
         Ok(PyEnv { env, obs, mask })
@@ -146,9 +151,29 @@ impl PyEnv {
         self.env.game.towers.len()
     }
 
-    fn reset<'py>(&mut self, py: Python<'py>) -> Bound<'py, PyArray1<f32>> {
-        self.env.reset(&mut self.obs);
-        PyArray1::from_slice(py, &self.obs)
+    /// Gesperrte Turmtypen der laufenden Episode (Reihenfolge wie in den Daten).
+    #[getter]
+    fn banned(&self) -> Vec<bool> {
+        self.env.banned().to_vec()
+    }
+
+    /// Neue Episode; `banned` (je Turmtyp) setzt die Sperren fest statt sie zu würfeln.
+    #[pyo3(signature = (banned=None))]
+    fn reset<'py>(
+        &mut self,
+        py: Python<'py>,
+        banned: Option<Vec<bool>>,
+    ) -> PyResult<Bound<'py, PyArray1<f32>>> {
+        match banned {
+            Some(b) => {
+                if b.len() != self.env.layout.towers {
+                    return Err(value_err(format!("banned braucht {} Einträge", self.env.layout.towers)));
+                }
+                self.env.reset_with_bans(&mut self.obs, &b);
+            }
+            None => self.env.reset(&mut self.obs),
+        }
+        Ok(PyArray1::from_slice(py, &self.obs))
     }
 
     /// -> (obs, reward, terminated, info)
@@ -229,7 +254,8 @@ struct PyVecEnv {
 impl PyVecEnv {
     #[new]
     #[pyo3(signature = (data_path, n_envs, max_builds_per_round=6, reward_round=1.0, reward_life=-0.02,
-                        reward_win=10.0, reward_loss=-5.0, preview_rounds=0, reward_tower=0.0))]
+                        reward_win=10.0, reward_loss=-5.0, preview_rounds=0, reward_tower=0.0,
+                        max_banned_towers=0, seed=0))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         data_path: &str,
@@ -241,11 +267,13 @@ impl PyVecEnv {
         reward_loss: f64,
         preview_rounds: usize,
         reward_tower: f64,
+        max_banned_towers: usize,
+        seed: u64,
     ) -> PyResult<Self> {
         if n_envs == 0 {
             return Err(value_err("n_envs muss > 0 sein"));
         }
-        let cfg = config(
+        let mut cfg = config(
             max_builds_per_round,
             reward_round,
             reward_life,
@@ -255,6 +283,7 @@ impl PyVecEnv {
             false,
             preview_rounds,
         )?;
+        (cfg.max_banned_towers, cfg.seed) = (max_banned_towers, seed);
         let v = VecEnv::new(load_spec(data_path)?, cfg, n_envs).map_err(data_err)?;
         let (no, na) = (v.layout.obs_size, v.layout.n_actions);
         Ok(PyVecEnv {

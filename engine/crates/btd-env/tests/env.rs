@@ -483,3 +483,74 @@ fn tower_reward_only_for_placements() {
     let sell = (e.layout.a_sell..e.layout.n_actions).find(|&a| mask[a]).unwrap();
     assert_eq!(e.step(sell, &mut obs).reward, 0.0, "Verkaufen bringt die Strafe nicht zurück");
 }
+
+fn banning(max: usize, seed: u64) -> Env {
+    Env::new(spec(), EnvConfig { max_banned_towers: max, seed, ..Default::default() }).unwrap()
+}
+
+#[test]
+fn tower_bans_off_by_default() {
+    let e = env(false);
+    assert_eq!(e.layout.obs_size, 8 * 300 + 4, "ohne Sperren keine Extra-Werte (Parität)");
+    assert!(e.banned().iter().all(|&b| !b));
+    assert!(Env::new(spec(), EnvConfig { max_banned_towers: 4, ..Default::default() }).is_err());
+}
+
+#[test]
+fn tower_bans_mask_obs_and_step() {
+    let mut e = banning(2, 7);
+    let l = e.layout;
+    assert_eq!(l.obs_size, 8 * 300 + 4 + 4, "ein Wert 'verfügbar' je Turm");
+    let (mut obs, mut mask) = (vec![0.0; l.obs_size], vec![false; l.n_actions]);
+    let mut seen = [0usize; 3];
+    let mut ever = [false; 4];
+    for _ in 0..200 {
+        e.reset(&mut obs);
+        let b = e.banned().to_vec();
+        let k = b.iter().filter(|&&x| x).count();
+        seen[k] += 1;
+        for (t, &x) in b.iter().enumerate() {
+            ever[t] |= x;
+            assert_eq!(obs[l.obs_size - 4 + t], if x { 0.0 } else { 1.0 });
+        }
+        e.action_mask(&mut mask);
+        for (t, &x) in b.iter().enumerate() {
+            let place = &mask[l.a_place + t * l.cells..l.a_place + (t + 1) * l.cells];
+            assert_eq!(place.iter().any(|&m| m), !x, "Turm {t}: gesperrt = nicht baubar");
+        }
+    }
+    assert!(seen.iter().all(|&n| n > 30), "0, 1 und 2 Sperren kommen vor: {seen:?}");
+    assert!(ever.iter().all(|&x| x), "jeder Turm wird mal gesperrt");
+
+    // gezielt gesperrter Turm: Bauen ist ungültig und kostet nichts
+    e.reset_with_bans(&mut obs, &[true, false, false, false]);
+    let cash = e.game.cash;
+    let cell = (0..l.cells).find(|&c| e.game.can_place_at(0, l.center(c).0, l.center(c).1)).unwrap();
+    let info = e.step(l.a_place + cell, &mut obs);
+    assert!(info.invalid);
+    assert_eq!((e.game.cash, e.game.towers.len()), (cash, 0));
+}
+
+#[test]
+fn tower_bans_reproducible_and_differ_between_vec_envs() {
+    let draws = |seed| {
+        let mut e = banning(2, seed);
+        let mut obs = vec![0.0; e.layout.obs_size];
+        (0..20)
+            .map(|_| {
+                e.reset(&mut obs);
+                e.banned().to_vec()
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(draws(1), draws(1), "gleicher Seed, gleiche Sperren");
+    assert_ne!(draws(1), draws(2));
+
+    let cfg = EnvConfig { max_banned_towers: 2, seed: 3, ..Default::default() };
+    let mut v = VecEnv::new(spec(), cfg, 8).unwrap();
+    let mut obs = vec![0.0; 8 * v.layout.obs_size];
+    v.reset(&mut obs);
+    let n = v.layout.obs_size;
+    let avail: Vec<&[f32]> = (0..8).map(|i| &obs[i * n + n - 4..(i + 1) * n]).collect();
+    assert!(avail.iter().any(|a| *a != avail[0]), "Envs würfeln unterschiedlich");
+}
