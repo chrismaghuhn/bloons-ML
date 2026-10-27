@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use btd_data::v1::{
-    Bonus, Contact, Delivery, Emission, HitExtras, HitFilter, Props, TagFactor, Targeting, TimedEffect,
-    TowerDefV1, VariantV1, PATHS,
+    Bonus, Contact, Delivery, Emission, Ground, HitExtras, HitFilter, Props, TagFactor, Targeting,
+    TimedEffect, TowerDefV1, VariantV1, PATHS,
 };
 use btd_data::TowerKind;
 use smallvec::SmallVec;
@@ -166,6 +166,8 @@ impl ExtrasRt {
 pub struct AttackRt {
     /// Reichweite zum Quadrat (wie `range ** 2` in der Referenz).
     pub range2: Real,
+    /// Wirksame Reichweite in f64 (für Vorab-Rechnungen wie `Targeting::TrackSpread`).
+    pub range: f64,
     pub cooldown: Real,
     pub damage: Real,
     pub pierce: u32,
@@ -187,6 +189,9 @@ pub struct AttackRt {
     pub burst_cd: Real,
     /// `Targeting::TrackBest`: Explosionsradius, zu dem `Game` den festen Zielpunkt kennt.
     pub track_best: Option<f64>,
+    /// `Targeting::TrackSpread` und die Zahl der Würfe in dieser Runde (für den Anteil frac(k·φ)).
+    pub track_spread: bool,
+    pub spread_k: u32,
 }
 
 /// Wie der Angriff trifft (Sim-Typ, aus `Delivery`).
@@ -210,7 +215,7 @@ pub struct EffectRt {
     pub group: u16,
     pub rank: u32,
     pub seconds: Option<Real>,
-    pub shots: u32,
+    pub shots: Option<u32>,
     pub block: Real,
     pub damage: Real,
     pub pierce: u32,
@@ -243,7 +248,7 @@ impl EffectRt {
 pub struct TimedRt {
     pub def: Arc<EffectRt>,
     pub ticks_left: Option<u32>,
-    pub shots_left: u32,
+    pub shots_left: Option<u32>,
 }
 
 /// Summe der laufenden Zeit-Effekte eines Turms (verschiedene Gruppen addieren sich).
@@ -313,11 +318,28 @@ pub struct ProjectileDef {
 }
 
 /// Wurf im Sim-Typ (aus `Delivery::Lob`): feste Flugzeit oder Tempo, Streuung um den Zielpunkt.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LobRt {
     pub time: Option<Real>,
     pub speed: Option<Real>,
     pub spread: Real,
+    /// Bleibt nach der Landung liegen (Spike-Stapel).
+    pub ground: Option<Arc<GroundRt>>,
+}
+
+/// Bodenobjekt im Sim-Typ (aus `Ground`): Lebensdauer ab der Landung, Kollision alle `every` Sekunden.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GroundRt {
+    pub lifespan: Real,
+    pub radius: Real,
+    pub pierce: u32,
+    pub damage: Real,
+    pub cannot_damage: Props,
+    pub camo: bool,
+    pub extras: Arc<ExtrasRt>,
+    pub every: Option<Real>,
+    /// Treffer-Reset und Effekte beim Verbrauch/Ablauf (als Projektil-Def des liegenden Objekts).
+    pub def: Arc<ProjectileDef>,
 }
 
 /// Zielsuche im Sim-Typ: Drehung pro Sekunde (Radiant), Suchradius², cos des halben Kegels.
@@ -474,11 +496,53 @@ fn buffed_def(def: &ProjectileDef, b: Buffs, t: &TimedMods, top: bool) -> Projec
             }
         }
     };
+    // Bodenobjekt (Spike-Stapel): Camo, MIB, Schaden, Bonus-Schaden und Pierce der Auren/Zeit-Effekte
+    let lob = def.lob.as_ref().map(|l| LobRt {
+        ground: l.ground.as_ref().map(|g| {
+            Arc::new(GroundRt {
+                pierce: g.pierce.saturating_add(b.pierce).saturating_add(t.pierce),
+                damage: t.damage_of(g.damage),
+                cannot_damage: if b.damage_all { Props(0) } else { g.cannot_damage },
+                camo: g.camo || b.camo,
+                extras: t.extras_of(&g.extras, g.damage),
+                def: Arc::new(buffed_def(&g.def, b, t, false)),
+                ..(**g).clone()
+            })
+        }),
+        ..l.clone()
+    });
     ProjectileDef {
         speed: if top && b.speed_frac != 0.0 { def.speed * real(1.0 + b.speed_frac) } else { def.speed },
         contacts: def.contacts.iter().map(contact).collect(),
         on_exhaust: def.on_exhaust.iter().map(contact).collect(),
+        lob,
         ..def.clone()
+    }
+}
+
+fn ground_rt(g: &Ground, tags: &TagTable) -> GroundRt {
+    GroundRt {
+        lifespan: real(g.lifespan),
+        radius: real(g.radius),
+        pierce: g.pierce,
+        damage: real(g.damage),
+        cannot_damage: g.cannot_damage_props(),
+        camo: g.camo,
+        extras: Arc::new(ExtrasRt::new(&g.extras, tags)),
+        every: (g.collide_every > 0.0).then(|| real(g.collide_every)),
+        def: Arc::new(ProjectileDef {
+            speed: 0.0,
+            lifespan: real(g.lifespan),
+            radius: real(g.radius),
+            emission: emission_rt(&Emission::Single {}),
+            contacts: Vec::new(),
+            on_exhaust: g.on_exhaust.iter().map(|c| contact_rt(c, tags)).collect(),
+            path: None,
+            clear_hits: g.clear_hits.map(real),
+            collide: true,
+            homing: None,
+            lob: None,
+        }),
     }
 }
 
@@ -585,6 +649,8 @@ pub struct Tower {
     /// nur innerhalb einer Runde (`Game::play_round` löscht sie am Anfang und Ende).
     pub timed: SmallVec<[TimedRt; 1]>,
     pub blocked: SmallVec<[(u16, u32); 1]>,
+    /// Zeit-Effekt auf sich selbst zu Rundenbeginn (aus der Variante).
+    pub round_start: Option<Arc<EffectRt>>,
 }
 
 impl Tower {
@@ -613,6 +679,7 @@ impl Tower {
             base: SmallVec::new(),
             timed: SmallVec::new(),
             blocked: SmallVec::new(),
+            round_start: None,
         };
         t.set_variant(v, tags);
         t
@@ -623,6 +690,7 @@ impl Tower {
     pub fn set_variant(&mut self, v: &VariantV1, tags: &TagTable) {
         self.tiers = v.tiers;
         self.footprint = v.footprint;
+        self.round_start = v.round_start.as_ref().map(|e| Arc::new(EffectRt::new(e, tags)));
         let old: SmallVec<[(Real, u32); 2]> = self.attacks.iter().map(|a| (a.cd_left, a.shots)).collect();
         self.attacks = v
             .attacks
@@ -633,6 +701,7 @@ impl Tower {
                 let (cd_left, shots) = old.get(i).copied().unwrap_or((0.0, 0));
                 AttackRt {
                     range2: range * range,
+                    range: a.range.unwrap_or(v.range),
                     cooldown: real(a.cooldown),
                     damage: real(a.damage),
                     pierce: a.pierce,
@@ -676,7 +745,7 @@ impl Tower {
                             }),
                             lob: None,
                         })),
-                        Delivery::Lob { time, speed, spread, on_arrive } => {
+                        Delivery::Lob { time, speed, spread, on_arrive, ground } => {
                             AttackKind::Projectile(Arc::new(ProjectileDef {
                                 speed: 0.0,
                                 lifespan: 0.0,
@@ -692,6 +761,7 @@ impl Tower {
                                     time: time.map(real),
                                     speed: speed.map(real),
                                     spread: real(*spread),
+                                    ground: ground.as_ref().map(|g| Arc::new(ground_rt(g, tags))),
                                 }),
                             }))
                         }
@@ -714,6 +784,8 @@ impl Tower {
                     track_best: (a.targeting == Targeting::TrackBest)
                         .then(|| a.delivery.track_best_radius())
                         .flatten(),
+                    track_spread: a.targeting == Targeting::TrackSpread,
+                    spread_k: 0,
                 }
             })
             .collect();
@@ -776,6 +848,7 @@ impl Tower {
         for (a, base) in self.attacks.iter_mut().zip(&self.base) {
             let range = base.range * (1.0 + b.range_frac + t.range_frac) + b.range_add;
             a.range2 = if ranged { real(range) * real(range) } else { base.range2 };
+            a.range = if ranged { range } else { base.range };
             a.cooldown = if b.rate != 1.0 || t.rate_frac != 0.0 {
                 real(base.cooldown * b.rate / (1.0 + t.rate_frac))
             } else {
@@ -796,7 +869,8 @@ impl Tower {
                     AttackKind::Area { radius: real(r + (range - base.range)) }
                 }
                 (AttackKind::Projectile(def), _) => {
-                    if b.camo || b.damage_all || b.speed_frac != 0.0 || t.active() {
+                    let grounded = def.lob.as_ref().is_some_and(|l| l.ground.is_some());
+                    if b.camo || b.damage_all || b.speed_frac != 0.0 || t.active() || grounded && pierce > 0 {
                         AttackKind::Projectile(Arc::new(buffed_def(def, b, &t, true)))
                     } else {
                         AttackKind::Projectile(Arc::clone(def))
@@ -844,7 +918,9 @@ impl Tower {
     /// Ein Schuss irgendeines Angriffs: zählt die Rest-Schüsse aller Zeit-Effekte herunter [KAL].
     pub fn on_shot(&mut self, ticks_of: impl Fn(Real) -> u32) {
         for t in &mut self.timed {
-            t.shots_left = t.shots_left.saturating_sub(1);
+            if let Some(n) = &mut t.shots_left {
+                *n = n.saturating_sub(1);
+            }
         }
         self.expire(ticks_of);
     }
@@ -853,7 +929,7 @@ impl Tower {
         let before = self.timed.len();
         let blocked = &mut self.blocked;
         self.timed.retain(|t| {
-            let alive = t.shots_left > 0 && t.ticks_left != Some(0);
+            let alive = t.shots_left != Some(0) && t.ticks_left != Some(0);
             if !alive && t.def.block > 0.0 {
                 blocked.push((t.def.group, ticks_of(t.def.block)));
             }

@@ -159,29 +159,60 @@ pub fn best_track_point(map: &MapV1, radius: f64) -> (f64, f64) {
     best.1
 }
 
+/// Punkt auf der Strecke im Kreis um (cx, cy) mit Radius `r`, beim Anteil `u` in [0, 1) der Streckenlänge im
+/// Kreis (für `Targeting::TrackSpread`); `None`, wenn keine Strecke im Kreis liegt. In f64, Segmente in
+/// Pfad-Reihenfolge.
+pub fn track_point_in_circle(map: &MapV1, cx: f64, cy: f64, r: f64, u: f64) -> Option<(f64, f64)> {
+    let total = track_length_in_circle(map, cx, cy, r);
+    if total <= 0.0 {
+        return None;
+    }
+    let mut want = u * total;
+    let mut last = None;
+    for w in map.points.windows(2) {
+        let Some((t0, t1, len)) = clip_segment(w[0], w[1], cx, cy, r) else { continue };
+        let piece = (t1 - t0) * len;
+        let t = if want <= piece { t0 + want / len } else { t1 };
+        let p = (w[0][0] + (w[1][0] - w[0][0]) * t, w[0][1] + (w[1][1] - w[0][1]) * t);
+        if want <= piece {
+            return Some(p);
+        }
+        want -= piece;
+        last = Some(p);
+    }
+    last // Rundung: Rest am Ende des letzten Stücks
+}
+
+/// Teil eines Segments im Kreis: (t0, t1, Segmentlänge) mit 0 <= t0 < t1 <= 1, sonst `None`.
+fn clip_segment(a: [f64; 2], b: [f64; 2], cx: f64, cy: f64, r: f64) -> Option<(f64, f64, f64)> {
+    let (ax, ay) = (a[0] - cx, a[1] - cy);
+    let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
+    let aa = dx * dx + dy * dy;
+    if aa == 0.0 {
+        return None;
+    }
+    // |A + t D|² <= r²  <=>  aa t² + 2 bb t + c <= 0
+    let (bb, c) = (ax * dx + ay * dy, ax * ax + ay * ay - r * r);
+    let disc = bb * bb - aa * c;
+    if disc <= 0.0 {
+        return None;
+    }
+    let root = disc.sqrt();
+    let (t0, t1) = (((-bb - root) / aa).max(0.0), ((-bb + root) / aa).min(1.0));
+    (t1 > t0).then(|| (t0, t1, aa.sqrt()))
+}
+
+/// Streckenlänge im Kreis (z.B. ob ein Strecken-Ziel überhaupt Strecke in Reichweite hat).
+pub fn track_length_in_circle(map: &MapV1, cx: f64, cy: f64, r: f64) -> f64 {
+    length_in_circle(&map.points, cx, cy, r)
+}
+
 /// Länge der Polylinie innerhalb des Kreises (Summe der geschnittenen Segmentstücke).
 fn length_in_circle(pts: &[[f64; 2]], cx: f64, cy: f64, r: f64) -> f64 {
-    let mut total = 0.0;
-    for w in pts.windows(2) {
-        let (ax, ay) = (w[0][0] - cx, w[0][1] - cy);
-        let (dx, dy) = (w[1][0] - w[0][0], w[1][1] - w[0][1]);
-        let a = dx * dx + dy * dy;
-        if a == 0.0 {
-            continue;
-        }
-        // |A + t D|² <= r²  <=>  a t² + 2 b t + c <= 0
-        let (b, c) = (ax * dx + ay * dy, ax * ax + ay * ay - r * r);
-        let disc = b * b - a * c;
-        if disc <= 0.0 {
-            continue;
-        }
-        let root = disc.sqrt();
-        let (t0, t1) = (((-b - root) / a).max(0.0), ((-b + root) / a).min(1.0));
-        if t1 > t0 {
-            total += (t1 - t0) * a.sqrt();
-        }
-    }
-    total
+    pts.windows(2)
+        .filter_map(|w| clip_segment(w[0], w[1], cx, cy, r))
+        .map(|(t0, t1, len)| (t1 - t0) * len)
+        .sum()
 }
 
 #[cfg(test)]
@@ -312,6 +343,20 @@ mod tests {
         let m = track_map(vec![[-90.0, 0.0], [90.0, 0.0], [90.0, 200.0], [91.0, 200.0], [91.0, 0.0]]);
         let (_, y) = best_track_point(&m, 10.0);
         assert!(y <= 100.0);
+    }
+
+    #[test]
+    fn track_point_in_circle_walks_the_pieces_in_path_order() {
+        // Haarnadel: hin bei y = 0, zurück bei y = 10; Kreis um (0, 5) mit r = 10 schneidet beide Bahnen
+        let m = track_map(vec![[-90.0, 0.0], [50.0, 0.0], [50.0, 10.0], [-90.0, 10.0]]);
+        let half = (100.0f64 - 25.0).sqrt(); // halbe Sehne je Bahn
+        let (x, y) = track_point_in_circle(&m, 0.0, 5.0, 10.0, 0.0).unwrap();
+        assert!((x + half).abs() < 1e-9 && y == 0.0, "Anfang: Eintritt der Hinbahn ({x}, {y})");
+        let (x, y) = track_point_in_circle(&m, 0.0, 5.0, 10.0, 0.25).unwrap();
+        assert!(x.abs() < 1e-9 && y == 0.0, "Mitte der Hinbahn ({x}, {y})");
+        let (x, y) = track_point_in_circle(&m, 0.0, 5.0, 10.0, 0.75).unwrap();
+        assert!(x.abs() < 1e-9 && y == 10.0, "Mitte der Rückbahn ({x}, {y})");
+        assert_eq!(track_point_in_circle(&m, 0.0, 50.0, 10.0, 0.5), None, "keine Strecke im Kreis");
     }
 
     #[test]

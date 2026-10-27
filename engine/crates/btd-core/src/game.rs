@@ -93,6 +93,9 @@ fn splitmix64(x: u64) -> u64 {
     z ^ (z >> 31)
 }
 
+/// Kehrwert des Goldenen Schnitts: frac(k·GOLDEN) verteilt k = 0, 1, 2, … gleichmäßig auf [0, 1).
+const GOLDEN: f64 = 0.618_033_988_749_894_9;
+
 /// Gleichverteilt in [0, 1) aus dem nächsten SplitMix64-Schritt.
 fn unit(state: &mut u64) -> f64 {
     *state = splitmix64(*state);
@@ -173,6 +176,11 @@ struct Projectile {
     hit: SmallVec<[u32; 8]>,
     /// Ziel der Zielsuche (Bloon-ID), nur mit `ProjectileDef::homing`.
     target: Option<u32>,
+    /// Liegendes Objekt (Spike-Stapel): hält die Runde nicht offen.
+    ground: bool,
+    /// Kollision nur alle `every` Ticks (0/1 = jeden Tick); Ticks bis zur nächsten Prüfung.
+    every: u32,
+    every_left: u32,
 }
 
 /// Wirkung eines Treffers: Pops, entfernte Bloons (0/1) und neue Kinder.
@@ -973,8 +981,11 @@ impl Game {
         let mut next_id: u32 = 0;
         for tw in &mut self.towers {
             tw.clear_timed();
+            if let Some(e) = tw.round_start.clone() {
+                tw.give(&e, |s| ticks_of(s, dt)); // z.B. schneller zu Rundenbeginn (Directed Spikes)
+            }
             for a in &mut tw.attacks {
-                (a.cd_left, a.shots, a.burst_left) = (0.0, 0, 0);
+                (a.cd_left, a.shots, a.burst_left, a.spread_k) = (0.0, 0, 0, 0);
                 if let Some((_, every)) = a.crit {
                     a.crit_next = roll_crit(&mut self.rng, every, a.crit_range);
                 }
@@ -1132,9 +1143,11 @@ impl Game {
                         let b = &self.bloons;
                         in_range.clear();
                         let mut first = usize::MAX;
+                        // Strecken-Ziel: feuert, solange ein anvisierbarer Bloon auf der Karte ist
+                        let anywhere = atk.track_spread;
                         for i in 0..b.len() {
                             let (x, y) = (b.x[i], b.y[i]);
-                            if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= atk.range2
+                            if (anywhere || (x - cx) * (x - cx) + (y - cy) * (y - cy) <= atk.range2)
                                 && w.eligible(b, i, atk.camo, &atk.extras)
                             {
                                 if first == usize::MAX || b.dist[i] > b.dist[first] {
@@ -1143,7 +1156,29 @@ impl Game {
                                 in_range.push(i);
                             }
                         }
-                        if in_range.is_empty() {
+                        // Punkt auf der Strecke in Reichweite: ohne Zufall gleichmäßig verteilt (frac(k·φ))
+                        // (Zufall erst ziehen, wenn Strecke in Reichweite liegt, sonst verschöbe ein Turm ohne
+                        // Strecke den Zufallsstrom der anderen)
+                        let spread_aim = if atk.track_spread
+                            && !in_range.is_empty()
+                            && crate::map::track_length_in_circle(
+                                &data.map,
+                                tw.pos().0,
+                                tw.pos().1,
+                                atk.range,
+                            ) > 0.0
+                        {
+                            let (px, py) = tw.pos();
+                            let u = match self.rng.as_mut() {
+                                Some(state) => unit(state),
+                                None => (atk.spread_k as f64 * GOLDEN).fract(),
+                            };
+                            crate::map::track_point_in_circle(&data.map, px, py, atk.range, u)
+                                .map(|(x, y)| (real(x), real(y)))
+                        } else {
+                            None
+                        };
+                        if in_range.is_empty() || atk.track_spread && spread_aim.is_none() {
                             let a = &mut self.towers[ti].attacks[ai];
                             a.burst_left = 0; // Salve ohne Ziel bricht ab [KAL]
                             if a.cd_left <= eps {
@@ -1167,10 +1202,11 @@ impl Game {
                         let aim = atk.track_best.map_or((fx, fy), |r| {
                             self.track_best.iter().find(|p| p.0 == r).expect("Zielpunkt aus Game::new").1
                         });
+                        let aim = spread_aim.unwrap_or(aim);
                         hit_list.clear();
                         match &atk.kind {
                             AttackKind::Projectile(def) if def.lob.is_some() => {
-                                let lob = def.lob.unwrap();
+                                let lob = def.lob.as_ref().unwrap();
                                 let (mut tx, mut ty) = aim;
                                 if lob.spread > 0.0 {
                                     // Streuung: mit Zufall gleichverteilt im Kreis, sonst genau der Punkt
@@ -1207,6 +1243,9 @@ impl Game {
                                     clear_left: 0,
                                     hit: SmallVec::new(),
                                     target: None,
+                                    ground: false,
+                                    every: 0,
+                                    every_left: 0,
                                 });
                             }
                             AttackKind::Projectile(def) => {
@@ -1239,6 +1278,9 @@ impl Game {
                                         clear_left: clear_every,
                                         hit: SmallVec::new(),
                                         target: def.homing.map(|_| b.id[first]),
+                                        ground: false,
+                                        every: 0,
+                                        every_left: 0,
                                     });
                                 }
                             }
@@ -1282,6 +1324,9 @@ impl Game {
                             }
                         }
                         a.shots = shots;
+                        if a.track_spread {
+                            a.spread_k += 1;
+                        }
                         if crit_hit {
                             let every = a.crit.map_or(1, |c| c.1);
                             a.crit_next = roll_crit(&mut self.rng, every, a.crit_range);
@@ -1314,7 +1359,8 @@ impl Game {
 
             t += rules.dt();
             ticks += 1;
-            if si >= spawns.len() && self.bloons.is_empty() && self.projectiles.is_empty() {
+            // liegende Objekte (Spikes) halten die Runde nicht offen
+            if si >= spawns.len() && self.bloons.is_empty() && self.projectiles.iter().all(|p| p.ground) {
                 break;
             }
         }
@@ -1392,8 +1438,18 @@ fn step_projectiles(
         }
         let def = p.def.clone();
         let contacts = def.as_ref().map_or(&[][..], |d| &d.contacts[..]);
-        // Projektile ohne Kollision (Cluster-Splitter) fliegen nur und lösen am Ende aus
-        let n = if def.as_ref().map_or(true, |d| d.collide) { bloons.len() } else { 0 };
+        // Projektile ohne Kollision (Cluster-Splitter, Würfe) fliegen nur und lösen am Ende aus;
+        // liegende Objekte prüfen nur alle `every` Ticks
+        let mut check = def.as_ref().map_or(true, |d| d.collide);
+        if check && p.every > 1 {
+            p.every_left -= 1;
+            if p.every_left == 0 {
+                p.every_left = p.every;
+            } else {
+                check = false;
+            }
+        }
+        let n = if check { bloons.len() } else { 0 };
         for i in 0..n {
             if p.pierce <= 0.0 {
                 break;
@@ -1423,6 +1479,32 @@ fn step_projectiles(
         if p.pierce <= 0.0 || p.ttl == 0 {
             if let Some(d) = def.as_ref().filter(|d| !d.on_exhaust.is_empty()) {
                 pops += fx.trigger(w, bloons, next_id, &d.on_exhaust, p, dt);
+            }
+            // Wurf gelandet: bleibt als Bodenobjekt liegen
+            if let Some(g) = def.as_ref().and_then(|d| d.lob.as_ref()).and_then(|l| l.ground.as_ref()) {
+                let clear = g.def.clear_hits.map_or(0, |c| ticks_of(c, dt));
+                fx.spawned.push(Projectile {
+                    x: p.x,
+                    y: p.y,
+                    vx: 0.0,
+                    vy: 0.0,
+                    ttl: ticks_of(g.lifespan, dt),
+                    pierce: g.pierce as Real,
+                    radius: g.radius,
+                    damage: g.damage,
+                    cannot_damage: g.cannot_damage,
+                    camo: g.camo,
+                    extras: Arc::clone(&g.extras),
+                    def: Some(Arc::clone(&g.def)),
+                    path: None,
+                    clear_every: clear,
+                    clear_left: clear,
+                    hit: SmallVec::new(),
+                    target: None,
+                    ground: true,
+                    every: g.every.map_or(0, |e| ticks_of(e, dt)),
+                    every_left: 1,
+                });
             }
         }
     }
@@ -1539,6 +1621,9 @@ impl Effects {
                             // Spiel: passOnCollidedWith -> Splitter treffen nichts, was das Projektil schon traf
                             hit: if *inherit_hit { p.hit.clone() } else { SmallVec::new() },
                             target: None,
+                            ground: false,
+                            every: 0,
+                            every_left: 0,
                         });
                     }
                 }

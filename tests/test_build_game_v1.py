@@ -578,8 +578,8 @@ def test_placeholder_for_tower_without_mechanic():
     assert v == {"tiers": [0, 0, 0], "range": 22.0, "footprint": pytest.approx(27.0 * 2 ** 0.5 / 2),
                  "attacks": [], "_rect": True}
     assert b.placeholder(dart_like())["footprint"] == 6.0
-    # alle t21-Türme ohne Mechanik sind fest gesperrt, Engineer, Mortar (Teil 1a) und Alchemist (1b) nicht
-    assert set(b.T21) - set(b.T14) - b.MECHANIC_LOCKED == {"EngineerMonkey", "MortarMonkey", "Alchemist"}
+    # alle t21-Türme ohne Mechanik sind fest gesperrt, Engineer, Mortar (1a), Alchemist (1b) und Spike (2a) nicht
+    assert set(b.T21) - set(b.T14) - b.MECHANIC_LOCKED == {"EngineerMonkey", "MortarMonkey", "Alchemist", "SpikeFactory"}
 
 
 def mortar_like(spread=18.0, point_extra=None):
@@ -713,3 +713,45 @@ def test_bonus_with_all_tags():
     assert b.bonus_of(m) == {"tag": "Lead", "add": 1.0, "all": ["Fortified"]}
     with pytest.raises(b.Unsupported):
         b.bonus_of(dict(m, mustIncludeAllTags=False))
+
+
+def spike_like(round_start=None, proj_extra=()):
+    age = T("AgeModel", useRoundTime=True, lifespan=50.0,
+            endOfRoundClearBypassModel=T("EndOfRoundClearBypassModel", gameModes="Apopalypse"))
+    proj = T("ProjectileModel", pierce=5.0, radius=6.0, checkCollisionInterval=0.083333336,
+             behaviors=[T("DamageModel", damage=1.0, immuneBloonProperties=17), age,
+                        T("ClearHitBloonsModel", interval=0.001), T("FadeProjectileModel", startFadingAt=48.0),
+                        T("ScaleProjectileModel"),
+                        T("ArriveAtTargetModel", timeToTake=0.9, filterCollisionWhileMoving=True,
+                          stopOnTargetReached=True),
+                        T("HeightOffsetProjectileModel"), T("ExpireProjectileOnBossSpawnedModel"), *proj_extra])
+    weapon = T("WeaponModel", rate=1.75, emission=T("SingleEmmisionTowardsTargetModel"), projectile=proj,
+               behaviors=[T("RandomRotationWeaponBehaviorModel")])
+    attack = T("AttackModel", range=34.0, weapons=[weapon],
+               behaviors=[T("TargetTrackModel", isSelectable=True, maxOffset=3.0),
+                          T("AttackFilterModel", filters=[T("FilterInvisibleModel", isActive=True)])])
+    extra = [round_start] if round_start else []
+    return T("TowerModel", cost=1000.0, range=34.0, towerSet=8, footprint=T("CircleFootprintModel", radius=8.0),
+             behaviors=[attack, *extra])
+
+
+def test_spike_factory_throws_piles_onto_the_track():
+    v = b.convert_variant(spike_like(), [0, 0, 0])
+    a = v["attacks"][0]
+    assert a["targeting"] == "track_spread" and a["camo"] is False and a["cooldown"] == 1.75
+    assert a["delivery"] == {"kind": "lob", "time": 0.9, "ground": {
+        "lifespan": 49.1, "radius": 6.0, "pierce": 5, "damage": 1.0, "cannot_damage": ["lead", "frozen"],
+        "camo": True, "extras": {}, "clear_hits": 0.001, "collide_every": 0.083333336}}
+    # Bonus gegen Ceramic (Spiked Balls) als Tag
+    balls = spike_like(proj_extra=[T("DamageModifierForBloonTypeModel", bloonId="Ceramic", bloonIds=["Ceramic"],
+                                     damageMultiplier=1.0, damageAdditive=3.0, includeChildren=True)])
+    assert b.convert_variant(balls, [3, 0, 0])["attacks"][0]["delivery"]["ground"]["extras"] == {
+        "damage_vs": [{"tag": "Ceramic", "add": 3.0}]}
+    # Directed Spikes: schneller zu Rundenbeginn (modifier als Cooldown-Faktor)
+    start = T("StartOfRoundRateBuffModel", modifier=0.25, duration=3.0, isUnique=True, mutatorId="StartOfRoundRateBuff")
+    assert b.convert_variant(spike_like(round_start=start), [0, 0, 2])["round_start"] == {
+        "group": "StartOfRoundRateBuff", "seconds": 3.0, "rate_frac": 3.0}
+    # Explosion nur beim Ablauf ohne gleiche beim Verbrauch: abgelehnt
+    expire = T("CreateProjectileOnExpireModel", projectile=T("ProjectileModel", pierce=30.0, radius=30.0))
+    with pytest.raises(b.Unsupported, match="CreateProjectileOnExpireModel"):
+        b.convert_variant(spike_like(proj_extra=[expire]), [4, 0, 0])

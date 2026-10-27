@@ -672,3 +672,63 @@ Antworten auf §10:
   - Der Village-Tempo-Buff wirkt nicht auf das Tempo des Alchemist-Wurfs. Alchemist ist "magic" und bekommt
     Primary Training ohnehin nicht.
   - Brew gilt nicht für Sub-Türme (kommen erst in Teil 3).
+
+## Stand Teil 2a (Bodenobjekte, Spike Factory, 2026-10-27)
+
+- **btd-data:**
+  - `Delivery::Lob` hat jetzt ein optionales `ground`. Felder: Lebensdauer ab der Landung, Radius, Pierce,
+    Schaden, Schadensarten, Camo, Extras, Treffer-Reset, Kollisions-Intervall, Explosionen beim
+    Verbrauch/Ablauf.
+  - `Targeting::TrackSpread`, nur mit Wurf.
+  - `VariantV1.round_start`: Zeit-Effekt auf sich selbst zu Rundenbeginn.
+  - `TimedEffect.shots` ist jetzt optional (ohne Angabe unbegrenzt).
+- **Engine:**
+  - **Bodenobjekte:** Ein gelandeter Wurf mit `ground` wird ein liegendes Projektil. Abweichend von §2.3 gibt
+    es keine eigene Liste `Game::ground`: Die Objekte liegen mit Flag `ground` in `projectiles`, in
+    Erzeugungsreihenfolge (deterministisch).
+    - Es prüft Kollisionen nur alle `collide_every` Ticks, die erste gleich nach der Landung.
+    - Treffer-Reset wie bei fliegenden Projektilen. Nach Verbrauch oder Ablauf löst es `on_exhaust` aus.
+    - Liegende Objekte halten die Runde nicht offen und verschwinden am Rundenende.
+    - Auren und Zeit-Effekte wirken auch auf sie: Camo, MIB, Schaden, Bonus-Schaden und Pierce (Pierce-Aura
+      bzw. Brew-Pierce auf den Stapel [KAL]).
+    - Die 1D-Vorfilterung über die Pfad-Distanz (§2.3) ist noch nicht gebaut. Die Kollision prüft alle Bloons
+      jedes `collide_every`-te Tick (Spike: 5 Ticks); messbar langsamer ist das bisher nicht.
+  - **`track_spread`:** Gefeuert wird, solange ein anvisierbarer Bloon auf der Karte ist (Camo-Regel des
+    Angriffs). Ohne Strecke in Reichweite kein Wurf.
+    - Zielpunkt: `map::track_point_in_circle` (Stücke der Strecke im Kreis in Pfad-Reihenfolge, f64) beim
+      Anteil frac(k·0,618…). k zählt die Würfe der Runde je Angriff.
+    - Mit `randomness` ist der Anteil gleichverteilt. Der Querversatz `maxOffset` entfällt [KAL].
+    - Der Radius ist die wirksame Reichweite (`AttackRt::range`, mit Auren und Brew).
+  - **Rundenstart-Effekt:** `play_round` gibt ihn nach dem Löschen der Zeit-Effekte dem eigenen Turm.
+- **Konverter (`convert_track_lob`, `convert_round_start`):**
+  - `TargetTrackModel` (Spike Factory) wird zu `track_spread`, und `ArriveAtTargetModel` mit `timeToTake` und
+    `stopOnTargetReached` zu `lob.time` mit `ground`.
+  - Lebensdauer des Stapels = `AgeModel.lifespan` (Rundenzeit) minus Flugzeit. `checkCollisionInterval` wird
+    zu `collide_every`.
+  - `DamageModifierForBloonTypeModel` (Spiked Balls: +3 gegen Ceramic) wird als Tag-Bonus übernommen.
+  - Ignoriert werden Darstellung und Modus: `Fade…`, `RandomRotation…`, `EndOfRoundClearBypass` (nur
+    Apopalypse), `ExpireProjectileOnBossSpawned` (keine Bosse) und die Modi von Directed Spikes
+    (Smart/Auto/Close/Punkt). Die Sim bleibt bei der Verteilung über die Strecke [KAL].
+  - Long Life und Deadly Spikes (`AgeModel.rounds` 1/2) überdauern das Rundenende nicht (§6). Die längere
+    Lebensdauer (140 s) und der höhere Schaden gelten.
+  - Perma-Spike (xx5, `rounds` 3, ein Wurf alle 6 s) ist gesperrt: Seine Stärke liegt im Liegenbleiben über Runden, ohne das wäre
+    er in der Sim stark entwertet.
+  - Fliegende Würfe halten die Runde nach dem letzten Bloon noch bis zur Landung offen (höchstens 0,9 s;
+    ändert nur `seconds`).
+  - `StartOfRoundRateBuffModel` wird zu `round_start`; `modifier` 0,25 gilt als Cooldown-Faktor, also 4-fach
+    schneller für `duration` Sekunden [KAL].
+  - Spiked Mines (Explosion beim Verbrauch und beim Ablauf, beide gleich) sind vorbereitet. Sie scheitern noch
+    am Feuer-DoT mit Purple-Immunität (Teil 2b).
+- **Abdeckung t21:** 429 von 1344.
+  - Spike Factory **39**, frei. Es fehlen Spiked Mines (4xx, Teil 2b), Super Mines (5xx), Perma-Spike (xx5),
+    Spike Storm/Carpet (Abilities).
+  - t14-Daten bleiben bytegleich.
+- **Tests:**
+  - `btd-core/tests/ground.rs`: Pierce-Verbrauch, Lebensdauer, keine Strecke in Reichweite, Pierce-Zuschlag und
+    Explosion beim Verbrauch am Stapel, Rundenende trotz
+    liegender Spikes, Kollisions-Intervall und Treffer-Reset, Verteilung und Determinismus (auch mit Seed),
+    Rundenstart-Effekt, Validierung.
+  - `map.rs`: Punkt im Kreis in Pfad-Reihenfolge.
+  - Konverter-Test für Spike Factory, Spiked Balls und Directed Spikes.
+  - Lokal gegen die t21-Daten: Eine Spike Factory allein lässt in den Runden 1–10 43 statt 738 Leben durch.
+- **Gemessen** (verrauscht, Training läuft parallel): t21 4,3–5,5 k Schritte/s gegen t14 5,8 k.

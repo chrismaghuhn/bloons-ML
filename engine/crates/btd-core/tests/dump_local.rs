@@ -155,3 +155,32 @@ fn alchemist_brew_helps_darts() {
     eprintln!("Durchgelassen in 20 Runden: Alchemist 1-0-1 {without}, 4-0-1 {with}");
     assert!(with < without);
 }
+
+/// Spike Factory (Teil 2a) allein auf den t21-Daten: Stapel landen auf der Strecke in Reichweite, und es
+/// kommt nur ein Bruchteil dessen durch, was ohne Turm durchkäme. (Dass liegende Spikes die Runde nicht offen
+/// halten, prüft `ground.rs`; geplatzte Bloons können hier die Runde verlängern.)
+#[test]
+#[ignore = "braucht den lokalen Spiel-Dump (data/local/)"]
+fn spike_factory_holds_the_first_rounds() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../data/local/game_v1_tutorial_medium60_t21.json");
+    if !path.exists() {
+        eprintln!("übersprungen: {} fehlt (tools/build_game_v1.py --towers t21)", path.display());
+        return;
+    }
+    let d = Arc::new(GameV1::load(path).expect("lokaler Datensatz gültig"));
+    let run = |with_spike: bool| {
+        let mut g = Game::new(Arc::clone(&d)).unwrap();
+        g.cash = btd_core::Money::from_dollars(10_000);
+        g.lives = 100_000; // ohne Turm soll die Partie nicht enden
+        if with_spike {
+            let spike = g.data().towers.iter().position(|t| t.name == "spike").unwrap() as u8;
+            let cells = best_cells(&d, 34.0);
+            assert!(cells.into_iter().any(|(x, y)| g.apply(Action::Place { kind: spike, x, y }).is_ok()));
+        }
+        (0..10).map(|_| g.play_round().leaked).sum::<i32>()
+    };
+    let (base, spike) = (run(false), run(true));
+    eprintln!("Runden 1-10 durchgelassen: ohne Turm {base}, mit Spike Factory {spike}");
+    assert!(spike * 5 < base);
+}

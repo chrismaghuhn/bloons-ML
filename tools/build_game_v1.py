@@ -44,7 +44,7 @@ TOWER_SET_NAMES = {1: "primary", 2: "military", 4: "magic", 8: "support"}
 # aber schon in Daten und Layout, damit sich der Aktionsraum später nicht ändert
 # (docs/design-towers-step2.md §2.4). Geht ihre Basisvariante noch nicht durch den Konverter, steht sie als
 # Platzhalter in den Daten (docs/design-towers-step3.md §4).
-MECHANIC_LOCKED = {"BananaFarm", "DartlingGunner", "SpikeFactory", "HeliPilot", "MonkeyAce"}
+MECHANIC_LOCKED = {"BananaFarm", "DartlingGunner", "HeliPilot", "MonkeyAce"}
 
 # Flächentypen im Spiel (AreaType) -> game_v1
 AREA_KINDS = {2: "land", 0: "track", 1: "water", 3: "blocked"}
@@ -112,7 +112,12 @@ STRICT = {"InstantModel", "InstantDamageEmissionModel", "FilterAllExceptTargetMo
           "AcidicMixtureCheckModel", "AddBerserkerBrewToProjectileModel", "BerserkerBrewModel",
           "BerserkerBrewCheckModel", "DestroyIfTargetLostModel",
           # Buff-Anzeige; nur die der Alchemist-Tränke ist ausgewertet (Super Monkey 3xx nutzt sie für den Tempel)
-          "CanBuffIndicatorModel"}
+          "CanBuffIndicatorModel",
+          # Spike Factory (convert_track_lob) und Effekt zu Rundenbeginn (convert_round_start)
+          "TargetTrackModel", "SmartTargetTrackModel", "AutoTargetTrackModel", "CloseTargetTrackModel",
+          "RandomRotationWeaponBehaviorModel", "FadeProjectileModel", "EndOfRoundClearBypassModel",
+          "ExpireProjectileOnBossSpawnedModel", "DamageModifierForBloonTypeModel", "CreateProjectileOnExpireModel",
+          "StartOfRoundRateBuffModel"}
 # Buff-Anzeigen (CanBuffIndicatorModel.buffLocsName) ohne Wirkung: die der Alchemist-Tränke
 POTION_INDICATORS = {"AcidicMixtureBuff", "BeserkerBrewBuff"}
 # Türme Schritt 2 (docs/design-towers-step2.md): Auren und Rabatt (convert_supports), Einkommen
@@ -1086,8 +1091,114 @@ def convert_potion(tower, attack, weapon, idx) -> dict:
     }
 
 
+def strip_names(node):
+    """Modell ohne Namen (zum Vergleich zweier sonst gleicher Projektile)."""
+    if isinstance(node, dict):
+        return {k: strip_names(v) for k, v in node.items() if k != "name"}
+    if isinstance(node, list):
+        return [strip_names(v) for v in node]
+    return node
+
+
+def convert_track_lob(tower, attack, weapon, idx) -> dict:
+    """Spike Factory: Stapel auf einen Streckenpunkt in Reichweite (`track_spread`), Flug in fester Zeit ohne
+    Treffer, danach liegt er als Bodenobjekt (docs/design-towers-step3.md §2.2/§2.3)."""
+    proj = weapon["projectile"]
+    track = behaviors(attack, "TargetTrackModel")
+    if len(track) != 1 or track[0].get("onlyTargetPathsWithBloons") or track[0].get("isOnSubTower"):
+        raise Unsupported("TargetTrackModel(nur Pfade mit Bloons/Sub-Turm)")
+    # Directed Spikes (xx2): wählbare Modi; die Sim bleibt bei der Verteilung über die Strecke [KAL]
+    modes = [b for t in ("SmartTargetTrackModel", "AutoTargetTrackModel", "CloseTargetTrackModel",
+                         "TargetSelectedPointModel") for b in behaviors(attack, t)]
+    if short(weapon["emission"]["$type"]) != "SingleEmmisionTowardsTargetModel":
+        raise Unsupported("Strecken-Wurf mit anderer Emission")
+    flight = arrive_flight(proj)
+    arrive = behaviors(proj, "ArriveAtTargetModel")
+    if not flight or flight[0] is None or not arrive[0].get("stopOnTargetReached") or arrive[0].get("expireOnArrival"):
+        raise Unsupported("Strecken-Wurf ohne feste Flugzeit/ohne Liegenbleiben")
+    age = behaviors(proj, "AgeModel")
+    if len(age) != 1 or not age[0].get("useRoundTime") or age[0]["lifespan"] <= flight[0]:
+        raise Unsupported("Spike-Stapel ohne Lebensdauer in Rundenzeit")
+    # Perma-Spike (rounds 3, Wurf nur alle 6 s) lebt vom Liegenbleiben über Runden; ohne das wäre er in der
+    # Sim stark entwertet, deshalb gesperrt. Long Life/Deadly Spikes (rounds 1/2) bleiben mit ihrer längeren
+    # Lebensdauer bzw. ihrem Schaden, liegen aber nur in der eigenen Runde [KAL]
+    if age[0].get("rounds", 0) >= 3 or proj.get("checkCollisionIntervalFrames"):
+        raise Unsupported("Spike-Stapel über mehrere Runden/Kollisions-Intervall in Frames")
+    check_pierce_reduction(proj)
+    check_damage(proj)
+    dmg = behaviors(proj, "DamageModel")
+    if not dmg or behaviors(proj, "CreateProjectileOnContactModel") or straight_travel(proj):
+        raise Unsupported("Spike-Stapel ohne Schaden/mit Kontakt/Flugbahn")
+    camo, extras = convert_extras(proj, all_filters(proj))
+    for m in behaviors(proj, "DamageModifierForBloonTypeModel"):
+        # Bonus gegen einen Bloon-Typ (Spiked Balls: Ceramic), als Tag (deckt die Varianten mit ab) [KAL]
+        if m.get("damageMultiplier", 1.0) != 1.0 or not m.get("includeChildren"):
+            raise Unsupported("DamageModifierForBloonTypeModel(Multiplikator/ohne Kinder)")
+        extras.setdefault("damage_vs", []).extend(
+            {"tag": t, "add": m["damageAdditive"]} for t in m.get("bloonIds") or [m["bloonId"]])
+        use(m)
+    exhaust = convert_exhaust(proj, nested=False)
+    expire = behaviors(proj, "CreateProjectileOnExpireModel")
+    ex_models = behaviors(proj, "CreateProjectileOnExhaustFractionModel")
+    # Spiked Mines: Explosion beim Verbrauch und beim Ablauf, beide gleich (die Sim löst bei beidem aus)
+    if expire and (len(expire) != 1 or len(ex_models) != 1
+                   or strip_names(expire[0].get("projectile")) != strip_names(ex_models[0]["projectile"])
+                   or strip_names(expire[0].get("emission")) != strip_names(ex_models[0].get("emission"))
+                   or expire[0].get("useRotation") or expire[0].get("useTargetPosition")):
+        raise Unsupported("CreateProjectileOnExpireModel ohne gleiche Explosion beim Verbrauch")
+    if any(c["kind"] != "explosion" for c in exhaust):
+        raise Unsupported("Spike-Stapel mit Splittern")
+    if ex_models and not expire:
+        raise Unsupported("Spike-Stapel mit Explosion nur beim Verbrauch")
+    clear = behaviors(proj, "ClearHitBloonsModel")
+    ground = {"lifespan": age[0]["lifespan"] - flight[0], "radius": proj["radius"], "pierce": pierce_of(proj),
+              "damage": dmg[0]["damage"], "cannot_damage": cannot_damage(proj), "camo": camo, "extras": extras}
+    if clear:
+        ground["clear_hits"] = clear[0]["interval"]
+    if proj.get("checkCollisionInterval", 0.0) > 0.0:
+        ground["collide_every"] = proj["checkCollisionInterval"]
+    if exhaust:
+        ground["on_exhaust"] = exhaust
+    # Long Life (AgeModel.rounds) überdauert im Spiel das Rundenende; die Sim löscht alles am Rundenende [KAL]
+    nested = [age[0]["endOfRoundClearBypassModel"]] if age[0].get("endOfRoundClearBypassModel") else []
+    for n in (track + modes + age + nested + expire + [weapon["emission"]]
+              + [b for b in weapon.get("behaviors") or [] if short(b["$type"]) == "RandomRotationWeaponBehaviorModel"]
+              + [b for t in ("FadeProjectileModel", "EndOfRoundClearBypassModel", "ExpireProjectileOnBossSpawnedModel")
+                 for b in behaviors(proj, t)]):
+        use(n)
+    atk_camo, atk_extras = convert_extras({"behaviors": []}, all_filters(attack))
+    out = {
+        "tag": f"{attack.get('name', 'attack')}-{idx}".replace(" ", "_"),
+        "range": attack["range"] if attack["range"] != tower["range"] else None,
+        "targeting": "track_spread",
+        "cooldown": weapon["rate"],
+        "damage": 0.0,
+        "pierce": 1,
+        "cannot_damage": [],
+        "camo": atk_camo,
+        "delivery": {"kind": "lob", "time": flight[0], "ground": ground},
+        "extras": atk_extras,
+    }
+    convert_weapon_behaviors(weapon, out)
+    return out
+
+
+def convert_round_start(model):
+    """StartOfRoundRateBuffModel -> Zeit-Effekt zu Rundenbeginn; `modifier` als Cooldown-Faktor [KAL]."""
+    found = behaviors(model, "StartOfRoundRateBuffModel")
+    if not found:
+        return None
+    b = found[0]
+    if len(found) > 1 or b.get("durationFrames") or not 0.0 < b["modifier"] <= 1.0 or b["duration"] <= 0.0:
+        raise Unsupported("StartOfRoundRateBuffModel(mehrfach/Frames/Faktor)")
+    use(b)
+    return {"group": b["mutatorId"], "seconds": b["duration"], "rate_frac": 1.0 / b["modifier"] - 1.0}
+
+
 def convert_attack(tower, attack, weapon, idx) -> dict:
     proj = weapon["projectile"]
+    if behaviors(attack, "TargetTrackModel"):
+        return convert_track_lob(tower, attack, weapon, idx)
     if behaviors(attack, "TargetSelectedPointModel"):
         return convert_point_lob(tower, attack, weapon, idx)
     if behaviors(attack, "TargetFriendlyModel") or behaviors(attack, "BrewTargettingModel"):
@@ -1326,6 +1437,7 @@ def convert_variant(model, tiers) -> dict:
     for b in behaviors(model, "CanBuffIndicatorModel"):
         if b.get("buffLocsName") in POTION_INDICATORS:
             use(b)
+    round_start = convert_round_start(model)
     supports, discount = convert_supports(model)
     footprint, rect = convert_footprint(model)
     bonus = behaviors(model, "PerRoundCashBonusTowerModel") + behaviors(model, "BonusLivesPerRoundModel")
@@ -1366,6 +1478,8 @@ def convert_variant(model, tiers) -> dict:
         v["income"] = income
     if model.get("sellbackModifierAdd"):
         v["sell_bonus"] = model["sellbackModifierAdd"]
+    if round_start:
+        v["round_start"] = round_start
     if rect:
         v["_rect"] = True  # nur für das Baubar-Raster (main), wird vor dem Schreiben entfernt
     return v
