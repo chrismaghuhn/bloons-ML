@@ -3,7 +3,7 @@
     python train.py --steps 2_000_000 --envs 64                 # Rust-Engine (Standard)
     python train.py --steps 200_000 --envs 12 --engine python   # Python-Referenz
     python train.py --data data/local/game_v1_tutorial_medium.json --preview 3   # Spieldaten (M2)
-    python train.py --data data/local/game_v1_tutorial_medium.json --preview 3 --arch conv   # Faltungs-Policy
+    python train.py --data data/local/game_v1_tutorial_medium.json --preview 3 --arch mlp    # flaches MLP
     tensorboard --logdir runs
 
 Die Rust-Engine braucht die Bindings: maturin develop --release -m engine/crates/btd-py/Cargo.toml
@@ -49,11 +49,14 @@ if __name__ == "__main__":
     ap.add_argument("--data", default=None, help="game_v1-Datei (Standard: sim_v0)")
     ap.add_argument("--preview", type=int, default=0, help="Runden-Vorschau in der Observation (nur Rust)")
     ap.add_argument("--device", default="auto")
-    ap.add_argument("--arch", choices=["mlp", "conv"], default="mlp", help="conv: btd_sim.policy.GridPolicy (nur Rust)")
+    ap.add_argument("--arch", choices=["mlp", "conv"], default=None,
+                    help="conv: btd_sim.policy.GridPolicy (Standard mit --engine rust), mlp: flaches MLP")
     ap.add_argument("--conv-width", type=int, default=32, help="Kanäle der Faltungs-Policy")
     ap.add_argument("--conv-blocks", type=int, default=4, help="Residual-Blöcke der Faltungs-Policy")
     ap.add_argument("--seed", type=int, default=None)
     args = ap.parse_args()
+    if args.arch is None:
+        args.arch = "conv" if args.engine == "rust" else "mlp"
     if args.engine != "rust" and (args.data or args.preview or args.arch == "conv"):
         ap.error("--data/--preview/--arch conv gibt es nur mit --engine rust")
     if args.resume:

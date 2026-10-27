@@ -45,11 +45,11 @@ cd .. && .venv/bin/python train.py --data data/local/game_v1_tutorial_medium.jso
 .venv/bin/python evaluate.py --model models/ppo_btd --data data/local/game_v1_tutorial_medium.json --preview 3
 ```
 
-`--arch conv` nutzt die Faltungs-Policy aus `btd_sim/policy.py`: Raster und Skalare gehen durch
+Standard-Policy ist die Faltungs-Policy aus `btd_sim/policy.py`: Raster und Skalare gehen durch
 Residual-Faltungen, die Logits für Bauen/Upgrade/Verkaufen kommen pro Zelle direkt aus dem Netz.
-Standard ist das flache MLP (`--arch mlp`), das im ersten Vergleich besser abschnitt; die
-Faltungs-Policy lernt anfangs schneller, ist aber noch experimentell. Die erreichte Runde steht in
-Tensorboard unter `btd/`.
+Nach 3M Schritten (~45 min) gewinnt sie Monkey Meadow Medium bis Runde 40 zuverlässig, das flache
+MLP (`--arch mlp`) nur 50–80 % der Spiele (Details in `docs/m3-log.md`). Die erreichte Runde steht
+in Tensorboard unter `btd/`.
 
 Der Konverter schreibt neben der Datei einen Abdeckungs-Report (`*_coverage.md`): welche der 384
 Upgrade-Kombinationen der 6 Primary-Türme die Engine simuliert und was den übrigen fehlt.
