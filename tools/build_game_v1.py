@@ -139,6 +139,8 @@ def bloon_speed_factor(dump: Path, match: str, map_name: str) -> float:
     def walk(n):
         if isinstance(n, dict):
             if short(n.get("$type", "")) == "GlobalSpeedModModel":
+                if n.get("addition", 0.0):
+                    sys.exit(f"{path}: GlobalSpeedModModel mit addition={n['addition']} nicht unterstützt")
                 factors.append(float(n["multiplier"]))
             for v in n.values():
                 walk(v)
@@ -153,6 +155,8 @@ def bloon_speed_factor(dump: Path, match: str, map_name: str) -> float:
 
 def trim_path(pts: list, start: float, end: float) -> list:
     """Teil der Polylinie von Distanz `start` bis `end` (Endpunkte interpoliert)."""
+    if not 0.0 <= start < end:
+        sys.exit(f"Laufstrecke {start}..{end}: erwartet 0 <= Start < Ende")
     out, d = [], 0.0
     for (ax, ay), (bx, by) in zip(pts, pts[1:]):
         seg = math.hypot(bx - ax, by - ay)

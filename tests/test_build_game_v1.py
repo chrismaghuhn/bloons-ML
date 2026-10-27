@@ -343,6 +343,8 @@ def test_trim_path_keeps_the_span_between_spawn_and_leak():
     assert b.trim_path(pts, 2.0, 8.0) == [[2.0, 0.0], [8.0, 0.0]], "Start und Ende im selben Segment"
     with pytest.raises(SystemExit):
         b.trim_path(pts, 5.0, 40.0)
+    with pytest.raises(SystemExit):
+        b.trim_path(pts, 20.0, 10.0)  # vertauscht
 
 
 def test_bloon_speed_factor_from_match_rules(tmp_path):
