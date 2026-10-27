@@ -277,3 +277,20 @@ Daten nach dc15beb (Laufstrecke 912 E., Bloon-Tempo ×1,1 auf Medium), sonst wie
 
 Rezept: Bomb ohne Upgrade + Dart unten (Sharp Shooter / Crossbow Master), in 57/64 Spielen zuerst die
 Bombe. Deterministisches Spiel deutlich besser als bei allen früheren 12-Turm-Läufen.
+
+### Abgleich echtes Spiel: Strategie von t12_r60_v2 (korrigierte Sim)
+
+Bomb 0-0-0 bei (−15, −1) + Dart bei (−25, 29), Dart unterer Pfad; der User hat jedes Upgrade gekauft,
+sobald es ging (Crossbow Master 1-0-5 schon vor Runde 45; der Bot kaufte ihn erst danach und
+verlor in der Sim in Runde 45 78 Leben).
+
+| | echtes Spiel | Sim (gleicher Spielstil) |
+|---|---|---|
+| Leaks bis Runde 44 | keine (150 Leben) | keine |
+| Runde 45–60 | keine Leaks, Sieg mit 150 Leben | keine Leaks, Sieg mit 150 Leben |
+| Cash am Ende (ab 210 $ vor Runde 45) | 30 004 $ | 32 426 $ (+8 %) |
+
+Erster vollständiger Test mit korrigierter Sim: Leben und Runden stimmen; beim Geld ist die Sim etwas
+zu großzügig (Kandidaten: Einkommen je Pop, Rundung, Einkommensfaktor ab Runde 51 -> mit dem
+Recorder die Cash-Rohwerte vergleichen). Lehre fürs Training: frühe Upgrades vermeiden Leaks, die
+Policy hortet Geld -> Vorausschau (docs/design-lookahead.md).
