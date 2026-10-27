@@ -19,25 +19,30 @@ from PIL import Image, ImageDraw, ImageFont
 
 # Karte -> (px je Einheit x, Pixel bei x=0, px je Einheit y, Pixel bei y=0); y zeigt nach unten.
 # Monkey Meadow: Screenshot 765×510 ohne UI, Track-Extrempunkte auf die Wegmitte gelegt.
-CALIBRATION = {"Tutorial": (2.583, 385.3, 2.222, 252.8)}
+CALIBRATION = {"Tutorial": ((765, 510), (2.583, 385.3, 2.222, 252.8))}
 COLORS = {"dart": (40, 90, 200), "boomerang": (200, 120, 20), "bomb": (30, 30, 30),
           "tack": (200, 40, 120), "ice": (40, 170, 210), "glue": (110, 160, 30)}
 
 
 def towers_and_timeline(lines):
     towers, timeline = {}, []
+
+    def at(x, y):
+        # Upgrades/Verkäufe nennen die Turmposition (im f32-Build leicht gerundet): nächster Turm
+        return min(towers, key=lambda k: (k[0] - x) ** 2 + (k[1] - y) ** 2)
+
     for line in lines:
         r = json.loads(line)
         for a in r.get("actions", []):
             kind, v = next(iter(a.items()))
-            key = (v["x"], v["y"])
+            key = (v["x"], v["y"]) if kind == "place" else at(v["x"], v["y"])
             if kind == "place":
                 towers[key] = [v["tower"], [0, 0, 0]]
                 timeline.append((r["round"], f"{v['tower']} bauen bei ({v['x']:g}, {v['y']:g})"))
             elif kind == "upgrade":
                 t = towers[key]
                 t[1][v["path"]] += 1
-                timeline.append((r["round"], f"{t[0]} -> {'-'.join(map(str, t[1]))}"))
+                timeline.append((r["round"], f"{t[0]} ({key[0]:g}, {key[1]:g}) -> {'-'.join(map(str, t[1]))}"))
             elif kind == "sell":
                 t = towers.pop(key)
                 timeline.append((r["round"], f"{t[0]} verkaufen"))
@@ -56,12 +61,16 @@ def main():
 
     with open(args.data) as f:
         data = json.load(f)
-    sx, ox, sy, oy = CALIBRATION[args.map]
+    if args.map not in CALIBRATION:
+        ap.error(f"keine Kalibrierung für Karte {args.map!r} (vorhanden: {', '.join(CALIBRATION)})")
+    size, (sx, ox, sy, oy) = CALIBRATION[args.map]
     px = lambda x, y: (ox + x * sx, oy + y * sy)  # noqa: E731
     with open(args.replay) as f:
         towers, timeline = towers_and_timeline(f.read().splitlines())
 
     img = Image.open(args.image).convert("RGB")
+    if img.size != size:
+        ap.error(f"Kalibrierung gilt für ein {size[0]}×{size[1]}-Bild, dieses ist {img.size[0]}×{img.size[1]}")
     w, h = img.size
     pad = 18 * (len(timeline) + 1)
     out = Image.new("RGB", (w, h + pad), (255, 255, 255))
@@ -69,7 +78,9 @@ def main():
     d = ImageDraw.Draw(out, "RGBA")
     font = ImageFont.load_default()
     if args.check:
-        d.line([px(*p) for p in data["map"]["points"]], fill=(255, 0, 0), width=2)
+        track = Image.new("RGBA", (w, h))
+        ImageDraw.Draw(track).line([px(*p) for p in data["map"]["points"]], fill=(255, 0, 0, 255), width=2)
+        out.paste(track, (0, 0), track)  # nur im Kartenbereich
     defs = {t["name"]: t for t in data["towers"]}
     for (x, y), (name, tiers) in towers.items():
         v = next((v for v in defs[name]["variants"] if v["tiers"] == tiers), None)
