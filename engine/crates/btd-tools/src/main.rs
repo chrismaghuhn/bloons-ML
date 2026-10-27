@@ -4,7 +4,7 @@
 //!     btd-tools replay DATEI.jsonl [--data DATEN] [--compare]
 //!     btd-tools bench [--data DATEN] [--envs N]
 //!     btd-tools demo [--data DATEN] [--tower NAME] [--max N]
-//!     btd-tools script [--data DATEN] [--plan DATEI]
+//!     btd-tools script [--data DATEN] [--plan DATEI]   (Standard-DATEN: data/local/…_medium.json)
 //!
 //! DATEN ist standardmäßig `data/sim_v0.game_v1.json` (relativ zum Repo-Root).
 
@@ -288,11 +288,16 @@ fn demo(args: &[String]) -> Result<(), String> {
 const MEADOW_PLAN: &str = include_str!("meadow_plan.txt");
 
 /// Spielt einen festen Bau-Plan: vor jeder Runde so viele Schritte wie bezahlbar, in Reihenfolge
-/// (ein unbezahlbarer Schritt hält den Rest auf, damit gespart wird). Türme kommen auf die freie
+/// (ein unbezahlbarer Schritt hält den Rest auf, damit gespart wird). Anders als die RL-Env ohne
+/// Limit an Bauaktionen pro Runde. Türme kommen auf die freie
 /// Zelle mit den meisten Pfadzellen in Reichweite.
 fn script(args: &[String]) -> Result<(), String> {
     use btd_core::{Action, ActionError, Game};
-    let spec = load_spec(args)?;
+    // der eingebaute Plan ist für Monkey Meadow: Standard sind die lokalen Spieldaten
+    let path = opt(args, "--data").map(PathBuf::from).unwrap_or_else(|| {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/local/game_v1_tutorial_medium.json")
+    });
+    let spec = EnvSpec::load(&path).map_err(|e| format!("{}: {e}", path.display()))?;
     let data = spec.data.clone();
     let plan_text = match opt(args, "--plan") {
         Some(p) => std::fs::read_to_string(p).map_err(|e| format!("{p}: {e}"))?,
@@ -345,7 +350,9 @@ fn script(args: &[String]) -> Result<(), String> {
                     .map(|id| ids.push(id.unwrap()))
                 }
                 Step::Up(n, path) => {
-                    let tower = *ids.get(n).ok_or(format!("Plan: Turm {n} gibt es (noch) nicht"))?;
+                    let tower = *ids
+                        .get(n)
+                        .ok_or(format!("Plan-Schritt {}: Turm {n} gibt es (noch) nicht", next + 1))?;
                     g.apply(Action::Upgrade { tower, path }).map(|_| ())
                 }
             };

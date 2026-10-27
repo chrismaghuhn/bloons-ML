@@ -668,8 +668,10 @@ fn slows_with_different_ids_coexist() {
             }
         })
     };
+    // gemessen: Permafrost allein 9,6 s, mit Stun 14,6 s; mit einem gemeinsamen Slot (Stun ersetzt
+    // den Permafrost und löscht ihn beim Ablaufen) nur 10,4 s
     let (perma, both) = (build(false), build(true));
-    assert!(both.seconds > perma.seconds + 0.3, "{both:?} vs {perma:?}");
+    assert!(both.seconds > perma.seconds + 2.0, "{both:?} vs {perma:?}");
 }
 
 #[test]
@@ -780,4 +782,28 @@ fn validation_rejects_zero_pierce_projectiles_and_bad_crits() {
     let mut d = data();
     atk(&mut d, PIN).crit = Some(Crit { damage: 5.0, every: 0 });
     assert!(d.validate().is_err());
+}
+
+#[test]
+fn crit_counter_restarts_each_round() {
+    // jeder 2. Schuss kritisch, Pin ohne Grundschaden; Runde 1 mit genau einem Schuss: ohne Reset
+    // wäre der erste Schuss in Runde 2 kritisch
+    let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
+    d.rounds[1] = vec![group(0, 1, 0.0, 0.0)];
+    let a = atk(&mut d, PIN);
+    (a.damage, a.cooldown) = (0.0, 1000.0);
+    a.crit = Some(Crit { damage: 1.0, every: 2 });
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.apply(Action::Place { kind: PIN, x: 0.0, y: 15.0 }).unwrap();
+    assert_eq!(g.play_round().pops, 0);
+    assert_eq!(g.play_round().pops, 0);
+}
+
+#[test]
+fn too_many_slow_ids_are_rejected() {
+    let mut d = data();
+    for (i, k) in [PIN, BOMB, DART, TACK, GLUE].into_iter().enumerate() {
+        atk(&mut d, k).extras.slow = Some(Slow { id: format!("s{i}"), ..slow(0, 1.0) });
+    }
+    assert!(Game::new(Arc::new(d)).is_err());
 }

@@ -4,6 +4,7 @@
 //! Merkmale je Runde werden einmal aus den Daten vorberechnet. Ein Bloon zählt für eine
 //! Kategorie, wenn er selbst oder einer seiner Nachkommen sie hat (Zebra -> Black + White,
 //! MOAB -> Ceramic); Camo/Regrow/Fortified-Flags der Gruppe gelten für alle Nachkommen.
+//! Fortified zählt außerdem über den Bloon-Tag "Fortified" (so kommt es in den Spieldaten vor).
 
 use btd_data::v1::{Classes, Flags, GameV1, Props};
 
@@ -70,6 +71,10 @@ impl RoundPreview {
             }
             if b.regrow {
                 m |= REGROW;
+            }
+            // Spieldaten: Fortified ist eine eigene Bloon-Variante mit Tag (z.B. "BfbFortified")
+            if b.tags.iter().any(|t| t == "Fortified") {
+                m |= FORTIFIED;
             }
             for &(c, _) in &b.children {
                 m |= mask_of(data, c as usize, memo);

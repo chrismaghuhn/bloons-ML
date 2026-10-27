@@ -433,3 +433,34 @@ fn round_preview_counts_down_to_special_bloons() {
     assert_eq!((until(tail, "camo"), until(tail, "ceramic")), (0.0, 0.1));
     assert!(tail.iter().all(|v| (0.0..=1.0).contains(v)));
 }
+
+#[test]
+fn round_preview_counts_descendants_and_fortified_tag() {
+    use btd_env::preview::CATEGORIES;
+    let mut data = btd_data::v1::GameV1::load(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/fixtures/game_v1_mini.json"),
+    )
+    .unwrap();
+    // Runde 1: nur Ceramics, als Fortified-Variante markiert und mit einem Lead als Kind
+    let ceramic = data.bloons.iter().position(|b| b.name == "ceramic").unwrap();
+    let lead = data.bloons.iter().position(|b| b.name == "lead").unwrap();
+    data.bloons[ceramic].tags.push("Fortified".into());
+    data.bloons[ceramic].children = vec![(lead as u8, 1)];
+    data.rounds[0] = vec![btd_data::v1::SpawnGroup {
+        kind: ceramic as u8,
+        flags: Default::default(),
+        count: 2,
+        start: 0.0,
+        end: 30.0,
+    }];
+    let p = btd_env::RoundPreview::new(&data, 1);
+    let mut out = vec![0.0; btd_env::RoundPreview::len(1)];
+    p.write(0, &mut out);
+    let cat = |n: &str| CATEGORIES.iter().position(|c| *c == n).unwrap();
+    assert!(out[cat("fortified")] > 0.0 && out[cat("ceramic")] > 0.0);
+    assert!(out[cat("lead")] > 0.0, "Nachkommen zählen mit");
+    assert_eq!(out[cat("camo")], 0.0);
+    assert_eq!(out[CATEGORIES.len() + 1], 0.5, "Dauer 30 s / 60 s");
+    let n = out.len();
+    assert_eq!(out[n - CATEGORIES.len() + cat("fortified")], 0.0, "Runden bis Fortified = 0");
+}

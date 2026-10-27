@@ -102,7 +102,8 @@ Bloon Dissolver (DoT mit Ceramic-Bonus), Cluster mit FilterAll-Crosspaths (013/0
    Kategorie" (Horizont 10). Ohne Vorschau bleibt die Observation identisch zur Python-Env.
 3. Benchmark (a): `btd-tools script` spielt `crates/btd-tools/src/meadow_plan.txt` (Darts mit
    Camo, Tack, Boomerangs, Bombs, Glue) und gewinnt Medium Runde 1–40 mit 131/150 Leben
-   (Verluste nur in Runde 37). Lokaler Test: `tests/benchmark.rs`.
+   (Verluste nur in Runde 37). Lokaler Test: `tests/benchmark.rs`. Anders als die RL-Env gilt
+   dabei kein Limit von 6 Bauaktionen pro Runde.
 4. Kurzer PPO-Lauf auf den Spieldaten (`train.py --data … --preview 3 --envs 64`, 600k Schritte,
    ~13 min auf der RTX 4060 Ti, ~800 Schritte/s inkl. Training): die Policy kommt deterministisch
    bis Runde 36 (4 von 5 stochastischen Episoden ebenso), baut dafür aber über 30 meist kleine
