@@ -1,0 +1,23 @@
+<Project>
+    <!--
+      Pfade zur lokalen BTD6-Installation. Nichts davon gehört ins Repo:
+      lokale Werte kommen aus mod/local.props (gitignored, Vorlage: local.props.example)
+      oder aus Umgebungsvariablen / -p:BloonsTD6=... auf der Kommandozeile.
+    -->
+    <Import Project="$(MSBuildThisFileDirectory)../local.props" Condition="Exists('$(MSBuildThisFileDirectory)../local.props')"/>
+
+    <PropertyGroup>
+        <!-- Steam unter Linux (Proton): Standard-Bibliothek -->
+        <BloonsTD6 Condition="'$(BloonsTD6)' == ''">$(HOME)/.steam/steam/steamapps/common/BloonsTD6</BloonsTD6>
+        <Il2CppAssemblies Condition="'$(Il2CppAssemblies)' == ''">$(BloonsTD6)/MelonLoader/Il2CppAssemblies</Il2CppAssemblies>
+        <MelonLoaderManaged Condition="'$(MelonLoaderManaged)' == ''">$(BloonsTD6)/MelonLoader/net6</MelonLoaderManaged>
+        <ModHelperDll Condition="'$(ModHelperDll)' == ''">$(BloonsTD6)/Mods/Btd6ModHelper.dll</ModHelperDll>
+
+        <!-- Wohin der Dump geschrieben wird (Unix-Pfad; die Mod rechnet ihn zur Laufzeit in Z:\... für Wine um).
+             Standard: data/raw/game_dump dieses Checkouts. Kann im Spiel in den Mod-Einstellungen überschrieben werden. -->
+        <DumpRoot Condition="'$(DumpRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../data/raw/game_dump'))</DumpRoot>
+
+        <!-- Nach dem Build die DLL nach $(BloonsTD6)/Mods kopieren -->
+        <CopyToMods Condition="'$(CopyToMods)' == ''">true</CopyToMods>
+    </PropertyGroup>
+</Project>

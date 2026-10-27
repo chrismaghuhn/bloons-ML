@@ -1,0 +1,9 @@
+<Project>
+    <!-- Nach mod/local.props kopieren und anpassen. local.props ist gitignored. -->
+    <PropertyGroup>
+        <BloonsTD6>/home/DEIN_USER/.steam/steam/steamapps/common/BloonsTD6</BloonsTD6>
+        <!-- Absoluter Unix-Pfad; am besten der Haupt-Checkout, nicht ein Worktree -->
+        <DumpRoot>/home/DEIN_USER/dev/bloons/data/raw/game_dump</DumpRoot>
+        <!-- <CopyToMods>false</CopyToMods> -->
+    </PropertyGroup>
+</Project>

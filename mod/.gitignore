@@ -1,0 +1,8 @@
+bin/
+obj/
+local.props
+*.user
+.vs/
+.idea/
+# Spiel-/Loader-DLLs nie committen
+*.dll
