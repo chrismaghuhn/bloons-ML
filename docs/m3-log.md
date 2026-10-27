@@ -304,11 +304,11 @@ Wie t12_r60_v2, nur Daten `medium60_t14` (24 Kanäle, 12 961 Aktionen) und 128 E
 |---|---|---|---|
 | deterministisch ohne Sperre | gewonnen | Runde 46 | gewonnen |
 | deterministisch: Einzelsperren gewonnen | 7 von 12 | 8 von 13 | 12 von 13 |
-| ohne Dart (det.) | Runde 9 | Runde 3 | Runde 39 |
+| ohne Dart (det.) | Runde 9 (design-lookahead §6) | Runde 3 | Runde 39 |
 | stochastisch ohne Sperre | 64/64 | 20/20 | 20/20 |
 | Erholung det. / stoch. (50) | 46 / 47 | 48 / 45 | 49 / 47 |
 | H(Schlüssel) ohne Sperre | 2,23 bit | 1,14 bit (3 Schlüssel) | 2,43 bit (7 Schlüssel) |
 
-Rezept unverändert: Dart zuerst, Bomb ohne Upgrade, Dart unten. **Die Village wird nie gebaut** (0 von
+Rezept wie t12_r60_v2 (Bomb ohne Upgrade, Dart unten), aber jetzt Dart zuerst (20/20). **Die Village wird nie gebaut** (0 von
 20 Spielen, auch mit Vorausschau); sperrt man sie, ändert sich nichts. Ohne Sperre deterministisch
 schlechter als t12_r60_v2, mit Vorausschau gleich gut.
