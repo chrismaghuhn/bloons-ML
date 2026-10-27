@@ -111,14 +111,64 @@ PUSH_TAGS = (("Moab", "multiplierMOAB"), ("Bfb", "multiplierBFB"), ("Ddt", "mult
 PRESETS = {
     # Medium-Standard; Benchmark (a): Runde 1-40
     "medium": dict(start_cash=650, start_lives=150, start_round=1, end_round=40, selling=True,
-                   cost_multiplier=1.0),
+                   cost_multiplier=1.0, match="Standard_Standard_Medium"),
     # Medium bis zum regulären Ende; Benchmark (b): Runde 1-60
     "medium60": dict(start_cash=650, start_lives=150, start_round=1, end_round=60, selling=True,
-                     cost_multiplier=1.0),
+                     cost_multiplier=1.0, match="Standard_Standard_Medium"),
     # CHIMPS (Werte aus dem Dump: matches/Standard_Clicks_Hard_Tutorial.json)
     "chimps": dict(start_cash=650, start_lives=1, start_round=6, end_round=100, selling=False,
-                   cost_multiplier=1.08),
+                   cost_multiplier=1.08, match="Standard_Clicks_Hard"),
 }
+
+# Laufstrecke auf dem Pfad: Bloons erscheinen erst bei `start` und leaken bei `end` (Distanz auf der
+# Pfad-Polylinie des Dumps). Gemessen mit der Recorder-Mod (docs/design-recorder.md §6, Runde 1 auf
+# Monkey Meadow: Spawn bei spawnDist − 10, Leak bei leakDist + ~8,45). Abgeleitete Messwerte, keine
+# Rohdaten; sobald die Mod spawnDist/leakDist mitdumpt, kommen sie von dort. [KAL: Leak-Punkt nur für
+# Reds gemessen, gilt hier für alle Bloons]
+TRACK_SPAN = {"Tutorial": (173.6, 1085.67)}
+
+
+def bloon_speed_factor(dump: Path, match: str, map_name: str) -> float:
+    """Tempo-Faktor der Schwierigkeit (GlobalSpeedModModel in den Partie-Regeln, z.B. Medium 1,1,
+    Hard/CHIMPS 1,25); ohne Modell 1,0."""
+    path = dump / "matches" / f"{match}_{map_name}.json"
+    if not path.exists():
+        sys.exit(f"{path} fehlt: einmal eine Partie in diesem Modus mit der Mod starten")
+    factors = []
+
+    def walk(n):
+        if isinstance(n, dict):
+            if short(n.get("$type", "")) == "GlobalSpeedModModel":
+                factors.append(float(n["multiplier"]))
+            for v in n.values():
+                walk(v)
+        elif isinstance(n, list):
+            for v in n:
+                walk(v)
+    walk(load(path).get("mods", []))
+    if len(factors) > 1:
+        sys.exit(f"{path}: mehrere GlobalSpeedModModel ({factors})")
+    return factors[0] if factors else 1.0
+
+
+def trim_path(pts: list, start: float, end: float) -> list:
+    """Teil der Polylinie von Distanz `start` bis `end` (Endpunkte interpoliert)."""
+    out, d = [], 0.0
+    for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+        seg = math.hypot(bx - ax, by - ay)
+        for target in (start, end):
+            if d <= target <= d + seg and seg > 0:
+                t = (target - d) / seg
+                p = [ax + (bx - ax) * t, ay + (by - ay) * t]
+                if target == start:
+                    out = [p]
+                elif out:
+                    out.append(p)
+                    return out
+        if out and d + seg < end:
+            out.append([bx, by])
+        d += seg
+    sys.exit(f"Laufstrecke {start}..{end} passt nicht zum Pfad (Länge {d:.1f})")
 
 
 def short(t: str) -> str:
@@ -184,6 +234,8 @@ def placeable(areas, bounds, x, y, r) -> bool:
 def build_map(dump: Path, map_name: str, footprint: float) -> dict:
     mm = load(dump / "maps" / f"{map_name}.json")["map"]
     pts = [[p["point"]["x"], p["point"]["y"]] for p in mm["paths"][0]["points"]]
+    if map_name in TRACK_SPAN:
+        pts = trim_path(pts, *TRACK_SPAN[map_name])
     cum = [0.0]
     for (ax, ay), (bx, by) in zip(pts, pts[1:]):
         cum.append(cum[-1] + math.hypot(bx - ax, by - ay))
@@ -245,7 +297,7 @@ def children_counts(children) -> list:
     return out
 
 
-def build_bloons(dump: Path, needed: set) -> list:
+def build_bloons(dump: Path, needed: set, speed_factor: float = 1.0) -> list:
     summary = {b["name"]: b for b in load(dump / "summary.json")["bloons"]}
     todo, seen = list(needed), set()
     while todo:
@@ -268,7 +320,7 @@ def build_bloons(dump: Path, needed: set) -> list:
         s = summary[n]
         model = load(dump / "bloons" / s["baseId"] / f"{n}.json")
         out.append({
-            "name": n, "hp": float(s["maxHealth"]), "speed": float(s["speed"]),
+            "name": n, "hp": float(s["maxHealth"]), "speed": float(s["speed"]) * speed_factor,
             "leak": int(round(leak(n))),
             "children": children_counts(s.get("children")),
             "props": props(s["bloonProperties"]),
@@ -876,14 +928,15 @@ def main():
     last = preset["end_round"]
     rounds = build_rounds(dump, args.rounds, last)
     needed = {g["bloon"] for r in rounds for g in r}
-    bloons = build_bloons(dump, needed)
+    speed = bloon_speed_factor(dump, preset["match"], args.map)
+    bloons = build_bloons(dump, needed, speed)
     dropped: set = set()
     prune_tags(towers, {t for b in bloons for t in b["tags"]}, dropped)
     data = {
         "format": "game_v1",
         "name": f"{args.map}-{args.preset}-{dump.name}",
         "rules": {"tick_rate": 60.0, "cd_eps": 1e-9, "max_round_seconds": 900.0, "child_spacing": 0.0,
-                  "sell_ratio": 0.7, "cost_rounding": 5, **preset},
+                  "sell_ratio": 0.7, "cost_rounding": 5, **{k: v for k, v in preset.items() if k != "match"}},
         "map": build_map(dump, args.map, footprint),
         "bloons": bloons,
         "towers": towers,

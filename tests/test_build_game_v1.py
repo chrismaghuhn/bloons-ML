@@ -332,3 +332,27 @@ def test_homing_inside_shards_is_refused():
                 emission=T("ArcEmissionModel", count=4, angle=360.0, offset=0.0, useProjectileRotation=False))
     with pytest.raises(b.Unsupported, match="TrackTargetModel"):
         b.convert_variant(dart_like(proj_extra=[contact]), [0, 0, 0])
+
+
+def test_trim_path_keeps_the_span_between_spawn_and_leak():
+    pts = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]]  # Länge 30
+    out = b.trim_path(pts, 5.0, 25.0)
+    assert out == [[5.0, 0.0], [10.0, 0.0], [10.0, 10.0], [5.0, 10.0]]
+    length = sum(((bx - ax) ** 2 + (by - ay) ** 2) ** 0.5 for (ax, ay), (bx, by) in zip(out, out[1:]))
+    assert length == pytest.approx(20.0)
+    assert b.trim_path(pts, 2.0, 8.0) == [[2.0, 0.0], [8.0, 0.0]], "Start und Ende im selben Segment"
+    with pytest.raises(SystemExit):
+        b.trim_path(pts, 5.0, 40.0)
+
+
+def test_bloon_speed_factor_from_match_rules(tmp_path):
+    (tmp_path / "matches").mkdir()
+    medium = {"mods": [{"$type": "X.GameModModel, A", "mutatorMods": [
+        {"$type": "Il2CppAssets.Scripts.Models.Gameplay.Mods.GlobalSpeedModModel, Assembly-CSharp",
+         "multiplier": 1.1}]}]}
+    (tmp_path / "matches" / "Standard_Standard_Medium_Tutorial.json").write_text(__import__("json").dumps(medium))
+    (tmp_path / "matches" / "Standard_Standard_Easy_Tutorial.json").write_text('{"mods": []}')
+    assert b.bloon_speed_factor(tmp_path, "Standard_Standard_Medium", "Tutorial") == 1.1
+    assert b.bloon_speed_factor(tmp_path, "Standard_Standard_Easy", "Tutorial") == 1.0
+    with pytest.raises(SystemExit):
+        b.bloon_speed_factor(tmp_path, "Standard_Clicks_Hard", "Tutorial")

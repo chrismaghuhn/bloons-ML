@@ -233,3 +233,23 @@ Echte Messungen (Monkey Meadow, Medium): Runde 1 ohne Türme dauert 50,0 s (Stop
   Sniper sieht 100 % des Tracks. Der Konverter ignoriert sie bisher; für andere Plätze/Karten nötig.
 - Vorschlag: Bloon-Positionen und Schüsse im echten Spiel per Mod mitschreiben und Tick für Tick
   vergleichen, statt aus Endständen zurückzurechnen.
+
+## 2026-10-27: Laufstrecke und Bloon-Tempo korrigiert (Recorder-Mod, Schritt 1)
+
+Die Recorder-Test-Mod (docs/design-recorder.md §6) hat gemessen: Bloons erscheinen auf Monkey Meadow
+bei Pfad-Distanz 173,6 und leaken bei 1085,67 (Laufstrecke 912 statt der 1276 des gedumpten Pfads);
+die Schwierigkeit skaliert das Tempo aller Bloons (GlobalSpeedModModel: Medium 1,1, Hard/CHIMPS 1,25).
+Der Konverter kürzt den Pfad jetzt auf diese Strecke und liest den Faktor aus den Partie-Regeln.
+
+| Messpunkt | echt | Sim vorher | Sim jetzt |
+|---|---|---|---|
+| Runde 1 ohne Türme | 50,68 s (Mod) / 50,0 s (Stoppuhr) | 68,6 s | 50,68 s |
+| Zwei-Turm-Build: erste Leaks | Runde 43 | Runde 43 | Runde 43 |
+| Zwei-Turm-Build: verloren in | Runde 45 (−78) | Runde 47 | Runde 45 |
+| Zwei-Turm-Build: Leben nach R44 | 65 | 91 | 131 |
+| Sniper 0-0-0 allein, Runde 1 | 3 Leaks | 0 | 0 |
+
+Offen: Runde 43 kostet im Spiel mehr; der Sniper (rechnerisch müsste er ~20 s später anfangen oder
+deutlich langsamer feuern) -> Schüsse mit der Recorder-Mod aufzeichnen. Alle bisher trainierten Modelle
+beruhen auf den alten Daten (Bloons ~1,5x zu langsam) und müssen neu trainiert werden; der feste
+Skript-Plan (Benchmark a) gewinnt Runde 40 weiterhin (132 Leben).
