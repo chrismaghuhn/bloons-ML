@@ -120,6 +120,7 @@ public static class TraceRecorder
             var file = $"{DateTime.Now:yyyyMMdd-HHmmss}_{mapName}_{mode}_{difficulty}.trace.jsonl.gz";
             writer = new TraceWriter(Path.Combine(dir, OutputPaths.Sanitize(file)));
             lastUnityFrame = -1;
+            lastFastForward = FastForward(); // Zustand steht im Header, kein Ereignis im ersten Schritt
 
             var paths = new JArray();
             var simPaths = sim.map.pathManager.paths;
@@ -161,8 +162,20 @@ public static class TraceRecorder
         catch (Exception e)
         {
             BloonsMLMod.Log.Error($"Trace konnte nicht starten: {e}");
-            writer?.Dispose();
+            var failed = writer;
             writer = null;
+            if (failed != null)
+            {
+                failed.Dispose();
+                try
+                {
+                    File.Delete(failed.Path); // leere/kaputte Datei nicht liegen lassen
+                }
+                catch (Exception)
+                {
+                    // egal
+                }
+            }
             BloonsMLMod.RecordTrace.SetValue(false); // nicht jeden Schritt erneut versuchen
             return false;
         }
