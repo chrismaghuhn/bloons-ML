@@ -375,7 +375,7 @@ Teilschritte (jeder mit Tests und Parität; nach Teil 2 ein t21-Lauf):
 ## 6. Determinismus und Parität
 
 - Ohne die neuen Felder in den Daten läuft alles wie bisher: sim_v0-Goldtrace (f64) und vorhandene Replays (t12,
-  t14) bleiben bitgleich. Neue Listen (`ground`, `subs`) sind leer, `unit` = Turmposition, `aim` = `first`.
+  t14) bleiben bitgleich. Neue Listen (`ground`, `subs`) sind leer, `unit` = Turmposition, `targeting` = `first`.
 - **Zeitlicher Zustand nur innerhalb der Runde.** Zeit-Effekte, Bodenobjekte, Sub-Türme, Flieger-Positionen,
   Zähler (`track_spread`, Sentry-Index, Sentry-Kandidat) werden zu Rundenbeginn zurückgesetzt, wie die Cooldowns.
   Zwischen den Runden hängt der Zustand also weiter nur von Cash, Leben, Runde und Türmen ab:
