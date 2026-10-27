@@ -49,25 +49,13 @@ public static class GameDataDumper
 
     private static string currentMarker;
 
-    /// <summary>Beim normalen Beenden des Spiels mitten im Dump: Markierung entfernen (sonst gälte das Feld als Absturz).</summary>
-    public static void ClearCrashMarker()
-    {
-        try
-        {
-            if (currentMarker != null && File.Exists(currentMarker)) File.Delete(currentMarker);
-        }
-        catch (Exception)
-        {
-            // beim Beenden nicht mehr wichtig
-        }
-    }
-
     /// <summary>Ein Feld als eigene Datei, mit Absturz-Markierung; Einträge in der Skip-Liste heißen z.B. gameData.questData.</summary>
     private static void DumpField(DumpRun run, HashSet<string> crashSkip, string category, string folder,
         PropertyInfo prop, object source)
     {
         var qualified = $"{category}.{prop.Name}";
-        if (crashSkip.Contains(qualified))
+        // ohne Präfix: Einträge aus einer früheren Mod-Version (nur GameData-Felder)
+        if (crashSkip.Contains(qualified) || (category == "gameData" && crashSkip.Contains(prop.Name)))
         {
             run.Fail(qualified, new InvalidOperationException(
                 $"übersprungen, ein früherer Dump ist daran abgestürzt (siehe {CrashSkipFile})"));

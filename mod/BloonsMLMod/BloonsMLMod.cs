@@ -63,8 +63,6 @@ public class BloonsMLMod : BloonsTD6Mod
         Log.Msg($"BloonsML geladen. Dump-Ziel: {OutputPaths.ToHostPath(DumpRoot)}  (F6 = alles, F7 = Karte)");
     }
 
-    public override void OnApplicationQuit() => GameDataDumper.ClearCrashMarker();
-
     public override void OnUpdate()
     {
         if (DumpAllHotkey.JustPressed()) GameDataDumper.Start();
