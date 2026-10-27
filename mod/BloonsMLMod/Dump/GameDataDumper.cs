@@ -39,13 +39,49 @@ public static class GameDataDumper
     private static readonly string[] GameDataLast = { "assetLibrary", "mapEditorData", "skinsData", "artifactsData" };
 
     /// <summary>
-    /// Selbstheilung bei Abstürzen: Vor jedem GameData-Feld steht sein Name in dieser Datei (im Dump-Basisordner),
+    /// Selbstheilung bei Abstürzen: Vor jedem GameModel-/GameData-Feld steht sein Name in dieser Datei (im Dump-Basisordner),
     /// danach wird sie gelöscht. Existiert sie beim nächsten F6 noch, ist das Spiel an diesem Feld abgestürzt;
     /// es kommt dann dauerhaft in <see cref="CrashSkipFile"/>.
     /// </summary>
     private const string CrashMarkerFile = ".bloonsml-dumping-field";
 
     private const string CrashSkipFile = ".bloonsml-skip-fields";
+
+    private static string currentMarker;
+
+    /// <summary>Beim normalen Beenden des Spiels mitten im Dump: Markierung entfernen (sonst gälte das Feld als Absturz).</summary>
+    public static void ClearCrashMarker()
+    {
+        try
+        {
+            if (currentMarker != null && File.Exists(currentMarker)) File.Delete(currentMarker);
+        }
+        catch (Exception)
+        {
+            // beim Beenden nicht mehr wichtig
+        }
+    }
+
+    /// <summary>Ein Feld als eigene Datei, mit Absturz-Markierung; Einträge in der Skip-Liste heißen z.B. gameData.questData.</summary>
+    private static void DumpField(DumpRun run, HashSet<string> crashSkip, string category, string folder,
+        PropertyInfo prop, object source)
+    {
+        var qualified = $"{category}.{prop.Name}";
+        if (crashSkip.Contains(qualified))
+        {
+            run.Fail(qualified, new InvalidOperationException(
+                $"übersprungen, ein früherer Dump ist daran abgestürzt (siehe {CrashSkipFile})"));
+            return;
+        }
+        BloonsMLMod.Log.Msg(qualified);
+        File.WriteAllText(currentMarker, qualified);
+        TryDump(run, () =>
+        {
+            var value = prop.GetValue(source);
+            run.Write(category, ModelJson.ToJTokenAny(value), folder, prop.Name + ".json");
+        }, qualified);
+        File.Delete(currentMarker);
+    }
 
     public static bool Running { get; private set; }
 
@@ -165,37 +201,21 @@ public static class GameDataDumper
         yield return null;
 
         // --- Restliches GameModel (nur statische Daten; Partie-Felder schreibt MapDumper nach matches/)
+        //     und restliches GameData (Income-Sets, Modus-/Schwierigkeits-Mods, Modi, …): ein File pro Feld,
+        //     jeweils mit Absturz-Markierung (siehe CrashMarkerFile)
+        currentMarker = Path.Combine(run.BaseDir, CrashMarkerFile);
+        var crashSkip = LoadCrashSkips(run.BaseDir, currentMarker);
         foreach (var prop in GameModelFields.Static())
         {
-            TryDump(run, () =>
-            {
-                var value = prop.GetValue(model);
-                run.Write("gameModel", ModelJson.ToJTokenAny(value), "gamemodel", prop.Name + ".json");
-            }, $"gameModel.{prop.Name}");
+            DumpField(run, crashSkip, "gameModel", "gamemodel", prop, model);
             yield return null;
         }
-
-        // --- Restliches GameData (Income-Sets, Modus-/Schwierigkeits-Mods, Modi, …): ein File pro Feld
-        var marker = Path.Combine(run.BaseDir, CrashMarkerFile);
-        var crashSkip = LoadCrashSkips(run.BaseDir, marker);
         foreach (var prop in GameDataProperties())
         {
-            if (crashSkip.Contains(prop.Name))
-            {
-                run.Fail($"gameData.{prop.Name}", new InvalidOperationException(
-                    $"übersprungen, früherer Dump ist daran abgestürzt (siehe {CrashSkipFile})"));
-                continue;
-            }
-            BloonsMLMod.Log.Msg($"gamedata.{prop.Name}");
-            File.WriteAllText(marker, prop.Name);
-            TryDump(run, () =>
-            {
-                var value = prop.GetValue(gameData);
-                run.Write("gameData", ModelJson.ToJTokenAny(value), "gamedata", prop.Name + ".json");
-            }, $"gameData.{prop.Name}");
-            File.Delete(marker);
+            DumpField(run, crashSkip, "gameData", "gamedata", prop, gameData);
             yield return null;
         }
+        currentMarker = null;
 
         // --- Zusammenfassung + Manifest, danach temporären Ordner an die endgültige Stelle setzen
         TryDump(run, () => run.Write("summary", summary.ToJson(), "summary.json"), "summary");
@@ -268,8 +288,8 @@ public static class GameDataDumper
             var crashed = File.ReadAllText(marker).Trim();
             if (crashed.Length > 0)
             {
-                File.AppendAllText(skipFile, crashed + "\n");
-                BloonsMLMod.Log.Warning($"Letzter Dump ist bei gamedata.{crashed} abgestürzt; das Feld wird ab jetzt übersprungen " +
+                File.AppendAllText(skipFile, "\n" + crashed + "\n"); // führender Umbruch: Datei evtl. ohne Abschluss-Zeilenumbruch
+                BloonsMLMod.Log.Warning($"Letzter Dump ist bei {crashed} abgestürzt; das Feld wird ab jetzt übersprungen " +
                                         $"(Liste: {skipFile}, Zeile löschen zum erneuten Versuch).");
             }
             File.Delete(marker);

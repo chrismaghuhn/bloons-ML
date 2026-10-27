@@ -93,9 +93,9 @@ Ein kompletter Dump schreibt erst in `<Spielversion>.tmp-<runId>/` und ersetzt `
 Schritt; `maps/` und `matches/` aus dem alten Stand werden übernommen. Bricht der Dump ab (Fehler, Absturz), bleibt der
 alte Stand unverändert; der Rest wird beim nächsten Dump aufgeräumt. `manifest.json` trägt die `runId`.
 
-Stürzt das Spiel beim Serialisieren eines `GameData`-Felds ab, merkt sich die Mod das Feld (`<DumpRoot>/.bloonsml-skip-fields`)
-und überspringt es bei allen weiteren Dumps; im Manifest steht es dann unter `errors`. Zum erneuten Versuch die Zeile
-aus der Datei löschen.
+Stürzt das Spiel beim Serialisieren eines `GameModel`- oder `GameData`-Felds ab, merkt sich die Mod das Feld (z.B.
+`gameData.questData` in `<DumpRoot>/.bloonsml-skip-fields`) und überspringt es bei allen weiteren Dumps, auch nach einem
+Spiel-Update; im Manifest steht es dann unter `errors`. Zum erneuten Versuch die Zeile aus der Datei löschen.
 
 ## Ausgabeformat
 
