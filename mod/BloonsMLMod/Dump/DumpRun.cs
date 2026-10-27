@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BloonsML.Common;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -52,40 +53,58 @@ public sealed class DumpRun
         return new DumpRun(version, runId, $"{finalRoot}.tmp-{runId}", finalRoot);
     }
 
-    /// <summary>Temporären Ordner an die endgültige Stelle setzen; Karten/Matches aus dem alten Stand übernehmen.</summary>
-    public void Commit()
+    /// <summary>
+    /// Temporären Ordner an die endgültige Stelle setzen. Reihenfolge so, dass Karten/Matches nie nur im
+    /// temporären Ordner liegen: erst Ordner tauschen, dann maps/ und matches/ aus dem alten Stand übernehmen,
+    /// zuletzt den alten Stand löschen. Bleibt etwas übrig, holt <see cref="RemoveStale"/> es beim nächsten Lauf.
+    /// </summary>
+    /// <returns>Warnungen, die den Erfolg nicht in Frage stellen (z.B. alter Ordner nicht löschbar).</returns>
+    public List<string> Commit()
     {
-        if (Root == FinalRoot) return;
-        if (Directory.Exists(FinalRoot))
-        {
-            foreach (var dir in PlayDirs)
-            {
-                var oldDir = Path.Combine(FinalRoot, dir);
-                if (!Directory.Exists(oldDir)) continue;
-                foreach (var file in Directory.GetFiles(oldDir))
-                {
-                    var target = Path.Combine(Root, dir, Path.GetFileName(file));
-                    if (File.Exists(target)) continue; // frisch geschrieben (z.B. maps/_index.json) gewinnt
-                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                    File.Move(file, target);
-                }
-            }
-            var old = $"{FinalRoot}.old-{RunId}";
-            Directory.Move(FinalRoot, old);
-            try
-            {
-                Directory.Move(Root, FinalRoot);
-            }
-            catch
-            {
-                Directory.Move(old, FinalRoot); // alten Stand wiederherstellen
-                throw;
-            }
-            Directory.Delete(old, true);
-        }
-        else
+        var warnings = new List<string>();
+        if (Root == FinalRoot) return warnings;
+        if (!Directory.Exists(FinalRoot))
         {
             Directory.Move(Root, FinalRoot);
+            return warnings;
+        }
+        var old = $"{FinalRoot}.old-{RunId}";
+        Directory.Move(FinalRoot, old);
+        try
+        {
+            Directory.Move(Root, FinalRoot);
+        }
+        catch
+        {
+            Directory.Move(old, FinalRoot); // alten Stand wiederherstellen
+            throw;
+        }
+        try
+        {
+            SalvagePlayFiles(old, FinalRoot);
+            Directory.Delete(old, true);
+        }
+        catch (Exception e)
+        {
+            warnings.Add($"Alter Stand {old} nicht vollständig aufgeräumt ({e.Message}); wird beim nächsten Dump übernommen.");
+        }
+        return warnings;
+    }
+
+    /// <summary>maps/ und matches/ aus <paramref name="from"/> übernehmen, sofern sie in <paramref name="to"/> fehlen.</summary>
+    private static void SalvagePlayFiles(string from, string to)
+    {
+        foreach (var dir in PlayDirs)
+        {
+            var source = Path.Combine(from, dir);
+            if (!Directory.Exists(source)) continue;
+            foreach (var file in Directory.GetFiles(source))
+            {
+                var target = Path.Combine(to, dir, Path.GetFileName(file));
+                if (File.Exists(target)) continue; // frisch geschrieben (z.B. maps/_index.json) gewinnt
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Move(file, target);
+            }
         }
     }
 
@@ -101,22 +120,40 @@ public sealed class DumpRun
 
     private static string NewRunId() => DateTime.UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'");
 
-    /// <summary>Reste abgebrochener Läufe (.tmp-*/.old-*) derselben Version entfernen.</summary>
+    /// <summary>
+    /// Reste früherer Läufe derselben Version aufräumen, ohne Daten zu verlieren:
+    /// fehlt &lt;version&gt;/ (Absturz zwischen den beiden Umbenennungen), wird der neueste .old-* wieder eingesetzt;
+    /// aus übrigen .old-* werden maps/ und matches/ übernommen; .tmp-* (nur F6-Ausgabe) wird gelöscht.
+    /// </summary>
     private static void RemoveStale(string finalRoot)
     {
         var parent = Path.GetDirectoryName(finalRoot)!;
         var name = Path.GetFileName(finalRoot);
-        foreach (var dir in Directory.GetDirectories(parent, name + ".*"))
+        var leftovers = Directory.GetDirectories(parent, name + ".*")
+            .Select(d => (dir: d, suffix: Path.GetFileName(d)[name.Length..]))
+            .Where(x => x.suffix.StartsWith(".tmp-") || x.suffix.StartsWith(".old-"))
+            .OrderByDescending(x => x.suffix, StringComparer.Ordinal)
+            .ToList();
+        if (!Directory.Exists(finalRoot))
         {
-            var suffix = Path.GetFileName(dir)[name.Length..];
-            if (!suffix.StartsWith(".tmp-") && !suffix.StartsWith(".old-")) continue;
+            var newestOld = leftovers.FirstOrDefault(x => x.suffix.StartsWith(".old-"));
+            if (newestOld.dir != null)
+            {
+                Directory.Move(newestOld.dir, finalRoot);
+                leftovers.Remove(newestOld);
+                BloonsMLMod.Log.Warning($"Unterbrochener Dump: {newestOld.dir} als {finalRoot} wiederhergestellt.");
+            }
+        }
+        foreach (var (dir, suffix) in leftovers)
+        {
             try
             {
+                if (suffix.StartsWith(".old-") && Directory.Exists(finalRoot)) SalvagePlayFiles(dir, finalRoot);
                 Directory.Delete(dir, true);
             }
             catch (Exception e)
             {
-                BloonsMLMod.Log.Warning($"Konnte alten Dump-Rest nicht löschen: {dir}: {e.Message}");
+                BloonsMLMod.Log.Warning($"Konnte alten Dump-Rest nicht aufräumen: {dir}: {e.Message}");
             }
         }
     }

@@ -12,7 +12,7 @@ public static class GameModelFields
     /// <summary>Eigene Ordner (towers/, upgrades/, bloons/), Nachschlage-Duplikate davon und Laufzeit-Caches.</summary>
     public static readonly HashSet<string> Skip = new(StringComparer.OrdinalIgnoreCase)
     {
-        "towers", "upgrades", "bloons", "upgradesByName", "bloonsByName", "_categorisedKnowledge",
+        "towers", "upgrades", "bloons", "upgradesByName", "bloonsByName", "powerProUpgradesByName", "_categorisedKnowledge",
         "searchCache", "cachedModels", "childDependants", "allowGarbageCollection"
     };
 
@@ -32,7 +32,9 @@ public static class GameModelFields
         "equalHeroXpDistribution", "stopEndlessWavesOnLastRound", "wasFastTrackApplied", "selectedDifficultyRating",
         "monkeyMoneyReward", "raceSendRoundDelay", "penaltyGraceTimeFrames", "penaltyGraceTimeSecondsPerRound",
         "bossBloonType", "bossEliteMode", "bossForcePreSpawnBoss", "bossRankedMode", "bossSpawnDistanceOverride",
-        "bossSpawnRounds", "customMapDataModel", "mapEditorBehaviorModel"
+        "bossSpawnRounds", "customMapDataModel", "mapEditorBehaviorModel",
+        // im Menü null bzw. 0, werden erst mit der Partie gesetzt
+        "behaviors", "globalBloonScale", "globalBossBloonScale", "globalTowerScale"
     };
 
     /// <summary>Alle lesbaren Felder von GameModel (ohne Compiler-Backing-Fields).</summary>

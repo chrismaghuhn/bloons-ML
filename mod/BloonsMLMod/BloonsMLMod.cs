@@ -2,8 +2,10 @@ using BloonsML;
 using BloonsML.Common;
 using BloonsML.Dump;
 using BTD_Mod_Helper;
+using System.Collections.Generic;
 using BTD_Mod_Helper.Api.ModOptions;
 using Il2CppAssets.Scripts.Models;
+using Il2CppAssets.Scripts.Models.Gameplay.Mods;
 using Il2CppAssets.Scripts.Models.Map;
 using MelonLoader;
 using UnityEngine;
@@ -64,12 +66,20 @@ public class BloonsMLMod : BloonsTD6Mod
     public override void OnUpdate()
     {
         if (DumpAllHotkey.JustPressed()) GameDataDumper.Start();
-        if (DumpMapHotkey.JustPressed()) MapDumper.DumpLast(force: true);
+        if (DumpMapHotkey.JustPressed()) MapDumper.DumpLast(force: true, includeMatch: true);
     }
+
+    public override void OnNewGameModel(GameModel result, IReadOnlyList<ModModel> mods) => MapDumper.RememberMods(mods);
 
     public override void OnNewGameModel(GameModel result, MapModel map)
     {
         MapDumper.Remember(result, map);
-        if (AutoDumpMaps) MapDumper.DumpLast(force: false);
+        if (AutoDumpMaps) MapDumper.DumpLast(force: false, includeMatch: false);
+    }
+
+    public override void LateOnNewGameModel(GameModel result)
+    {
+        MapDumper.RememberGame(result);
+        if (AutoDumpMaps) MapDumper.DumpMatch();
     }
 }

@@ -69,7 +69,8 @@ public sealed class DumpSummary
         roundSets[name] = new JObject
         {
             ["rounds"] = rounds.Count,
-            ["groupsPerRound"] = new JArray(rounds.Select(r => (r["groups"] as JArray)?.Count ?? 0))
+            // null = Runde konnte nicht serialisiert werden (siehe manifest.json errors)
+            ["groupsPerRound"] = new JArray(rounds.Select(r => r.Type == JTokenType.Null ? null : (JToken)((r["groups"] as JArray)?.Count ?? 0)))
         };
     }
 

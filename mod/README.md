@@ -79,7 +79,7 @@ Referenziert werden `MelonLoader/net6/*` (MelonLoader, Harmony, Il2CppInterop, N
 | Aktion | Wie |
 |---|---|
 | Kompletter Dump | **F6** (am besten im Hauptmenü) oder Mods → BloonsML → „Dump“ |
-| Karte + Partie-Regeln | automatisch beim Start jeder Partie (Karte nur, wenn sie noch fehlt); **F7** schreibt beides erneut |
+| Karte + Partie-Regeln | automatisch beim Start jeder Partie (Karte nur, wenn sie fehlt oder bisher nur aus einer Reverse-Partie stammt); **F7** schreibt beides erneut |
 | Einstellungen | Mods → BloonsML: Dump-Ordner, Hotkeys, Auto-Karten-Dump |
 
 Fortschritt und Fehler stehen im MelonLoader-Log (`BloonsTD6/MelonLoader/Latest.log`, Präfix `[BloonsML]`).
@@ -108,7 +108,7 @@ alte Stand unverändert; der Rest wird beim nächsten Dump aufgeräumt. `manifes
 | `rounds/<RoundSet>/NNN.json` | `RoundModel` der Runde NNN (1-basiert): `groups[]` mit `bloon`, `start`, `end`, `count`, ggf. `emissions` |
 | `maps/_index.json` | Metadaten aller Karten (`id`, `difficulty`, …) aus `GameData.mapSet` |
 | `maps/<mapName>.json` | `{gameVersion, mapName, dumpedInMode, dumpedInDifficulty, reverseMode, map: MapModel}`: Pfade (`paths[].points[].point`), Flächen (`areas[]` mit `polygon` und `type`), Blocker, Spawner |
-| `matches/<Modus>_<Schwierigkeit>_<Karte>.json` | Partie-Felder des GameModels einer echten Partie: `cash`, `startingHealth`, `maxHealth`, `startRound`/`endRound`, `roundSet`, `incomeSet`, `sellMultiplier`, `AllMods`, `gameMode`, `difficultyId`, … (CHIMPS hat die Modus-ID `Clicks`) |
+| `matches/<Spieltyp>_<Modus>_<Schwierigkeit>_<Karte>.json` | Regeln einer echten Partie, geschrieben nachdem das Spiel Modus-, Schwierigkeits- und Challenge-Regeln angewendet hat: `fields` (Partie-Felder des GameModels wie `cash`, `startingHealth`, `maxHealth`, `startRound`/`endRound`, `roundSet`, `incomeSet`, `sellMultiplier`, `gameMode`, `difficultyId`, globale Skalierungen) und `mods` (die `ModModel`s der Partie). CHIMPS hat die Modus-ID `Clicks` |
 | `gamedata/<feld>.json` | Alle übrigen Felder von `GameData` einzeln, u.a. `incomeSets` (Rundengeld), `mods` (Schwierigkeits- und Modus-Presets wie CHIMPS), `modesData`, Bosse, Artefakte; auch reine Asset-/UI-Felder |
 | `gamemodel/<feld>.json` | Statische Felder von `GameModel` einzeln (z.B. `freeplayGroups`, Powers, Wissensbaum, Buff-Indikatoren, Helden-/Turm-Sets, globale Skalierungen). Ohne Duplikate (`upgradesByName`, `bloonsByName`, Backing-Fields) und ohne Partie-Felder, die im Menü nur Standardwerte haben (stehen in `matches/`) |
 
