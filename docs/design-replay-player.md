@@ -150,8 +150,12 @@ bis der gewünschte Typ eingestellt ist (Kontrolle über den Turm).
   laden und starten; **F11**: Abbruch). Alternativ legt die Python-Seite die Datei in
   `data/local/replay_inbox/` (gitignored wie `data/local/`) und der Player bietet die neueste an. Unterstützt: `btd-replay/2` (`.jsonl`) und
   `StartState` (`.json`, ein Objekt); ein Replay kann mit einem Startzustand beginnen.
-- **Prüfen vor dem Start:** Format, Karte/Modus/Schwierigkeit gegen die laufende bzw. zu startende Partie,
-  Spielversion gegen die Version im Namen der Datendatei, sofern vorhanden (z.B. `…-57.4`, siehe Abschnitt 3), alle Turmnamen bekannt. Fehler → nichts tun, Meldung.
+- **Datendatei:** das Replay nennt sie im Header (`data`, z.B. `game_v1_tutorial_chimps.json`); der Player sucht sie
+  in `data/local/` (Einstellung "Datenordner", Standard neben dem Dump-Ordner) und prüft `data_hash`, falls gesetzt.
+- **Prüfen vor dem Start:** Format; Karte (`map.name` der Datendatei) gegen die Partie; Modus/Schwierigkeit kommen
+  aus den Einstellungen und werden bei einer schon laufenden Partie gegen diese geprüft; Spielversion gegen die
+  Version im Namen der Datendatei, sofern vorhanden (z.B. `…-57.4`, siehe Abschnitt 3); alle Turmnamen bekannt.
+  Fehler → nichts tun, Meldung.
 - **Ausgabe:** neben dem Trace des Recorders eine Ergebnisdatei
   `data/raw/recordings/<Zeit>_<Karte>_<Modus>.player.jsonl`: je Aktion Status (ok/Fehler + Grund, Sim-Schritt,
   Cash vorher/nachher), je Runde das echte Ergebnis (Leben, Cash, Pops) neben dem erwarteten aus dem Replay. Das
@@ -191,7 +195,7 @@ Damit ist die Bridge im Kern "Replay, das Zeile für Zeile über den Socket komm
 ## 8. Reihenfolge
 
 1. **Test-Mod (wie beim Recorder):** im Spiel prüfen, was oben **[prüfen]** ist: `CreateTowerAt` mit Sim-Koordinaten
-   (Einrasten? Koordinatensystem des `UnityEngine.Vector2`?), Ausführungsschritt von Bridge-Aktionen, `SetRound`-Zählung vor der ersten Runde,
+   (Einrasten? Koordinatensystem des `UnityEngine.Vector2`?), Ausführungsschritt von Bridge-Aktionen (auch aus einem `Simulate`-Prefix heraus), `SetRound`-Zählung vor der ersten Runde,
    `SetCash`/Leben in CHIMPS, Callback-Verhalten bei Fehlern (zu wenig Geld, belegter Platz).
 2. **Player für `btd-replay/2` zwischen den Runden** (Weg A, Abschnitt 4), mit Ergebnisdatei; Test: ein Sim-Replay
    aus `data/local/starts/` im Spiel abspielen, `btd-tools replay --compare` auf die Ergebnisse.
@@ -205,4 +209,5 @@ Damit ist die Bridge im Kern "Replay, das Zeile für Zeile über den Socket komm
 1. Weg A (echter Modus, Zustand aufbauen) als Standard, Sandkasten nur für Messungen?
 2. Bei einem Fehler anhalten (Standard) oder überspringen?
 3. Laden per Einstellung + Hotkey (F10/F11) oder über einen Eingangsordner?
-4. Turm-Zuordnung über ein neues Feld `game_id` in `game_v1` (Konverter-Änderung in der Trainings-Session)?
+4. Konverter-Änderung in der Trainings-Session: `game_v1` bekommt `game_id` je Turm sowie Karte, Modus,
+   Schwierigkeit und Spielversion als eigene Felder (statt Tabelle in der Mod bzw. Einstellungen im Player)?
