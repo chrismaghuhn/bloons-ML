@@ -88,7 +88,8 @@ public class BloonsMLMod : BloonsTD6Mod
     {
         displayName = "Hotkey: Player-Test",
         description = "Test für den Replay-Player (docs/design-replay-player.md, Schritt 1): in einer Wegwerf-Partie " +
-                      "vor dem ersten Rundenstart drücken. Setzt Türme, Geld, Leben und Runde!"
+                      "vor dem ersten Rundenstart drücken. Setzt Türme, Geld, Leben und Runde (landet im Autosave dieser " +
+                      "Partie, also nicht weiterspielen) und schaltet den Trace dauerhaft an."
     };
 
     public static MelonLogger.Instance Log => Melon<BloonsMLMod>.Logger;
@@ -132,11 +133,23 @@ public class BloonsMLMod : BloonsTD6Mod
 
     public override void OnWeaponFire(Weapon weapon) => TraceRecorder.OnWeaponFire(weapon);
 
-    public override void OnMatchEnd() => TraceRecorder.Stop("Partie beendet");
+    public override void OnMatchEnd()
+    {
+        TraceRecorder.Stop("Partie beendet");
+        PlayerProbe.Reset();
+    }
 
-    public override void OnRestart() => TraceRecorder.Stop("Neustart");
+    public override void OnRestart()
+    {
+        TraceRecorder.Stop("Neustart");
+        PlayerProbe.Reset();
+    }
 
-    public override void OnMainMenu() => TraceRecorder.Stop("Hauptmenü");
+    public override void OnMainMenu()
+    {
+        TraceRecorder.Stop("Hauptmenü");
+        PlayerProbe.Reset();
+    }
 
     public override void OnApplicationQuit() => TraceRecorder.Stop("Spiel beendet");
 

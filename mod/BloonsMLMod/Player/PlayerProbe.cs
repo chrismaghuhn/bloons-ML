@@ -1,5 +1,5 @@
 using System;
-using System.Globalization;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using BloonsML.Common;
@@ -11,6 +11,7 @@ using Il2CppAssets.Scripts.Simulation;
 using Il2CppAssets.Scripts.Simulation.Towers;
 using Il2CppAssets.Scripts.Unity.Bridge;
 using Il2CppAssets.Scripts.Unity.UI_New.InGame;
+using MelonLoader;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -22,6 +23,8 @@ namespace BloonsML.Player;
 /// die das Design als [prüfen] markiert. Aufruf vor dem ersten Rundenstart einer Wegwerf-Partie (Monkey Meadow,
 /// CHIMPS) per F10. Schreibt &lt;DumpRoot&gt;/../recordings/&lt;Zeit&gt;_probe.json und schaltet den Trace an.
 /// Verändert die Partie (Türme, Geld, Leben, Runde) – nur offline und in einer Partie, die nicht zählt.
+/// Läuft als Coroutine: nach jeder Aktion wird auf Callback und leere Bridge-Warteschlange gewartet, und der
+/// Callback trägt ein, in welchem Frame/Sim-Schritt er wirklich kam.
 /// </summary>
 public static class PlayerProbe
 {
@@ -31,201 +34,273 @@ public static class PlayerProbe
     /// <summary>Ziel-Runde für SetRound (interne Zählung; CHIMPS beginnt intern bei 5 = Runde 6).</summary>
     private const int TargetRoundInternal = 9;
 
-    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+    /// <summary>So viele Frames höchstens auf Callback/leere Warteschlange warten.</summary>
+    private const int MaxWaitFrames = 180;
 
     private static JObject report;
     private static string reportPath;
+    private static bool running;
+
+    /// <summary>Simulation, für die Teil 1 gelaufen ist; Teil 2 feuert nur dort (nie in einer späteren Partie).</summary>
+    private static Simulation probedSim;
     private static bool midRoundArmed;
 
     public static void Run()
     {
-        var inGame = InGame.instance;
-        var bridge = inGame?.bridge;
+        var bridge = InGame.instance?.bridge;
         if (bridge?.Simulation == null)
         {
             BloonsMLMod.Log.Warning("Player-Test: erst eine Partie starten (vor dem ersten Rundenstart).");
             return;
         }
-        if (!BloonsMLMod.RecordTrace) BloonsMLMod.RecordTrace.SetValueAndSave(true);
+        if (running || (probedSim != null && probedSim.Pointer == bridge.Simulation.Pointer))
+        {
+            BloonsMLMod.Log.Warning("Player-Test läuft bereits bzw. ist in dieser Partie schon gelaufen (neue Partie starten).");
+            return;
+        }
+        if (bridge.AreRoundsActive())
+        {
+            BloonsMLMod.Log.Warning("Player-Test: nur vor dem ersten Rundenstart (zwischen den Runden) möglich.");
+            return;
+        }
+        running = true;
+        MelonCoroutines.Start(Guarded(RunPart1(bridge)));
+    }
 
+    /// <summary>Partie beendet/neu gestartet/Hauptmenü: Teil 2 entschärfen.</summary>
+    public static void Reset()
+    {
+        midRoundArmed = false;
+        probedSim = null;
+    }
+
+    private static IEnumerator Guarded(IEnumerator inner)
+    {
+        while (true)
+        {
+            object current;
+            try
+            {
+                if (!inner.MoveNext()) break;
+                current = inner.Current;
+            }
+            catch (Exception e)
+            {
+                BloonsMLMod.Log.Error($"Player-Test abgebrochen: {e}");
+                break;
+            }
+            yield return current;
+        }
+        running = false;
+        Save();
+    }
+
+    private static IEnumerator RunPart1(UnityToSimulation bridge)
+    {
+        probedSim = bridge.Simulation;
         report = new JObject
         {
-            ["format"] = "bloonsml-player-probe/0",
+            ["format"] = "bloonsml-player-probe/1",
             ["gameVersion"] = Application.version,
             ["map"] = bridge.Simulation.model?.map?.mapName,
             ["mode"] = InGameData.CurrentGame?.selectedMode,
             ["difficulty"] = InGameData.CurrentGame?.selectedDifficulty,
             ["checks"] = new JArray()
         };
-        reportPath = Path.Combine(OutputPaths.RecordingsDir(), $"{DateTime.Now:yyyyMMdd-HHmmss}_probe.json");
-        BloonsMLMod.Log.Msg("Player-Test startet");
+        reportPath = Path.Combine(OutputPaths.RecordingsDir(), $"{DateTime.Now:yyyyMMdd-HHmmss-fff}_probe.json");
+        BloonsMLMod.Log.Msg($"Player-Test startet -> {reportPath}");
+
+        // Trace an und warten, bis er wirklich schreibt (startet mit dem nächsten Sim-Schritt)
+        if (!BloonsMLMod.RecordTrace)
+        {
+            BloonsMLMod.RecordTrace.SetValueAndSave(true);
+            BloonsMLMod.Log.Msg("Player-Test: Trace eingeschaltet (bleibt an, bis F9 oder Einstellung)");
+        }
+        for (var i = 0; i < MaxWaitFrames && !Recorder.TraceRecorder.Active; i++) yield return null;
 
         var dart = FindTower(bridge, "DartMonkey");
-        Step("state_before", () => State(bridge));
+        Check("state_before", State(bridge));
+        bridge.SetCash(5000, bridge.GetInputId());
 
         // --- A: Platzieren an exakter und krummer Koordinate (Plätze aus Sim-Replays auf Monkey Meadow)
-        bridge.SetCash(5000, bridge.GetInputId());
-        var a1 = Place(bridge, dart, -35.0f, 39.0f, "place_exact");
-        var a2 = Place(bridge, dart, -35.37f, 59.81f, "place_fractional");
+        var a1 = new PlaceResult();
+        yield return Place(bridge, dart, -35.0f, 39.0f, "place_exact", a1);
+        var a2 = new PlaceResult();
+        yield return Place(bridge, dart, -35.37f, 59.81f, "place_fractional", a2);
 
-        // --- B: Fehlerfälle
-        Place(bridge, dart, -35.0f, 39.0f, "place_occupied");
-        Place(bridge, dart, -100.0f, -18.9f, "place_on_track");
+        // --- B: Fehlerfälle (belegt nur, wenn der Platz wirklich belegt ist)
+        if (a1.Tower != null) yield return Place(bridge, dart, -35.0f, 39.0f, "place_occupied", new PlaceResult());
+        else Check("place_occupied", new JObject { ["skipped"] = "place_exact hat keinen Turm erzeugt" });
+        yield return Place(bridge, dart, -100.0f, -18.9f, "place_on_track", new PlaceResult());
         bridge.SetCash(10, bridge.GetInputId());
-        Place(bridge, dart, 60.0f, 60.0f, "place_no_cash");
+        yield return Place(bridge, dart, 60.0f, 60.0f, "place_no_cash", new PlaceResult());
         bridge.SetCash(5000, bridge.GetInputId());
 
         // --- C: Upgrade (mit Geld, dann ohne)
-        if (a1 != null) Upgrade(bridge, a1, 0, "upgrade_with_cash");
-        if (a2 != null)
+        if (a1.Tower != null) yield return Upgrade(bridge, a1.Tower, 0, "upgrade_with_cash");
+        if (a2.Tower != null)
         {
             bridge.SetCash(1, bridge.GetInputId());
-            Upgrade(bridge, a2, 1, "upgrade_no_cash");
+            yield return Upgrade(bridge, a2.Tower, 1, "upgrade_no_cash");
         }
 
         // --- D: Geld und Leben setzen (Bruchteil, CHIMPS max. 1 Leben)
-        Step("set_cash_fraction", () =>
+        bridge.SetCash(1234.5, bridge.GetInputId());
+        Check("set_cash_fraction", new JObject { ["set"] = 1234.5, ["read"] = bridge.GetCash(bridge.GetInputId()) });
+        var sim = bridge.Simulation;
+        var healthBefore = sim.health.Value;
+        sim.health.Value = 5;
+        Check("set_health_5", new JObject
         {
-            bridge.SetCash(1234.5, bridge.GetInputId());
-            return new JObject { ["set"] = 1234.5, ["read"] = bridge.GetCash(bridge.GetInputId()) };
+            ["before"] = healthBefore, ["set"] = 5, ["read"] = sim.health.Value, ["max"] = sim.maxHealth.Value
         });
-        Step("set_health_5", () =>
+        yield return null;
+        Check("health_next_frame", new JObject { ["read"] = sim.health.Value, ["max"] = sim.maxHealth.Value });
+
+        // --- E: bridge.SetRound vor dem ersten Rundenstart (welche Runde startet danach? -> Trace round_start/spawn)
+        var roundBefore = bridge.GetCurrentRound();
+        bridge.SetRound(TargetRoundInternal, false);
+        Check("set_round", new JObject
         {
-            var sim = bridge.Simulation;
-            var before = sim.health.Value;
-            sim.health.Value = 5;
-            return new JObject
-            {
-                ["before"] = before, ["set"] = 5, ["read"] = sim.health.Value, ["max"] = sim.maxHealth.Value
-            };
+            ["method"] = "bridge.SetRound(round, false)",
+            ["before"] = roundBefore, ["set"] = TargetRoundInternal, ["after"] = bridge.GetCurrentRound(),
+            ["spawnedRound"] = sim.map.spawner.spawnedRound
         });
 
-        // --- E: SetRound vor dem ersten Rundenstart (welche Runde startet danach? -> Trace round_start/spawns)
-        Step("set_round", () =>
-        {
-            var before = bridge.GetCurrentRound();
-            bridge.SetRound(TargetRoundInternal, false);
-            return new JObject
-            {
-                ["before"] = before, ["set"] = TargetRoundInternal, ["after"] = bridge.GetCurrentRound(),
-                ["spawnedRound"] = bridge.Simulation.map.spawner.spawnedRound
-            };
-        });
-
-        Step("state_after", () => State(bridge));
+        Check("state_after", State(bridge));
         midRoundArmed = true;
         Save();
-        BloonsMLMod.Log.Msg($"Player-Test Teil 1 fertig -> {reportPath}. Jetzt die Runde starten; bei Rundenschritt " +
-                            $"{MidRoundStep} setzt der Test einen weiteren Turm (Teil 2).");
+        BloonsMLMod.Log.Msg($"Player-Test Teil 1 fertig. Jetzt die Runde starten; bei Rundenschritt {MidRoundStep} " +
+                            "setzt der Test einen weiteren Turm (Teil 2) und ergänzt die Datei.");
     }
 
     /// <summary>Teil F: aus dem Simulate-Prefix heraus platzieren, wenn die Rundenzeit erreicht ist.</summary>
     internal static void OnSimulatePrefix(Simulation sim)
     {
-        if (!midRoundArmed || sim.roundTime.elapsed != MidRoundStep) return;
+        if (!midRoundArmed || probedSim == null || probedSim.Pointer != sim.Pointer) return;
+        if (sim.roundTime.elapsed != MidRoundStep) return;
         midRoundArmed = false;
         var bridge = InGame.instance?.bridge;
         if (bridge == null) return;
-        var dart = FindTower(bridge, "DartMonkey");
-        Step("mid_round_prefix_place", () =>
-        {
-            var result = PlaceRaw(bridge, dart, 105.0f, -41.0f);
-            result["roundTimeAtCall"] = MidRoundStep;
-            return result;
-        });
-        Save();
-        BloonsMLMod.Log.Msg($"Player-Test Teil 2 fertig -> {reportPath}");
+        var entry = new JObject { ["roundTimeAtCall"] = sim.roundTime.elapsed, ["simTimeAtCall"] = sim.time.elapsed };
+        Check("mid_round_prefix_place", entry);
+        // Aufruf und Sofort-Ergebnis laufen hier im Prefix; Warten auf Callback/Turm danach per Coroutine
+        MelonCoroutines.Start(Guarded(PlaceInto(bridge, FindTower(bridge, "DartMonkey"), 105.0f, -41.0f, entry,
+            new PlaceResult())));
     }
 
-    // ------------------------------------------------------------------ einzelne Prüfungen
+    // ------------------------------------------------------------------ Prüfungen
 
-    private static Tower Place(UnityToSimulation bridge, TowerModel model, float x, float y, string name)
+    private sealed class PlaceResult
     {
-        Tower created = null;
-        Step(name, () =>
-        {
-            var result = PlaceRaw(bridge, model, x, y);
-            created = lastCreated;
-            return result;
-        });
-        return created;
+        public Tower Tower;
     }
 
-    private static Tower lastCreated;
+    private static IEnumerator Place(UnityToSimulation bridge, TowerModel model, float x, float y, string name,
+        PlaceResult result)
+    {
+        var entry = new JObject();
+        Check(name, entry);
+        yield return PlaceInto(bridge, model, x, y, entry, result);
+    }
 
-    private static JObject PlaceRaw(UnityToSimulation bridge, TowerModel model, float x, float y)
+    /// <summary>
+    /// Ruft CreateTowerAt auf und trägt in <paramref name="entry"/> ein: Abfrage vorher, Sofort-Ergebnis direkt nach
+    /// dem Aufruf, und – auch wenn er später kommt – Callback mit Frame und Sim-Zeit; dann neuer Turm und Position.
+    /// </summary>
+    private static IEnumerator PlaceInto(UnityToSimulation bridge, TowerModel model, float x, float y, JObject entry,
+        PlaceResult result)
     {
         var sim = bridge.Simulation;
         var inputId = bridge.GetInputId();
         var pos = new Vector2(x, y);
         var query = bridge.QueryPlacementPosition(pos, model, inputId, ObjectId.Invalid);
-        var canPlace = bridge.CanPlaceTowerAt(pos, model, inputId, ObjectId.Invalid);
-        var before = TowerIds(bridge);
-        var cashBefore = bridge.GetCash(inputId);
-        var tBefore = sim.time.elapsed;
-        bool? callback = null;
-        var callbackFrame = -1;
+        entry["request"] = new JArray(x, y);
+        entry["query"] = new JObject
+        {
+            ["positionValid"] = query?.positionValid,
+            ["position"] = query == null ? null : new JArray(query.position.x, query.position.y)
+        };
+        entry["canPlace"] = bridge.CanPlaceTowerAt(pos, model, inputId, ObjectId.Invalid);
+        var before = TowerIds();
+        entry["cashBefore"] = bridge.GetCash(inputId);
+        entry["callFrame"] = Time.frameCount;
+        entry["callSimTime"] = sim.time.elapsed;
+        var fired = false;
         bridge.CreateTowerAt(inputId, pos, model, ObjectId.Invalid, false,
             (Il2CppSystem.Action<bool>)(Action<bool>)(ok =>
             {
-                callback = ok;
-                callbackFrame = Time.frameCount;
+                fired = true;
+                entry["callback"] = ok;
+                entry["callbackFrame"] = Time.frameCount;
+                entry["callbackSimTime"] = bridge.Simulation?.time.elapsed;
+                entry["callbackRoundTime"] = bridge.Simulation?.roundTime.elapsed;
             }),
             false, false, false, -1, true, -1);
-        var queued = bridge.actions.Count;
-        var after = InGame.instance.GetTowers();
-        lastCreated = after.FirstOrDefault(t => !before.Contains(t.Id.Raw));
-        var result = new JObject
+        entry["callbackFiredDuringCall"] = fired;
+        entry["queuedActionsAfterCall"] = bridge.actions.Count;
+        entry["towerCreatedDuringCall"] = TowerIds().Except(before).Any();
+
+        // warten, bis Callback da und Warteschlange leer (oder Zeit um)
+        var waited = 0;
+        while ((!fired || bridge.actions.Count > 0) && waited < MaxWaitFrames)
         {
-            ["request"] = new JArray(x, y),
-            ["query"] = new JObject
-            {
-                ["positionValid"] = query?.positionValid,
-                ["position"] = query == null ? null : new JArray(query.position.x, query.position.y)
-            },
-            ["canPlace"] = canPlace,
-            ["callback"] = callback,
-            ["callbackSameFrame"] = callback != null && callbackFrame == Time.frameCount,
-            ["queuedActionsAfterCall"] = queued,
-            ["created"] = lastCreated != null,
-            ["cashBefore"] = cashBefore,
-            ["cashAfter"] = bridge.GetCash(inputId),
-            ["simTimeBefore"] = tBefore,
-            ["simTimeAfter"] = sim.time.elapsed
-        };
-        if (lastCreated != null)
-        {
-            var p = lastCreated.Position;
-            result["createdPosition"] = new JArray(p.X, p.Y);
-            result["positionDelta"] = Math.Sqrt((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y));
-            result["worth"] = lastCreated.worth;
+            waited++;
+            yield return null;
         }
-        return result;
+        entry["waitedFrames"] = waited;
+        entry["callbackFired"] = fired;
+
+        result.Tower = InGame.instance.GetTowers().FirstOrDefault(t => !before.Contains(t.Id.Raw));
+        entry["created"] = result.Tower != null;
+        entry["cashAfter"] = bridge.GetCash(inputId);
+        if (result.Tower != null)
+        {
+            var p = result.Tower.Position;
+            entry["createdPosition"] = new JArray(p.X, p.Y);
+            entry["positionDelta"] = Math.Sqrt((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y));
+            entry["worth"] = result.Tower.worth;
+        }
+        Save();
     }
 
-    private static void Upgrade(UnityToSimulation bridge, Tower tower, int path, string name)
+    private static IEnumerator Upgrade(UnityToSimulation bridge, Tower tower, int path, string name)
     {
-        Step(name, () =>
+        var inputId = bridge.GetInputId();
+        var sim = bridge.Simulation;
+        var entry = new JObject
         {
-            var inputId = bridge.GetInputId();
-            var tiersBefore = string.Join("", tower.towerModel.tiers);
-            var cashBefore = bridge.GetCash(inputId);
-            bool? callback = null;
-            bridge.UpgradeTower(inputId, tower.Id, path, 0,
-                (Il2CppSystem.Action<bool>)(Action<bool>)(ok => callback = ok));
-            var current = bridge.GetTowerFromId(tower.Id);
-            return new JObject
+            ["path"] = path,
+            ["tiersBefore"] = string.Join("", tower.towerModel.tiers),
+            ["cashBefore"] = bridge.GetCash(inputId),
+            ["callFrame"] = Time.frameCount,
+            ["callSimTime"] = sim.time.elapsed
+        };
+        Check(name, entry);
+        var fired = false;
+        bridge.UpgradeTower(inputId, tower.Id, path, 0,
+            (Il2CppSystem.Action<bool>)(Action<bool>)(ok =>
             {
-                ["path"] = path,
-                ["callback"] = callback,
-                ["queuedActionsAfterCall"] = bridge.actions.Count,
-                ["tiersBefore"] = tiersBefore,
-                ["tiersAfter"] = current == null ? null : string.Join("", current.towerModel.tiers),
-                ["cashBefore"] = cashBefore,
-                ["cashAfter"] = bridge.GetCash(inputId),
-                ["worthAfter"] = current?.worth
-            };
-        });
+                fired = true;
+                entry["callback"] = ok;
+                entry["callbackFrame"] = Time.frameCount;
+                entry["callbackSimTime"] = bridge.Simulation?.time.elapsed;
+            }));
+        entry["callbackFiredDuringCall"] = fired;
+        entry["queuedActionsAfterCall"] = bridge.actions.Count;
+        var waited = 0;
+        while ((!fired || bridge.actions.Count > 0) && waited < MaxWaitFrames)
+        {
+            waited++;
+            yield return null;
+        }
+        entry["waitedFrames"] = waited;
+        entry["callbackFired"] = fired;
+        var current = bridge.GetTowerFromId(tower.Id);
+        entry["tiersAfter"] = current == null ? null : string.Join("", current.towerModel.tiers);
+        entry["cashAfter"] = bridge.GetCash(inputId);
+        entry["worthAfter"] = current?.worth;
+        Save();
     }
 
     private static JObject State(UnityToSimulation bridge)
@@ -256,27 +331,19 @@ public static class PlayerProbe
     private static TowerModel FindTower(UnityToSimulation bridge, string baseId) =>
         bridge.Model.towers.FirstOrDefault(t => t.name == baseId);
 
-    private static System.Collections.Generic.HashSet<uint> TowerIds(UnityToSimulation bridge) =>
+    private static System.Collections.Generic.HashSet<uint> TowerIds() =>
         InGame.instance.GetTowers().Select(t => t.Id.Raw).ToHashSet();
 
-    private static void Step(string name, Func<JObject> check)
+    private static void Check(string name, JObject entry)
     {
-        JObject entry;
-        try
-        {
-            entry = check() ?? new JObject();
-        }
-        catch (Exception e)
-        {
-            entry = new JObject { ["exception"] = $"{e.GetType().Name}: {e.Message}" };
-        }
         entry["check"] = name;
         ((JArray)report["checks"]).Add(entry);
-        BloonsMLMod.Log.Msg($"Player-Test {name}: {entry.ToString(Formatting.None)}");
+        BloonsMLMod.Log.Msg($"Player-Test {name}");
     }
 
     private static void Save()
     {
+        if (report == null || reportPath == null) return;
         try
         {
             File.WriteAllText(reportPath, report.ToString(Formatting.Indented));
@@ -286,7 +353,6 @@ public static class PlayerProbe
             BloonsMLMod.Log.Error($"Player-Test: {reportPath}: {e.Message}");
         }
     }
-
 }
 
 /// <summary>Teil F des Player-Tests: Aktion aus dem Prefix eines Sim-Schritts.</summary>
