@@ -36,6 +36,7 @@ Spielkonfiguration für die Engine. Sie bleibt wie der Dump lokal (`data/local/`
 ```bash
 .venv/bin/python -I tools/build_game_v1.py                  # Monkey Meadow, Medium, Runde 1-40
 .venv/bin/python -I tools/build_game_v1.py --preset medium60 # Medium bis Runde 60 (Benchmark b)
+.venv/bin/python -I tools/build_game_v1.py --preset medium60 --towers t12  # 12 Türme (docs/design-towers-step1.md)
 cd engine
 cargo run --release -p btd-tools -- demo --data ../data/local/game_v1_tutorial_medium.json
 # Benchmark (a): fester Bau-Plan (crates/btd-tools/src/meadow_plan.txt) schafft Runde 40

@@ -370,7 +370,7 @@ fn shards_can_inherit_the_hit_set() {
 
 // ---------------------------------------------------------------- M2c: Effekte
 
-use btd_data::v1::{Contact, Crit, Delivery, Dot, Emission, Freeze, Push, Slow, TagFactor, Zone};
+use btd_data::v1::{Burst, Contact, Crit, Delivery, Dot, Emission, Freeze, Push, Slow, TagFactor, Zone};
 
 fn atk(d: &mut GameV1, kind: u8) -> &mut btd_data::v1::AttackV1 {
     &mut d.towers[kind as usize].variants[0].attacks[0]
@@ -806,4 +806,42 @@ fn too_many_slow_ids_are_rejected() {
         atk(&mut d, k).extras.slow = Some(Slow { id: format!("s{i}"), ..slow(0, 1.0) });
     }
     assert!(Game::new(Arc::new(d)).is_err());
+}
+
+#[test]
+fn burst_fires_several_shots_per_cooldown() {
+    // ein Angriff pro Runde (riesiger Cooldown), Pierce 1, Reds als Pulk (immer ein Ziel da):
+    // jede Salve platzt so viele Reds wie Schüsse
+    let pin = |burst: Option<Burst>| {
+        let mut d = with_round(vec![group(0, 10, 0.0, 0.0)]);
+        let a = atk(&mut d, PIN);
+        (a.cooldown, a.pierce) = (1000.0, 1);
+        a.burst = burst;
+        run(d, place(PIN, 0.0, 15.0)).pops
+    };
+    assert_eq!(pin(None), 1);
+    assert_eq!(pin(Some(Burst { count: 3, interval: 0.1 })), 3);
+    assert_eq!(pin(Some(Burst { count: 1, interval: 0.1 })), 1, "Salve aus einem Schuss = normal");
+    assert_eq!(pin(Some(Burst { count: 3, interval: 1000.0 })), 1, "zweiter Schuss erst nach Rundenende");
+}
+
+#[test]
+fn burst_stops_without_target_and_keeps_the_cooldown() {
+    // ein einzelner Red: der erste Schuss platzt ihn, die restliche Salve hat kein Ziel mehr; der
+    // nächste Red kommt erst nach dem Cooldown dran
+    let mut d = with_round(vec![group(0, 1, 0.0, 0.0), group(0, 1, 1.0, 1.0)]);
+    let a = atk(&mut d, PIN);
+    (a.cooldown, a.pierce) = (0.8, 1);
+    a.burst = Some(Burst { count: 3, interval: 0.1 });
+    let r = run(d, place(PIN, 0.0, 15.0));
+    assert_eq!((r.pops, r.leaked), (2, 0), "{r:?}");
+}
+
+#[test]
+fn validation_rejects_empty_bursts() {
+    let mut d = data();
+    atk(&mut d, PIN).burst = Some(Burst { count: 0, interval: 0.1 });
+    assert!(d.validate().is_err());
+    atk(&mut d, PIN).burst = Some(Burst { count: 2, interval: -1.0 });
+    assert!(d.validate().is_err());
 }

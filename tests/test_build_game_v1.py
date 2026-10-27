@@ -235,3 +235,73 @@ def test_income_thresholds(tmp_path):
          "finalMultiplier": 0.2}]))
     inc = b.build_income(tmp_path, "R", 61)
     assert [inc[i]["cash_per_pop"] for i in (0, 49, 50, 59, 60)] == [1.0, 1.0, 0.5, 0.5, 0.2]
+
+
+def sniper_like(burst=None, extra_filter=True, contact=False):
+    """Sofort-Treffer wie Sniper/Desperado: InstantModel + FilterAllExceptTarget, InstantDamageEmission."""
+    only = T("FilterAllExceptTargetModel")
+    proj = T("ProjectileModel", pierce=5.0, radius=0.0,
+             filters=[T("FilterInvisibleModel", isActive=True)] + ([only] if extra_filter else []),
+             behaviors=[T("DamageModel", damage=2.0, maxDamage=0.0, immuneBloonProperties=0),
+                        T("InstantModel", destroyIfInvalid=False),
+                        T("ProjectileFilterModel", filters=[T("FilterAllExceptTargetModel")])])
+    if contact:
+        proj["behaviors"].append(T("CreateProjectileOnContactModel", projectile=T("ProjectileModel", pierce=1.0)))
+    weapon = T("WeaponModel", rate=1.59, emission=T("InstantDamageEmissionModel"), projectile=proj,
+               behaviors=[burst] if burst else [])
+    attack = T("AttackModel", range=9999999.0, name="AttackModel_Attack", weapons=[weapon],
+               behaviors=[T("RotateToTargetModel"), T("CheckTargetsWithoutOffsetsModel")])
+    return T("TowerModel", cost=350.0, range=20.0, footprint=T("CircleFootprintModel", radius=6.0),
+             behaviors=[attack, T("TargetDesperadoFirstModel"), T("TowerRadiusModel")])
+
+
+def test_instant_hit_targets_only_the_target():
+    a = b.convert_variant(sniper_like(), [0, 0, 0])["attacks"][0]
+    assert a["delivery"] == {"kind": "hitscan"}
+    assert (a["pierce"], a["range"], a["damage"], a["camo"]) == (1, 9999999.0, 2.0, False)
+    m = sniper_like(extra_filter=False)
+    proj_of(m)["behaviors"] = [x for x in proj_of(m)["behaviors"] if "ProjectileFilter" not in x["$type"]]
+    with pytest.raises(b.Unsupported, match="ohne FilterAllExceptTarget"):
+        b.convert_variant(m, [0, 0, 0])
+    with pytest.raises(b.Unsupported, match="Kontakt"):
+        b.convert_variant(sniper_like(contact=True), [0, 0, 0])
+
+
+def test_burst_and_offset_on_the_weapon():
+    burst = T("BurstWeaponBehaviorModel", interval=0.1, count=2, alwaysEmptyClip=False)
+    assert b.convert_variant(sniper_like(burst=burst), [0, 0, 0])["attacks"][0]["burst"] == {"count": 2, "interval": 0.1}
+    with pytest.raises(b.Unsupported, match="alwaysEmptyClip"):
+        b.convert_variant(sniper_like(burst=dict(burst, alwaysEmptyClip=True)), [0, 0, 0])
+    m = dart_like()
+    m["behaviors"][0]["weapons"][0]["behaviors"] = [T("OffsetModel", range=45.0, angleOffset=0.0)]
+    assert "burst" not in b.convert_variant(m, [0, 0, 0])["attacks"][0]
+    m["behaviors"][0]["weapons"][0]["behaviors"] = [T("OffsetModel", range=45.0, angleOffset=10.0)]
+    with pytest.raises(b.Unsupported, match="angleOffset"):
+        b.convert_variant(m, [0, 0, 0])
+
+
+def test_random_emissions_use_their_mean():
+    single = T("RandomArcEmissionModel", randomAngle=8.0, angle=0.0, count=1, offset=0.0, offsetStart=0.0,
+               sliceSize=0.0, useProjectileRotation=False, useAirUnitRotation=False)
+    assert b.convert_variant(dart_like(emission=single), [0, 0, 0])["attacks"][0]["delivery"]["emission"] == {
+        "kind": "single"}
+    thorns = T("RandomEmissionModel", angle=25.0, count=5, useSpeedMultiplier=False, useMainAttackRotation=False)
+    em = b.convert_variant(dart_like(emission=thorns), [0, 0, 0])["attacks"][0]["delivery"]["emission"]
+    assert (em["kind"], em["count"], em["angle"]) == ("arc", 5, 25.0)
+
+
+def test_strict_models_only_where_they_are_evaluated():
+    # Druid-Basis: RemoveBloonModifiers ohne Schalter ist wirkungslos, mit Schalter gesperrt
+    rm = T("RemoveBloonModifiersModel", cleanseRegen=False, cleanseCamo=False, cleanseLead=False,
+           cleanseFortified=False)
+    b.convert_variant(dart_like(proj_extra=[rm]), [0, 0, 0])
+    with pytest.raises(b.Unsupported, match="entfernt"):
+        b.convert_variant(dart_like(proj_extra=[dict(rm, cleanseCamo=True)]), [0, 0, 0])
+    # ein Sofort-Treffer-Modell an anderer Stelle (am Turm statt im Projektil) ist nicht unterstützt
+    with pytest.raises(b.Unsupported, match="InstantModel"):
+        b.convert_variant(dart_like(extra_behaviors=[T("InstantModel")]), [0, 0, 0])
+    # FilterAllExceptTarget an einem fliegenden Projektil wird nicht ausgewertet
+    m = dart_like()
+    proj_of(m)["filters"].append(T("FilterAllExceptTargetModel"))
+    with pytest.raises(b.Unsupported, match="FilterAllExceptTargetModel"):
+        b.convert_variant(m, [0, 0, 0])

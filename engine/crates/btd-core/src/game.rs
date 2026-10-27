@@ -629,7 +629,7 @@ impl Game {
         self.projectiles.clear();
         let mut next_id: u32 = 0;
         for tw in &mut self.towers {
-            tw.attacks.iter_mut().for_each(|a| (a.cd_left, a.shots) = (0.0, 0));
+            tw.attacks.iter_mut().for_each(|a| (a.cd_left, a.shots, a.burst_left) = (0.0, 0, 0));
         }
         let mut in_range: Vec<usize> = Vec::new();
         let mut hit_list: Vec<usize> = Vec::new();
@@ -712,7 +712,12 @@ impl Game {
 
             // Türme schießen. Cooldowns laufen jeden Tick, der Überschuss wird übertragen.
             for tw in &mut self.towers {
-                tw.attacks.iter_mut().for_each(|a| a.cd_left -= dt);
+                for a in &mut tw.attacks {
+                    a.cd_left -= dt;
+                    if a.burst_left > 0 {
+                        a.burst_cd -= dt;
+                    }
+                }
             }
             if !self.bloons.is_empty() {
                 // Lebende Bloons in diesem Tick. Sind alle weg, werden die restlichen Angriffe
@@ -725,7 +730,9 @@ impl Game {
                         }
                         let tw = &self.towers[ti];
                         let atk = &tw.attacks[ai];
-                        if atk.cd_left > eps {
+                        // nächster Schuss einer laufenden Salve (Cooldown läuft unabhängig weiter)
+                        let burst_shot = atk.burst_left > 0 && atk.burst_cd <= eps;
+                        if atk.cd_left > eps && !burst_shot {
                             continue;
                         }
                         let (cx, cy) = (tw.x, tw.y);
@@ -744,7 +751,11 @@ impl Game {
                             }
                         }
                         if in_range.is_empty() {
-                            self.towers[ti].attacks[ai].cd_left = 0.0; // bereit, aber kein Ziel
+                            let a = &mut self.towers[ti].attacks[ai];
+                            a.burst_left = 0; // Salve ohne Ziel bricht ab [KAL]
+                            if a.cd_left <= eps {
+                                a.cd_left = 0.0; // bereit, aber kein Ziel
+                            }
                             continue;
                         }
                         // jeder n-te Schuss ist kritisch
@@ -820,7 +831,15 @@ impl Game {
                         hit_list.truncate(pierce as usize);
 
                         let a = &mut self.towers[ti].attacks[ai];
-                        a.cd_left = a.cd_left.max(-dt) + cooldown;
+                        if burst_shot {
+                            a.burst_left -= 1;
+                            a.burst_cd = a.burst_cd.max(-dt) + a.burst.map_or(0.0, |b| b.1);
+                        } else {
+                            a.cd_left = a.cd_left.max(-dt) + cooldown;
+                            if let Some((count, interval)) = a.burst.filter(|b| b.0 > 1) {
+                                (a.burst_left, a.burst_cd) = (count - 1, interval);
+                            }
+                        }
                         a.shots = shots;
 
                         for &i in &hit_list {

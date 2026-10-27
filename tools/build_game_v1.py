@@ -24,8 +24,14 @@ OUT = ROOT / "data" / "local"
 
 # Die 6 klassischen Primary-Türme (docs/m2-plan.md)
 TOWERS = ["DartMonkey", "BoomerangMonkey", "BombShooter", "TackShooter", "IceMonkey", "GlueGunner"]
+# Turm-Sets (--towers): primary = die 6 klassischen Primary-Türme, t12 = dazu Schritt 1 aus
+# docs/design-towers-step1.md
+TOWER_SETS = {"primary": TOWERS,
+              "t12": TOWERS + ["SniperMonkey", "Desperado", "SuperMonkey", "Druid", "NinjaMonkey", "WizardMonkey"]}
 TOWER_NAMES = {"DartMonkey": "dart", "BoomerangMonkey": "boomerang", "BombShooter": "bomb",
-               "TackShooter": "tack", "IceMonkey": "ice", "GlueGunner": "glue"}
+               "TackShooter": "tack", "IceMonkey": "ice", "GlueGunner": "glue", "SniperMonkey": "sniper",
+               "Desperado": "desperado", "SuperMonkey": "super", "Druid": "druid", "NinjaMonkey": "ninja",
+               "WizardMonkey": "wizard"}
 
 # Flächentypen im Spiel (AreaType) -> game_v1
 AREA_KINDS = {2: "land", 0: "track", 1: "water", 3: "blocked"}
@@ -38,7 +44,10 @@ COSMETIC_PARTS = ("Display", "Sound", "Effect", "Sprite", "Prefab", "Audio", "An
 COSMETIC_TYPES = {"UpgradePathModel", "ApplyModModel", "TargetType", "RotateToTargetModel",
                   "TargetFirstModel", "TargetLastModel", "TargetCloseModel", "TargetStrongModel",
                   "TargetFirstPrioCamoModel", "TargetLastPrioCamoModel", "TargetClosePrioCamoModel",
-                  "TargetStrongPrioCamoModel", "ShowTextOnHitModel"}
+                  "TargetStrongPrioCamoModel", "ShowTextOnHitModel",
+                  # Desperado-Targeting (die Sim zielt immer "First"); Super-Monkey-Radius ist Darstellung
+                  "TargetDesperadoFirstModel", "TargetDesperadoLastModel", "TargetDesperadoCloseModel",
+                  "TargetDesperadoStrongModel", "TowerRadiusModel"}
 
 
 def cosmetic(t: str) -> bool:
@@ -66,7 +75,34 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
            # Treffer-Reset, kritische Treffer, parallele Emission, Verlangsamungs-Zone
            "RandomRangeTravelStraitModel", "CreateProjectileOnExhaustFractionModel", "AddBehaviorToBloonModel",
            "DamageOverTimeModel", "AddBehaviorModifierForTagModel", "PushBackModel", "ClearHitBloonsModel",
-           "CritMultiplierModel", "ParallelEmissionModel", "SlowBloonsZoneModel"}
+           "CritMultiplierModel", "ParallelEmissionModel", "SlowBloonsZoneModel",
+           # Türme Schritt 1: Zielen ohne Abwurf-Versatz (die Sim zielt ohnehin von der Turmmitte)
+           "CheckTargetsWithoutOffsetsModel"}
+
+# Nur dort erlaubt, wo der Konverter sie wirklich auswertet (`use`); jedes andere Vorkommen (z.B. in
+# einem Kontakt-Projektil eines späteren Upgrades) macht die Variante "nicht unterstützt".
+STRICT = {"InstantModel", "InstantDamageEmissionModel", "FilterAllExceptTargetModel", "BurstWeaponBehaviorModel",
+          "RandomArcEmissionModel", "RandomEmissionModel", "OffsetModel", "RemoveBloonModifiersModel"}
+HANDLED |= STRICT
+_used: set = set()
+
+
+def use(node):
+    _used.add(id(node))
+
+
+def check_strict(node):
+    """Wirft Unsupported, wenn ein STRICT-Modell an einer nicht ausgewerteten Stelle steht."""
+    if isinstance(node, dict):
+        t = short(node.get("$type", ""))
+        if t in STRICT and id(node) not in _used:
+            raise Unsupported(f"{t} (an dieser Stelle)")
+        for k, v in node.items():
+            if not k[:1].isupper():
+                check_strict(v)
+    elif isinstance(node, list):
+        for v in node:
+            check_strict(v)
 
 # Bloon-Tags der MOAB-Klassen für PushBackModel-Multiplikatoren
 PUSH_TAGS = (("Moab", "multiplierMOAB"), ("Bfb", "multiplierBFB"), ("Ddt", "multiplierDDT"), ("Zomg", "multiplierZOMG"))
@@ -309,6 +345,22 @@ def convert_emission(em, fixed: bool) -> dict:
             raise Unsupported("ArcEmissionModel(offsetStart/sliceSize/AirUnit)")
         return {"kind": "arc", "count": em["count"], "angle": em["angle"], "offset": em.get("offset", 0.0),
                 "fixed": fixed}
+    if et == "RandomArcEmissionModel":
+        # zufällige Richtung im Fächer: Mittelwert statt Zufall (Super Monkey: 1 Projektil ±8° -> gerade) [KAL]
+        if em.get("offsetStart", 0.0) or em.get("sliceSize", 0.0) or em.get("useAirUnitRotation") \
+                or em.get("useProjectileRotation"):
+            raise Unsupported("RandomArcEmissionModel(offsetStart/sliceSize/Rotation)")
+        use(em)
+        if em["count"] == 1:
+            return {"kind": "single"}
+        return {"kind": "arc", "count": em["count"], "angle": em["angle"], "offset": em.get("offset", 0.0),
+                "fixed": fixed}
+    if et == "RandomEmissionModel":
+        # n Projektile mit zufälliger Richtung in einem Winkel: gleichmäßig verteilt (Druid-Dornen) [KAL]
+        if em.get("useSpeedMultiplier") or em.get("useMainAttackRotation"):
+            raise Unsupported("RandomEmissionModel(SpeedMultiplier/MainAttackRotation)")
+        use(em)
+        return {"kind": "arc", "count": em["count"], "angle": em["angle"], "offset": 0.0, "fixed": fixed}
     if et == "ParallelEmissionModel":
         n, width = em["count"], em["spreadLength"]
         # Projektile gleichmäßig auf spreadLength quer zur Schussrichtung, mittig; yOffset (Versatz nach
@@ -404,6 +456,8 @@ def convert_filters(filters) -> tuple:
             f["skip_frozen"] = True
         elif t == "FilterGlueLevelModel":
             f["skip_glue_level"] = max(f.get("skip_glue_level", 0), int(x["glueLevel"]))
+        elif t == "FilterAllExceptTargetModel":
+            pass  # nur bei Sofort-Treffern ausgewertet (convert_attack), sonst über check_strict gesperrt
         elif t == "FilterOveridingMutatedTargetModel":
             pass  # Zielreihenfolge zwischen "brüchigen" Bloons (Ice-Upgrades); ohne die Mechanik wirkungslos [KAL]
         elif t in ("FilterMoabModel", "FilterWithTagModel"):
@@ -580,8 +634,49 @@ def convert_exhaust(proj, nested: bool) -> list:
     return out
 
 
+def convert_weapon_behaviors(weapon, out: dict):
+    """Salve und Versatz an der Waffe (STRICT, deshalb hier ausgewertet)."""
+    for b in weapon.get("behaviors") or []:
+        t = short(b.get("$type", ""))
+        if t == "BurstWeaponBehaviorModel":
+            if b.get("alwaysEmptyClip"):
+                raise Unsupported("BurstWeaponBehaviorModel(alwaysEmptyClip)")
+            use(b)
+            out["burst"] = {"count": int(b["count"]), "interval": b["interval"]}
+        elif t == "OffsetModel":
+            # Abschuss-Versatz (Druid); die Sim schießt von der Turmmitte [KAL], nur ohne Winkel-Versatz
+            if b.get("angleOffset", 0.0):
+                raise Unsupported("OffsetModel(angleOffset)")
+            use(b)
+
+
+def check_remove_modifiers(proj):
+    """RemoveBloonModifiersModel ist ohne gesetzte Schalter wirkungslos (Druid-Basis)."""
+    for b in behaviors(proj, "RemoveBloonModifiersModel"):
+        if any(b.get(k) for k in ("cleanseRegen", "cleanseCamo", "cleanseLead", "cleanseFortified")):
+            raise Unsupported("RemoveBloonModifiersModel(entfernt Eigenschaften)")
+        use(b)
+
+
+def convert_instant(proj, weapon) -> dict:
+    """Sofort-Treffer (Sniper, Desperado): trifft genau das Ziel ("First") ohne Flug."""
+    if short(weapon["emission"]["$type"]) not in ("InstantDamageEmissionModel", "SingleEmissionModel"):
+        raise Unsupported("Sofort-Treffer mit Mehrfach-Emission")
+    targets_only = [f for f in (proj.get("filters") or []) + [g for pf in behaviors(proj, "ProjectileFilterModel")
+                                                             for g in pf.get("filters") or []]
+                    if short(f.get("$type", "")) == "FilterAllExceptTargetModel"]
+    if not targets_only:
+        raise Unsupported("Sofort-Treffer ohne FilterAllExceptTarget")
+    if behaviors(proj, "CreateProjectileOnContactModel") or behaviors(proj, "CreateProjectileOnExhaustFractionModel"):
+        raise Unsupported("Sofort-Treffer mit Kontakt-Projektilen")
+    for n in behaviors(proj, "InstantModel") + targets_only + [weapon["emission"]]:
+        use(n)
+    return {"kind": "hitscan"}
+
+
 def convert_attack(tower, attack, weapon, idx) -> dict:
     proj = weapon["projectile"]
+    check_remove_modifiers(proj)
     if proj.get("dontUseCollisionChecker") or not proj.get("canCollideWithBloons", True):
         raise Unsupported("Projektil ohne Kollision")
     check_pierce_reduction(proj)
@@ -594,7 +689,12 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
     camo, extras = convert_extras(proj, all_filters(proj, attack))
     if travel and age:
         raise Unsupported("AgeModel an einem geraden Projektil")
-    if travel or follow:
+    instant = behaviors(proj, "InstantModel")
+    if instant and (travel or follow):
+        raise Unsupported("InstantModel mit Flugbahn")
+    if instant:
+        delivery = convert_instant(proj, weapon)
+    elif travel or follow:
         emission = convert_emission(weapon["emission"], not rotates(tower))
         if follow:
             fp = follow[0]
@@ -630,12 +730,13 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
         "range": attack["range"] if attack["range"] != tower["range"] else None,
         "cooldown": weapon["rate"],
         "damage": dmg[0]["damage"] if dmg else 0.0,
-        "pierce": pierce_of(proj),
+        "pierce": 1 if instant else pierce_of(proj),  # Sofort-Treffer: nur das Ziel
         "cannot_damage": cannot_damage(proj),
         "camo": camo,
         "delivery": delivery,
         "extras": extras,
     }
+    convert_weapon_behaviors(weapon, out)
     if crit:
         c = crit[0]
         # jeder n-te Schuss kritisch; das Spiel würfelt n in [lower, upper] [KAL: Mittelwert]
@@ -644,6 +745,7 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
 
 
 def convert_variant(model, tiers) -> dict:
+    _used.clear()  # id() gilt nur, solange das Modell lebt
     unknown = set()
     check_types(model, unknown)
     if unknown:
@@ -654,6 +756,7 @@ def convert_variant(model, tiers) -> dict:
             attacks.append(convert_attack(model, a, w, len(attacks)))
     if not attacks:
         raise Unsupported("kein Angriff")
+    check_strict(model)
     for a in attacks:
         if a["range"] is None:
             del a["range"]
@@ -704,7 +807,8 @@ def build_tower(dump: Path, base: str, coverage: list) -> dict:
             tiers[p] = k
             m = load(tdir / f"{base}-{''.join(map(str, tiers))}.json")
             name = m["appliedUpgrades"][-1]
-            costs[p].append(int(load(dump / "upgrades" / f"{name}.json")["cost"]))
+            # Dateinamen im Dump: ":" ist durch "_" ersetzt (z.B. "Necromancer_ Unpopped Army")
+            costs[p].append(int(load(dump / "upgrades" / f"{name.replace(':', '_')}.json")["cost"]))
     for f in sorted(tdir.glob(f"{base}-[0-5][0-5][0-5].json")) + [tdir / f"{base}.json"]:
         code = f.stem.split("-")[-1] if "-" in f.stem else "000"
         tiers = [int(c) for c in code]
@@ -727,12 +831,14 @@ def main():
     ap.add_argument("--map", default="Tutorial", help="interner Kartenname (Monkey Meadow = Tutorial)")
     ap.add_argument("--preset", choices=sorted(PRESETS), default="medium")
     ap.add_argument("--rounds", default="DefaultRoundSet")
+    ap.add_argument("--towers", choices=sorted(TOWER_SETS), default="primary",
+                    help="Turm-Set; außer primary bekommt die Ausgabe den Namen als Suffix")
     args = ap.parse_args()
     dump = args.dump or latest_dump()
     preset = PRESETS[args.preset]
 
     coverage = []
-    towers = [build_tower(dump, t, coverage) for t in TOWERS]
+    towers = [build_tower(dump, t, coverage) for t in TOWER_SETS[args.towers]]
     footprint = max(v["footprint"] for t in towers for v in t["variants"])
     last = preset["end_round"]
     rounds = build_rounds(dump, args.rounds, last)
@@ -752,7 +858,7 @@ def main():
         "income": build_income(dump, args.rounds, last),
     }
     OUT.mkdir(parents=True, exist_ok=True)
-    stem = f"game_v1_{args.map.lower()}_{args.preset}"
+    stem = f"game_v1_{args.map.lower()}_{args.preset}" + ("" if args.towers == "primary" else f"_{args.towers}")
     (OUT / f"{stem}.json").write_text(json.dumps(data, indent=1) + "\n")
 
     lines = [f"# Abdeckung {stem} (Dump {dump.name})", "",
@@ -766,7 +872,7 @@ def main():
              "werden nicht gespiegelt (FlipFollowPath).",
              "- Zufall durch Mittelwerte ersetzt: Cluster-Reichweite, Crit-Intervall.",
              f"- Tags ohne Bloon in dieser Konfiguration entfernt: {', '.join(sorted(dropped)) or '-'}.", ""]
-    for base in TOWERS:
+    for base in TOWER_SETS[args.towers]:
         rows = [c for c in coverage if c[0] == base]
         ok = sum(1 for c in rows if c[2] is None)
         lines += [f"## {base}: {ok}/{len(rows)} Kombinationen", ""]

@@ -454,6 +454,8 @@ pub struct AttackV1 {
     pub delivery: Delivery,
     pub extras: HitExtras,
     pub crit: Option<Crit>,
+    /// Salve: nach dem Cooldown `count` Schüsse im Abstand `interval` (Spiel: BurstWeaponBehaviorModel).
+    pub burst: Option<Burst>,
 }
 
 /// Zusätzliche Treffer-Regeln (aus den Filter-, Bonus- und Status-Models des Spiels).
@@ -505,6 +507,14 @@ pub struct Push {
 pub struct Crit {
     pub damage: f64,
     pub every: u32,
+}
+
+/// Salve: `count` Schüsse je Angriff, `interval` Sekunden auseinander (Desperado).
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Burst {
+    pub count: u32,
+    pub interval: f64,
 }
 
 /// Verlangsamungs-Zone um den Turm (Arctic Wind).
@@ -753,6 +763,8 @@ struct RawAttack {
     extras: HitExtras,
     #[serde(default)]
     crit: Option<Crit>,
+    #[serde(default)]
+    burst: Option<Burst>,
 }
 
 fn first() -> Targeting {
@@ -1003,6 +1015,7 @@ impl GameV1 {
                     let ok = pos(a.cooldown)
                         && non_neg(a.damage)
                         && a.crit.map_or(true, |c| non_neg(c.damage) && c.every >= 1)
+                        && a.burst.map_or(true, |b| b.count >= 1 && non_neg(b.interval))
                         && a.range.map_or(true, pos)
                         && match &a.delivery {
                             Delivery::Hitscan {} => true,
@@ -1153,6 +1166,7 @@ fn resolve_tower(t: &RawTower) -> Result<TowerDefV1, DataError> {
                         delivery: a.delivery.clone(),
                         extras: a.extras.clone(),
                         crit: a.crit,
+                        burst: a.burst,
                     })
                 })
                 .collect::<Result<_, DataError>>()?,

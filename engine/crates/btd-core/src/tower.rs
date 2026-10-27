@@ -169,6 +169,10 @@ pub struct AttackRt {
     pub crit: Option<(Real, u32)>,
     pub shots: u32,
     pub cd_left: Real,
+    /// Salve: (Schüsse je Angriff, Abstand); offene Schüsse der laufenden Salve und Zeit bis zum nächsten.
+    pub burst: Option<(u32, Real)>,
+    pub burst_left: u32,
+    pub burst_cd: Real,
 }
 
 /// Wie der Angriff trifft (Sim-Typ, aus `Delivery`).
@@ -431,6 +435,9 @@ impl Tower {
                     crit: a.crit.map(|c| (real(c.damage), c.every.max(1))),
                     shots,
                     cd_left,
+                    burst: a.burst.map(|b| (b.count, real(b.interval))),
+                    burst_left: 0,
+                    burst_cd: 0.0,
                 }
             })
             .collect();
