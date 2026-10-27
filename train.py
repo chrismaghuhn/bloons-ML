@@ -132,6 +132,8 @@ if __name__ == "__main__":
             except ValueError:
                 return False
         states_b = [st for st in states_b if buildable(st)]
+        if not states_b:
+            ap.error("--start-replays: kein Zustand passt zu diesen Daten (falsche Karte/Türme?)")
         if len(states_b) < n_all:
             print(f"Startzustände: {n_all - len(states_b)} von {n_all} passen nicht zu diesen Daten, verworfen")
         for st in states_b:
