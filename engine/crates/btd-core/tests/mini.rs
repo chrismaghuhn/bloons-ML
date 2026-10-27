@@ -891,3 +891,18 @@ fn validation_rejects_bad_homing() {
     }
     assert!(d.validate().is_err(), "Zielsuche mit Kurvenbahn");
 }
+
+#[test]
+fn burst_is_cancelled_when_no_target_is_left() {
+    // ein Angriff pro Runde; der erste Schuss platzt den einzigen Red, der zweite Salvenschuss hat
+    // kein Ziel und verfällt -- der Red 3 s später bleibt ungetroffen
+    let pin = |second_red_at: f64| {
+        let mut d = with_round(vec![group(0, 1, 0.0, 0.0), group(0, 1, second_red_at, second_red_at)]);
+        let a = atk(&mut d, PIN);
+        (a.cooldown, a.pierce) = (1000.0, 1);
+        a.burst = Some(Burst { count: 2, interval: 0.1 });
+        run(d, place(PIN, 0.0, 15.0)).pops
+    };
+    assert_eq!(pin(0.0), 2, "beide Reds gleichzeitig: beide Schüsse treffen");
+    assert_eq!(pin(3.0), 1, "Salve verfällt ohne Ziel");
+}

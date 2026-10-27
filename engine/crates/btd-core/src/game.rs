@@ -718,6 +718,9 @@ impl Game {
                     a.cd_left -= dt;
                     if a.burst_left > 0 {
                         a.burst_cd -= dt;
+                        if self.bloons.is_empty() {
+                            a.burst_left = 0; // keine Bloons mehr: Salve bricht ab
+                        }
                     }
                 }
             }

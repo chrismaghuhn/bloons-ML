@@ -352,12 +352,13 @@ def convert_emission(em, fixed: bool) -> dict:
                 or em.get("useProjectileRotation"):
             raise Unsupported("RandomArcEmissionModel(offsetStart/sliceSize/Rotation)")
         use(em)
-        if em["count"] == 1:
+        if em["count"] == 1 and not em.get("offset", 0.0):
             return {"kind": "single"}
         return {"kind": "arc", "count": em["count"], "angle": em["angle"], "offset": em.get("offset", 0.0),
                 "fixed": fixed}
     if et == "RandomEmissionModel":
-        # n Projektile mit zufälliger Richtung in einem Winkel: gleichmäßig verteilt (Druid-Dornen) [KAL]
+        # n Projektile mit zufälliger Richtung in einem Winkel: gleichmäßig verteilt (Druid-Dornen);
+        # [KAL: angle als voller Fächer angenommen, nicht ±angle; startOffset/ejectPointRandomness ignoriert]
         if em.get("useSpeedMultiplier") or em.get("useMainAttackRotation"):
             raise Unsupported("RandomEmissionModel(SpeedMultiplier/MainAttackRotation)")
         use(em)
@@ -645,7 +646,8 @@ def convert_weapon_behaviors(weapon, out: dict):
             use(b)
             out["burst"] = {"count": int(b["count"]), "interval": b["interval"]}
         elif t == "OffsetModel":
-            # Abschuss-Versatz (Druid); die Sim schießt von der Turmmitte [KAL], nur ohne Winkel-Versatz
+            # Bedeutung unbestätigt (Druid: range 45; Sniper-Supply-Drop: range 360, eher Zufallsdrehung).
+            # Ignoriert, die mittlere Richtung bleibt gleich [KAL: echte Streuung evtl. breiter]
             if b.get("angleOffset", 0.0):
                 raise Unsupported("OffsetModel(angleOffset)")
             use(b)

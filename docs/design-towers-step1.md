@@ -14,13 +14,13 @@ nah an dem, was die Engine schon kann. Buffs/Farm (Village, Banana Farm, Alchemi
 | Druid | RandomEmissionModel (5 in 25°), OffsetModel, RemoveBloonModifiersModel (alle Schalter aus) | Zufallsfächer → gleichmäßiger Fächer; Offset ignorieren (wie Abwurf-Versatz); Remove… nur mit allen Schaltern aus annehmen |
 | Ninja, Wizard | – (Basis geht) | Konverter: Upgrade-Dateien mit ":" im Namen heißen im Dump "_"; Namen in der Turmtabelle |
 
-## 2. Neue Engine-Mechaniken
+## 2. Neue Engine-Mechaniken (Entwurf; tatsächliche Umsetzung siehe "Stand" unten)
 
 1. **Sofort-Treffer** (`Delivery::Instant`): trifft das gewählte Ziel im selben Tick, wendet Schaden,
    Extras (Filter, Status, Bonus-Schaden) und Kontakt-Effekte (z.B. Splitter/Explosion bei späteren
    Upgrades) an der Position des Ziels an. Pierce = Zahl der Ziele in Reihenfolge "First".
 2. **Salve**: `burst: {count, interval}` am Angriff; nach dem Cooldown folgen `count` Schüsse im
-   Abstand `interval` (in Ticks gerundet).
+   Abstand `interval` (Überschuss wird übertragen, wie beim Cooldown).
 3. **Zielsuchende Projektile** (`TrackTargetModel`, `TrackTargetWithinTimeModel`): Projektil dreht
    pro Tick um höchstens `turnRate` auf sein Ziel (bzw. den nächsten "First"-Bloon in Reichweite,
    wenn das Ziel weg ist). Das ist der größte Brocken und schaltet vor allem Ninja- und
@@ -33,7 +33,7 @@ Wind/Blowback, Darkshift, Lightning, Life-based Attack Speed).
 
 ## 3. Konverter und Daten
 
-- `tools/build_game_v1.py --towers primary|step1` (Standard bleibt `primary`, damit bestehende Modelle
+- `tools/build_game_v1.py --towers primary|t12` (Standard bleibt `primary`, damit bestehende Modelle
   und Datendateien gültig bleiben); Ausgabe mit Suffix, z.B. `game_v1_tutorial_medium60_t12.json`.
 - Abdeckungs-Report wie bisher je Turm.
 - Mit 12 Türmen: Observation 2 + 12 + 3 = 17 Kanäle, 1 + (12 + 3 + 1) × 720 = 11 521 Aktionen.
@@ -79,3 +79,12 @@ ist es weg oder schon getroffen, mit `retarget` der nächste anvisierbare Bloon 
 Kegel um die Flugrichtung; Drehung höchstens `turn_rate` pro Sekunde. TrackTargetWithinTime (Ninja):
 Drehung bis zur Kegelkante in `timeInFrames`. [KAL: Zielwahl beim Neu-Anvisieren, Kegel = voller
 Öffnungswinkel.] Damit 275 von 768 Kombinationen (Wizard 21, Ninja 6).
+
+## Kalibrierpunkte aus Schritt 1
+
+- Salve: Cooldown startet mit dem ersten Schuss; ohne Ziel verfällt der Rest der Salve.
+- OffsetModel (Druid, Sniper-Supply-Drop) ignoriert; Bedeutung unbestätigt (evtl. Zufallsdrehung).
+- RandomEmission-`angle` als voller Fächer; RandomArc/RandomEmission durch Mittelwert ersetzt.
+- Zielsuche: Zielwahl beim Neu-Anvisieren (nächster Bloon), Kegel = voller Öffnungswinkel.
+- Immunitäts-Bit 64 in `immuneBloonProperties` (z.B. 72/73 bei Super 2xx, Wizard, Druid) wird vom
+  Konverter ignoriert; Bedeutung im Spiel prüfen.
