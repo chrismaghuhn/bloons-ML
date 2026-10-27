@@ -39,33 +39,39 @@ Betroffene Runden mit Regrow-Bloons:
 ## 2. Regrow in der Sim
 
 **Daten (game_v1):**
-- `BloonDefV1`: neue Felder `grow_to: Option<String>`, `grow_rate: f64` und
-  `grow_override_child: Option<String>`. Der Konverter füllt sie aus `GrowModel` (`""` und `null` = kein
-  Ziel).
+- `BloonDefV1`: neues Feld `grow_rate: f64` (0 = wächst nicht). Der Konverter liest es aus `GrowModel`.
+- `growToId` und `overrideChildWithColor` braucht die Engine nicht. Der Konverter prüft damit nur, dass jeder
+  Schritt Elternteil→Kind zum Spiel passt (`""` und `null` = kein Ziel).
 - Neue Felder bedeuten: Eine alte Erweiterung lädt neue Daten nicht (`deny_unknown_fields`), wie bei
   Village/Farm. Das kommt in die README.
 
-**Engine (`BloonStore`), je Bloon drei neue Werte:**
-- `grow_to: Option<BloonKind>`: der nächste Typ beim Wachsen.
-- `grow_cap: BloonKind`: die Obergrenze.
+**Engine (`BloonStore`), je Bloon zwei neue Werte:**
+- `grow_stack`: die Regrow-Vorfahren des Bloons, höchstens 9 Typen (`[BloonKind; 9]` plus Länge), der
+  jüngste oben.
 - `grow_timer`: Zeit seit Spawn oder letztem Wachsen; Start 0.
 
 **Beim Spawn (Runde oder Kind):**
-- `grow_cap`: Ist der Elternteil ein Regrow-Typ, erbt das Kind dessen `grow_cap`; sonst (Rundenspawn, Kind
-  eines DDT) ist es der eigene Typ.
-- `grow_to`: der Elternteil, wenn dessen `grow_override_child` zur Basisfarbe des Kinds passt; sonst
-  `def(kind).grow_to`.
-- Dafür liefert `bloon::hit()` je Kind den direkten Elternteil mit; bei Überschuss-Schaden über mehrere
-  Ebenen geht er heute verloren.
+- Rundenspawn: leerer Stapel.
+- Kind eines Regrow-Bloons: der Stapel des Elternteils, dazu alle Zwischentypen bis zum Kind. Dafür liefert
+  `bloon::hit()` bei Überschuss-Schaden über mehrere Ebenen je Kind den ganzen Pfad. Heute gibt es nur die
+  letzten Kinder zurück.
+- Kind eines Bloons ohne Regrow (z.B. Ceramic-Kinder eines DDT): leerer Stapel, wächst also höchstens bis
+  zum eigenen Typ zurück.
+
+Der Stapel deckt alle Fälle aus §1 ab, ohne Sonderregeln:
+- Obergrenze: Wächst der Bloon zurück, landet er beim Spawntyp, dann ist der Stapel leer.
+- Override: Pink aus White, Purple oder Lead wächst zum Elternteil zurück, weil der oben im Stapel liegt.
+- Überschuss-Schaden: Lead→Black→Pink wächst über Black zurück zu Lead und hört dort auf.
 
 **Je Tick** (in der Bewegungsschleife, gefrorene Bloons sind dort schon ausgenommen; der Timer hält also
-beim Einfrieren an [KAL]): Für Regrow-Bloons, nicht in einer Grow-Block-Zone, mit `grow_timer ≥ grow_rate`
-und `grow_to = Some(t)`:
-- `kind = t`, `hp` = HP des neuen Typs, Timer auf 0.
-- Ist `t` die Obergrenze, wird `grow_to = None`, sonst `def(t).grow_to`.
-- Den Vergleich mit der Obergrenze macht die Engine ohne Fortified, damit befestigte Ceramics nachwachsen.
+beim Einfrieren an [KAL]): Für Regrow-Bloons, nicht in einer Grow-Block-Zone, mit nicht leerem Stapel und
+`grow_timer ≥ grow_rate`:
+- `kind = grow_stack.pop()`, `hp` = HP dieses Typs, Timer auf 0.
 - Position, ID und Status-Effekte bleiben. Die gleiche ID heißt: Ein Projektil, das ihn schon getroffen
   hat, trifft ihn nicht noch einmal.
+- **Fortified [KAL]:** Mit dem Stapel wachsen die Kinder eines CeramicRegrowFortified wieder zum
+  *befestigten* Ceramic (20 HP). Laut `growToId` wäre es das unbefestigte (10 HP). Wir nehmen den Stapel;
+  die Messung entscheidet.
 
 **Was aus dem Typ folgt:**
 - Leak-Wert, Tempo und Immunitäten kommen aus der Definition des neuen Typs.
@@ -82,6 +88,7 @@ und `grow_to = Some(t)`:
   vorerst `Unsupported`.
 
 **Aufwand und Tempo:** Ein Vergleich und eine Addition je Regrow-Bloon und Tick; ohne Regrow-Bloons nichts.
+Speicher: 9 Typen plus Länge mehr je Bloon.
 
 ## 3. Runden 81–100
 
@@ -93,8 +100,8 @@ Was ich über das Spiel weiß, aber im Dump nicht belegen kann (darum **alles [K
 **Messen mit dem Recorder (Mod-Session):**
 - Partie im Sandbox-Modus auf Monkey Meadow, CHIMPS-Regeln, Runden 76–100 einzeln starten. Nur Türme, die
   wenig poppen, damit die Bloons den Pfad ganz durchlaufen.
-- Der Recorder loggt je Bloon schon `health`, Typ, Distanz und `trackSpeedMultiplier`.
-- Die Anfangs-HP je Spawn stehen schon in `bloon_info`.
+- Der Recorder loggt je Schritt nur ID, Distanz und Position. Typ und `health` stehen bei `spawn`,
+  `bloon_info` (dort auch die Anfangs-HP) und `leak`.
 - Neu nötig:
   - ein Ereignis bei **Typwechsel** (für Regrow-Zeiten),
   - ein Schaden-/Pop-Hook (`Bloon.Damage`) und `cash`-Ereignisse (Timer nach Treffer, Geld für
@@ -131,9 +138,11 @@ auswerten; dann entscheiden, ob neu trainiert wird.
 - **Obergrenze:** Eine als PinkRegrow gespawnte, auf Yellow gepoppte wächst nur bis Pink.
 - **Zebra:** Ein ZebraRegrow zerplatzt in Black und White; beide wachsen zu Zebra, aus einem werden zwei.
 - **Override:** Pink aus White, Purple und Lead wächst zu White, Purple bzw. Lead zurück.
-- **Fortified:** Ein CeramicRegrowFortified wächst nach dem Zerplatzen wieder zu einem Ceramic.
+- **Überschuss-Schaden mit Override:** Lead bis Pink gepoppt wächst über Black nur bis Lead; Purple bzw.
+  White bis Yellow gepoppt wächst nur bis Purple bzw. White.
+- **Fortified:** Ein CeramicRegrowFortified wächst nach dem Zerplatzen wieder zum befestigten Ceramic (Stapel; [KAL]).
 - **DDT-Kinder:** Die Ceramic-Kinder eines DDT wachsen nur bis Ceramic.
-- **Überschuss-Schaden:** über mehrere Ebenen, der direkte Elternteil stimmt.
+- **Überschuss-Schaden:** über mehrere Ebenen enthält der Stapel alle Zwischentypen.
 - **Blocker:**
   - Ein gefrorener Bloon wächst nicht.
   - In einer Village-Aura mit GrowBlock wächst er nicht.
