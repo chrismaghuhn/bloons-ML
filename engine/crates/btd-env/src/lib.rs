@@ -72,6 +72,9 @@ pub struct EnvConfig {
     pub max_banned_towers: usize,
     /// Seed für die Sperren (VecEnv leitet daraus je Env einen eigenen ab).
     pub seed: u64,
+    /// Zufall im Spiel (z.B. Crit-Abstände): jede Episode bekommt einen eigenen Seed aus dem
+    /// Env-Zufall. Aus = Mittelwerte (deterministisch, Parität zur Python-Env).
+    pub randomness: bool,
 }
 
 impl Default for EnvConfig {
@@ -88,6 +91,7 @@ impl Default for EnvConfig {
             preview_rounds: 0,
             max_banned_towers: 0,
             seed: 0,
+            randomness: false,
         }
     }
 }
@@ -310,6 +314,10 @@ impl Env {
         }
         self.draw_bans();
         self.game.reset();
+        if self.cfg.randomness {
+            let seed = self.next_rand();
+            self.game.set_seed(Some(seed));
+        }
         self.start = EpisodeStart::default();
         if let Some(sc) = self.starts.clone().filter(|_| draw_start) {
             if self.unit() < sc.p_start {

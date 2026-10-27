@@ -62,6 +62,28 @@ pub struct Game {
     next_id: TowerId,
     bloons: BloonStore,
     projectiles: Vec<Projectile>,
+    /// Zufall im Spiel (Crit-Abstände; später weitere Quellen). `None` = Mittelwerte, deterministisch
+    /// ohne Seed (Standard, Parität zur Python-Referenz).
+    rng: Option<u64>,
+}
+
+/// SplitMix64-Schritt (wie in btd-env), Zustand = letzte Ausgabe.
+fn splitmix64(x: u64) -> u64 {
+    let mut z = x.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
+}
+
+/// Schüsse bis zum nächsten Crit: mit Zufall gleichverteilt im Bereich, sonst der Mittelwert.
+fn roll_crit(rng: &mut Option<u64>, every: u32, range: Option<(u32, u32)>) -> u32 {
+    match (rng.as_mut(), range) {
+        (Some(state), Some((lo, hi))) => {
+            *state = splitmix64(*state);
+            lo + (*state % (hi - lo + 1) as u64) as u32
+        }
+        _ => every,
+    }
 }
 
 /// Spawn-Zeitpunkte einer Runde: `count` Bloons je Gruppe gleichmäßig auf [start, end],
@@ -446,6 +468,7 @@ impl Game {
             next_id: 0,
             bloons: BloonStore::default(),
             projectiles: Vec::new(),
+            rng: None,
             data,
         };
         g.reset();
@@ -461,6 +484,11 @@ impl Game {
         self.next_id = 0;
         self.bloons.clear();
         self.projectiles.clear();
+    }
+
+    /// Zufall an (`Some(seed)`) oder aus (`None`, Mittelwerte). Gilt ab der nächsten Runde.
+    pub fn set_seed(&mut self, seed: Option<u64>) {
+        self.rng = seed.map(splitmix64);
     }
 
     pub fn data(&self) -> &Arc<GameV1> {
@@ -631,7 +659,12 @@ impl Game {
         self.projectiles.clear();
         let mut next_id: u32 = 0;
         for tw in &mut self.towers {
-            tw.attacks.iter_mut().for_each(|a| (a.cd_left, a.shots, a.burst_left) = (0.0, 0, 0));
+            for a in &mut tw.attacks {
+                (a.cd_left, a.shots, a.burst_left) = (0.0, 0, 0);
+                if let Some((_, every)) = a.crit {
+                    a.crit_next = roll_crit(&mut self.rng, every, a.crit_range);
+                }
+            }
         }
         let mut in_range: Vec<usize> = Vec::new();
         let mut hit_list: Vec<usize> = Vec::new();
@@ -765,10 +798,11 @@ impl Game {
                         }
                         // jeder n-te Schuss ist kritisch
                         let shots = atk.shots + 1;
-                        let (damage, shots) = match atk.crit {
-                            Some((crit, every)) if shots % every == 0 => (crit, 0),
-                            Some(_) => (atk.damage, shots),
-                            None => (atk.damage, 0),
+                        // ohne Zufall ist crit_next == every: wie bisher jeder every-te Schuss
+                        let (damage, shots, crit_hit) = match atk.crit {
+                            Some((crit, _)) if shots >= atk.crit_next => (crit, 0, true),
+                            Some(_) => (atk.damage, shots, false),
+                            None => (atk.damage, 0, false),
                         };
                         let (cannot, cooldown, pierce) = (atk.cannot_damage, atk.cooldown, atk.pierce);
                         let extras = atk.extras.clone();
@@ -847,6 +881,10 @@ impl Game {
                             }
                         }
                         a.shots = shots;
+                        if crit_hit {
+                            let every = a.crit.map_or(1, |c| c.1);
+                            a.crit_next = roll_crit(&mut self.rng, every, a.crit_range);
+                        }
 
                         for &i in &hit_list {
                             if let Some(h) =

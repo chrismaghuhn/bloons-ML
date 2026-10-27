@@ -100,7 +100,7 @@ impl PyEnv {
     #[new]
     #[pyo3(signature = (data_path, max_builds_per_round=6, reward_round=1.0, reward_life=-0.02,
                         reward_win=10.0, reward_loss=-5.0, record=false, preview_rounds=0, reward_tower=0.0,
-                        max_banned_towers=0, seed=0))]
+                        max_banned_towers=0, seed=0, randomness=false))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         data_path: &str,
@@ -114,6 +114,7 @@ impl PyEnv {
         reward_tower: f64,
         max_banned_towers: usize,
         seed: u64,
+        randomness: bool,
     ) -> PyResult<Self> {
         let mut cfg = config(
             max_builds_per_round,
@@ -125,7 +126,7 @@ impl PyEnv {
             record,
             preview_rounds,
         )?;
-        (cfg.max_banned_towers, cfg.seed) = (max_banned_towers, seed);
+        (cfg.max_banned_towers, cfg.seed, cfg.randomness) = (max_banned_towers, seed, randomness);
         let env = Env::new(load_spec(data_path)?, cfg).map_err(data_err)?;
         let (obs, mask) = (vec![0.0; env.layout.obs_size], vec![false; env.layout.n_actions]);
         Ok(PyEnv { env, obs, mask })
@@ -289,7 +290,7 @@ impl PyVecEnv {
     #[new]
     #[pyo3(signature = (data_path, n_envs, max_builds_per_round=6, reward_round=1.0, reward_life=-0.02,
                         reward_win=10.0, reward_loss=-5.0, preview_rounds=0, reward_tower=0.0,
-                        max_banned_towers=0, seed=0))]
+                        max_banned_towers=0, seed=0, randomness=false))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         data_path: &str,
@@ -303,6 +304,7 @@ impl PyVecEnv {
         reward_tower: f64,
         max_banned_towers: usize,
         seed: u64,
+        randomness: bool,
     ) -> PyResult<Self> {
         if n_envs == 0 {
             return Err(value_err("n_envs muss > 0 sein"));
@@ -317,7 +319,7 @@ impl PyVecEnv {
             false,
             preview_rounds,
         )?;
-        (cfg.max_banned_towers, cfg.seed) = (max_banned_towers, seed);
+        (cfg.max_banned_towers, cfg.seed, cfg.randomness) = (max_banned_towers, seed, randomness);
         let v = VecEnv::new(load_spec(data_path)?, cfg, n_envs).map_err(data_err)?;
         let (no, na) = (v.layout.obs_size, v.layout.n_actions);
         Ok(PyVecEnv {

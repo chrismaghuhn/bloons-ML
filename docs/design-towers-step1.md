@@ -88,3 +88,12 @@ Drehung bis zur Kegelkante in `timeInFrames`. [KAL: Zielwahl beim Neu-Anvisieren
 - Zielsuche: Zielwahl beim Neu-Anvisieren (nächster Bloon), Kegel = voller Öffnungswinkel.
 - Immunitäts-Bit 64 in `immuneBloonProperties` (z.B. 72/73 bei Super 2xx, Wizard, Druid) wird vom
   Konverter ignoriert; Bedeutung im Spiel prüfen.
+
+## Zufall mit Seed (2026-10-27)
+
+`Crit.every_range` (aus `lower`/`upper` des Dumps) und `Game::set_seed`: mit Zufall wird der Abstand
+bis zum nächsten Crit je Crit gewürfelt, sonst gilt `every` (bitgleich wie zuvor). Env:
+`EnvConfig.randomness` / `train.py --randomness`, je Episode ein Seed aus dem Env-Zufall. Laut Dump
+57.4 ist der Abstand nur beim Super Monkey zufällig (3xx: 15-20, 5xx: 13-17); Sharp Shooter (10) und
+Crossbow Master (5) sind fest. Weitere Mittelwert-Stellen (Cluster-Reichweite, Zufallsfächer) können
+später an denselben Zufall.

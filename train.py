@@ -74,6 +74,8 @@ if __name__ == "__main__":
                     help="Reward je gebautem Turm, z.B. -0.5 für möglichst wenige Türme (nur Rust)")
     ap.add_argument("--arch", choices=["mlp", "conv"], default=None,
                     help="conv: btd_sim.policy.GridPolicy (Standard mit --engine rust), mlp: flaches MLP")
+    ap.add_argument("--randomness", action="store_true",
+                    help="Zufall im Spiel (z.B. Crit-Abstände) statt Mittelwerten, je Episode ein Seed (nur Rust)")
     ap.add_argument("--ban-towers", type=int, default=0,
                     help="je Episode bis zu so viele Turmtypen zufällig sperren (nur Rust)")
     ap.add_argument("--start-states", type=float, default=0.0,
@@ -97,7 +99,7 @@ if __name__ == "__main__":
     if args.arch is None:
         args.arch = "conv" if args.engine == "rust" else "mlp"
     if args.engine != "rust" and (args.data or args.preview or args.arch == "conv" or args.reward_tower
-                                   or args.ban_towers or args.start_states):
+                                   or args.ban_towers or args.start_states or args.randomness):
         ap.error("--data/--preview/--arch conv/--reward-tower/--ban-towers/--start-states "
                  "gibt es nur mit --engine rust")
     if args.start_states and not args.start_replays:
@@ -112,7 +114,7 @@ if __name__ == "__main__":
         from btd_sim.rust_env import DEFAULT_DATA, RustVecEnv
         env = RustVecEnv(args.envs, args.data or DEFAULT_DATA, preview_rounds=args.preview,
                          reward_tower=args.reward_tower, max_banned_towers=args.ban_towers,
-                         seed=args.seed or 0)
+                         seed=args.seed or 0, randomness=args.randomness)
     else:
         env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
     if args.resume:

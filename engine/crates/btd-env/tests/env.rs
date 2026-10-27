@@ -567,3 +567,22 @@ fn last_replay_survives_the_next_reset() {
     e.reset(&mut obs);
     assert_eq!(e.last_replay(), Some(&done), "bleibt nach dem Auto-Reset abrufbar");
 }
+
+#[test]
+fn randomness_off_by_default_and_reproducible_per_seed() {
+    let play = |cfg: EnvConfig| {
+        let mut e = Env::new(spec(), cfg).unwrap();
+        let mut obs = vec![0.0; e.layout.obs_size];
+        e.reset(&mut obs);
+        while !e.step(0, &mut obs).terminated {}
+        e.game.state_hash()
+    };
+    let base = play(EnvConfig::default());
+    assert_eq!(
+        base,
+        play(EnvConfig { seed: 9, ..Default::default() }),
+        "ohne randomness zählt der Seed nicht"
+    );
+    let r = |seed| play(EnvConfig { randomness: true, seed, ..Default::default() });
+    assert_eq!(r(1), r(1));
+}

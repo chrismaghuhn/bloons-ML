@@ -206,3 +206,7 @@ letzten 500k Schritten von ~2 auf 0,96 (ohne Schedule ~2); normale Starts am End
 Stochastisch deutlich stärker und zuverlässiger; deterministisch besser, aber weiter schwach (in den
 meisten Sperren Runde 26-39). Vielfalt sinkt: immer zuerst Sniper (oben), dann Dart (unten).
 Offen: warum Argmax scheitert (einzelne Spiele ansehen).
+
+Nachtrag: Im Dump 57.4 ist der Crit-Abstand des Sharp Shooters fest 10 (lower = upper = 10), also
+kein Crit-Glück im echten Spiel. Die Abweichung in Runde 43/44 hat eine andere Ursache; Kandidaten:
+Sichtlinie (Bäume blocken Schüsse, die Sim kennt keine Hindernisse), Details der Zielwahl.
