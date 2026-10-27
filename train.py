@@ -49,6 +49,8 @@ if __name__ == "__main__":
     ap.add_argument("--data", default=None, help="game_v1-Datei (Standard: sim_v0)")
     ap.add_argument("--preview", type=int, default=0, help="Runden-Vorschau in der Observation (nur Rust)")
     ap.add_argument("--device", default="auto")
+    ap.add_argument("--reward-tower", type=float, default=0.0,
+                    help="Reward je gebautem Turm, z.B. -0.5 für möglichst wenige Türme (nur Rust)")
     ap.add_argument("--arch", choices=["mlp", "conv"], default=None,
                     help="conv: btd_sim.policy.GridPolicy (Standard mit --engine rust), mlp: flaches MLP")
     ap.add_argument("--conv-width", type=int, default=32, help="Kanäle der Faltungs-Policy")
@@ -57,14 +59,15 @@ if __name__ == "__main__":
     args = ap.parse_args()
     if args.arch is None:
         args.arch = "conv" if args.engine == "rust" else "mlp"
-    if args.engine != "rust" and (args.data or args.preview or args.arch == "conv"):
-        ap.error("--data/--preview/--arch conv gibt es nur mit --engine rust")
+    if args.engine != "rust" and (args.data or args.preview or args.arch == "conv" or args.reward_tower):
+        ap.error("--data/--preview/--arch conv/--reward-tower gibt es nur mit --engine rust")
     if args.resume:
         print("--resume: Architektur und Seed kommen aus dem Modell, --arch/--conv-*/--seed werden ignoriert")
 
     if args.engine == "rust":
         from btd_sim.rust_env import DEFAULT_DATA, RustVecEnv
-        env = RustVecEnv(args.envs, args.data or DEFAULT_DATA, preview_rounds=args.preview)
+        env = RustVecEnv(args.envs, args.data or DEFAULT_DATA, preview_rounds=args.preview,
+                         reward_tower=args.reward_tower)
     else:
         env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
     if args.resume:

@@ -464,3 +464,22 @@ fn round_preview_counts_descendants_and_fortified_tag() {
     let n = out.len();
     assert_eq!(out[n - CATEGORIES.len() + cat("fortified")], 0.0, "Runden bis Fortified = 0");
 }
+
+#[test]
+fn tower_reward_only_for_placements() {
+    let mut e = Env::new(spec(), EnvConfig { reward_tower: -0.5, ..Default::default() }).unwrap();
+    let mut obs = vec![0.0; e.layout.obs_size];
+    let mut mask = vec![false; e.layout.n_actions];
+    e.reset(&mut obs);
+    e.action_mask(&mut mask);
+    let place = (e.layout.a_place..e.layout.a_upgrade).find(|&a| mask[a]).unwrap();
+    let info = e.step(place, &mut obs);
+    assert_eq!(info.reward, -0.5, "Bauen kostet reward_tower");
+    e.action_mask(&mut mask);
+    let upgrade = (e.layout.a_upgrade..e.layout.a_sell).find(|&a| mask[a]).unwrap();
+    let info = e.step(upgrade, &mut obs);
+    assert!(!info.invalid);
+    assert_eq!(info.reward, 0.0, "Upgrades sind frei");
+    let sell = (e.layout.a_sell..e.layout.n_actions).find(|&a| mask[a]).unwrap();
+    assert_eq!(e.step(sell, &mut obs).reward, 0.0, "Verkaufen bringt die Strafe nicht zurück");
+}

@@ -39,6 +39,7 @@ fn config(
     reward_life: f64,
     reward_win: f64,
     reward_loss: f64,
+    reward_tower: f64,
     record: bool,
     preview_rounds: usize,
 ) -> PyResult<EnvConfig> {
@@ -51,6 +52,7 @@ fn config(
         reward_life,
         reward_win,
         reward_loss,
+        reward_tower,
         record,
         preview_rounds,
     })
@@ -80,7 +82,7 @@ struct PyEnv {
 impl PyEnv {
     #[new]
     #[pyo3(signature = (data_path, max_builds_per_round=6, reward_round=1.0, reward_life=-0.02,
-                        reward_win=10.0, reward_loss=-5.0, record=false, preview_rounds=0))]
+                        reward_win=10.0, reward_loss=-5.0, record=false, preview_rounds=0, reward_tower=0.0))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         data_path: &str,
@@ -91,6 +93,7 @@ impl PyEnv {
         reward_loss: f64,
         record: bool,
         preview_rounds: usize,
+        reward_tower: f64,
     ) -> PyResult<Self> {
         let cfg = config(
             max_builds_per_round,
@@ -98,6 +101,7 @@ impl PyEnv {
             reward_life,
             reward_win,
             reward_loss,
+            reward_tower,
             record,
             preview_rounds,
         )?;
@@ -224,7 +228,7 @@ struct PyVecEnv {
 impl PyVecEnv {
     #[new]
     #[pyo3(signature = (data_path, n_envs, max_builds_per_round=6, reward_round=1.0, reward_life=-0.02,
-                        reward_win=10.0, reward_loss=-5.0, preview_rounds=0))]
+                        reward_win=10.0, reward_loss=-5.0, preview_rounds=0, reward_tower=0.0))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         data_path: &str,
@@ -235,6 +239,7 @@ impl PyVecEnv {
         reward_win: f64,
         reward_loss: f64,
         preview_rounds: usize,
+        reward_tower: f64,
     ) -> PyResult<Self> {
         if n_envs == 0 {
             return Err(value_err("n_envs muss > 0 sein"));
@@ -245,6 +250,7 @@ impl PyVecEnv {
             reward_life,
             reward_win,
             reward_loss,
+            reward_tower,
             false,
             preview_rounds,
         )?;

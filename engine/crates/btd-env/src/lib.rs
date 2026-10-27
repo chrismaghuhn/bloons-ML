@@ -54,6 +54,8 @@ pub struct EnvConfig {
     pub reward_life: f64,
     pub reward_win: f64,
     pub reward_loss: f64,
+    /// Reward je gebautem Turm (negativ = Strafe für viele Türme; 0 = aus, wie die Python-Env).
+    pub reward_tower: f64,
     /// Spielprotokoll mitschreiben (`Env::replay`, `Env::last_replay`).
     pub record: bool,
     /// Runden-Vorschau in der Observation: so viele kommende Runden plus "Runden bis zum
@@ -70,6 +72,7 @@ impl Default for EnvConfig {
             reward_life: -0.02,
             reward_win: 10.0,
             reward_loss: -5.0,
+            reward_tower: 0.0,
             record: false,
             preview_rounds: 0,
         }
@@ -269,7 +272,10 @@ impl Env {
                 Some(a) => {
                     let described = replay::describe(&self.game, a);
                     match self.game.apply(a) {
-                        Ok(_) => {
+                        Ok(placed) => {
+                            if placed.is_some() {
+                                info.reward += self.cfg.reward_tower;
+                            }
                             if let Some(r) = &mut self.recorder {
                                 r.action(described);
                             }
