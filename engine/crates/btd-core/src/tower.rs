@@ -423,7 +423,10 @@ impl Tower {
                             let r = real(*radius);
                             AttackKind::Splash { r2: r * r }
                         }
-                        Delivery::Area { radius } => AttackKind::Area { radius: radius.map_or(range, real) },
+                        // `radius_offset` zählt erst mit Reichweiten-Buffs (Schritt 2 der Türme)
+                        Delivery::Area { radius, .. } => {
+                            AttackKind::Area { radius: radius.map_or(range, real) }
+                        }
                         Delivery::Projectile {
                             speed,
                             lifespan,

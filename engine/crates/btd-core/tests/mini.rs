@@ -639,7 +639,7 @@ fn ice_does_not_fire_at_bloons_it_skips() {
 fn area_radius_can_differ_from_range() {
     let build = |radius: Option<f64>| {
         let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
-        atk(&mut d, ICE).delivery = Delivery::Area { radius };
+        atk(&mut d, ICE).delivery = Delivery::Area { radius, radius_offset: None };
         run(d, place(ICE, -40.0, 14.0))
     };
     assert_eq!(build(None).pops, 1);

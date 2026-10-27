@@ -127,6 +127,10 @@ pub struct RulesV1 {
     /// Kosten = Medium-Kosten × `cost_multiplier`, gerundet auf ein Vielfaches von `cost_rounding`.
     pub cost_multiplier: f64,
     pub cost_rounding: i64,
+    /// Turmtypen, die in diesem Modus nie gebaut werden dürfen (Spiel: LockTowerModModel, z.B. die
+    /// Banana Farm in CHIMPS). Sie bleiben in den Daten, damit das Layout für alle Presets gleich ist.
+    #[serde(default)]
+    pub locked_towers: Vec<String>,
 }
 
 /// Raster für die Env: Aktionsraum (Zelle -> Weltposition) und Observation (Pfad, bebaubar).
@@ -225,6 +229,11 @@ pub enum Delivery {
         /// Radius des Flächentreffers; ohne Angabe die Reichweite des Angriffs.
         #[serde(default)]
         radius: Option<f64>,
+        /// Im Spiel an die Reichweite gekoppelt (LinkProjectileRadiusToTowerRange): Radius =
+        /// Reichweite + Versatz. Wirkt erst mit Reichweiten-Buffs (docs/design-towers-step2.md §2.1);
+        /// ungebufft gilt `radius`.
+        #[serde(default)]
+        radius_offset: Option<f64>,
     },
     /// Fliegendes Projektil. Trifft jeden Bloon höchstens einmal, bis `pierce` verbraucht ist
     /// oder `lifespan` abläuft. `radius` + Bloon-Radius = Kollisionsabstand. Mit `path` fliegt es
@@ -547,6 +556,133 @@ pub struct Zone {
     pub filter: HitFilter,
 }
 
+/// Turmgruppe im Spiel (`towerSet`), z.B. als Filter für Buffs, die nur Primary-Türme treffen.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TowerSet {
+    #[default]
+    Primary,
+    Military,
+    Magic,
+    Support,
+}
+
+/// Statische Aura eines Support-Turms auf andere Türme in seiner (ungebufften) Reichweite
+/// (docs/design-towers-step2.md §2.1). Je `group` (Spiel: mutatorId) wirkt nur die stärkste Aura;
+/// `sets` leer = alle Türme. Noch ohne Wirkung in der Engine.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Support {
+    /// Reichweite × (1 + `add_frac`) + `add`.
+    Range {
+        group: String,
+        #[serde(default)]
+        sets: Vec<TowerSet>,
+        #[serde(default)]
+        add_frac: f64,
+        #[serde(default)]
+        add: f64,
+    },
+    /// Cooldown × `factor` (0 < factor <= 1).
+    Rate {
+        group: String,
+        #[serde(default)]
+        sets: Vec<TowerSet>,
+        factor: f64,
+    },
+    /// Camo-Erkennung.
+    Camo {
+        group: String,
+        #[serde(default)]
+        sets: Vec<TowerSet>,
+    },
+    /// Pierce + `add`.
+    Pierce {
+        group: String,
+        #[serde(default)]
+        sets: Vec<TowerSet>,
+        add: u32,
+    },
+    /// Projektiltempo × (1 + `add_frac`).
+    ProjectileSpeed {
+        group: String,
+        #[serde(default)]
+        sets: Vec<TowerSet>,
+        add_frac: f64,
+    },
+    /// Trifft alle Bloon-Arten (`cannot_damage` leer; MIB).
+    DamageAll {
+        group: String,
+        #[serde(default)]
+        sets: Vec<TowerSet>,
+    },
+}
+
+impl Support {
+    pub fn group(&self) -> &str {
+        match self {
+            Support::Range { group, .. }
+            | Support::Rate { group, .. }
+            | Support::Camo { group, .. }
+            | Support::Pierce { group, .. }
+            | Support::ProjectileSpeed { group, .. }
+            | Support::DamageAll { group, .. } => group,
+        }
+    }
+
+    pub fn sets(&self) -> &[TowerSet] {
+        match self {
+            Support::Range { sets, .. }
+            | Support::Rate { sets, .. }
+            | Support::Camo { sets, .. }
+            | Support::Pierce { sets, .. }
+            | Support::ProjectileSpeed { sets, .. }
+            | Support::DamageAll { sets, .. } => sets,
+        }
+    }
+
+    fn valid(&self) -> bool {
+        let fin = |x: f64| x.is_finite();
+        let sets = self.sets();
+        !self.group().is_empty()
+            && sets.iter().enumerate().all(|(i, s)| !sets[..i].contains(s))
+            && match *self {
+                Support::Range { add_frac, add, .. } => fin(add_frac) && add_frac > -1.0 && fin(add),
+                Support::Rate { factor, .. } => fin(factor) && factor > 0.0 && factor <= 1.0,
+                Support::ProjectileSpeed { add_frac, .. } => fin(add_frac) && add_frac > -1.0,
+                Support::Pierce { add, .. } => add <= MAX_PIERCE_ADD,
+                Support::Camo { .. } | Support::DamageAll { .. } => true,
+            }
+    }
+}
+
+/// Rabatt-Zone (Spiel: DiscountZoneModel) auf Käufe in der Reichweite des Turms: Platzieren und
+/// Upgrades auf Tier `tier_min..=tier_cap`. Je `stack` zählen höchstens `stack_limit` Zonen.
+/// Noch ohne Wirkung in der Engine (docs/design-towers-step2.md §2.2).
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Discount {
+    pub fraction: f64,
+    pub tier_min: u8,
+    pub tier_cap: u8,
+    pub stack: String,
+    pub stack_limit: u32,
+    /// Ob der Turm seine eigenen Käufe rabattiert.
+    #[serde(default)]
+    pub affect_self: bool,
+}
+
+/// Einkommen nach jeder geschafften Runde (Banana Farm; Bananen gelten als eingesammelt).
+/// Noch ohne Wirkung in der Engine (docs/design-towers-step2.md §2.3).
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Income {
+    pub per_round: f64,
+    /// Zusätzliche Leben je Runde.
+    #[serde(default)]
+    pub lives: i32,
+}
+
 /// Welche Bloons ein Angriff gar nicht erst anvisiert oder trifft.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -613,6 +749,12 @@ pub struct VariantV1 {
     pub footprint: f64,
     pub attacks: Vec<AttackV1>,
     pub zones: Vec<Zone>,
+    /// Auren auf andere Türme (Village).
+    pub supports: Vec<Support>,
+    pub discount: Vec<Discount>,
+    pub income: Option<Income>,
+    /// Zuschlag auf `rules.sell_ratio` beim Verkaufen (Farm).
+    pub sell_bonus: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -620,6 +762,7 @@ pub struct TowerDefV1 {
     pub name: String,
     /// ID des Turms im Spiel (z.B. `DartMonkey`), für die Mod (Replay-Player); fehlt bei sim_v0.
     pub game_id: Option<String>,
+    pub set: TowerSet,
     /// Medium-Kosten.
     pub cost: i64,
     /// `upgrade_costs[pfad][tier-1]`, Medium.
@@ -765,6 +908,10 @@ struct RawTower {
     name: String,
     #[serde(default)]
     game_id: Option<String>,
+    /// Ohne Angabe `primary`; Pflicht, sobald ein Support nach Turmgruppen filtert (sonst würden
+    /// ältere Daten ohne das Feld alle Türme als Primary buffen).
+    #[serde(default)]
+    set: Option<TowerSet>,
     cost: i64,
     upgrade_costs: Vec<Vec<i64>>,
     variants: Vec<RawVariant>,
@@ -779,6 +926,14 @@ struct RawVariant {
     attacks: Vec<RawAttack>,
     #[serde(default)]
     zones: Vec<Zone>,
+    #[serde(default)]
+    supports: Vec<Support>,
+    #[serde(default)]
+    discount: Vec<Discount>,
+    #[serde(default)]
+    income: Option<Income>,
+    #[serde(default)]
+    sell_bonus: f64,
 }
 
 #[derive(Deserialize)]
@@ -886,6 +1041,11 @@ impl GameV1 {
             .collect::<Result<Vec<_>, DataError>>()?;
 
         let towers = raw.towers.iter().map(resolve_tower).collect::<Result<Vec<_>, _>>()?;
+        let filters_by_set =
+            towers.iter().flat_map(|t| &t.variants).flat_map(|v| &v.supports).any(|s| !s.sets().is_empty());
+        if let Some(t) = raw.towers.iter().find(|t| filters_by_set && t.set.is_none()) {
+            return Err(invalid(format!("Turm {}: set fehlt (Supports filtern nach Turmgruppen)", t.name)));
+        }
 
         let rounds = raw
             .rounds
@@ -961,6 +1121,10 @@ impl GameV1 {
         }
         if r.start_round < 1 || r.end_round < r.start_round || r.end_round as usize > self.rounds.len() {
             return Err(invalid("rules: 1 <= start_round <= end_round <= Anzahl Runden erwartet"));
+        }
+        check_unique(r.locked_towers.iter().map(String::as_str), "rules.locked_towers: Turm")?;
+        if let Some(n) = r.locked_towers.iter().find(|n| !self.towers.iter().any(|t| &t.name == *n)) {
+            return Err(invalid(format!("rules.locked_towers: unbekannter Turm {n:?}")));
         }
         if self.income.len() < r.end_round as usize
             || self.income.iter().any(|i| !non_neg(i.cash_per_pop) || !non_neg(i.end_bonus))
@@ -1057,6 +1221,38 @@ impl GameV1 {
                         return Err(invalid(format!("{what}: ungültige Zone")));
                     }
                 }
+                if v.attacks.is_empty()
+                    && v.zones.is_empty()
+                    && v.supports.is_empty()
+                    && v.discount.is_empty()
+                    && v.income.is_none()
+                {
+                    return Err(invalid(format!(
+                        "{what}: weder Angriff, Zone, Support, Rabatt noch Einkommen"
+                    )));
+                }
+                if !v.supports.iter().all(Support::valid) {
+                    return Err(invalid(format!("{what}: ungültiger Support")));
+                }
+                if !v.discount.iter().all(|d| {
+                    d.fraction.is_finite()
+                        && d.fraction > 0.0
+                        && d.fraction < 1.0
+                        && d.tier_min <= d.tier_cap
+                        && d.tier_cap as usize <= MAX_TIER
+                        && !d.stack.is_empty()
+                        && d.stack_limit >= 1
+                }) {
+                    return Err(invalid(format!("{what}: ungültiger Rabatt")));
+                }
+                if v.income.is_some_and(|i| {
+                    !non_neg(i.per_round) || i.per_round > 1e9 || !(0..=MAX_INCOME_LIVES).contains(&i.lives)
+                }) {
+                    return Err(invalid(format!("{what}: ungültiges Einkommen")));
+                }
+                if !v.sell_bonus.is_finite() || !(0.0..=1.0).contains(&(r.sell_ratio + v.sell_bonus)) {
+                    return Err(invalid(format!("{what}: sell_ratio + sell_bonus in [0, 1] erwartet")));
+                }
                 for a in &v.attacks {
                     let ok = pos(a.cooldown)
                         && non_neg(a.damage)
@@ -1069,7 +1265,10 @@ impl GameV1 {
                         && a.range.map_or(true, pos)
                         && match &a.delivery {
                             Delivery::Hitscan {} => true,
-                            Delivery::Area { radius } => radius.map_or(true, pos),
+                            Delivery::Area { radius, radius_offset } => {
+                                let range = a.range.unwrap_or(v.range);
+                                radius.map_or(true, pos) && radius_offset.map_or(true, |o| pos(range + o))
+                            }
                             Delivery::HitscanSplash { radius } => pos(*radius),
                             Delivery::Projectile {
                                 speed,
@@ -1169,6 +1368,9 @@ impl RulesV1 {
 }
 
 const MAX_LEAK: i32 = 1_000_000;
+/// Obergrenzen für Support-Werte (gegen Überläufe beim Aufaddieren in der Engine).
+const MAX_PIERCE_ADD: u32 = 1_000_000;
+const MAX_INCOME_LIVES: i32 = 1_000_000;
 const MAX_GROUP: u32 = 100_000;
 const MAX_DESCENDANTS: f64 = 100_000.0;
 
@@ -1207,6 +1409,10 @@ fn resolve_tower(t: &RawTower) -> Result<TowerDefV1, DataError> {
             range: v.range,
             footprint: v.footprint,
             zones: v.zones.clone(),
+            supports: v.supports.clone(),
+            discount: v.discount.clone(),
+            income: v.income,
+            sell_bonus: v.sell_bonus,
             attacks: v
                 .attacks
                 .iter()
@@ -1236,6 +1442,7 @@ fn resolve_tower(t: &RawTower) -> Result<TowerDefV1, DataError> {
     Ok(TowerDefV1 {
         name: t.name.clone(),
         game_id: t.game_id.clone(),
+        set: t.set.unwrap_or_default(),
         cost: t.cost,
         upgrade_costs: costs,
         variants,
@@ -1357,6 +1564,176 @@ mod tests {
         rejects(|v| v["bloons"][3]["children"] = json!([["blue", 60000], ["lead", 2]]), "Nachkommen");
         rejects(|v| v["bloons"][0]["leak"] = json!(10_000_000), "leak");
         rejects(|v| v["map"]["grid"]["x0"] = json!(500.0), "außerhalb");
+    }
+
+    /// Mini-Daten mit einem Support-Turm (Village-artig: keine Angriffe, Auren + Rabatt) und einem
+    /// Einkommens-Turm (Farm-artig), die Farm gesperrt.
+    fn with_support_towers() -> serde_json::Value {
+        use serde_json::json;
+        let mut v = mini();
+        let towers = v["towers"].as_array_mut().unwrap();
+        for t in towers.iter_mut() {
+            t["set"] = json!("primary"); // Pflicht, weil Supports nach Turmgruppen filtern
+        }
+        towers.push(json!({
+            "name": "village", "set": "support", "cost": 1000, "upgrade_costs": [[], [], [100]],
+            "variants": [
+                {"tiers": [0, 0, 0], "range": 40.0, "footprint": 11.0, "attacks": [], "supports": [
+                    {"kind": "range", "group": "Range:Support", "add_frac": 0.1},
+                    {"kind": "rate", "group": "Village:Rate", "factor": 0.8},
+                    {"kind": "camo", "group": "Village:Visibility"},
+                    {"kind": "pierce", "group": "P", "sets": ["primary"], "add": 1},
+                    {"kind": "projectile_speed", "group": "S", "sets": ["primary"], "add_frac": 0.2},
+                    {"kind": "damage_all", "group": "Village:DamageType"}]},
+                {"tiers": [0, 0, 1], "range": 40.0, "footprint": 11.0, "attacks": [], "discount": [
+                    {"fraction": 0.1, "tier_min": 0, "tier_cap": 3, "stack": "major", "stack_limit": 1}]}
+            ]
+        }));
+        towers.push(json!({
+            "name": "farm", "set": "support", "cost": 1000, "upgrade_costs": [[], [], []],
+            "variants": [{"tiers": [0, 0, 0], "range": 40.0, "footprint": 21.0, "attacks": [],
+                          "income": {"per_round": 80.0}, "sell_bonus": 0.1}]
+        }));
+        v["rules"]["locked_towers"] = json!(["farm"]);
+        v
+    }
+
+    #[test]
+    fn loads_support_and_income_towers() {
+        let g = GameV1::from_json(&with_support_towers().to_string()).unwrap();
+        let n = g.towers.len();
+        let (village, farm) = (&g.towers[n - 2], &g.towers[n - 1]);
+        assert_eq!((village.set, g.towers[0].set), (TowerSet::Support, TowerSet::Primary));
+        let base = village.variant([0, 0, 0]).unwrap();
+        assert!(base.attacks.is_empty() && base.supports.len() == 6);
+        assert_eq!(
+            base.supports[1],
+            Support::Rate { group: "Village:Rate".into(), sets: vec![], factor: 0.8 }
+        );
+        assert_eq!(village.variant([0, 0, 1]).unwrap().discount[0].tier_cap, 3);
+        let f = farm.variant([0, 0, 0]).unwrap();
+        assert_eq!((f.income, f.sell_bonus), (Some(Income { per_round: 80.0, lives: 0 }), 0.1));
+        assert_eq!(g.rules.locked_towers, vec!["farm".to_string()]);
+        let mut v = with_support_towers();
+        v["towers"][0]["variants"][0]["attacks"][0]["delivery"] =
+            serde_json::json!({"kind": "area", "radius": 30.0, "radius_offset": 2.0});
+        let g = GameV1::from_json(&v.to_string()).unwrap();
+        assert_eq!(
+            g.towers[0].variants[0].attacks[0].delivery,
+            Delivery::Area { radius: Some(30.0), radius_offset: Some(2.0) }
+        );
+        // ohne die neuen Felder: Standardwerte (sim_v0 und ältere Daten laden weiter)
+        let v0 = &GameV1::from_json(&mini().to_string()).unwrap().towers[0];
+        let b = v0.variant([0, 0, 0]).unwrap();
+        assert!(b.supports.is_empty() && b.discount.is_empty() && b.income.is_none() && b.sell_bonus == 0.0);
+    }
+
+    #[test]
+    fn rejects_invalid_support_data() {
+        use serde_json::json;
+        let rejects = |f: &dyn Fn(&mut serde_json::Value), needle: &str| {
+            let mut v = with_support_towers();
+            f(&mut v);
+            match GameV1::from_json(&v.to_string()) {
+                Err(e) => assert!(e.to_string().contains(needle), "{e} enthält nicht {needle:?}"),
+                Ok(_) => panic!("sollte abgelehnt werden: {needle}"),
+            }
+        };
+        let village = |v: &mut serde_json::Value| -> usize { v["towers"].as_array().unwrap().len() - 2 };
+        let sup = |v: &mut serde_json::Value, i: usize, val: serde_json::Value| {
+            let t = village(v);
+            v["towers"][t]["variants"][0]["supports"][i] = val;
+        };
+        rejects(&|v| v["rules"]["locked_towers"] = json!(["castle"]), "unbekannter Turm");
+        rejects(&|v| v["rules"]["locked_towers"] = json!(["farm", "farm"]), "doppelt");
+        rejects(&|v| sup(v, 1, json!({"kind": "rate", "group": "R", "factor": 1.5})), "ungültiger Support");
+        rejects(&|v| sup(v, 1, json!({"kind": "rate", "group": "R", "factor": 0.0})), "ungültiger Support");
+        rejects(&|v| sup(v, 0, json!({"kind": "range", "group": "", "add_frac": 0.1})), "ungültiger Support");
+        rejects(
+            &|v| sup(v, 0, json!({"kind": "range", "group": "R", "add_frac": -1.0})),
+            "ungültiger Support",
+        );
+        rejects(&|v| sup(v, 0, json!({"kind": "range", "group": "R", "mul": 0.1})), "unknown field");
+        rejects(&|v| sup(v, 0, json!({"kind": "slow", "group": "R"})), "unknown variant");
+        rejects(
+            &|v| sup(v, 3, json!({"kind": "pierce", "group": "P", "sets": ["hero"], "add": 1})),
+            "unknown variant",
+        );
+        rejects(
+            &|v| sup(v, 3, json!({"kind": "pierce", "group": "P", "sets": ["magic", "magic"], "add": 1})),
+            "ungültiger Support",
+        );
+        rejects(
+            &|v| sup(v, 3, json!({"kind": "pierce", "group": "P", "add": 2_000_000})),
+            "ungültiger Support",
+        );
+        rejects(
+            &|v| {
+                let t = village(v);
+                v["towers"][t].as_object_mut().unwrap().remove("set");
+            },
+            "set fehlt",
+        );
+        let discount = |field: &'static str, val: serde_json::Value| {
+            move |v: &mut serde_json::Value| {
+                let t = v["towers"].as_array().unwrap().len() - 2;
+                v["towers"][t]["variants"][1]["discount"][0][field] = val.clone();
+            }
+        };
+        rejects(&discount("tier_min", json!(4)), "ungültiger Rabatt");
+        rejects(&discount("stack_limit", json!(0)), "ungültiger Rabatt");
+        rejects(&discount("stack", json!("")), "ungültiger Rabatt");
+        rejects(&discount("percent", json!(10)), "unknown field");
+        let income = |field: &'static str, val: serde_json::Value| {
+            move |v: &mut serde_json::Value| {
+                let t = v["towers"].as_array().unwrap().len() - 1;
+                v["towers"][t]["variants"][0]["income"][field] = val.clone();
+            }
+        };
+        rejects(&income("lives", json!(-1)), "ungültiges Einkommen");
+        rejects(&income("bananas", json!(4)), "unknown field");
+        rejects(
+            &|v| {
+                v["towers"][0]["variants"][0]["attacks"][0]["delivery"] =
+                    json!({"kind": "area", "radius": 30.0, "radius_offset": -1e9})
+            },
+            "ungültige Werte",
+        );
+        rejects(
+            &|v| {
+                let t = village(v);
+                v["towers"][t]["variants"][0]["supports"] = json!([]);
+            },
+            "weder Angriff",
+        );
+        rejects(
+            &|v| {
+                let t = village(v);
+                v["towers"][t]["variants"][1]["discount"][0]["fraction"] = json!(1.0);
+            },
+            "ungültiger Rabatt",
+        );
+        rejects(
+            &|v| {
+                let t = village(v);
+                v["towers"][t]["variants"][1]["discount"][0]["tier_cap"] = json!(6);
+            },
+            "ungültiger Rabatt",
+        );
+        rejects(
+            &|v| {
+                let t = village(v) + 1;
+                v["towers"][t]["variants"][0]["income"]["per_round"] = json!(-1.0);
+            },
+            "ungültiges Einkommen",
+        );
+        rejects(
+            &|v| {
+                let t = village(v) + 1;
+                v["towers"][t]["variants"][0]["sell_bonus"] = json!(0.5);
+            },
+            "sell_bonus",
+        );
     }
 
     #[test]

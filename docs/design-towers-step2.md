@@ -442,3 +442,48 @@ Antworten auf §7:
    braucht eine echte Partie.
 7. Rabatt-Stapel wie im Dump (begrenzt). Unbegrenztes Stapeln würde Village-Ketten belohnen, die im Spiel
    nichts bringen.
+
+## Stand Teil 1 (Konverter und btd-data, 2026-10-27)
+
+`--towers t14` (die 12 Türme aus Schritt 1, dann `village`, `farm`): 348 von 896 Kombinationen, davon
+Village 29/64 und Farm 44/64. Engine und Env lesen die neuen Felder, nutzen sie aber noch nicht.
+
+- btd-data: `RulesV1.locked_towers`, `TowerDefV1.set` (Standard `primary`), an der Variante `supports`,
+  `discount`, `income`, `sell_bonus`, an `Delivery::Area` neu `radius_offset`. Alle Felder sind optional, alte
+  Daten (sim_v0, t12) laden unverändert.
+  Neue Prüfungen:
+  - Eine Variante ohne Angriff braucht Support, Rabatt oder Einkommen.
+  - Wertebereiche je Support-Art, Rabatt (Anteil in (0, 1), Tier-Grenzen) und Einkommen.
+  - `sell_ratio` + `sell_bonus` liegt in [0, 1].
+  - `locked_towers` nennt nur bekannte, eindeutige Türme.
+- Konverter:
+  - Village-Auren und Rabatt (`convert_supports`), Bananen-Einkommen (`convert_income`) und Footprint
+    (`convert_footprint`). Die neuen Modelle sind STRICT.
+  - Filter, die MIB abschaltet, werden abgelehnt.
+  - `selling` und `locked_towers` kommen aus den Partie-Mods (`match_rules`).
+  - Die Farm ist in allen Presets gesperrt (`MECHANIC_LOCKED`). In CHIMPS sperrt sie zusätzlich der Mod.
+- `radius_offset`: Die Kopplung steht im Dump **am Turm** (`LinkProjectileRadiusToTowerRangeModel` mit
+  Verweis auf das Projektil), nicht am Projektil. Die alte Prüfung im Konverter hat sie deshalb nie
+  gefunden. Jetzt wird sie über die Projektil-ID zugeordnet und geprüft: 29 Varianten (Ice, Tack 4xx)
+  bekommen `radius_offset`.
+- primary- und t12-Daten (medium60, chimps) unterscheiden sich vom alten Konverter nur um `set` und
+  `radius_offset`. Beides wirkt in der Engine nicht. Alle Rust-Tests einschließlich der Parität sind grün.
+- Baubar-Raster: wird mit dem größten runden Footprint gerechnet, also ohne den Außenkreis der Farm. Mit
+  t14 bleibt es gleich wie mit t12.
+
+- `set` ist Pflicht, sobald ein Support nach Turmgruppen filtert. Sonst würden alte Daten ohne das Feld
+  alle Türme als Primary buffen.
+- Die neuen Modelle werden auch in ihren Feldern geprüft. Alles, was nicht dem Dump-Standard entspricht,
+  macht die Variante "nicht unterstützt", z.B.:
+  - `distributeCash` am Rundenbonus
+  - Platzier-Sonderregeln am Footprint
+  - eine Einkommens-Waffe neben anderen Waffen
+  `RateSupportModel.priority` wird ignoriert [KAL: Reihenfolge gleichartiger Tempo-Buffs].
+- **`data_hash`:** `set` und `radius_offset` ändern den Hash auch der primary- und t12-Dateien. Die
+  Simulation bleibt bitgleich. Replays mit `data_hash` im Kopf laden aber nur gegen die Datei, mit der sie
+  aufgenommen wurden. Also die alten Datendateien behalten oder die Replays neu aufnehmen.
+
+Abweichungen vom Plan:
+- Banana Central (5xx, 5 Varianten) ist noch gesperrt. `income.global_mul` kommt mit der Farm-Mechanik.
+- `locked_towers` wird erst in Teil 3 (Env/Engine) durchgesetzt. Bis dahin ließe sich die Farm mit t14-Daten
+  platzieren, bringt aber nichts (kein Angriff, Einkommen noch ohne Wirkung).
