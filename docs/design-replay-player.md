@@ -135,9 +135,9 @@ Runde). `result.cash` sind ganze Dollar, im Spiel ist Cash ein Bruch: verglichen
 Sim-Schritten. Der Player führt sie in einem Harmony-**Prefix** auf `Simulation.Simulate` aus, sobald
 `roundTime.elapsed` den Wert erreicht. Gemessen (§10): auch der Aufruf aus dem Prefix geht in die Warteschlange und
 wird **einen Schritt später** wirksam, noch im selben Frame (Aufruf im Prefix des 2. von 3 Schritten des Frames,
-Turm noch in diesem Schritt nach dem Zeitschritt oder spätestens vor dem 3.). Die Warteschlange wird also nicht erst
-einmal je Frame nach der Schritt-Schleife geleert; dann ist der Versatz immer 1, und der Player ruft für Schritt N
-im Prefix bei N − 1 auf.
+Turm zwischen dem 2. und 3. Schritt). Die Warteschlange wird also vor jedem Sim-Schritt geleert, nicht erst einmal
+je Frame nach der Schritt-Schleife; dann ist der Versatz immer 1, und der Player ruft für Schritt N im Prefix bei
+N − 1 auf.
 Bestätigung steht noch aus: vorgespult an drei aufeinanderfolgenden Rundenschritten messen, also an jeder Position
 im Frame einmal (Player-Test, Teil 2). Der Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt
 eine Abweichung sofort auf. Karte, Modus,
@@ -229,8 +229,9 @@ Damit sind die offenen Punkte aus den Abschnitten 1, 2, 3 (Weg A) und 4 beantwor
   Warteschlange (`queuedActionsAfterCall` 1, `callbackFiredDuringCall` false); Callback im selben Frame, Turm bei
   Rundenzeit **301** (`t` 5018), laut Recorder ebenfalls 301. Vorgespult, 3 Schritte je Frame. Der Recorder schreibt
   `step` im Postfix, der Prefix sieht also die Zeit des vorigen Schritts: der Aufruf (Prefix sieht `t` 5017) gehört
-  zum Schritt, dessen Postfix `t` 5018 meldet, dem **2.** Schritt von Frame 6090; der Turm wurde in diesem Schritt
-  nach dem Zeitschritt oder vor dem 3. Schritt wirksam (der Trace unterscheidet das nicht). Würde die Warteschlange
+  zum Schritt, dessen Postfix `t` 5018 meldet, dem **2.** Schritt von Frame 6090. Im Trace folgt `tower_placed`
+  (`t` 5018) direkt auf den `step` dieses Postfix und kommt vor dem `step` des 3. Schritts (`t` 5019): der Turm
+  entstand zwischen dem 2. und 3. Schritt, bevor der 3. die Zeit erhöhte. Würde die Warteschlange
   nur einmal je Frame nach der Schritt-Schleife geleert, stünde der Turm erst bei `t` 5019; die Messung spricht also
   für einen festen Versatz von 1. Eine Messung; die Bestätigung an allen drei Positionen im Frame macht der
   erweiterte Player-Test (Teil 2 setzt Türme bei Rundenzeit 300, 301 und 302 und zählt die Position im Frame im
