@@ -171,3 +171,18 @@ Daten `--towers t12` (275/768 Kombinationen), R60, 5M Schritte, Seed 1, `--rewar
   ihre Wahrscheinlichkeit breit, die wahrscheinlichste Einzelaktion ist oft schlecht.
 - Nächster Schritt: Entropie-Schedule (abklingender ent_coef) als getrennter Lauf mit sonst gleicher
   Konfiguration.
+
+### Abgleich echtes Spiel, Teil 2: Zwei-Turm-Build über Runde 40 hinaus
+
+Dart 0-0-4 bei (−5, −1) + Bomb 0-0-0 bei (15, −31), ab Runde 16 keine Aktionen mehr (Freeplay bis 60).
+
+| Runde | Sim (medium60): Leben danach | echtes Spiel |
+|---|---|---|
+| ≤ 42 | 150 | 150 |
+| 43 | 91 (erste Leaks) | erste Leaks |
+| 44 | 91 | 65 (Screenshot während/nach Runde 44) |
+| 45 | 13 | – |
+| 47 | 0 | – |
+
+Erste Leak-Runde stimmt exakt; der Schaden ist im echten Spiel größer (≥ 26 Leben mehr bis Runde 44).
+Passt zum Verdacht, dass die Sim leicht großzügig ist (keine Sichtlinie, Crits exakt jeder 10. Schuss).
