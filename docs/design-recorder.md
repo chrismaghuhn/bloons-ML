@@ -134,14 +134,21 @@ Polylinie aus dem Dump (Start x −333,6) laufen Bloons also nur den Abschnitt v
 - Lauf je Red: 912,1 Einheiten in 1990 Schritten = **33,17 s**;
 - Leak kostet 1 Leben (`leakDamage` 1), sichtbar zwischen `leak` und `leak_done`.
 
-**Red-Tempo:** 0,45833 Einheiten je Schritt = **27,5 E./s**, im Modell steht `speed` 25 (`mapWideBloonSpeed` 1):
-Faktor 1,1. Herkunft noch offen (Kandidat `trackSpeedMultiplier`; der Trace schreibt ihn ab der nächsten
-Aufnahme in `bloon_info`).
+**Bloon-Tempo: Schwierigkeit × Modell.** Red läuft 0,45833 Einheiten je Schritt = **27,5 E./s**, im
+Menü-Modell (Dump) steht `speed` 25. Den Faktor setzt die Schwierigkeit beim Erstellen der Partie über
+`GlobalSpeedModModel` (`gamedata/mods.json`): **Easy 1,0, Medium 1,1, Hard 1,25**. Impoppable und CHIMPS (`Clicks`)
+haben keinen eigenen Tempo-Mod, laufen aber zusammen mit `Hard` (CHIMPS-Partie: Mods `[Hard, Clicks]`), also
+**CHIMPS × 1,25**. Gemessen im Sandkasten (Medium, Runde 1, je ein Bloon jedes Typs, 61 Bloons): jeder Typ läuft
+exakt mit Menü-Tempo × 1,1, z.B. Red/Lead/MOAB 27,5, Blue 38,5, Green/Black/Zebra 49,5, White 55, Rainbow 60,5,
+Ceramic 68,75, Purple 82,5, Yellow 88, Pink 96,25, DDT 72,6, BFB 6,875, ZOMG/BAD 4,95 E./s. Camo, Regrow und
+Fortified ändern das Tempo nicht; `trackSpeedMultiplier` ist 1, `mapWideBloonSpeed` 1.
+Folge für die Sim: Tempo je Schwierigkeit skalieren. Möglicherweise erklärt das auch die Sniper-Abweichung in Runde 1 (Medium): in der
+Sim sind die Reds 10 % zu langsam.
 
 **Runde 1:** `round_start` bis `round_end` 3041 Schritte = **50,68 s** (Stoppuhr 50,0 s). Rechnung: letzter
 Spawn bei Rundenschritt 1051 + 1990 Laufzeit = 3041; die Runde endet im Schritt des letzten Leaks. Die Sim kommt
 auf 68,6 s (1051/60 + 1276/25 = 17,5 + 51,0), weil sie den ganzen Dump-Pfad (1276 E.) mit 25 E./s läuft; mit der
 Spiel-Strecke (Distanz 173,6 → 1085,67) und 27,5 E./s ergäbe sich dieselbe Laufzeit wie im Spiel.
 
-Offen für die nächsten Schritte: Herkunft des Faktors 1,1; Sniper-Abweichung (erster Schuss/Takt) mit einer
+Offen für die nächsten Schritte: Sniper-Abweichung nach der Tempo-Korrektur erneut prüfen (erster Schuss/Takt) mit einer
 Aufnahme Sniper allein; Schaden/Pop-Hook.
