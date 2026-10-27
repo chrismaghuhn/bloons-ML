@@ -34,12 +34,17 @@ def load(path: Path) -> list[dict]:
 
 
 def bloon_keys(events: list[dict]) -> dict[int, tuple]:
-    """Spiel-ID -> Schlüssel (spawnRound, createdAtRoundTime, Nr., Kind-Nr. je Elternteil …), unabhängig von IDs.
+    """Spiel-ID -> Schlüssel (Runde, createdAtRoundTime, Nr., Kind-Nr. je Elternteil …), unabhängig von IDs.
+    Die Runde kommt aus dem letzten `round_start` (Bloon.spawnRound ist in 57.4 nicht die Rundennummer, meist 0).
     Bloons mit mehrdeutigem Schlüssel werden weggelassen (und gemeldet)."""
     keys: dict[int, tuple] = {}
     children: Counter = Counter()
     same_time: Counter = Counter()
+    round_no = None
     for e in events:
+        if e["ev"] == "round_start":
+            round_no = e.get("round")
+            continue
         if e["ev"] != "spawn":
             continue
         lineage = e.get("lineage") or []
@@ -50,7 +55,7 @@ def bloon_keys(events: list[dict]) -> dict[int, tuple]:
         else:
             # emissionIndex ist im Spiel (57.4) für alle Bloons einer Runde 0; die Rundenzeit beim Erzeugen
             # unterscheidet sie, gleichzeitig erzeugte zählen in Reihenfolge
-            base = (e.get("spawnRound"), e.get("createdAtRoundTime"))
+            base = (round_no, e.get("createdAtRoundTime"))
             same_time[base] += 1
             keys[e["id"]] = base + (same_time[base],)
     counts = Counter(keys.values())
