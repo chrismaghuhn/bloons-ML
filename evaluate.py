@@ -69,9 +69,12 @@ if __name__ == "__main__":
             ap.error("--per-ban braucht --data")
         import json
         with open(args.data) as f:
-            names = [t["name"] for t in json.load(f)["towers"]]
+            d = json.load(f)
+        names = [t["name"] for t in d["towers"]]
+        locked = set(d["rules"].get("locked_towers", []))  # ohnehin gesperrt (z.B. Farm)
         report(f"{'keine Sperre':<16}", [False] * len(names))
         for i, name in enumerate(names):
-            report(f"{'ohne ' + name:<16}", [j == i for j in range(len(names))])
+            if name not in locked:
+                report(f"{'ohne ' + name:<16}", [j == i for j in range(len(names))])
     else:
         report("")
