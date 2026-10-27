@@ -52,7 +52,7 @@ Ein JSON pro Spielkonfiguration (Karte + Runden + Türme + Regeln), Einheiten wi
    (zunächst Hitscan/Splash/Radial wie bisher). Golden-Trace-Parität und Env-Parität bleiben grün.
 4. Synthetische Fixture `tests/fixtures/game_v1_mini.json` für CI.
 
-### M2b: Projektile und Dump-Konverter (Basis + Tier 1–2)
+### M2b: Projektile und Dump-Konverter (Basis + Tier 1–2) ✅
 
 1. `tools/build_game_v1.py --dump …` → `data/local/game_v1_meadow.json`: Monkey Meadow (Pfad,
    Flächen), DefaultRoundSet 1–40 + Income-Set, Medium-Regeln, alle Bloons, die 6 Türme.
@@ -61,7 +61,17 @@ Ein JSON pro Spielkonfiguration (Karte + Runden + Türme + Regeln), Einheiten wi
 2. Engine: Projektile mit Flugbahn, Kollisionsradius, Pierce pro Projektil, Treffer-Sets,
    Explosionen bei Kontakt, Camo-Filter, Immunitäten, HP + Kinder (Ceramic, MOAB),
    Fortified, Regrow, Income.
-3. Basis + Tier 1–2 der 6 Türme laufen; Abdeckungs-Report zeigt den Stand.
+3. Basis + Tier 1–2 von Dart, Tack und Bomb laufen (gerade Projektile, Fächer, Explosionen);
+   Boomerang (Kurvenbahn), Ice (Einfrieren) und Glue (Verlangsamen) kommen mit den
+   Status-Effekten in M2c. Der Abdeckungs-Report zeigt den Stand pro Kombination.
+
+Stand nach M2b: `tools/build_game_v1.py` erzeugt Monkey Meadow (Medium, Runde 1–40) aus dem
+Dump; 87 von 192 Kombinationen von Dart/Tack/Bomb laufen (Basis + Tier 1–2 vollständig, inkl.
+Frag Bombs). Plausibilität (`btd-tools demo`, `tests/dump_local.rs`): nur Darts halten Runde
+1–27 ohne Verlust und verlieren in Runde 28 an die Leads; nur Bombs verlieren 3 Leben an die
+Camo-Green in Runde 24, halten die Leads und fallen in Runde 36. Erledigte Kalibrierpunkte:
+Spawn-Abstand `(end − start)/(count − 1)` bestätigt (Runde 1: alle 55,3 Frames); Kinder kommen
+als eigene Spiel-Varianten (Fortified/Camo stimmen dadurch automatisch).
 
 ### M2c: Tier 3, dann 4–5
 

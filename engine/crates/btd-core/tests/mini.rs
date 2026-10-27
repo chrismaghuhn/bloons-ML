@@ -131,3 +131,109 @@ fn splash_without_camo_detection_never_fires_at_pure_camo_group() {
     let r = g.play_round();
     assert_eq!((r.pops, r.leaked), (0, 5));
 }
+
+const DART: u8 = 2;
+const TACK: u8 = 3;
+const BOMBP: u8 = 4;
+
+fn one_round(groups: Vec<btd_data::v1::SpawnGroup>, build: impl Fn(&mut Game)) -> btd_core::RoundReport {
+    let mut d = data();
+    d.rounds[0] = groups;
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.cash = Money::from_dollars(10_000);
+    build(&mut g);
+    g.play_round()
+}
+
+fn group(kind: u8, count: u32, start: f64, end: f64) -> btd_data::v1::SpawnGroup {
+    btd_data::v1::SpawnGroup { kind, flags: Default::default(), count, start, end }
+}
+
+#[test]
+fn projectile_dart_pops_reds() {
+    let r = one_round(vec![group(0, 5, 0.0, 4.0)], |g| {
+        g.apply(Action::Place { kind: DART, x: 0.0, y: 15.0 }).unwrap();
+    });
+    assert_eq!((r.pops, r.leaked), (5, 0), "{r:?}");
+}
+
+#[test]
+fn projectile_does_not_hit_children_of_bloons_it_popped() {
+    // Ein Blue: Pierce 2 reicht nicht, um Blue und sein Kind mit demselben Dart zu platzen
+    let r = one_round(vec![group(1, 1, 0.0, 0.0)], |g| {
+        g.apply(Action::Place { kind: DART, x: 0.0, y: 15.0 }).unwrap();
+    });
+    assert_eq!(r.pops, 2, "zwei verschiedene Darts nötig: {r:?}");
+    assert!(r.seconds > 0.6, "zweiter Schuss erst nach dem Cooldown: {r:?}");
+}
+
+#[test]
+fn projectile_lifespan_limits_its_reach() {
+    let mut d = data();
+    d.rounds[0] = vec![group(0, 3, 0.0, 2.0)];
+    // Lebensdauer so kurz, dass der Dart die Bloons nie erreicht
+    if let btd_data::v1::Delivery::Projectile { lifespan, .. } =
+        &mut d.towers[2].variants[0].attacks[0].delivery
+    {
+        *lifespan = 0.01;
+    }
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.apply(Action::Place { kind: DART, x: 0.0, y: 25.0 }).unwrap();
+    let r = g.play_round();
+    assert_eq!((r.pops, r.leaked), (0, 3), "{r:?}");
+}
+
+#[test]
+fn tack_fires_in_fixed_directions() {
+    // Tack 13 Einheiten über dem Track (Track verläuft in x-Richtung, y = 0, y zeigt nach unten)
+    let run = |count: u32| {
+        let mut d = data();
+        d.rounds[0] = vec![group(0, 10, 0.0, 9.0)];
+        if let btd_data::v1::Delivery::Projectile { emission, .. } =
+            &mut d.towers[3].variants[0].attacks[0].delivery
+        {
+            *emission = btd_data::v1::Emission::Arc { count, angle: 360.0, offset: 0.0, fixed: true };
+        }
+        let mut g = Game::new(Arc::new(d)).unwrap();
+        g.apply(Action::Place { kind: TACK, x: 0.0, y: -13.0 }).unwrap();
+        g.play_round()
+    };
+    let one = run(1); // eine Nadel fest Richtung +x: fliegt am Track vorbei
+    assert_eq!(one.pops, 0, "{one:?}");
+    let eight = run(8); // u.a. eine Nadel Richtung +y, also zum Track
+    assert_eq!((eight.pops, eight.leaked), (10, 0), "{eight:?}");
+}
+
+#[test]
+fn bomb_projectile_explodes_on_contact() {
+    // dichte Gruppe Leads: Darts sind wirkungslos, die Explosion (ohne Lead-Immunität) platzt sie
+    let r = one_round(vec![group(2, 6, 0.0, 0.5)], |g| {
+        g.apply(Action::Place { kind: BOMBP, x: 0.0, y: 18.0 }).unwrap();
+    });
+    assert!(r.pops >= 6, "Explosion trifft mehrere Leads auf einmal: {r:?}");
+    let darts = one_round(vec![group(2, 6, 0.0, 0.5)], |g| {
+        g.apply(Action::Place { kind: DART, x: 0.0, y: 15.0 }).unwrap();
+    });
+    assert_eq!(darts.pops, 0, "Darts können kein Lead: {darts:?}");
+}
+
+const FRAG: u8 = 5;
+
+#[test]
+fn shards_spawn_at_contact_and_pop_more_bloons() {
+    // der Hauptschuss macht keinen Schaden; nur die 8 Splitter ab der Kontaktstelle platzen Bloons
+    let r = one_round(vec![group(0, 12, 0.0, 1.0)], |g| {
+        g.apply(Action::Place { kind: FRAG, x: 0.0, y: 18.0 }).unwrap();
+    });
+    assert!(r.pops >= 2, "mehrere Splitter treffen: {r:?}");
+    let mut d = data();
+    d.rounds[0] = vec![group(0, 12, 0.0, 1.0)];
+    if let btd_data::v1::Delivery::Projectile { on_contact, .. } =
+        &mut d.towers[5].variants[0].attacks[0].delivery
+    {
+        on_contact.clear();
+    }
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.apply(Action::Place { kind: FRAG, x: 0.0, y: 18.0 }).unwrap();
+    assert_eq!(g.play_round().pops, 0, "ohne Splitter kein Schaden");
+}

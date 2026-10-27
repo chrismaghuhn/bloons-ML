@@ -2,64 +2,700 @@
  "format": "game_v1",
  "name": "mini",
  "rules": {
-  "tick_rate": 60.0, "cd_eps": 1e-9, "max_round_seconds": 120.0, "child_spacing": 2.0,
-  "start_cash": 650, "start_lives": 100, "start_round": 1, "end_round": 3,
-  "selling": true, "sell_ratio": 0.7, "cost_multiplier": 1.0, "cost_rounding": 5
+  "tick_rate": 60.0,
+  "cd_eps": 1e-09,
+  "max_round_seconds": 120.0,
+  "child_spacing": 2.0,
+  "start_cash": 650,
+  "start_lives": 100,
+  "start_round": 1,
+  "end_round": 3,
+  "selling": true,
+  "sell_ratio": 0.7,
+  "cost_multiplier": 1.0,
+  "cost_rounding": 5
  },
  "map": {
   "name": "straight",
-  "bounds": [-50.0, -40.0, 50.0, 40.0],
-  "points": [[-60.0, 0.0], [60.0, 0.0]],
-  "cum": [0.0, 120.0],
+  "bounds": [
+   -50.0,
+   -40.0,
+   50.0,
+   40.0
+  ],
+  "points": [
+   [
+    -60.0,
+    0.0
+   ],
+   [
+    60.0,
+    0.0
+   ]
+  ],
+  "cum": [
+   0.0,
+   120.0
+  ],
   "grid": {
-   "x0": -50.0, "y0": -40.0, "cell": 10.0, "w": 10, "h": 8,
-   "path": ["..........", "..........", "..........", "##########", "##########", "..........", "..........", ".........."],
-   "buildable": ["##########", "##########", "##########", "..........", "..........", "##########", "##########", "##########"]
+   "x0": -50.0,
+   "y0": -40.0,
+   "cell": 10.0,
+   "w": 10,
+   "h": 8,
+   "path": [
+    "..........",
+    "..........",
+    "..........",
+    "##########",
+    "##########",
+    "..........",
+    "..........",
+    ".........."
+   ],
+   "buildable": [
+    "##########",
+    "##########",
+    "##########",
+    "..........",
+    "..........",
+    "##########",
+    "##########",
+    "##########"
+   ]
   },
   "placement": "areas",
   "areas": [
-   {"kind": "land", "polygon": [[-50.0, -40.0], [50.0, -40.0], [50.0, 40.0], [-50.0, 40.0]]},
-   {"kind": "track", "polygon": [[-60.0, -8.0], [60.0, -8.0], [60.0, 8.0], [-60.0, 8.0]]},
-   {"kind": "blocked", "polygon": [[30.0, 20.0], [50.0, 20.0], [50.0, 40.0], [30.0, 40.0]]}
+   {
+    "kind": "land",
+    "polygon": [
+     [
+      -50.0,
+      -40.0
+     ],
+     [
+      50.0,
+      -40.0
+     ],
+     [
+      50.0,
+      40.0
+     ],
+     [
+      -50.0,
+      40.0
+     ]
+    ]
+   },
+   {
+    "kind": "track",
+    "polygon": [
+     [
+      -60.0,
+      -8.0
+     ],
+     [
+      60.0,
+      -8.0
+     ],
+     [
+      60.0,
+      8.0
+     ],
+     [
+      -60.0,
+      8.0
+     ]
+    ]
+   },
+   {
+    "kind": "blocked",
+    "polygon": [
+     [
+      30.0,
+      20.0
+     ],
+     [
+      50.0,
+      20.0
+     ],
+     [
+      50.0,
+      40.0
+     ],
+     [
+      30.0,
+      40.0
+     ]
+    ]
+   }
   ]
  },
  "bloons": [
-  {"name": "red", "hp": 1.0, "speed": 25.0, "leak": 1},
-  {"name": "blue", "hp": 1.0, "speed": 35.0, "leak": 2, "children": [["red", 1]]},
-  {"name": "lead", "hp": 1.0, "speed": 25.0, "leak": 5, "children": [["blue", 2]], "props": ["lead"]},
-  {"name": "ceramic", "hp": 10.0, "speed": 25.0, "leak": 15, "children": [["blue", 2]], "classes": ["ceramic"]}
+  {
+   "name": "red",
+   "hp": 1.0,
+   "speed": 25.0,
+   "leak": 1,
+   "radius": 4.0
+  },
+  {
+   "name": "blue",
+   "hp": 1.0,
+   "speed": 35.0,
+   "leak": 2,
+   "children": [
+    [
+     "red",
+     1
+    ]
+   ],
+   "radius": 4.0
+  },
+  {
+   "name": "lead",
+   "hp": 1.0,
+   "speed": 25.0,
+   "leak": 5,
+   "children": [
+    [
+     "blue",
+     2
+    ]
+   ],
+   "props": [
+    "lead"
+   ],
+   "radius": 4.0
+  },
+  {
+   "name": "ceramic",
+   "hp": 10.0,
+   "speed": 25.0,
+   "leak": 15,
+   "children": [
+    [
+     "blue",
+     2
+    ]
+   ],
+   "classes": [
+    "ceramic"
+   ],
+   "radius": 4.0
+  }
  ],
  "towers": [
   {
-   "name": "pin", "cost": 100, "upgrade_costs": [[50, 100], [60], [40]],
+   "name": "pin",
+   "cost": 100,
+   "upgrade_costs": [
+    [
+     50,
+     100
+    ],
+    [
+     60
+    ],
+    [
+     40
+    ]
+   ],
    "variants": [
-    {"tiers": [0, 0, 0], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 1.0, "pierce": 1, "cannot_damage": ["lead"], "delivery": {"kind": "hitscan"}}]},
-    {"tiers": [1, 0, 0], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 1.0, "pierce": 2, "cannot_damage": ["lead"], "delivery": {"kind": "hitscan"}}]},
-    {"tiers": [2, 0, 0], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 1.0, "pierce": 4, "cannot_damage": ["lead"], "delivery": {"kind": "hitscan"}}]},
-    {"tiers": [0, 1, 0], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 2.0, "pierce": 1, "cannot_damage": ["lead"], "camo": true, "delivery": {"kind": "hitscan"}}]},
-    {"tiers": [0, 0, 1], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 1.0, "pierce": 3, "delivery": {"kind": "hitscan_splash", "radius": 8.0}}]},
-    {"tiers": [1, 1, 0], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 2.0, "pierce": 2, "cannot_damage": ["lead"], "camo": true, "delivery": {"kind": "hitscan"}}]},
-    {"tiers": [2, 1, 0], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 2.0, "pierce": 4, "cannot_damage": ["lead"], "camo": true, "delivery": {"kind": "hitscan"}}]},
-    {"tiers": [1, 0, 1], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 1.0, "pierce": 4, "delivery": {"kind": "hitscan_splash", "radius": 8.0}}]},
-    {"tiers": [2, 0, 1], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 1.0, "pierce": 6, "delivery": {"kind": "hitscan_splash", "radius": 8.0}}]},
-    {"tiers": [0, 1, 1], "range": 30.0, "footprint": 5.0, "attacks": [{"tag": "pin", "cooldown": 0.5, "damage": 2.0, "pierce": 3, "camo": true, "delivery": {"kind": "hitscan_splash", "radius": 8.0}}]}
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 1.0,
+       "pierce": 1,
+       "cannot_damage": [
+        "lead"
+       ],
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      0,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 1.0,
+       "pierce": 2,
+       "cannot_damage": [
+        "lead"
+       ],
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      0,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 1.0,
+       "pierce": 4,
+       "cannot_damage": [
+        "lead"
+       ],
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      1,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 2.0,
+       "pierce": 1,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      0,
+      1
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 1.0,
+       "pierce": 3,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 8.0
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      1,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 2.0,
+       "pierce": 2,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      1,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 2.0,
+       "pierce": 4,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      0,
+      1
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 1.0,
+       "pierce": 4,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 8.0
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      0,
+      1
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 1.0,
+       "pierce": 6,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 8.0
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      1,
+      1
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "pin",
+       "cooldown": 0.5,
+       "damage": 2.0,
+       "pierce": 3,
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 8.0
+       }
+      }
+     ]
+    }
    ]
   },
   {
-   "name": "bomb", "cost": 300, "upgrade_costs": [[], [], []],
+   "name": "bomb",
+   "cost": 300,
+   "upgrade_costs": [
+    [],
+    [],
+    []
+   ],
    "variants": [
-    {"tiers": [0, 0, 0], "range": 25.0, "footprint": 6.0, "attacks": [{"tag": "bomb", "cooldown": 1.5, "damage": 1.0, "pierce": 10, "delivery": {"kind": "hitscan_splash", "radius": 10.0}}]}
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 25.0,
+     "footprint": 6.0,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.5,
+       "damage": 1.0,
+       "pierce": 10,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 10.0
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "dart",
+   "cost": 200,
+   "upgrade_costs": [
+    [],
+    [],
+    []
+   ],
+   "variants": [
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.5,
+       "damage": 1.0,
+       "pierce": 2,
+       "cannot_damage": [
+        "lead"
+       ],
+       "delivery": {
+        "kind": "projectile",
+        "speed": 300.0,
+        "lifespan": 0.3,
+        "radius": 2.0,
+        "emission": {
+         "kind": "single"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "tack",
+   "cost": 250,
+   "upgrade_costs": [
+    [],
+    [],
+    []
+   ],
+   "variants": [
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 20.0,
+     "footprint": 5.0,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.0,
+       "damage": 1.0,
+       "pierce": 1,
+       "cannot_damage": [
+        "lead"
+       ],
+       "delivery": {
+        "kind": "projectile",
+        "speed": 160.0,
+        "lifespan": 0.2,
+        "radius": 0.0,
+        "emission": {
+         "kind": "arc",
+         "count": 8,
+         "angle": 360.0,
+         "fixed": true
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "bombp",
+   "cost": 350,
+   "upgrade_costs": [
+    [],
+    [],
+    []
+   ],
+   "variants": [
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 6.0,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.5,
+       "damage": 0.0,
+       "pierce": 1,
+       "delivery": {
+        "kind": "projectile",
+        "speed": 180.0,
+        "lifespan": 0.6,
+        "radius": 3.0,
+        "emission": {
+         "kind": "single"
+        },
+        "on_contact": [
+         {
+          "kind": "explosion",
+          "radius": 10.0,
+          "pierce": 20,
+          "damage": 1.0
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "frag",
+   "cost": 400,
+   "upgrade_costs": [
+    [],
+    [],
+    []
+   ],
+   "variants": [
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 30.0,
+     "footprint": 6.0,
+     "attacks": [
+      {
+       "tag": "frag",
+       "cooldown": 2.0,
+       "damage": 0.0,
+       "pierce": 1,
+       "delivery": {
+        "kind": "projectile",
+        "speed": 180.0,
+        "lifespan": 0.6,
+        "radius": 3.0,
+        "emission": {
+         "kind": "single"
+        },
+        "on_contact": [
+         {
+          "kind": "shards",
+          "emission": {
+           "kind": "arc",
+           "count": 8,
+           "angle": 360.0
+          },
+          "speed": 200.0,
+          "lifespan": 0.15,
+          "radius": 2.0,
+          "pierce": 1,
+          "damage": 1.0
+         }
+        ]
+       }
+      }
+     ]
+    }
    ]
   }
  ],
  "rounds": [
-  [{"bloon": "red", "count": 10, "start": 0.0, "end": 5.0}],
-  [{"bloon": "blue", "count": 5, "start": 0.0, "end": 4.0}, {"bloon": "red", "flags": ["camo"], "count": 3, "start": 1.0, "end": 3.0}],
-  [{"bloon": "ceramic", "count": 1, "start": 0.0, "end": 0.0}, {"bloon": "lead", "count": 2, "start": 1.0, "end": 2.0}]
+  [
+   {
+    "bloon": "red",
+    "count": 10,
+    "start": 0.0,
+    "end": 5.0
+   }
+  ],
+  [
+   {
+    "bloon": "blue",
+    "count": 5,
+    "start": 0.0,
+    "end": 4.0
+   },
+   {
+    "bloon": "red",
+    "flags": [
+     "camo"
+    ],
+    "count": 3,
+    "start": 1.0,
+    "end": 3.0
+   }
+  ],
+  [
+   {
+    "bloon": "ceramic",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "lead",
+    "count": 2,
+    "start": 1.0,
+    "end": 2.0
+   }
+  ]
  ],
  "income": [
-  {"cash_per_pop": 1.0, "end_bonus": 101.0},
-  {"cash_per_pop": 1.0, "end_bonus": 102.0},
-  {"cash_per_pop": 1.0, "end_bonus": 103.0}
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 101.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 102.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 103.0
+  }
  ]
 }

@@ -28,6 +28,16 @@ cd engine && cargo test && cargo test -p btd-core --features f64
 cargo run --release -p btd-tools -- bench --envs 64
 ```
 
+## Echte Spieldaten (lokal)
+
+Mit dem Spiel-Dump der Mod (`mod/`, `data/raw/game_dump/`) erzeugt der Konverter eine
+Spielkonfiguration für die Engine. Sie bleibt wie der Dump lokal (`data/local/`, gitignored):
+
+```bash
+.venv/bin/python -I tools/build_game_v1.py                  # Monkey Meadow, Medium, Runde 1-40
+cd engine && cargo run --release -p btd-tools -- demo --data ../data/local/game_v1_tutorial_medium.json
+```
+
 ## Spielprotokolle (Replays)
 
 Mit `RustBTDEnv(record=True)` wird jedes Spiel als `.jsonl` mitgeschrieben (`save_replay`).

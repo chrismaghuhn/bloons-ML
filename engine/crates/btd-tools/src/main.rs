@@ -3,6 +3,7 @@
 //!     btd-tools validate-data [DATEN]
 //!     btd-tools replay DATEI.jsonl [--data DATEN] [--compare]
 //!     btd-tools bench [--data DATEN] [--envs N]
+//!     btd-tools demo [--data DATEN] [--tower NAME] [--max N]
 //!
 //! DATEN ist standardmäßig `data/sim_v0.game_v1.json` (relativ zum Repo-Root).
 
@@ -16,7 +17,8 @@ use btd_env::{Env, EnvConfig, EnvSpec, Replay, VecEnv, VecStepBuffers};
 const USAGE: &str = "Nutzung:
   btd-tools validate-data [DATEN]
   btd-tools replay DATEI.jsonl [--data DATEN] [--compare]
-  btd-tools bench [--data DATEN] [--envs N]";
+  btd-tools bench [--data DATEN] [--envs N]
+  btd-tools demo [--data DATEN] [--tower NAME] [--max N]";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -24,6 +26,7 @@ fn main() -> ExitCode {
         Some("validate-data") => validate(&args[1..]),
         Some("replay") => replay(&args[1..]),
         Some("bench") => bench(&args[1..]),
+        Some("demo") => demo(&args[1..]),
         _ => Err(USAGE.to_string()),
     };
     match result {
@@ -200,5 +203,78 @@ fn bench(args: &[String]) -> Result<(), String> {
     println!("VecEnv mit {n_envs} Envs (rayon, {} Threads):", rayon::current_num_threads());
     println!("  Env-Schritte/s gesamt    {:>12.0}", steps as f64 / total);
     println!("  davon nur Env (step+mask){:>12.0}", steps as f64 / env_time.max(1e-9));
+    Ok(())
+}
+
+/// Einfache Skript-Strategie zum Plausibilisieren neuer Daten: nach jeder Runde einen Turm auf
+/// die bebaubare Zelle mit den meisten Pfadzellen in Reichweite setzen (bis `--max`), sonst
+/// upgraden, was bezahlbar ist. Gibt pro Runde Leben, Cash, Pops und Rundendauer aus.
+fn demo(args: &[String]) -> Result<(), String> {
+    use btd_core::{Action, Game};
+    let spec = load_spec(args)?;
+    let data = spec.data.clone();
+    let tower = opt(args, "--tower").unwrap_or("dart");
+    let kind =
+        data.towers.iter().position(|t| t.name == tower).ok_or(format!("Turm {tower:?} unbekannt"))? as u8;
+    let max: usize = opt(args, "--max").map_or(Ok(8), str::parse).map_err(|e| format!("--max: {e}"))?;
+    let mut g = Game::new(data.clone()).map_err(|e| e.to_string())?;
+    let grid = &data.map.grid;
+    let range = data.towers[kind as usize].variant([0, 0, 0]).unwrap().range;
+    // Zellen nach Anzahl Pfadzellen in Reichweite sortieren
+    let center = |c: usize| {
+        (grid.x0 + ((c % grid.w) as f64 + 0.5) * grid.cell, grid.y0 + ((c / grid.w) as f64 + 0.5) * grid.cell)
+    };
+    let mut cells: Vec<(usize, usize)> = (0..grid.w * grid.h)
+        .map(|c| {
+            let (x, y) = center(c);
+            let cover = (0..grid.w * grid.h)
+                .filter(|&o| {
+                    grid.path[o] && {
+                        let (ox, oy) = center(o);
+                        (ox - x).hypot(oy - y) <= range
+                    }
+                })
+                .count();
+            (c, cover)
+        })
+        .collect();
+    cells.sort_by_key(|c| std::cmp::Reverse(c.1));
+    let start = std::time::Instant::now();
+    while !g.over() {
+        if g.towers.len() < max {
+            for &(c, _) in &cells {
+                let (x, y) = center(c);
+                if g.apply(Action::Place { kind, x, y }).is_ok() {
+                    break;
+                }
+            }
+        }
+        let ids: Vec<u32> = g.towers.iter().map(|t| t.id).collect();
+        for id in ids {
+            for path in [0u8, 2, 1] {
+                let _ = g.apply(Action::Upgrade { tower: id, path });
+            }
+        }
+        let r = g.play_round();
+        println!(
+            "Runde {:>3}: Leben {:>4}  Cash {:>6}  Pops {:>5}  {:>5.1} s  Türme {}",
+            g.round,
+            g.lives,
+            g.cash.dollars(),
+            r.pops,
+            r.seconds,
+            g.towers
+                .iter()
+                .map(|t| format!("{}{}{}", t.tiers[0], t.tiers[1], t.tiers[2]))
+                .collect::<Vec<_>>()
+                .join(" ")
+        );
+    }
+    println!(
+        "{} nach Runde {} ({:.2} s Rechenzeit)",
+        if g.won() { "Gewonnen" } else { "Verloren" },
+        g.round,
+        start.elapsed().as_secs_f64()
+    );
     Ok(())
 }

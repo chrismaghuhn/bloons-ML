@@ -13,6 +13,7 @@ f64 = []
 btd-data.workspace = true
 smallvec.workspace = true
 xxhash-rust.workspace = true
+libm.workspace = true
 
 [dev-dependencies]
 serde.workspace = true

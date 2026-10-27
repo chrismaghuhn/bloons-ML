@@ -57,6 +57,8 @@ fn hit_into(
 /// entfernt, damit die Reihenfolge (= Spawn-Reihenfolge) erhalten bleibt.
 #[derive(Clone, Debug, Default)]
 pub struct BloonStore {
+    /// Laufende ID pro Runde (für Treffer-Sets der Projektile).
+    pub id: Vec<u32>,
     pub kind: Vec<BloonKind>,
     pub flags: Vec<Flags>,
     pub hp: Vec<Real>,
@@ -74,7 +76,8 @@ impl BloonStore {
         self.kind.is_empty()
     }
 
-    pub fn push(&mut self, kind: BloonKind, flags: Flags, hp: Real, dist: Real, seg: u16) {
+    pub fn push(&mut self, id: u32, kind: BloonKind, flags: Flags, hp: Real, dist: Real, seg: u16) {
+        self.id.push(id);
         self.kind.push(kind);
         self.flags.push(flags);
         self.hp.push(hp);
@@ -84,6 +87,7 @@ impl BloonStore {
     }
 
     pub fn clear(&mut self) {
+        self.id.clear();
         self.kind.clear();
         self.flags.clear();
         self.hp.clear();
@@ -97,6 +101,7 @@ impl BloonStore {
         let mut w = 0;
         for r in 0..self.kind.len() {
             if self.alive[r] {
+                self.id[w] = self.id[r];
                 self.kind[w] = self.kind[r];
                 self.flags[w] = self.flags[r];
                 self.hp[w] = self.hp[r];
@@ -106,6 +111,7 @@ impl BloonStore {
                 w += 1;
             }
         }
+        self.id.truncate(w);
         self.kind.truncate(w);
         self.flags.truncate(w);
         self.hp.truncate(w);
@@ -129,6 +135,9 @@ mod tests {
             children,
             props: Props(props),
             classes: Classes::default(),
+            camo: false,
+            regrow: false,
+            radius: 0.0,
         };
         vec![
             b("red", 1.0, vec![], 0),                    // 0
@@ -191,7 +200,7 @@ mod tests {
     fn compact_keeps_order() {
         let mut s = BloonStore::default();
         for k in 0..5 {
-            s.push(k, Flags::default(), 1.0, k as Real, 0);
+            s.push(k as u32, k, Flags::default(), 1.0, k as Real, 0);
         }
         s.alive[1] = false;
         s.alive[3] = false;

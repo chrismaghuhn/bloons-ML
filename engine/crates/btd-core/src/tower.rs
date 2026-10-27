@@ -1,6 +1,6 @@
 //! Türme: Position, Upgrade-Stand (Variante) und die daraus abgeleiteten Angriffswerte.
 
-use btd_data::v1::{Delivery, Props, TowerDefV1, VariantV1, PATHS};
+use btd_data::v1::{Contact, Delivery, Emission, Props, TowerDefV1, VariantV1, PATHS};
 use btd_data::TowerKind;
 use smallvec::SmallVec;
 
@@ -18,9 +18,90 @@ pub struct AttackRt {
     pub pierce: u32,
     pub cannot_damage: Props,
     pub camo: bool,
-    /// Explosionsradius zum Quadrat bei Splash, sonst `None`.
-    pub splash2: Option<Real>,
+    pub kind: AttackKind,
     pub cd_left: Real,
+}
+
+/// Wie der Angriff trifft (Sim-Typ, aus `Delivery`).
+#[derive(Clone, Debug, PartialEq)]
+pub enum AttackKind {
+    /// Sofort bis zu `pierce` Bloons in Reichweite (sim_v0).
+    Hitscan,
+    /// Sofort am vordersten Ziel explodieren, Radius zum Quadrat (sim_v0-Bomb).
+    Splash { r2: Real },
+    /// Fliegende Projektile.
+    Projectile {
+        speed: Real,
+        lifespan: Real,
+        radius: Real,
+        emission: EmissionRt,
+        contacts: SmallVec<[ContactRt; 2]>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct EmissionRt {
+    pub count: u32,
+    /// Gesamtwinkel in Grad (360 = rundum), Versatz in Grad.
+    pub angle: Real,
+    pub offset: Real,
+    /// Richtung unabhängig vom Ziel (Turm dreht sich nicht).
+    pub fixed: bool,
+}
+
+/// Effekt bei Kontakt (Sim-Typ, aus `Contact`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ContactRt {
+    Explosion {
+        radius: Real,
+        pierce: u32,
+        damage: Real,
+        cannot_damage: Props,
+        camo: bool,
+    },
+    Shards {
+        emission: EmissionRt,
+        speed: Real,
+        lifespan: Real,
+        radius: Real,
+        pierce: u32,
+        damage: Real,
+        cannot_damage: Props,
+        camo: bool,
+    },
+}
+
+fn contact_rt(c: &Contact) -> ContactRt {
+    match c {
+        Contact::Explosion { radius, pierce, damage, camo, .. } => ContactRt::Explosion {
+            radius: real(*radius),
+            pierce: *pierce,
+            damage: real(*damage),
+            cannot_damage: c.cannot_damage_props(),
+            camo: *camo,
+        },
+        Contact::Shards { emission, speed, lifespan, radius, pierce, damage, camo, .. } => {
+            ContactRt::Shards {
+                emission: emission_rt(emission),
+                speed: real(*speed),
+                lifespan: real(*lifespan),
+                radius: real(*radius),
+                pierce: *pierce,
+                damage: real(*damage),
+                cannot_damage: c.cannot_damage_props(),
+                camo: *camo,
+            }
+        }
+    }
+}
+
+fn emission_rt(e: &Emission) -> EmissionRt {
+    match e {
+        Emission::Single {} => EmissionRt { count: 1, angle: 0.0, offset: 0.0, fixed: false },
+        Emission::Arc { count, angle, offset, fixed } => {
+            EmissionRt { count: *count, angle: real(*angle), offset: real(*offset), fixed: *fixed }
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -71,11 +152,20 @@ impl Tower {
                     pierce: a.pierce,
                     cannot_damage: a.cannot_damage,
                     camo: a.camo,
-                    splash2: match a.delivery {
-                        Delivery::Hitscan {} => None,
+                    kind: match &a.delivery {
+                        Delivery::Hitscan {} => AttackKind::Hitscan,
                         Delivery::HitscanSplash { radius } => {
-                            let r = real(radius);
-                            Some(r * r)
+                            let r = real(*radius);
+                            AttackKind::Splash { r2: r * r }
+                        }
+                        Delivery::Projectile { speed, lifespan, radius, emission, on_contact } => {
+                            AttackKind::Projectile {
+                                speed: real(*speed),
+                                lifespan: real(*lifespan),
+                                radius: real(*radius),
+                                emission: emission_rt(emission),
+                                contacts: on_contact.iter().map(contact_rt).collect(),
+                            }
                         }
                     },
                     cd_left: old.get(i).copied().unwrap_or(0.0),

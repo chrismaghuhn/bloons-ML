@@ -193,6 +193,12 @@ pub struct BloonDefV1 {
     pub children: Vec<(BloonKind, u16)>,
     pub props: Props,
     pub classes: Classes,
+    /// Typ ist Camo (im Spiel eine eigene Variante wie `GreenCamo`); zusätzlich zum Instanz-Flag.
+    pub camo: bool,
+    /// Kollisionsradius für Projektile (Spiel: Red 8). 0 = Punkt.
+    pub radius: f64,
+    /// Typ wächst nach (Regrow). Stand M2b: geladen, noch ohne Wirkung (kommt in M2c).
+    pub regrow: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -210,6 +216,73 @@ pub enum Delivery {
     /// Sofort am vordersten Ziel explodieren; trifft bis zu `pierce` Bloons im `radius`
     /// um das Ziel, weiteste zuerst (sim_v0-Bomb).
     HitscanSplash { radius: f64 },
+    /// Fliegendes Projektil (gerade Bahn). Trifft jeden Bloon höchstens einmal, bis `pierce`
+    /// verbraucht ist oder `lifespan` abläuft. `radius` + Bloon-Radius = Kollisionsabstand.
+    Projectile {
+        speed: f64,
+        lifespan: f64,
+        radius: f64,
+        emission: Emission,
+        /// Was bei jedem Kontakt mit einem Bloon zusätzlich passiert (Bomb: Explosion,
+        /// Frag Bombs: Explosion + Splitter).
+        #[serde(default)]
+        on_contact: Vec<Contact>,
+    },
+}
+
+/// Effekt bei Kontakt eines Projektils.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Contact {
+    /// Sofortiger Flächentreffer an der Kontaktstelle.
+    Explosion {
+        radius: f64,
+        pierce: u32,
+        damage: f64,
+        #[serde(default)]
+        cannot_damage: Vec<String>,
+        #[serde(default)]
+        camo: bool,
+    },
+    /// Neue Projektile ab der Kontaktstelle (Richtungen relativ zur Flugrichtung).
+    Shards {
+        emission: Emission,
+        speed: f64,
+        lifespan: f64,
+        radius: f64,
+        pierce: u32,
+        damage: f64,
+        #[serde(default)]
+        cannot_damage: Vec<String>,
+        #[serde(default)]
+        camo: bool,
+    },
+}
+
+/// Wie viele Projektile pro Schuss in welche Richtungen fliegen.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Emission {
+    /// Ein Projektil Richtung Ziel.
+    Single {},
+    /// `count` Projektile, über `angle` Grad verteilt (360 = rundum). `fixed`: Richtung hängt
+    /// nicht vom Ziel ab (Turm dreht sich nicht, z.B. Tack), sonst um die Zielrichtung zentriert.
+    Arc {
+        count: u32,
+        angle: f64,
+        #[serde(default)]
+        offset: f64,
+        #[serde(default)]
+        fixed: bool,
+    },
+}
+
+impl Contact {
+    /// `cannot_damage` als Bitmaske (beim Laden validiert).
+    pub fn cannot_damage_props(&self) -> Props {
+        let (Contact::Explosion { cannot_damage, .. } | Contact::Shards { cannot_damage, .. }) = self;
+        Props::parse(cannot_damage, "Kontakt").unwrap_or_default()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -355,6 +428,12 @@ struct RawBloon {
     props: Vec<String>,
     #[serde(default)]
     classes: Vec<String>,
+    #[serde(default)]
+    camo: bool,
+    #[serde(default)]
+    regrow: bool,
+    #[serde(default)]
+    radius: f64,
 }
 
 #[derive(Deserialize)]
@@ -465,6 +544,9 @@ impl GameV1 {
                         .collect::<Result<_, DataError>>()?,
                     props: Props::parse(&b.props, &what)?,
                     classes: Classes::parse(&b.classes, &what)?,
+                    camo: b.camo,
+                    regrow: b.regrow,
+                    radius: b.radius,
                 })
             })
             .collect::<Result<Vec<_>, DataError>>()?;
@@ -583,6 +665,9 @@ impl GameV1 {
         }
 
         for b in &self.bloons {
+            if !non_neg(b.radius) {
+                return Err(invalid(format!("Bloon {}: radius >= 0 erwartet", b.name)));
+            }
             if !pos(b.hp)
                 || !pos(b.speed)
                 || (b.speed as f32) * (r.dt() as f32) <= 0.0
@@ -625,9 +710,61 @@ impl GameV1 {
                     let ok = pos(a.cooldown)
                         && non_neg(a.damage)
                         && a.range.map_or(true, pos)
-                        && match a.delivery {
+                        && match &a.delivery {
                             Delivery::Hitscan {} => true,
-                            Delivery::HitscanSplash { radius } => pos(radius),
+                            Delivery::HitscanSplash { radius } => pos(*radius),
+                            Delivery::Projectile { speed, lifespan, radius, emission, on_contact } => {
+                                pos(*speed)
+                                    && pos(*lifespan)
+                                    && non_neg(*radius)
+                                    && match emission {
+                                        Emission::Single {} => true,
+                                        Emission::Arc { count, angle, offset, .. } => {
+                                            (1..=1000).contains(count)
+                                                && non_neg(*angle)
+                                                && offset.is_finite()
+                                        }
+                                    }
+                                    && on_contact.iter().all(|c| {
+                                        let ok_props = Props::parse(
+                                            match c {
+                                                Contact::Explosion { cannot_damage, .. }
+                                                | Contact::Shards { cannot_damage, .. } => cannot_damage,
+                                            },
+                                            &what,
+                                        )
+                                        .is_ok();
+                                        ok_props
+                                            && match c {
+                                                Contact::Explosion { radius, damage, .. } => {
+                                                    pos(*radius) && non_neg(*damage)
+                                                }
+                                                Contact::Shards {
+                                                    emission,
+                                                    speed,
+                                                    lifespan,
+                                                    radius,
+                                                    damage,
+                                                    ..
+                                                } => {
+                                                    pos(*speed)
+                                                        && pos(*lifespan)
+                                                        && non_neg(*radius)
+                                                        && non_neg(*damage)
+                                                        && match emission {
+                                                            Emission::Single {} => true,
+                                                            Emission::Arc {
+                                                                count, angle, offset, ..
+                                                            } => {
+                                                                (1..=1000).contains(count)
+                                                                    && non_neg(*angle)
+                                                                    && offset.is_finite()
+                                                            }
+                                                        }
+                                                }
+                                            }
+                                    })
+                            }
                         };
                     if !ok {
                         return Err(invalid(format!("{what} Angriff {}: ungültige Werte", a.tag)));
