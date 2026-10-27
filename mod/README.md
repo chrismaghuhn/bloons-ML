@@ -97,6 +97,30 @@ Stürzt das Spiel beim Serialisieren eines `GameModel`- oder `GameData`-Felds ab
 `gameData.questData` in `<DumpRoot>/.bloonsml-skip-fields`) und überspringt es bei allen weiteren Dumps, auch nach einem
 Spiel-Update; im Manifest steht es dann unter `errors`. Zum erneuten Versuch die Zeile aus der Datei löschen.
 
+## Test-Recorder (Stufe 2, Schritt 1)
+
+Für die Kalibrierung Sim ↔ Spiel (`docs/design-recorder.md`): Einstellung **„Trace aufzeichnen“** oder Hotkey **F9**
+schaltet einen Trace an. Ab dem nächsten Sim-Schritt schreibt die Mod nach
+`<DumpRoot>/../recordings/<Zeit>_<Karte>_<Modus>_<Schwierigkeit>.trace.jsonl.gz` (also `data/raw/recordings/`,
+gitignored, mit eigener `.gitignore`); die Datei wird bei Partie-Ende, Neustart, Hauptmenü oder Ausschalten
+geschlossen. Geschrieben wird in einem Hintergrundthread.
+
+Format `bloonsml-trace/0`, eine JSON-Zeile je Ereignis, `t` = interner Sim-Zähler (`Simulation.time.elapsed`),
+`rt` = Rundenzeit (`roundTime.elapsed`):
+
+| `ev` | Felder |
+|---|---|
+| `header` | Karte, Modus, Schwierigkeit, Spiel-/Mod-Version, `paths[]` mit `spawnDist`, `leakDist`, `maximumDistanceUntilSpawn/Leak`, `mapWideBloonSpeed` |
+| `step` | je Sim-Schritt: `t`, `rt`, Unity-Frame `uf`, Schritt-Nr. im Frame `sif`, `timeScale` `ts`, `deltaTime` `dt`, Vorspulen `ff`; alle N Schritte `b` = `[[id, Pfad, Distanz, x, y], …]` |
+| `spawn` | `id`, `type`, `dist`, `x`, `y`, `spawnRound`, `emissionIndex`, `createdAtRoundTime`, `health`, `lineage` (Abstammung, IDs) |
+| `leak` / `leak_done` | vor/nach dem Leak: Bloon, `health`, `leakDamage`, `lives` |
+| `round_start` / `round_end`, `fastforward` | Runde bzw. an/aus |
+| `tower_placed` / `tower_upgraded` / `tower_sold` | Turm-ID, Name, Position, Range, Upgrade bzw. Verkaufserlös |
+| `shot` | Turm-ID, Waffe, `rateFrames` |
+
+Auswertung: `.venv/bin/python mod/tools/analyze_trace.py TRACE [TRACE2]` (mit zwei Dateien: Vergleich je Bloon
+über Runde, Emission-Index und Abstammung zur selben Rundenzeit).
+
 ## Ausgabeformat
 
 `<DumpRoot>/<Spielversion>/` (Spielversion = `Application.version`, z.B. `57.4`):

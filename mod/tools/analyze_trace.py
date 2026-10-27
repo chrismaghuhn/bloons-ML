@@ -1,0 +1,137 @@
+"""Auswertung der Test-Recorder-Traces (docs/design-recorder.md, Schritt 1).
+
+    .venv/bin/python mod/tools/analyze_trace.py TRACE [TRACE2]
+
+Mit einer Datei: Zeitbasis (Sim-Schritte je Unity-Frame, Zählerverlauf, dt/timeScale), Pfade (spawnDist/leakDist),
+Spawn- und Leak-Distanz, Laufzeit je Bloon in Sim-Schritten und Sekunden (60 Schritte/s).
+Mit zwei Dateien (z.B. Runde 1 in 1× und vorgespult): vergleicht je Bloon (Schlüssel: Runde, Emission-Index,
+Abstammung) die Distanz zum selben Rundenzeitpunkt und meldet die größte Abweichung.
+Liest nur; die Traces liegen lokal unter data/raw/recordings/ (gitignored).
+"""
+from __future__ import annotations
+
+import argparse
+import gzip
+import json
+from collections import Counter, defaultdict
+from pathlib import Path
+
+STEPS_PER_SECOND = 60
+
+
+def load(path: Path) -> list[dict]:
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rt", encoding="utf-8") as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def bloon_keys(events: list[dict]) -> dict[int, tuple]:
+    """Spiel-ID -> Schlüssel (spawnRound, emissionIndex, Kind-Nr. je Elternteil …), unabhängig von IDs."""
+    keys: dict[int, tuple] = {}
+    children: Counter = Counter()
+    for e in events:
+        if e["ev"] != "spawn":
+            continue
+        lineage = e.get("lineage") or []
+        parent = lineage[-1] if lineage and lineage[-1] != e["id"] else None
+        if parent is not None and parent in keys:
+            children[parent] += 1
+            keys[e["id"]] = keys[parent] + (children[parent],)
+        else:
+            keys[e["id"]] = (e.get("spawnRound"), e.get("emissionIndex"))
+    return keys
+
+
+def summarize(path: Path, events: list[dict]) -> dict:
+    header = next((e for e in events if e["ev"] == "header"), {})
+    steps = [e for e in events if e["ev"] == "step"]
+    print(f"\n== {path.name}")
+    print(f"  Karte {header.get('map')} {header.get('mode')}/{header.get('difficulty')}, Spiel {header.get('gameVersion')}, "
+          f"Positionen alle {header.get('positionEverySteps')} Schritte")
+    for p in header.get("paths", []):
+        print(f"  Pfad {p['index']} ({p.get('pathId')}): spawnDist {p['spawnDist']}, leakDist {p['leakDist']}, "
+              f"maxUntilSpawn {p['maximumDistanceUntilSpawn']}, maxUntilLeak {p['maximumDistanceUntilLeak']}, "
+              f"{p['segments']} Segmente")
+    if steps:
+        dts = Counter(b["t"] - a["t"] for a, b in zip(steps, steps[1:]))
+        per_frame = Counter()
+        frames = defaultdict(int)
+        for s in steps:
+            frames[(s["uf"], s["ff"])] += 1
+        for (_, ff), n in frames.items():
+            per_frame[(ff, n)] += 1
+        print(f"  {len(steps)} Sim-Schritte, Zähler t {steps[0]['t']}..{steps[-1]['t']}, Zuwachs je Schritt: {dict(dts)}")
+        print("  Sim-Schritte je Unity-Frame (ff, Schritte): "
+              + ", ".join(f"{k}: {v}x" for k, v in sorted(per_frame.items())))
+        ts = Counter((s["ff"], s["ts"]) for s in steps)
+        print(f"  timeScale (ff, ts): {dict(ts)}")
+
+    spawns = {e["id"]: e for e in events if e["ev"] == "spawn"}
+    leaks = {e["id"]: e for e in events if e["ev"] == "leak"}
+    if spawns:
+        dists = Counter(round(e["dist"], 3) for e in spawns.values())
+        print(f"  Spawns: {len(spawns)}, Spawn-Distanzen {dict(dists)}, Typen {dict(Counter(e['type'] for e in spawns.values()))}")
+    if leaks:
+        dists = Counter(round(e["dist"], 1) for e in leaks.values())
+        times = [leaks[i]["t"] - spawns[i]["t"] for i in leaks if i in spawns]
+        print(f"  Leaks: {len(leaks)}, Leak-Distanzen {dict(dists)}")
+        if times:
+            print(f"  Laufzeit Spawn→Leak: {min(times)}..{max(times)} Schritte = "
+                  f"{min(times) / STEPS_PER_SECOND:.2f}..{max(times) / STEPS_PER_SECOND:.2f} s")
+    rounds = [e for e in events if e["ev"] in ("round_start", "round_end")]
+    for e in rounds:
+        print(f"  {e['ev']} Runde {e.get('round')} bei t {e.get('t')} (Rundenzeit {e.get('rt')})")
+    starts = [e for e in rounds if e["ev"] == "round_start"]
+    ends = [e for e in rounds if e["ev"] == "round_end"]
+    if starts and ends:
+        d = ends[0]["t"] - starts[0]["t"]
+        print(f"  Rundendauer (erste Runde): {d} Schritte = {d / STEPS_PER_SECOND:.2f} s")
+    return {"steps": steps, "keys": bloon_keys(events), "spawns": spawns}
+
+
+def positions_by_key(info: dict) -> dict[tuple, dict[int, float]]:
+    """Schlüssel -> {Rundenzeit: Distanz}."""
+    out: dict[tuple, dict[int, float]] = defaultdict(dict)
+    for s in info["steps"]:
+        for bid, _path, dist, _x, _y in s.get("b", []):
+            key = info["keys"].get(bid)
+            if key is not None:
+                out[key][s["rt"]] = dist
+    return out
+
+
+def compare(a: dict, b: dict) -> None:
+    pa, pb = positions_by_key(a), positions_by_key(b)
+    common = set(pa) & set(pb)
+    print(f"\n== Vergleich: {len(common)} gemeinsame Bloons (nur in A: {len(set(pa) - common)}, nur in B: {len(set(pb) - common)})")
+    worst = (0.0, None, None)
+    compared = 0
+    for key in common:
+        for rt, dist in pa[key].items():
+            other = pb[key].get(rt)
+            if other is None:
+                continue
+            compared += 1
+            diff = abs(dist - other)
+            if diff > worst[0]:
+                worst = (diff, key, rt)
+    print(f"  {compared} Vergleichspunkte (gleicher Bloon, gleiche Rundenzeit)")
+    if compared == 0:
+        print("  keine Vergleichspunkte (Positionen fehlen oder Schlüssel passen nicht)")
+    elif worst[1] is None:
+        print("  maximale Distanz-Abweichung: 0 -> Schritt fest, Traces identisch")
+    else:
+        print(f"  maximale Distanz-Abweichung: {worst[0]:.6f} bei Bloon {worst[1]}, Rundenzeit {worst[2]}")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("traces", type=Path, nargs="+")
+    args = ap.parse_args()
+    infos = [summarize(p, load(p)) for p in args.traces]
+    if len(infos) == 2:
+        compare(*infos)
+
+
+if __name__ == "__main__":
+    main()
