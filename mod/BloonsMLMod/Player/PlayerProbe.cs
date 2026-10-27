@@ -273,6 +273,12 @@ public static class PlayerProbe
         entry["waitedFrames"] = waited;
         entry["callbackFired"] = fired;
         waitedOut = true;
+        if (!Alive())
+        {
+            entry["aborted"] = "Partie verlassen";
+            Save();
+            yield break;
+        }
 
         result.Tower = InGame.instance.GetTowers().FirstOrDefault(t => !before.Contains(t.Id.Raw));
         entry["created"] = result.Tower != null;
@@ -322,6 +328,12 @@ public static class PlayerProbe
         entry["waitedFrames"] = waited;
         entry["callbackFired"] = fired;
         waitedOut = true;
+        if (!Alive())
+        {
+            entry["aborted"] = "Partie verlassen";
+            Save();
+            yield break;
+        }
         var current = bridge.GetTowerFromId(tower.Id);
         entry["tiersAfter"] = current == null ? null : string.Join("", current.towerModel.tiers);
         entry["cashAfter"] = bridge.GetCash(inputId);
