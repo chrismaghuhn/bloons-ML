@@ -1,4 +1,4 @@
-# Design: Bloons für CHIMPS (Regrow, Runden 81–100) — Entwurf, nicht freigegeben (Review eingearbeitet)
+# Design: Bloons für CHIMPS (Regrow, Runden 81–100) — Entwurf, reviewt, wartet auf Freigabe
 
 Anlass: Die Sim kennt zwei Bloon-Mechaniken nicht, die CHIMPS deutlich schwerer machen. CHIMPS-Ergebnisse
 der Sim sind darum zu optimistisch, ab Runde 81 vermutlich stark.
@@ -52,7 +52,8 @@ Betroffene Runden mit Regrow-Bloons:
 
 **Beim Spawn (Runde oder Kind):**
 - Rundenspawn: leerer Stapel.
-- Kind eines Regrow-Bloons: der Stapel des Elternteils, dazu alle Zwischentypen bis zum Kind. Dafür liefert
+- Kind eines Regrow-Bloons: der Stapel des Elternteils, dazu der Elternteil selbst und alle Zwischentypen
+  bis zum Kind. Dafür liefert
   `bloon::hit()` bei Überschuss-Schaden über mehrere Ebenen je Kind den ganzen Pfad. Heute gibt es nur die
   letzten Kinder zurück.
 - Kind eines Bloons ohne Regrow (z.B. Ceramic-Kinder eines DDT): leerer Stapel, wächst also höchstens bis
@@ -150,7 +151,7 @@ auswerten; dann entscheiden, ob neu trainiert wird.
   - Ohne Regrow-Bloons bleibt alles gleich (sim_v0-Hash, f64-Parität).
   - Determinismus mit Regrow (gleicher Seed, gleicher Hash).
 - **Konverter:** `grow_rate` für alle Regrow-Typen gesetzt; jeder Schritt Elternteil→Kind passt zu `growToId`
-  bzw. `overrideChildWithColor`.
+  bzw. `overrideChildWithColor` (Vergleich ohne Fortified, sonst scheitert CeramicRegrowFortified→Rainbow).
 
 ## 6. Offene Fragen an den User
 
