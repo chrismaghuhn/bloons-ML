@@ -1,0 +1,800 @@
+{
+  "id": "monkey_buccaneer",
+  "name": "Monkey Buccaneer",
+  "category": "military",
+  "cost": 400,
+  "placement": "water",
+  "footprint": {
+    "radius": 8
+  },
+  "game_version": "55.1",
+  "sources": [
+    "https://www.bloonswiki.com/Monkey_Buccaneer_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Monkey_Buccaneer/new",
+    "https://www.bloonswiki.com/api.php?action=cargoquery&tables=btd6_upgrades (tower=Monkey Buccaneer)"
+  ],
+  "abilities": [
+    {
+      "name": "Ability (Monkey Pirates)",
+      "cooldown": 45,
+      "description": "Unlocked by Monkey Pirates (middle tier 4): Adds 2 cannons to the ship and attacks do more damage. MOAB Takedown Ability: harpoons a MOAB class Bloon and brings it down. Data: maxActivationsPerRound=9999999; attack Grappling hook: dmg None, pierce None, cd None, type None, x1, targets: Grapplable; cannot target Zomg; cannot target Bad; cannot target Rock; no damaging projectile listed in wiki data"
+    }
+  ],
+  "base": {
+    "range": 60,
+    "camo": false,
+    "reach": "radius",
+    "attacks": [
+      {
+        "tag": "attack_projectile",
+        "name": "Attack/Projectile",
+        "damage": 1,
+        "pierce": 4,
+        "cooldown": 1,
+        "damage_type": "sharp",
+        "projectiles": 2,
+        "blast_radius": null,
+        "projectile_speed": null,
+        "lifespan": null,
+        "camo": false,
+        "notes": "cannot hit Camo; speed 200; collision radius 4; lifespan 0.6s; attack range 60",
+        "damage_vs": {}
+      }
+    ]
+  },
+  "paths": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Faster Shooting",
+        "cost": 275,
+        "description": "All weapons on board shoot faster. Wiki: This upgrade decreases the attack cooldown of the Monkey Buccaneer's attacks by 25%, increasing its attack speed by ~33.33%. Without additional upgrades, the dart attack has a cooldown of 0.75 seconds.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.75,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 4; lifespan 0.6s; attack range 60",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Double Shot",
+        "cost": 425,
+        "description": "Increases ship weapons fired. Wiki: This upgrade increases the number of darts fired by each cannon from 1 to 2, each shot firing two projectiles in parallel. If Grape Shot is purchased, Double Shot also grants +1 grape per attack. Double Shot does not increase the number of cannonballs fired by Cannon Ship or its subsequent upgrades, only granting +1 grape, because these upgrades remove the Monkey Buccaneer's dart attack.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.75,
+              "damage_type": "sharp",
+              "projectiles": 4,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 4; lifespan 0.6s; attack range 60",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Destroyer",
+        "cost": 3350,
+        "description": "Attacks super duper fast! Wiki: This upgrade reduces the cooldown of both its main attack and (if crosspathed with path 2) Grape Shot by 80%, effectively quintupling its attack speed for both attacks. Without additional upgrades, the cooldown of each shot is 0.15 seconds for the twin darts and 0.2025 seconds for the grapes.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.15,
+              "damage_type": "sharp",
+              "projectiles": 4,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 4; lifespan 0.6s; attack range 60",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Aircraft Carrier",
+        "cost": 8000,
+        "description": "Launches waves of fighter planes that strafe their targets and fire missiles at MOAB class Bloons. Wiki: This upgrade grants the Monkey Buccaneer sub-towers which are aircraft visually resembling smaller Monkey Aces, and attack similarly to Fighter Planes. Aircraft Carriers can deploy up to three aircraft at a time, with a cooldown of 1.25 seconds between each deployment. The main Destroyer attacks remained unchanged, except 4-2-0, with burning damage increased from 2 to 4.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.15,
+              "damage_type": "sharp",
+              "projectiles": 4,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 4; lifespan 0.7s; attack range 60",
+              "damage_vs": {}
+            },
+            {
+              "tag": "plane_spawner",
+              "name": "Plane spawner",
+              "damage": null,
+              "pierce": null,
+              "cooldown": 1.25,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": null,
+              "notes": "no damaging projectile listed in wiki data",
+              "damage_vs": {}
+            },
+            {
+              "tag": "plane_attack_projectile",
+              "name": "[Plane] Attack/Projectile",
+              "damage": 2,
+              "pierce": 4,
+              "cooldown": 0.21,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "subtower Plane (range 200); cannot hit Camo; seeking; speed 300; collision radius 6; lifespan 0.9333s",
+              "damage_vs": {}
+            },
+            {
+              "tag": "plane_radial_attack_projectile",
+              "name": "[Plane] Radial attack/Projectile",
+              "damage": 4,
+              "pierce": 8,
+              "cooldown": 1.2,
+              "damage_type": "sharp",
+              "projectiles": 8,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "subtower Plane (range 200); cannot hit Camo; speed 100; collision radius 6; lifespan 0.7s; spread angle 360",
+              "damage_vs": {}
+            },
+            {
+              "tag": "plane_missile_attack_explosion",
+              "name": "[Plane] Missile attack/Explosion",
+              "damage": 15,
+              "pierce": 3,
+              "cooldown": 3,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 30,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "subtower Plane (range 200); hits MOAB-class only; cannot hit Camo; attack targets MOAB-class only",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "Carrier Flagship",
+        "cost": 26000,
+        "description": "Does extra damage. Can place other Monkeys on the upper decks of the ship and increases attack speed of all water based Monkeys and Monkey Aces. Wiki: This upgrade improves all weapons of the Aircraft Carrier's aircraft. Carrier Flagship provides a buff to all water towers and Monkey Aces on screen, including itself, which reduces their attack cooldown by 20%, or a 25% attack speed increase. Carrier Flagship gains two platforms on its main tower which towers may be placed onto. If Hot Shot is purchased, Carrier Flagship increases the damage of its damage-over-time effect from 4 to 9.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 7,
+              "cooldown": 0.15,
+              "damage_type": "sharp",
+              "projectiles": 4,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 4; lifespan 0.7s; attack range 60",
+              "damage_vs": {}
+            },
+            {
+              "tag": "plane_spawner",
+              "name": "Plane spawner",
+              "damage": null,
+              "pierce": null,
+              "cooldown": 1.25,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": null,
+              "notes": "no damaging projectile listed in wiki data",
+              "damage_vs": {}
+            },
+            {
+              "tag": "plane_attack_projectile",
+              "name": "[Plane] Attack/Projectile",
+              "damage": 2,
+              "pierce": 7,
+              "cooldown": 0.18,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "subtower Plane (range 200); +3 damage vs Ceramic; cannot hit Camo; seeking; speed 300; collision radius 4; lifespan 0.9333s",
+              "damage_vs": {
+                "ceramic": 3
+              }
+            },
+            {
+              "tag": "plane_radial_attack_projectile",
+              "name": "[Plane] Radial attack/Projectile",
+              "damage": 4,
+              "pierce": 14,
+              "cooldown": 1.2,
+              "damage_type": "sharp",
+              "projectiles": 8,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "subtower Plane (range 200); +3 damage vs Ceramic; cannot hit Camo; speed 100; collision radius 4; lifespan 0.7s; spread angle 360",
+              "damage_vs": {
+                "ceramic": 3
+              }
+            },
+            {
+              "tag": "plane_missile_attack_explosion",
+              "name": "[Plane] Missile attack/Explosion",
+              "damage": 30,
+              "pierce": 4,
+              "cooldown": 1.5,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 30,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "subtower Plane (range 200); hits MOAB-class only; cannot hit Camo; attack targets MOAB-class only",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "buff:Flagship buff": {
+            "maxStacks": 0,
+            "isGlobal": true,
+            "rateMultiplier": 0.8
+          }
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Grape Shot",
+        "cost": 550,
+        "description": "Adds a spray of 5 sharpened grapes to the ship. Wiki: This upgrade grants the Monkey Buccaneer an additional attack which fires 5 grapes (6 with Big Bunch) at a time, in a 90° spread. Grapes deal 1 Sharp-type damage (cannot damage Lead or Frozen Bloons), have 1 pierce (2 with Naval Upgrades), and have an attack cooldown of 1.35 seconds. Like Monkey Buccaneer's main dart attack, grapes may be fired from both sides at the same time if there are targets on both sides of it. The attack has several crosspathing benefits: Faster Shooting increases grape fire rate by +33% Double Shot adds +1 grape Destroyer increases grape fire rate by +400% Aircraft Carrier changes the radial attack from its planes to front-shooting bursts of grapes Carrier Flagship improves the Ceramic damage and pierce of the plane's fired grapes Long Range increases grape projectile speed by +25% and increases grape pierce by +1 Crow's Nest allows grapes to hit Camo Bloons Favored Trades increases grape fire rate by +80% Trade Empire increases grape damage to 2 and grants bonus MOAB and ceramic damage",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 1,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 4; lifespan 0.6s; attack range 60",
+              "damage_vs": {}
+            },
+            {
+              "tag": "grape_attack_projectile",
+              "name": "Grape attack/Projectile",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 1.3,
+              "damage_type": "sharp",
+              "projectiles": 10,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 2; lifespan 0.5s; spread angle 90; attack range 60",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Hot Shot",
+        "cost": 500,
+        "description": "Burning hot grape shot can pop Lead Bloons and set Bloons on fire. Wiki: This upgrade sets its grapes on fire, changing the grapes to deal Fire-type damage instead of Sharp, letting them pop Lead and Frozen Bloons but not Purple Bloons. Additionally, the grapes gain a damage-over-time effect that ticks every 1.5 seconds, dealing 2 damage and lasting 3.1 seconds. It can set Purple Bloons in this damage-over-time, but will not damage them. Tier 4 and above crosspaths have extra DoT damage from Hot Shot. Aircraft Carrier grapes from the main ship deal 4 damage per tick, remaining at one tick every 1.5 seconds for 3.1 seconds. The radial volleys from the aircraft become tightly packed burning grapes that also burn Bloons, dealing 4 damage per tick per 0.5 seconds for 3.1 seconds. Carrier Flagship increases damage per tick of both burning effects from 4 to 9. Favored Trades burn effect does 4 damage per tick, increased to 9 with Trade Empire.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 1,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 4; lifespan 0.6s; attack range 60",
+              "damage_vs": {}
+            },
+            {
+              "tag": "grape_attack_projectile",
+              "name": "Grape attack/Projectile",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 1.3,
+              "damage_type": "fire",
+              "projectiles": 10,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 2; lifespan 0.5s; spread angle 90; Damage over time(layers=9999999, lifespan=3.1, applyOnlyIfDamaged=False, damage=2, damage_type=fire, interval=1.5, initialDelay=0, distributeToChildren=True); attack range 60",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Cannon Ship",
+        "cost": 900,
+        "description": "Adds a powerful cannon that shoots out powerful bombs. Wiki: This upgrade replaces its dart attack with bombs that explode on contact, dealing damage in an area and spawning 8 sharp frags that fly in all directions, and it increases the damage of its Grape Shot from 1 to 3. The bomb attack has a cooldown of 1.3 seconds and its explosion does 2 Explosion-type damage onto up to 20 Bloons (30 with Long Range), with a radius of 40. Its frags can each pop 1 Bloon (2 with Long Range), their pierce and damage cannot be buffed, and do not hit the same Bloon that the cannonball collided onto.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "grape_attack_projectile",
+              "name": "Grape attack/Projectile",
+              "damage": 3,
+              "pierce": 1,
+              "cooldown": 1.3,
+              "damage_type": "fire",
+              "projectiles": 10,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 200; collision radius 2; lifespan 0.5s; spread angle 90; Damage over time(layers=9999999, lifespan=3.1, applyOnlyIfDamaged=False, damage=2, damage_type=fire, interval=1.5, initialDelay=0, distributeToChildren=True); attack range 60",
+              "damage_vs": {}
+            },
+            {
+              "tag": "bomb_attack_frag",
+              "name": "Bomb attack/Frag",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 1.3,
+              "damage_type": "sharp",
+              "projectiles": 16,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; max pierce 1; speed 300; collision radius 2; spread angle 360; attack range 60",
+              "damage_vs": {}
+            },
+            {
+              "tag": "bomb_attack_explosion",
+              "name": "Bomb attack/Explosion",
+              "damage": 2,
+              "pierce": 28,
+              "cooldown": 1.3,
+              "damage_type": "explosive",
+              "projectiles": 2,
+              "blast_radius": 40,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; attack range 60",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Monkey Pirates",
+        "cost": 3900,
+        "description": "Adds 2 cannons to the ship and attacks do more damage. MOAB Takedown Ability: harpoons a MOAB class Bloon and brings it down. Wiki: With this upgrade, the Monkey Buccaneer shoots three bombs at a time instead of one, its bombs deal 3 damage instead of 2 and deal +5 damage to MOAB-Class Bloons, and its grapes deal 4 damage instead of 3 and deal +2 damage to Ceramic Bloons. This upgrade unlocks the MOAB Takedown Activated Ability, which destroys one MOAB, BFB, or visible DDT, prioritizing the strongest Bloon. It has a cooldown of 45 seconds (40 seconds with Faster Takedowns). The ability cannot be activated if no valid Bloon is on screen.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "grape_attack_projectile",
+              "name": "Grape attack/Projectile",
+              "damage": 4,
+              "pierce": 1,
+              "cooldown": 1.3,
+              "damage_type": "fire",
+              "projectiles": 10,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+2 damage vs Ceramic; cannot hit Camo; speed 200; collision radius 2; lifespan 0.5s; spread angle 90; Damage over time(layers=9999999, lifespan=3.1, applyOnlyIfDamaged=False, damage=2, damage_type=fire, interval=1.5, initialDelay=0, distributeToChildren=True); attack range 60",
+              "damage_vs": {
+                "ceramic": 2
+              }
+            },
+            {
+              "tag": "bomb_attack_frag",
+              "name": "Bomb attack/Frag",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 1.3,
+              "damage_type": "sharp",
+              "projectiles": 16,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; max pierce 1; speed 300; collision radius 2; spread angle 360; attack range 60",
+              "damage_vs": {}
+            },
+            {
+              "tag": "bomb_attack_explosion",
+              "name": "Bomb attack/Explosion",
+              "damage": 3,
+              "pierce": 28,
+              "cooldown": 1.3,
+              "damage_type": "explosive",
+              "projectiles": 2,
+              "blast_radius": 40,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+5 damage vs Moabs; cannot hit Camo; attack range 60",
+              "damage_vs": {
+                "moab": 5
+              }
+            }
+          ]
+        },
+        "effects": {
+          "new_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 45,
+              "description": "maxActivationsPerRound=9999999; attack Grappling hook: dmg None, pierce None, cd None, type None, x1, targets: Grapplable; cannot target Zomg; cannot target Bad; cannot target Rock; no damaging projectile listed in wiki data"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Pirate Lord",
+        "cost": 29000,
+        "description": "Greatly improved power and can shoot many grappling hooks at once, plundering extra cash from each MOAB-class Bloon taken down. Wiki: This upgrade decreases the attack cooldown of all attacks by 35%, increasing the Monkey Buccaneer's attack speed by ~53.8%. The grapes deal 8 damage and deal +4 Ceramic damage (instead of 4 and +2), and deal 9 damage per tick instead of 2. Cannonballs deal +8 MOAB-class damage instead of +5, and their fragments deal 6 damage and +3 MOAB-class damage. Without Faster Shooting, the attack cooldown of grapes and cannons are 0.8775 seconds and 0.845 seconds, respectively. This upgrade grants the MOAB Takedown ability 6 hooks in total, and the capability of hooking ZOMGs at the cost of 3 hooks each. The ability's cooldown is decreased from 45 seconds to 30 seconds (25 seconds with Faster Takedowns), and hooked Bloons grant +100% increased pop income.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "grape_attack_projectile",
+              "name": "Grape attack/Projectile",
+              "damage": 8,
+              "pierce": 1,
+              "cooldown": 0.845,
+              "damage_type": "fire",
+              "projectiles": 10,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+4 damage vs Ceramic; cannot hit Camo; speed 200; collision radius 2; lifespan 0.5s; spread angle 90; Damage over time(layers=9999999, lifespan=3.1, applyOnlyIfDamaged=False, damage=9, damage_type=fire, interval=1.5, initialDelay=0, distributeToChildren=True); attack range 60",
+              "damage_vs": {
+                "ceramic": 4
+              }
+            },
+            {
+              "tag": "bomb_attack_frag",
+              "name": "Bomb attack/Frag",
+              "damage": 6,
+              "pierce": 1,
+              "cooldown": 0.845,
+              "damage_type": "sharp",
+              "projectiles": 16,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+3 damage vs Moabs; cannot hit Camo; max pierce 1; speed 300; collision radius 2; spread angle 360; attack range 60",
+              "damage_vs": {
+                "moab": 3
+              }
+            },
+            {
+              "tag": "bomb_attack_explosion",
+              "name": "Bomb attack/Explosion",
+              "damage": 3,
+              "pierce": 28,
+              "cooldown": 0.845,
+              "damage_type": "explosive",
+              "projectiles": 2,
+              "blast_radius": 40,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+8 damage vs Moabs; cannot hit Camo; attack range 60",
+              "damage_vs": {
+                "moab": 8
+              }
+            }
+          ]
+        },
+        "effects": {
+          "changed_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 30,
+              "description": "maxActivationsPerRound=9999999; attack Grappling hook: dmg None, pierce None, cd None, type None, x1, targets: Grapplable; cannot target Bad; cannot target Rock; no damaging projectile listed in wiki data"
+            }
+          ]
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Long Range",
+        "cost": 200,
+        "description": "Much longer range, and projectiles fly faster and pierce more. Wiki: This upgrade increases the Monkey Buccaneer's range by ~18.3% (absolute range increased from 60 to 71), increases the pierce of its darts by 2, and increases projectile speed of all its attacks by 25%. With crosspaths, the pierce of each attack is improved: Aircraft Carrier: Increases the pierce of the planes' radial and forward-firing darts by 2 Grape Shot: Increases the pierce of the grapes by 1 Cannon Ship: Increases the pierce of the bombs' explosions by 10 and the frags by 1.",
+        "state": {
+          "range": 71,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 1,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 250; collision radius 4; lifespan 0.6s; attack range 71",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Crow's Nest",
+        "cost": 350,
+        "description": "Allows the ship to hit Camo Bloons. Wiki: The Monkey Buccaneer gains Camo detection and the Camo Prioritization targeting option.",
+        "state": {
+          "range": 71,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 1,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "speed 250; collision radius 4; lifespan 0.6s; attack range 71",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Merchantman",
+        "cost": 2400,
+        "description": "Generates cash each round automatically, and deals more damage when over 10,000 saved cash. Wiki: This upgrade generates $200 at the end of each round automatically ($220 with Trade Agreements), which can be improved with Central Market (+10%, up to +100%) and Trade Empire. Additionally, the Merchantman's damage, applied after other buffs, is increased by ×2 if the player's cash is at least $10,000; in Co-op, only the owner's cash determines the damage buff of the Merchantman.",
+        "state": {
+          "range": 71,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 1,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "speed 250; collision radius 4; lifespan 0.6s; attack range 71",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "buff:Cash-based buff ($10,000+)": {
+            "isGlobal": false,
+            "damageMultiplier": 2
+          },
+          "cash_per_round": 200
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Favored Trades",
+        "cost": 5500,
+        "description": "Attacks faster and deals more damage when over 50,000 saved cash. Generates lots of money per round. Monkeys in radius have increased sell value. Wiki: This upgrade reduces the attack cooldown of the Monkey Buccaneer's attacks, increases the amount of cash generated from $200 to $500 per round ($520 with Trade Agreements), and provides a buff to itself and towers within its range which increases their sell value by 4% stacking up to 3 times for a maximum of 12% (capped at maximum of 95% of their cost). Additionally, its damage is increased by ×2 if the player's cash is $10,000–$49,999, or ×3 at $50,000 or more; in Co-op, only the owner's cash determines the cash-based damage buff. Darts have a cooldown of 0.5 seconds. If given Grape Shot, the attack cooldown for the grapes are reduced from 1.3 to 0.75 seconds. Hot Shot's burn damage is improved from 2 to 4.",
+        "state": {
+          "range": 71,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 0.5,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "speed 250; collision radius 4; lifespan 0.6s; attack range 71",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "buff:Sellback rate buff": {
+            "maxStacks": 3,
+            "isGlobal": false,
+            "cashbackZoneMultiplier": 0.04
+          },
+          "buff:Cash-based buff ($10,000−$49,999)": {
+            "isGlobal": false,
+            "damageMultiplier": 2
+          },
+          "buff:Cash-based buff ($50,000+)": {
+            "isGlobal": false,
+            "damageMultiplier": 3
+          },
+          "cash_per_round": "+300",
+          "buff:Cash-based buff ($10,000+)": "removed"
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Trade Empire",
+        "cost": 23000,
+        "description": "Generates more cash per round. Grants up to 20 Merchantmen bonus damage and an income bonus that increases with every Merchantman owned up to 20 times. Wiki: This upgrade increases the cash generated by Monkey Buccaneer from $500 to $800 ($820 with Trade Agreements), and grants a Trade Empire buff to up to 20 other Merchantmen or Favored Trades. This buff increases the cash generation of affected Monkey Buccaneers by an amount which scales based on the number of affected Monkey Buccaneers. The buff also grants +1 damage, +1 Ceramic damage, and +1 MOAB-Class damage to all attacks of affected towers. Trade Empire grants the Monkey Buccaneer itself +1 damage, +1 Ceramic damage, and +1 MOAB-Class damage to all attacks. Additionally, Hot Shot improves burn damage of its own grapes from 4 to 9. Like the previous tiers, it also gains a damage bonus depending on the amount of cash on hand, ×2 at $10,000–$49,999, or ×3 at $50,000 or more.",
+        "state": {
+          "range": 71,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 2,
+              "pierce": 6,
+              "cooldown": 0.5,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+1 damage vs Ceramic; +1 damage vs Moabs; speed 250; collision radius 4; lifespan 0.6s; attack range 71",
+              "damage_vs": {
+                "ceramic": 1,
+                "moab": 1
+              }
+            }
+          ]
+        },
+        "effects": {
+          "buff:Trade Empire buff": {
+            "maxStacks": 20,
+            "isGlobal": true,
+            "cashPerRoundPerMechantship": 10,
+            "cashPerRoundPerFavouredTrades": 20,
+            "damageAdditive": 1,
+            "damageAdditiveForCeramic": 1,
+            "damageAdditiveForMoabs": 1
+          },
+          "cash_per_round": "+300"
+        }
+      }
+    ]
+  }
+}

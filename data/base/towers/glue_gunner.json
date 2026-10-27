@@ -1,0 +1,516 @@
+{
+  "id": "glue_gunner",
+  "name": "Glue Gunner",
+  "category": "primary",
+  "cost": 225,
+  "placement": "land",
+  "footprint": {
+    "radius": 6
+  },
+  "game_version": "stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4",
+  "sources": [
+    "https://www.bloonswiki.com/Glue_Gunner_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Glue_Gunner_(BTD6)",
+    "https://www.bloonswiki.com/Special:CargoTables/btd6_upgrades"
+  ],
+  "abilities": [
+    {
+      "name": "Glue Strike",
+      "cooldown": 40,
+      "description": "Unlocked by Glue Strike (middle path tier 4). In-game text: Glue Strike Ability: Glues all Bloons on screen, removing Lead immunity, and causing them to take more damage from all sources while it lasts. wiki stats: Lifespan: 0.05s; Attack {Cooldown: 2s; Targeting range: ∞ units; Projectile {Pierce: 9,999,999; Lifespan: 0.05s; Radius: 999 units; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 5; Glue level: 1}; Bonus damage {Duration: 11s; Layers: 0}; Remove immunities {Duration: 11s; Layers: 6}}}"
+    },
+    {
+      "name": "Glue Storm",
+      "cooldown": 40,
+      "description": "Unlocked by Glue Storm (middle path tier 5). In-game text: Glue Storm Ability: Pelts the whole screen with glue for 20 seconds. wiki stats: Lifespan: 20s; Attack {Cooldown: 1s; Targeting range: ∞ units; Projectile {Pierce: 9,999,999; Lifespan: 0.05s; Radius: 999 units; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 5; Glue level: 1}; Bonus damage {Duration: 11s; Layers: 0}; Remove immunities {Duration: 11s; Layers: 6}}}"
+    }
+  ],
+  "base": {
+    "range": 46,
+    "camo": false,
+    "reach": "radius",
+    "attacks": [
+      {
+        "tag": "glue",
+        "name": "glue",
+        "damage": 0,
+        "pierce": 1,
+        "cooldown": 1,
+        "damage_type": null,
+        "projectiles": 1,
+        "blast_radius": null,
+        "projectile_speed": 300,
+        "lifespan": 0.43,
+        "camo": false,
+        "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}",
+        "damage_vs": {}
+      }
+    ]
+  },
+  "paths": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Glue Soak",
+        "cost": 200,
+        "description": "Glue soaks through all layers of Bloon.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: ∞; Glue level: 1}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Corrosive Glue",
+        "cost": 300,
+        "description": "Glued Bloons pop one layer every few seconds.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Ignores Bloons with glue level: 2+; Projectile {Pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Ignores Bloons with glue level: 2+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: ∞; Glue level: 2}; Damage over time {Damage: 1; Damage type: Acid; Duration: 11s; Interval: 2s; Layers: ∞; Glue level: 2}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Bloon Dissolver",
+        "cost": 2000,
+        "description": "Can glue one additional Bloon per shot and solvents melt two layers every second.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 2,
+              "cooldown": 0.5,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 0.5s; Targeting range: 46 units; Filters: Cannot target Camo; Ignores Bloons with glue level: 3+; Projectile {Pierce: 2; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Ignores Bloons with glue level: 3+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: ∞; Glue level: 3}; Damage over time {Damage: 1; Damage to Ceramic: +2; Damage type: Acid; Duration: 11s; Interval: 0.5s; Layers: ∞; Glue level: 3}}",
+              "damage_vs": {
+                "ceramic": 2
+              }
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Bloon Liquefier",
+        "cost": 5000,
+        "description": "Applies liquifying compounds that do 10 pops every second, and drops powerful acid onto the track after destroying a Bloon.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 4,
+              "pierce": 3,
+              "cooldown": 0.5,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.5s; Targeting range: 46 units; Filters: Cannot target Camo; Ignores Bloons with glue level: 4+; Projectile {Pierce: 2; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Ignores Bloons with glue level: 4+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: ∞; Glue level: 4}; Damage over time {Damage: 1; Damage to Ceramic: +2; Damage type: Acid; Duration: 11s; Interval: 0.1s; Layers: ∞; Glue level: 4}}; Puddle {Pierce: 3; Damage: 4; Damage type: Normal [Can damage any Bloon type]; Lifespan: 7.7s; Radius: 6 units; Filters: Cannot hit Camo; Cannot hit bosses}",
+              "damage_vs": {
+                "ceramic": 2
+              }
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "The Bloon Solver",
+        "cost": 22500,
+        "description": "Bloons a problem? Here's the solution.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 15,
+              "pierce": 3,
+              "cooldown": 0.25,
+              "damage_type": "normal",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.25s; Targeting range: 46 units; Filters: Cannot target Camo; Ignores Bloons with glue level: 6+; Projectile {Count: 2; Angle: 10°; Pierce: 4; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Ignores Bloons with glue level: 6+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: ∞; Glue level: 6}; Damage over time {Damage: 1; Damage to Ceramic: +8; Damage to MOAB-Class: +4; Damage type: Acid; Duration: 11s; Interval: 0.1s; Layers: ∞; Glue level: 6}}; Splat {Pierce: 4; Lifespan: 0s; Radius: 12 units; Filters: Cannot hit Camo; Ignores Bloons with glue level: 6+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: ∞; Glue level: 6}; Damage over time {Damage: 1; Damage to Ceramic: +8; Damage to MOAB-Class: +4; Damage type: Acid; Duration: 11s; Interval: 0.1s; Layers: ∞; Glue level: 6}}; Puddle {Pierce: 3; Damage: 15; Damage type: Normal [Can damage any Bloon type]; Lifespan: 7.7s; Radius: 6 units; Filters: Cannot hit Camo; Cannot hit bosses}",
+              "damage_vs": {
+                "ceramic": 8,
+                "moab": 4
+              }
+            }
+          ]
+        },
+        "effects": {}
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Bigger Globs",
+        "cost": 100,
+        "description": "Can coat 2 Bloons per shot.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 2,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 2; Speed: 300 units/s; Lifespan: 0.43s; Radius: 5 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Glue Splatter",
+        "cost": 650,
+        "description": "Splatters glue across up to 5 Bloons per shot.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 4,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 4; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 5 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}; Splat {Pierce: 4; Lifespan: 0.1s; Radius: 13 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Glue Hose",
+        "cost": 1950,
+        "description": "Shoots glue 3x as fast and in a wider area!",
+        "state": {
+          "range": 58,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 4,
+              "cooldown": 0.34,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 0.34s; Targeting range: 58 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 4; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 5 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}; Splat {Pierce: 4; Lifespan: 0.1s; Radius: 13 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Glue Strike",
+        "cost": 4500,
+        "description": "Glue Strike Ability: Glues all Bloons on screen, removing Lead immunity, and causing them to take more damage from all sources while it lasts.",
+        "state": {
+          "range": 58,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 4,
+              "cooldown": 0.34,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 0.34s; Targeting range: 58 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 4; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 5 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}; Splat {Pierce: 4; Lifespan: 0.1s; Radius: 13 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "abilities": [
+            {
+              "name": "Glue Strike",
+              "cooldown": 40,
+              "description": "wiki stats: Lifespan: 0.05s; Attack {Cooldown: 2s; Targeting range: ∞ units; Projectile {Pierce: 9,999,999; Lifespan: 0.05s; Radius: 999 units; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 5; Glue level: 1}; Bonus damage {Duration: 11s; Layers: 0}; Remove immunities {Duration: 11s; Layers: 6}}}"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Glue Storm",
+        "cost": 16000,
+        "description": "Glue Storm Ability: Pelts the whole screen with glue for 20 seconds.",
+        "state": {
+          "range": 58,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 4,
+              "cooldown": 0.34,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 0.34s; Targeting range: 58 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 4; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 5 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}; Splat {Pierce: 4; Lifespan: 0.1s; Radius: 13 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "abilities": [
+            {
+              "name": "Glue Storm",
+              "cooldown": 40,
+              "description": "wiki stats: Lifespan: 20s; Attack {Cooldown: 1s; Targeting range: ∞ units; Projectile {Pierce: 9,999,999; Lifespan: 0.05s; Radius: 999 units; Glue {Multiplier: ×0.5; Duration: 11s; Duration for MOAB-Class: 0s; Layers: 5; Glue level: 1}; Bonus damage {Duration: 11s; Layers: 0}; Remove immunities {Duration: 11s; Layers: 6}}}"
+            }
+          ]
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Stickier Glue",
+        "cost": 280,
+        "description": "Makes glue effect last much longer.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.5; Duration: 24s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Stronger Glue",
+        "cost": 400,
+        "description": "Slows down Bloons even more.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target bosses; Ignores Bloons with glue level: 1+; Projectile {Pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit bosses; Ignores Bloons with glue level: 1+; Glue {Multiplier: ×0.25; Duration: 24s; Duration for MOAB-Class: 0s; Layers: 3; Glue level: 1}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "MOAB Glue",
+        "cost": 3600,
+        "description": "Improved glue formula allows it to stick to MOAB-Class Bloons.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target bosses; Ignores Bloons with glue level: 5+; Projectile {Pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Cannot hit bosses; Ignores Bloons with glue level: 5+; Glue {Multiplier: ×0.25; Multiplier for MOAB-Class: ×2.5; Multiplier for BADs: ×1.6; Duration: 24s; Duration for MOAB-Class: 9s; Duration for BADs: 0s; Layers: 3; Glue level: 5}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Relentless Glue",
+        "cost": 4000,
+        "description": "When a glued Bloon is popped, nearby Bloons are stunned.",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "no direct damage listed on wiki; cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target BADs; Cannot target bosses; Ignores Bloons with glue level: 7+; Projectile {Pierce: 1; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Cannot hit bosses; Cannot hit BADs; Ignores Bloons with glue level: 7+; Glue {Multiplier: ×0.25; Multiplier for MOAB-Class: ×2.5; Multiplier for BADs: ×1.6; Duration: 24s; Duration for MOAB-Class: 12s; Duration for BADs: 0s; Layers: 3; Glue level: 7}}; Splat on pop {Pierce: 6; Lifespan: 0.1s; Radius: 12 units; Filters: Cannot hit Camo; Cannot hit bosses; Cannot hit BFBs; Cannot hit ZOMGs; Stun {Multiplier: ×0; Duration: 1s; Duration for MOABs: 0.25s; Duration for DDTs: 0.2s; Layers: ∞}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "Super Glue",
+        "cost": 24000,
+        "description": "Glue so strong it temporarily immobilizes all affected Bloons!",
+        "state": {
+          "range": 46,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "glue",
+              "name": "glue",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 1,
+              "damage_type": "acid",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.43,
+              "camo": false,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 46 units; Filters: Cannot target Camo; Ignores Bloons with glue level: 9+; Projectile {Pierce: 6; Damage: 1; Max damage: 1; Damage type: Acid [Cannot damage Glass]; Speed: 300 units/s; Lifespan: 0.43s; Radius: 4 units; Filters: Cannot hit Camo; Ignores Bloons with glue level: 8+; Glue {Multiplier: ×0.25; Multiplier for MOAB-Class: ×2.5; Multiplier for BADs: ×1.6; Duration: 24s; Duration for MOAB-Class: 18s; Duration for BADs: 0s; Layers: 3; Glue level: 7}; Super Glue {Multiplier: ×0; Multiplier for MOABs: ×0; Multiplier for BFBs: ×0.05; Multiplier for ZOMGs: ×0.1; Multiplier for DDTs: ×0; Duration: 24s; Duration for MOABs: 5s; Duration for BFBs: 2s; Duration for ZOMGs: 1s; Duration for DDTs: 5s; Layers: 3}; Super Glue damage {Damage: 30; Damage type: Acid; Duration: 0.95s; Interval: 1s; Layers: 1}}; Splat on pop {Pierce: 11; Lifespan: 0.1s; Radius: 12 units; Filters: Cannot hit Camo; Cannot hit bosses; Stun {Multiplier: ×0; Duration: 1s; Layers: ∞}}",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      }
+    ]
+  }
+}

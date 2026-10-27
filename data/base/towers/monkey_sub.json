@@ -1,0 +1,733 @@
+{
+  "id": "monkey_sub",
+  "name": "Monkey Sub",
+  "category": "military",
+  "cost": 325,
+  "placement": "water",
+  "footprint": {
+    "radius": 7
+  },
+  "game_version": "55.1",
+  "sources": [
+    "https://www.bloonswiki.com/Monkey_Sub_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Monkey_Sub/new",
+    "https://www.bloonswiki.com/api.php?action=cargoquery&tables=btd6_upgrades (tower=Monkey Sub)"
+  ],
+  "abilities": [
+    {
+      "name": "Ability (First Strike Capability)",
+      "cooldown": 60,
+      "description": "Unlocked by First Strike Capability (middle tier 4): First Strike Ability: A devastating missile strike targeting the largest Bloon on screen, plus splash damage. Data: maxActivationsPerRound=9999999; projectile Missile: dmg 10000, pierce 1, radius 5, type normal; hits only target (instant); max pierce 1; projectile Explosion: dmg 350, pierce 80, radius 65, type normal"
+    }
+  ],
+  "base": {
+    "range": 42,
+    "camo": false,
+    "reach": "radius",
+    "attacks": [
+      {
+        "tag": "attack_projectile",
+        "name": "Attack/Projectile",
+        "damage": 1,
+        "pierce": 2,
+        "cooldown": 0.75,
+        "damage_type": "sharp",
+        "projectiles": 1,
+        "blast_radius": null,
+        "projectile_speed": null,
+        "lifespan": null,
+        "camo": false,
+        "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 42",
+        "damage_vs": {}
+      }
+    ]
+  },
+  "paths": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Longer Range",
+        "cost": 130,
+        "description": "Increases attack range. Wiki: This upgrade increases the Monkey Sub's range by +10.",
+        "state": {
+          "range": 52,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.75,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 52",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Advanced Intel",
+        "cost": 500,
+        "description": "Allows long range targeting of Bloons in radius of your other towers. Wiki: This upgrade allows the Monkey Sub to target Bloons within range of other towers, in addition to itself. Its main dart projectiles gain more projectile lifespan to account for the increased travel distance. If another tower has Camo detection, the Sub can target Camo Bloons within that tower's range, even if the Sub itself lacks Camo detection. If the Sub lacks Camo detection, its projectiles ignore Camo Bloons if it is not targeting a Camo Bloon when it fires; the Sub must specifically be targeting a Camo Bloon within the other tower's range for its projectiles to not pass through Camo. If the Sub has Camo detection, but not the other tower, then it cannot target Camo Bloons within the other tower's range, but its projectiles can still collide with Camo Bloons. Detecting Camo in range of another tower doesn't count as a camo buff, so it cannot be blocked by Phayze's Radar Jam.",
+        "state": {
+          "range": 52,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.75,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 2.9412s; attack range 52",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Submerge and Support",
+        "cost": 700,
+        "description": "Adds Submerge targeting option that permanently reveals Camo Bloons in its radius but does not attack while submerged. Wiki: When purchased, the Monkey Sub gains the Submerge targeting option and switches to this option, which can be toggled (with a cooldown of 0.5 seconds). While submerged, the Monkey Sub stops its usual attacks, and instead periodically creates an aura in its range that removes the Camo property of Bloons inside it. This decamo aura deals no damage, activates every 1.35 seconds, and has a pierce of 100. Crosspaths upgrade the aura. Twin Guns increases the attack speed of the aura by ~42.3%, and Barbed Darts increases its pierce by 50. Heat-tipped Darts and Airburst Darts provide no further benefit to a submerged sub.",
+        "state": {
+          "range": 52,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.75,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 2.9412s; attack range 52",
+              "damage_vs": {}
+            },
+            {
+              "tag": "pulse_decamo_projectile",
+              "name": "Pulse (decamo)/Projectile",
+              "damage": null,
+              "pierce": 100,
+              "cooldown": 1.35,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 52,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": null,
+              "notes": "removes Camo; min cooldown 1.35; attack range 2000",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Bloontonium Reactor",
+        "cost": 2400,
+        "description": "Submerge to detect Camo, pop Bloons and reduce ability cooldowns of nearby water-based Monkeys by 15%. Wiki: This upgrade improves the Monkey Sub's decamo pulses while submerged, now dealing 1 damage to Bloons in addition to removing the Camo property. The damage pulse has a pierce of 50 (compared to the decamo pulse's pierce of 100) and cannot damage Lead Bloons. This upgrade also reduces the pulse's attack cooldown by ~79% (0.28 seconds, or 0.196 seconds with 4-0-1), effectively increasing its attack speed by ~4.82x. Bloons hit by the damaging pulse are irradiated for the same duration as its attack cooldown, which prevents Bloontonium Reactors and Energizers from stacking their damage. While submerged, towers placed on water within its range are granted a buff that reduces their Activated Ability cooldowns by 15%. This upgrade increases the damage of Monkey Sub's darts from 1 to 2 when not submerged. This includes Airburst Darts, if crosspathed as 4-0-2.",
+        "state": {
+          "range": 52,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 2,
+              "pierce": 2,
+              "cooldown": 0.75,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 2.9412s; attack range 52",
+              "damage_vs": {}
+            },
+            {
+              "tag": "pulse_decamo_projectile",
+              "name": "Pulse (decamo)/Projectile",
+              "damage": null,
+              "pierce": 100,
+              "cooldown": 0.28,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 52,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": null,
+              "notes": "removes Camo; min cooldown 0.28; attack range 2000",
+              "damage_vs": {}
+            },
+            {
+              "tag": "pulse_damage_projectile",
+              "name": "Pulse (damage)/Projectile",
+              "damage": 1,
+              "pierce": 50,
+              "cooldown": 0.28,
+              "damage_type": "shatter",
+              "projectiles": 1,
+              "blast_radius": 52,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": null,
+              "notes": "Radiation(layers=9999999, isUnique=True, mutationId=ReactorDamage, lifespan=0.28); min cooldown 0.28; attack range 2000",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "buff:Ability cooldown buff": {
+            "isGlobal": false,
+            "abilityCooldownMultiplier": 1.15
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Energizer",
+        "cost": 28000,
+        "description": "Reduces ability cooldowns everywhere by 20% and by 40% for Water based Monkeys. While in radius, Heroes earn XP 50% faster. Wiki: This upgrade increases the damage of Monkey Sub's darts from 2 to 5 while not submerged, including Airburst Darts with the 5-0-2 crosspath, and its submerged mode gains further improvements: Additionally reduces all ability cooldowns on screen by 20%. For water-based towers within its range, this buff reduces ability cooldowns by 40% instead of 20%. Heroes within its range gain +50% XP from the ends of rounds and sacrifices, but not from purchasing levels. The base pierce of both its decamo and damage auras are increased to 1000, and its damage aura's damage is increased from 1 to 5 with additional +5 Ceramic damage.",
+        "state": {
+          "range": 52,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 5,
+              "pierce": 2,
+              "cooldown": 0.75,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 2.9412s; attack range 52",
+              "damage_vs": {}
+            },
+            {
+              "tag": "pulse_decamo_projectile",
+              "name": "Pulse (decamo)/Projectile",
+              "damage": null,
+              "pierce": 1000,
+              "cooldown": 0.28,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 52,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": null,
+              "notes": "removes Camo; min cooldown 0.28; attack range 2000",
+              "damage_vs": {}
+            },
+            {
+              "tag": "pulse_damage_projectile",
+              "name": "Pulse (damage)/Projectile",
+              "damage": 5,
+              "pierce": 1000,
+              "cooldown": 0.28,
+              "damage_type": "shatter",
+              "projectiles": 1,
+              "blast_radius": 52,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": null,
+              "notes": "+5 damage vs Ceramic; Radiation(layers=9999999, isUnique=True, mutationId=ReactorDamage, lifespan=0.28); min cooldown 0.28; attack range 2000",
+              "damage_vs": {
+                "ceramic": 5
+              }
+            }
+          ]
+        },
+        "effects": {
+          "buff:Ability cooldown buff": {
+            "isGlobal": false,
+            "abilityCooldownMultiplier": 1.2
+          },
+          "buff:Ability cooldown buff (global)": {
+            "isGlobal": true,
+            "abilityCooldownMultiplier": 1.2,
+            "heroXpMultiplier": 1.5
+          }
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Barbed Darts",
+        "cost": 450,
+        "description": "Sub's darts can pop an additional 3 Bloons. Enhances pierce of other weapons. Wiki: This upgrade increases the pierce of the Monkey Sub's dart projectiles by 3, from 2 to 5 without additional upgrades. Crosspathing with Airburst Darts increases pierce of its mini-darts by 3 instead of the main dart. Crosspathing with Submerge and Support and above increases the pierce of its decamo pulses by 50, and for Bloontonium Reactor and above, it also increases the pierce of the damaging pulses by 50.",
+        "state": {
+          "range": 42,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 0.75,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 42",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Heat-tipped Darts",
+        "cost": 300,
+        "description": "Heat tipped darts allow the Monkey Sub to pop Frozen and Lead Bloons. Wiki: The damage type of the Monkey Sub's dart projectiles are changed to Normal, letting them pop frozen Bloons and Lead Bloons. Crosspathing with Bloontonium Reactor or Energizer also changes their damage type to Normal and grants extra Lead damage (+1 with Bloontonium Reactor, +5 with Energizer).",
+        "state": {
+          "range": 42,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 0.75,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 42",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Ballistic Missile",
+        "cost": 1350,
+        "description": "Fires missiles at targets within range. Missiles fly over walls and deal extra damage to MOABs and Ceramics. Wiki: In addition to increasing range of the Monkey Sub by +8 units, this upgrade grants Monkey Sub an additional missile attack that triggers when Bloons pass through its range, regardless of line of sight, or the range of all towers with Advanced Intel. Each missile does 3 Explosion-type damage with +3 Ceramic damage (or +4 with Breaking Ballistic), +3 MOAB-Class damage, 40 pierce, and an attack cooldown of 1 second. The missiles are shot upwards and land directly on their target ignoring line of sight blockers, similarly to Mortar Monkey's attacks except they also seek their targets. It takes 0.6 seconds for the missile to hit its target.",
+        "state": {
+          "range": 50,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 0.75,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 50",
+              "damage_vs": {}
+            },
+            {
+              "tag": "ballistic_missile_explosion",
+              "name": "Ballistic Missile/Explosion",
+              "damage": 3,
+              "pierce": 40,
+              "cooldown": 1,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 18,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+3 damage vs Moabs; +3 damage vs CeramicExceptCAS; cannot hit Camo; attack range 50",
+              "damage_vs": {
+                "moab": 3,
+                "ceramicexceptcas": 3
+              }
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "First Strike Capability",
+        "cost": 13000,
+        "description": "First Strike Ability: A devastating missile strike targeting the largest Bloon on screen, plus splash damage. Wiki: This upgrade grants Monkey Sub the First Strike ability, which when activated launches a missile at the strongest Bloon on screen, dealing 10,000 damage to it and creating an explosion which deals 350 damage with a pierce of 80 and blast radius of 65. The first strike missile can damage all Bloon types and can see Camo Bloons even if the Monkey Sub cannot. Since the explosion also damages its main target, the main target takes a total of 10,350 damage from First Strike. This ability has a cooldown of 60 seconds and an initial cooldown of 20 seconds. The ability cannot be activated if no Bloon is on screen.",
+        "state": {
+          "range": 50,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 0.75,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 50",
+              "damage_vs": {}
+            },
+            {
+              "tag": "ballistic_missile_explosion",
+              "name": "Ballistic Missile/Explosion",
+              "damage": 3,
+              "pierce": 40,
+              "cooldown": 1,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 18,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+3 damage vs Moabs; +3 damage vs CeramicExceptCAS; cannot hit Camo; attack range 50",
+              "damage_vs": {
+                "moab": 3,
+                "ceramicexceptcas": 3
+              }
+            }
+          ]
+        },
+        "effects": {
+          "new_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 60,
+              "description": "maxActivationsPerRound=9999999; projectile Missile: dmg 10000, pierce 1, radius 5, type normal; hits only target (instant); max pierce 1; projectile Explosion: dmg 350, pierce 80, radius 65, type normal"
+            }
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Pre-emptive Strike",
+        "cost": 29000,
+        "description": "Automatically triggers a powerful missile attack whenever MOAB-Class Bloon spawns from the Bloon entrance. Wiki: This upgrade grants Monkey Sub an additional missile attack that automatically fires one powerful missile at every MOAB-Class Bloon that enters the map. This missile deals 750 damage to the target but it does not soak through multiple layers. In addition, its own First Strike ability is improved; its ability cooldown is reduced from 45 to 30 seconds, increases initial impact damage from 10,000 to 20,000, and increases AoE damage from 350 to 1000. The main target now takes a total of 21,000 damage. This upgrade also doubles the attack speed of its Ballistic Missile attack (from 1 second to 0.5 seconds) and improves the damage and blast radius of its Ballistic Missiles, increasing their base damage from 3 to 10, bonus Ceramic damage from +3 to +20 (+21 with Breaking Ballistic), and bonus MOAB damage from +5 to +15.",
+        "state": {
+          "range": 50,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 0.75,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 50",
+              "damage_vs": {}
+            },
+            {
+              "tag": "ballistic_missile_explosion",
+              "name": "Ballistic Missile/Explosion",
+              "damage": 10,
+              "pierce": 40,
+              "cooldown": 0.5,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 24,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+15 damage vs Moabs; +20 damage vs CeramicExceptCAS; cannot hit Camo; attack range 50",
+              "damage_vs": {
+                "moab": 15,
+                "ceramicexceptcas": 20
+              }
+            }
+          ]
+        },
+        "effects": {
+          "changed_ability": [
+            {
+              "name": "Ability",
+              "cooldown": 45,
+              "description": "maxActivationsPerRound=9999999; projectile Missile: dmg 20000, pierce 1, radius 5, type normal; hits only target (instant); max pierce 1; projectile Explosion: dmg 1000, pierce 80, radius 65, type normal"
+            }
+          ]
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Twin Guns",
+        "cost": 450,
+        "description": "Added twin gun doubles attack speed, and enhances attack speed of other weapons. Wiki: This upgrade doubles the attack speed of Monkey Sub's darts, reducing its attack cooldown from 0.75 to 0.375 seconds. Crosspathing additionally reduces cooldown of its other attacks: Ballistic Missile reduces the attack cooldown of its missiles by 12.5%, increasing its attack speed by ~14%. Submerge and Support reduces the cooldown of its pulses by 30%, increasing its attack speed by ~42%. The same applies to Bloontonium Reactor's radioactive damage pulses.",
+        "state": {
+          "range": 42,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.375,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 42",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Airburst Darts",
+        "cost": 1000,
+        "description": "Airburst darts split into 3 on impact for massive popping power. Wiki: The pierce of each of its darts is decreased to 1 unbuffable pierce. However, the main dart instantly splits into 3 airburst projectiles (4 projectiles with Quad Burst) upon impact that each deal 1 damage with 2 pierce (3 with Naval Upgrades). These airburst projectiles cannot damage Lead or Frozen Bloons unless the original dart could. The main darts will also automatically \"burst\" when they expire (this is easiest noticed at the end of rounds), though this (for the most part) doesn't affect gameplay. With Barbed Darts, airburst darts gain +3 additional pierce.",
+        "state": {
+          "range": 42,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.375,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; max pierce 1; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 42",
+              "damage_vs": {}
+            },
+            {
+              "tag": "attack_airburst_dart",
+              "name": "Attack/Airburst dart",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.375,
+              "damage_type": "sharp",
+              "projectiles": 3,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 340; collision radius 3; attack range 42",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Triple Guns",
+        "cost": 1100,
+        "description": "Adds a third gun for even faster firing. Wiki: This upgrade reduces the Monkey Sub's attack cooldown by exactly 33%, from 0.375 to 0.2512 seconds, increasing its attack speed by ~49%. Its overall attack speed is ~2.985× faster than a Monkey Sub with no attack speed upgrades. Like Twin Guns, shots from Triple Guns alternate from left to right. The left and right guns' eject points are offset from the center by 4.14 distance units.",
+        "state": {
+          "range": 42,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.2512,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; max pierce 1; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 42",
+              "damage_vs": {}
+            },
+            {
+              "tag": "attack_airburst_dart",
+              "name": "Attack/Airburst dart",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.2512,
+              "damage_type": "sharp",
+              "projectiles": 3,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "cannot hit Camo; speed 340; collision radius 3; attack range 42",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Armor Piercing Darts",
+        "cost": 2500,
+        "description": "Special AP darts gain increased damage and popping power, plus additional damage to Fortified and MOAB class Bloons. Wiki: Each dart does more damage, and the pierce of the airburst projectiles increase from 2 to 5. The damage of Monkey Sub's main darts increase from 1 to 2, deals +2 MOAB-Class damage, and deals +1 Fortified damage. The airburst projectiles deal +1 MOAB-Class damage and +1 Fortified damage.",
+        "state": {
+          "range": 42,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 2,
+              "pierce": 2,
+              "cooldown": 0.2512,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+2 damage vs Moabs; +1 damage vs Fortified; cannot hit Camo; max pierce 1; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 42",
+              "damage_vs": {
+                "moab": 2,
+                "fortified": 1
+              }
+            },
+            {
+              "tag": "attack_airburst_dart",
+              "name": "Attack/Airburst dart",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 0.2512,
+              "damage_type": "sharp",
+              "projectiles": 3,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+1 damage vs Moabs; +1 damage vs Fortified; cannot hit Camo; speed 340; collision radius 3; attack range 42",
+              "damage_vs": {
+                "moab": 1,
+                "fortified": 1
+              }
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "Sub Commander",
+        "cost": 25000,
+        "description": "Adds extra pierce and damage to Commander and all Subs in its radius. Wiki: This upgrade grants the Monkey Sub a buff to all Monkey Subs in its range (or to all Monkey Subs on the screen with Sub Admiral), including itself. This buff doubles affected Monkey Subs' damage including bonus damage, and increases pierce by +4. This buff does not double the damage of First Strike Capability and Pre-emptive Strike's abilities, but it does increase the pierce of the abilities' explosions. Sub Commander itself has its attack cooldown reduced by 50%, and increases airburst projectiles from 3 to 5.",
+        "state": {
+          "range": 42,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack_projectile",
+              "name": "Attack/Projectile",
+              "damage": 2,
+              "pierce": 2,
+              "cooldown": 0.1256,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+2 damage vs Moabs; +1 damage vs Fortified; cannot hit Camo; max pierce 1; seeking; speed 170; collision radius 2; lifespan 1.5s; attack range 42",
+              "damage_vs": {
+                "moab": 2,
+                "fortified": 1
+              }
+            },
+            {
+              "tag": "attack_airburst_dart",
+              "name": "Attack/Airburst dart",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 0.1256,
+              "damage_type": "sharp",
+              "projectiles": 5,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": null,
+              "camo": false,
+              "notes": "+1 damage vs Moabs; +1 damage vs Fortified; cannot hit Camo; speed 340; collision radius 3; attack range 42",
+              "damage_vs": {
+                "moab": 1,
+                "fortified": 1
+              }
+            }
+          ]
+        },
+        "effects": {
+          "buff:Sub Commander buff": {
+            "isGlobal": false,
+            "customRadius": 0,
+            "appliesToOwningTower": true,
+            "maxStackSize": 0,
+            "pierceAdditive": 4,
+            "damageAdditive": 0,
+            "damageMultiplier": 2,
+            "filterInBaseTowerId": "Monkey Sub"
+          }
+        }
+      }
+    ]
+  }
+}

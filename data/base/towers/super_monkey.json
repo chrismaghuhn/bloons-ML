@@ -1,0 +1,541 @@
+{
+  "id": "super_monkey",
+  "name": "Super Monkey",
+  "category": "magic",
+  "cost": 2500,
+  "placement": "land",
+  "footprint": {
+    "radius": 11
+  },
+  "game_version": "55.1",
+  "sources": [
+    "https://www.bloonswiki.com/Super_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Super_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Super_Monkey/new"
+  ],
+  "abilities": [
+    {
+      "name": "Tech Terror (Ability)",
+      "cooldown": 45,
+      "description": "Annihilation ability: Destroys most Bloons completely and utterly within blast radius. [unlocked by middle path tier 4] Effect stats (wiki data at unlock tier): Ability: damage 2600, pierce 2000, type normal, count 1 (critDamage=3900; critLower=3; critUpper=3; lifespan=0.05s; can target/hit camo; projectile radius=70)"
+    },
+    {
+      "name": "Dark Knight (Ability)",
+      "cooldown": 20,
+      "description": "Dark blades increase knockback and pierce and deal extra damage to MOAB-class Bloons. Gains Darkshift ability to shift to a nearby location. [unlocked by bottom path tier 3]"
+    },
+    {
+      "name": "Legend of the Night (Black Hole, passive)",
+      "cooldown": 180,
+      "description": "Passive: activates when a Bloon leaks; prevents life loss from leaked Bloons (except Bosses) for 8 seconds; max 2 activations per round. Values from wiki upgrade text; not present in the wiki stats data. [unlocked by bottom path tier 5]"
+    }
+  ],
+  "base": {
+    "range": 50,
+    "camo": false,
+    "reach": "radius",
+    "attacks": [
+      {
+        "tag": "attack",
+        "name": "Attack",
+        "damage": 1,
+        "pierce": 1,
+        "cooldown": 0.045,
+        "damage_type": "sharp",
+        "projectiles": 1,
+        "blast_radius": null,
+        "projectile_speed": 200,
+        "lifespan": 0.6,
+        "camo": null,
+        "notes": "randomAngle=8; lifespan=0.6s; speed=200; targeting: Depends on targeting option; attack range=50; projectile radius=2",
+        "damage_vs": {}
+      }
+    ]
+  },
+  "paths": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Laser Blasts",
+        "cost": 2000,
+        "description": "Shoots powerful blasts of laser instead of darts.",
+        "state": {
+          "range": 50,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.045,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "randomAngle=8; lifespan=0.6s; speed=200; targeting: Depends on targeting option; attack range=50; projectile radius=5",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Plasma Blasts",
+        "cost": 2500,
+        "description": "Plasma vaporizes almost everything it touches.",
+        "state": {
+          "range": 50,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.030001,
+              "damage_type": "plasma",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "randomAngle=8; lifespan=0.6s; speed=200; targeting: Depends on targeting option; attack range=50; projectile radius=6",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Sun Avatar",
+        "cost": 20000,
+        "description": "Channels power from the core of the Sun.",
+        "state": {
+          "range": 50,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 0.030001,
+              "damage_type": "plasma",
+              "projectiles": 3,
+              "blast_radius": null,
+              "projectile_speed": 400,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "randomAngle=8; angle=30; lifespan=0.6s; speed=400; targeting: Depends on targeting option; attack range=50; projectile radius=6",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Sun Temple",
+        "cost": 100000,
+        "description": "Tower sacrifices enhance and modify the Temple's attacks. [Sim note: when bought, all towers in range are sacrificed; sacrificed cash per category (primary/military/magic/support, thresholds from $10,001 up to $50,001 in $5000 steps, top 3 categories only) buffs/adds attacks. Those sacrifice-dependent stats are NOT included here; the attack listed is the no-sacrifice sunbeam (5 dmg, 20 pierce, 0.05s per wiki text).]",
+        "state": {
+          "range": 65,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 5,
+              "pierce": 20,
+              "cooldown": 0.050004,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 400,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "randomAngle=8; lifespan=0.6s; speed=400; targeting: Depends on targeting option; attack range=65; projectile radius=9",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "footprint": "rectangle 37x40 (footprintX/footprintY in wiki data; was circle radius 11)",
+          "sacrifices": null,
+          "footprint_rect": [
+            37.0,
+            40.0
+          ]
+        }
+      },
+      {
+        "tier": 5,
+        "name": "True Sun God",
+        "cost": 500000,
+        "description": "Tremble before the AWESOME power of the TRUE Sun God!! [Sim note: sacrifices again on upgrade and can take benefits from all four categories; sacrifice-dependent stats NOT included. Sunbeam damage 15 per wiki text.]",
+        "state": {
+          "range": 65,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 15,
+              "pierce": 20,
+              "cooldown": 0.050004,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 400,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "randomAngle=8; lifespan=0.6s; speed=400; targeting: Depends on targeting option; attack range=65; projectile radius=9",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "sacrifices": null
+        }
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Super Range",
+        "cost": 1500,
+        "description": "Super Monkeys need Super Range.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.045,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "randomAngle=8; lifespan=0.6s; speed=200; targeting: Depends on targeting option; attack range=60; projectile radius=2",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Epic Range",
+        "cost": 1900,
+        "description": "Why settle for super when you can have EPIC?",
+        "state": {
+          "range": 72,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.045,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 350,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "randomAngle=8; lifespan=0.6s; speed=350; targeting: Depends on targeting option; attack range=72; projectile radius=2",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Robo Monkey",
+        "cost": 7500,
+        "description": "Half Super Monkey, half killer robot of death. Shoots from 2 guns at once and can crit!",
+        "state": {
+          "range": 72,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 5,
+              "cooldown": 0.045,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 350,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "critDamage=10; critLower=15; critUpper=20; randomAngle=8; lifespan=0.6s; speed=350; targeting: Depends on targeting option; attack range=72; projectile radius=2",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Tech Terror",
+        "cost": 25000,
+        "description": "Annihilation ability: Destroys most Bloons completely and utterly within blast radius.",
+        "state": {
+          "range": 72,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 7,
+              "cooldown": 0.045,
+              "damage_type": "plasma",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 350,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "critDamage=10; critLower=15; critUpper=20; randomAngle=8; lifespan=0.6s; speed=350; targeting: Depends on targeting option; attack range=72; projectile radius=7",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "new_ability": {
+            "name": "Ability",
+            "cooldown": 45,
+            "effect_stats": "Ability: damage 2600, pierce 2000, type normal, count 1 (critDamage=3900; critLower=3; critUpper=3; lifespan=0.05s; can target/hit camo; projectile radius=70)"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "The Anti-Bloon",
+        "cost": 70000,
+        "description": "<Program Directive> <Eradicate Bloons> <INITIATE>",
+        "state": {
+          "range": 82,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 5,
+              "pierce": 12,
+              "cooldown": 0.045,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 350,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "critDamage=50; critLower=13; critUpper=17; randomAngle=8; lifespan=0.6s; speed=350; targeting: Depends on targeting option; attack range=82; projectile radius=7",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "ability.Ability.cooldown": 30,
+          "ability.Ability.effect_stats": "Ability: damage 10400, pierce 2000, type normal, count 1 (critDamage=15600; critLower=3; critUpper=3; lifespan=0.05s; can target/hit camo; projectile radius=120)"
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Knockback",
+        "cost": 3000,
+        "description": "Bloons get pushed backwards or slowed after each hit.",
+        "state": {
+          "range": 50,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 0.045,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "randomAngle=8; lifespan=0.6s; speed=200; targeting: Depends on targeting option; attack range=50; effect 'Knockback': multiplier=-0.25, multiplierForLead=0.4, multiplierForCeramic=0.4, multiplierForMoabs=0.7, mutationId=Knockback, lifespan=0.5; projectile radius=2",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Ultravision",
+        "cost": 1200,
+        "description": "Enables Super Monkey to shoot slightly further, see and do more damage to Camo Bloons.",
+        "state": {
+          "range": 53,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 0.045,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "+1 damage vs camo; randomAngle=8; lifespan=0.6s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=53; effect 'Knockback': multiplier=-0.25, multiplierForLead=0.4, multiplierForCeramic=0.4, multiplierForMoabs=0.7, mutationId=Knockback, lifespan=0.5; projectile radius=2",
+              "damage_vs": {
+                "camo": 1
+              }
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Dark Knight",
+        "cost": 5600,
+        "description": "Dark blades increase knockback and pierce and deal extra damage to MOAB-class Bloons. Gains Darkshift ability to shift to a nearby location. [Darkshift ability: teleport to a nearby location, cooldown 20s per wiki data.]",
+        "state": {
+          "range": 53,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.045,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "+2 damage vs MOAB-class; +1 damage vs camo; randomAngle=8; lifespan=0.6s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=53; effect 'Knockback': multiplier=-0.25, multiplierForLead=0.1, multiplierForCeramic=0.1, multiplierForMoabs=0.7, mutationId=Knockback, lifespan=0.5; projectile radius=4",
+              "damage_vs": {
+                "moab": 2,
+                "camo": 1
+              }
+            }
+          ]
+        },
+        "effects": {
+          "new_ability": {
+            "name": "Ability",
+            "cooldown": 20,
+            "effect_stats": ""
+          }
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Dark Champion",
+        "cost": 55555,
+        "description": "Champion's dark blades excel at puncturing and ruining all Bloon types. Darkshift ability extends mapwide.",
+        "state": {
+          "range": 57,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 2,
+              "pierce": 8,
+              "cooldown": 0.0225,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "+3 damage vs MOAB-class; +2 damage vs ceramic; +2 damage vs camo; bounceDistance=57; maxBounces=8; lifespan=0.6s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=57; effect 'Knockback': multiplier=-0.25, multiplierForMoabs=0.7, mutationId=Knockback, lifespan=0.5; projectile radius=5",
+              "damage_vs": {
+                "moab": 3,
+                "ceramic": 2,
+                "camo": 2
+              }
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "Legend of the Night",
+        "cost": 165650,
+        "description": "We turn to him, when all hope is lost...",
+        "state": {
+          "range": 57,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 10,
+              "pierce": 16,
+              "cooldown": 0.0225,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.6,
+              "camo": null,
+              "notes": "+25 damage vs MOAB-class; +4 damage vs ceramic; +4 damage vs camo; bounceDistance=57; maxBounces=16; lifespan=0.6s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=57; effect 'Knockback': multiplier=-0.25, multiplierForMoabs=0.7, mutationId=Knockback, lifespan=0.5; projectile radius=5",
+              "damage_vs": {
+                "moab": 25,
+                "ceramic": 4,
+                "camo": 4
+              }
+            }
+          ]
+        },
+        "effects": {
+          "new_ability": {
+            "name": "Black Hole (passive)",
+            "cooldown": 180,
+            "effect_stats": "per wiki text (not in stats data): triggers automatically when a Bloon leaks, prevents all life loss from leaks (except Bosses) for 8s, max 2 activations per round"
+          }
+        }
+      }
+    ]
+  }
+}

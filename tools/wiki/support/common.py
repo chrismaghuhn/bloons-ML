@@ -1,6 +1,6 @@
 import json,os
 import os
-OUT = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data', 'towers') + os.sep
+OUT = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data', 'raw', 'towers') + os.sep
 S = os.environ.get('WIKI_RAW_DIR', 'wiki_raw') + os.sep  # Ordner mit den Wiki-Rohdaten
 def upgrades(key, changes, extra_desc=None):
     """changes: dict {(path,tier): changes dict}; descriptions from wiki short + detail"""

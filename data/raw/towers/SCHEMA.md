@@ -1,6 +1,6 @@
 # Tower data schema (BTD6)
 
-One file per monkey: `data/towers/<snake_case_name>.json`, e.g. `dart_monkey.json`.
+One file per monkey: `data/raw/towers/<snake_case_name>.json`, e.g. `dart_monkey.json`.
 Values are game facts from the wiki, used to build a simplified simulator.
 Prefer https://www.bloonswiki.com (current game version). Record the game version
 the page states, if any. Costs are **Medium difficulty**. Ranges/radii in

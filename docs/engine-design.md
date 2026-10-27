@@ -105,7 +105,7 @@ Einheit, Overrides als eigene Schicht, Schema-Validierung.
 ```
 data/
 ├── raw/                          # Schicht 0: Wiki-Rohdaten, generiert, nie von Hand editiert
-│   ├── towers/*.json             #   (aktuell noch unter data/towers/, wird beim Normalisieren verschoben)
+│   ├── towers/*.json             #   Rohformat: data/raw/towers/SCHEMA.md
 │   ├── rounds.json
 │   └── bloons.json
 ├── base/                         # Schicht 1: normalisiert, strikt, das liest btd-data

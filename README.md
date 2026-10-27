@@ -8,7 +8,8 @@ Screen-Capture-Bridge im echten Spiel spielen.
 
 - `btd_sim/`: Python-Referenz-Engine (vereinfachte Bloons, 4 Türme, prozedurale Runden) + Gymnasium-Env mit Action-Masking
 - `train.py` / `evaluate.py`: MaskablePPO-Training und Auswertung (bisher nur Pipeline-Test)
-- `data/towers/`: Turm-Daten aller BTD6-Affen aus dem Wiki (Rohformat, siehe `data/towers/SCHEMA.md`)
+- `data/raw/towers/`: Turm-Daten aller BTD6-Affen aus dem Wiki (Rohformat, siehe `data/raw/towers/SCHEMA.md`)
+- `data/base/towers/`: normalisierte Turm-Daten (erzeugt mit `tools/normalize.py`, Format: `data/schema/tower.schema.json`)
 - `tools/wiki/`: Skripte, mit denen die Turm-Daten erzeugt wurden
 - `docs/engine-design.md`: Design der geplanten Rust-Engine (`btd-core` + PyO3-Bindings)
 

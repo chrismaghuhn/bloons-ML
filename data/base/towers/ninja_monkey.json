@@ -1,0 +1,726 @@
+{
+  "id": "ninja_monkey",
+  "name": "Ninja Monkey",
+  "category": "magic",
+  "cost": 400,
+  "placement": "land",
+  "footprint": {
+    "radius": 6
+  },
+  "game_version": "55.1",
+  "sources": [
+    "https://www.bloonswiki.com/Ninja_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Ninja_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Ninja_Monkey/new"
+  ],
+  "abilities": [
+    {
+      "name": "Bloon Sabotage (Ability)",
+      "cooldown": 60,
+      "description": "Sabotage ability: Lasts 15 seconds. During the sabotage, all Bloons move at half speed. [unlocked by middle path tier 4] Effect stats (wiki data at unlock tier): Ability: damage 0, pierce 9999999, type None, count 1 (no direct damage listed; rounds=9999999; lifespan=15s; can target/hit camo; effect 'Effect': layers=9999999, isUnique=True, mutationId=Sabotage, lifespan=15, multiplier=0.5; projectile radius=999)"
+    }
+  ],
+  "base": {
+    "range": 40,
+    "camo": true,
+    "reach": "radius",
+    "attacks": [
+      {
+        "tag": "attack",
+        "name": "Attack",
+        "damage": 1,
+        "pierce": 2,
+        "cooldown": 0.62,
+        "damage_type": "sharp",
+        "projectiles": 1,
+        "blast_radius": null,
+        "projectile_speed": 300,
+        "lifespan": 0.62,
+        "camo": null,
+        "notes": "lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; projectile radius=3",
+        "damage_vs": {}
+      }
+    ]
+  },
+  "paths": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Ninja Discipline",
+        "cost": 350,
+        "description": "Increases attack speed.",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.434,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Sharp Shurikens",
+        "cost": 350,
+        "description": "Shurikens can pop 4 Bloons each.",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.434,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Double Shot",
+        "cost": 900,
+        "description": "Throws 2 shurikens at once.",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.434,
+              "damage_type": "sharp",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "angle=18; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Bloonjitsu",
+        "cost": 2750,
+        "description": "Throws 5 shurikens at once!",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.434,
+              "damage_type": "sharp",
+              "projectiles": 5,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "angle=45; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "Grandmaster Ninja",
+        "cost": 35000,
+        "description": "Throws incredibly fast, 8 shurikens per shot!",
+        "state": {
+          "range": 50,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 2,
+              "pierce": 4,
+              "cooldown": 0.217,
+              "damage_type": "sharp",
+              "projectiles": 8,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "angle=72; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=50; projectile radius=3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Distraction",
+        "cost": 250,
+        "description": "Some Bloons will become distracted and move backwards.",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; effect 'Blowback': distanceMin=100, distanceMax=150, chance=0.15, ceramicMultiplier=0.5; projectile radius=3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Counter-Espionage",
+        "cost": 400,
+        "description": "Ninja attacks can strip camo from Bloons they damage.",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "+2 damage vs camo; cleanseCamo=True; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; effect 'Blowback': distanceMin=100, distanceMax=150, chance=0.15, ceramicMultiplier=0.5; projectile radius=3",
+              "damage_vs": {
+                "camo": 2
+              }
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Shinobi Tactics",
+        "cost": 1200,
+        "description": "Increases attack speed and pierce of nearby Ninjas. Stacks 20 times.",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "+2 damage vs camo; cleanseCamo=True; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; effect 'Blowback': distanceMin=100, distanceMax=150, chance=0.15, ceramicMultiplier=0.5; projectile radius=3",
+              "damage_vs": {
+                "camo": 2
+              }
+            }
+          ]
+        },
+        "effects": {
+          "buff:Shinobi Tactics": "maxStackSize=20, rateMultiplier=0.92, piercePercentage=0.08, filterInBaseTowerId=Ninja Monkey"
+        }
+      },
+      {
+        "tier": 4,
+        "name": "Bloon Sabotage",
+        "cost": 5200,
+        "description": "Sabotage ability: Lasts 15 seconds. During the sabotage, all Bloons move at half speed.",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "+2 damage vs camo; cleanseCamo=True; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; effect 'Blowback': distanceMin=100, distanceMax=150, chance=0.15, ceramicMultiplier=0.5; projectile radius=3",
+              "damage_vs": {
+                "camo": 2
+              }
+            }
+          ]
+        },
+        "effects": {
+          "new_ability": {
+            "name": "Ability",
+            "cooldown": 60,
+            "effect_stats": "Ability: damage 0, pierce 9999999, type None, count 1 (no direct damage listed; rounds=9999999; lifespan=15s; can target/hit camo; effect 'Effect': layers=9999999, isUnique=True, mutationId=Sabotage, lifespan=15, multiplier=0.5; projectile radius=999)"
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Grand Saboteur",
+        "cost": 22000,
+        "description": "Ability duration is longer and buffs Shinobi while active, and MOAB-Class Bloons spawn with less health during the sabotage.",
+        "state": {
+          "range": 40,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "+2 damage vs camo; cleanseCamo=True; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=40; effect 'Blowback': distanceMin=100, distanceMax=150, chance=0.15, ceramicMultiplier=0.5; projectile radius=3",
+              "damage_vs": {
+                "camo": 2
+              }
+            }
+          ]
+        },
+        "effects": {
+          "ability.Ability.effect_stats": "Attack: damage 0, pierce 9999999, type normal, count 1 (rounds=9999999; damagePercent=0.25; filterOutBoss=True; lifespan=30s; can target/hit camo; attack range=999; effect 'Effect': layers=9999999, isUnique=True, mutationId=Sabotage, lifespan=30, multiplier=0.5; projectile radius=999)"
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Seeking Shuriken",
+        "cost": 300,
+        "description": "Increases attack range and shurikens will seek out and pop Bloons automatically.",
+        "state": {
+          "range": 47,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "seekDistance=9999999; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=47; projectile radius=3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Caltrops",
+        "cost": 450,
+        "description": "Throws out spiked caltrops onto the track nearby.",
+        "state": {
+          "range": 47,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 2,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "seekDistance=9999999; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=47; projectile radius=3",
+              "damage_vs": {}
+            },
+            {
+              "tag": "caltrops",
+              "name": "Caltrops",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 3.9,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 35,
+              "camo": null,
+              "notes": "clearHitBloonsInterval=0.001; lifespan=35s; can target/hit camo; targeting: Normal (track); attack range=47; projectile radius=4",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Flash Bomb",
+        "cost": 2250,
+        "description": "Combination attack! Alternates flash bombs that stun many Bloons and shuriken deal increased damage to stunned targets.",
+        "state": {
+          "range": 47,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "+4 damage vs stunned; seekDistance=9999999; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=47; projectile radius=3",
+              "damage_vs": {
+                "stunned": 4
+              }
+            },
+            {
+              "tag": "caltrops",
+              "name": "Caltrops",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 3.9,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 35,
+              "camo": null,
+              "notes": "clearHitBloonsInterval=0.001; lifespan=35s; can target/hit camo; targeting: Normal (track); attack range=47; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "attack_flash_bomb",
+              "name": "Attack/Flash Bomb",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 0.62,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 5,
+              "projectile_speed": 300,
+              "lifespan": 0.57,
+              "camo": null,
+              "notes": "every 4th shuriken attack is replaced by a flash bomb (wiki upgrade text); Attack/Explosion is the flash bomb's on-impact blast",
+              "damage_vs": {}
+            },
+            {
+              "tag": "attack_explosion",
+              "name": "Attack/Explosion",
+              "damage": 3,
+              "pierce": 30,
+              "cooldown": 0.62,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 40,
+              "projectile_speed": null,
+              "lifespan": 0.1,
+              "camo": null,
+              "notes": "lifespan=0.1s; can target/hit camo; targeting: Depends on targeting option; attack range=47; effect 'Stun': layers=1, isUnique=True, matchLayersWithDamage=True, mutationId=Stun:Weak, lifespan=1.3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Sticky Bomb",
+        "cost": 5000,
+        "description": "Throws powerful timed charges at MOAB-Class Bloons.",
+        "state": {
+          "range": 47,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "+4 damage vs stunned; +4 damage vs stickied; seekDistance=9999999; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=47; projectile radius=3",
+              "damage_vs": {
+                "stunned": 4,
+                "stickied": 4
+              }
+            },
+            {
+              "tag": "caltrops",
+              "name": "Caltrops",
+              "damage": 1,
+              "pierce": 6,
+              "cooldown": 3.9,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 35,
+              "camo": null,
+              "notes": "clearHitBloonsInterval=0.001; lifespan=35s; can target/hit camo; targeting: Normal (track); attack range=47; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "attack_flash_bomb",
+              "name": "Attack/Flash Bomb",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 0.62,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 5,
+              "projectile_speed": 300,
+              "lifespan": 0.57,
+              "camo": null,
+              "notes": "every 4th shuriken attack is replaced by a flash bomb (wiki upgrade text); Attack/Explosion is the flash bomb's on-impact blast",
+              "damage_vs": {}
+            },
+            {
+              "tag": "attack_explosion",
+              "name": "Attack/Explosion",
+              "damage": 3,
+              "pierce": 30,
+              "cooldown": 0.62,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 40,
+              "projectile_speed": null,
+              "lifespan": 0.1,
+              "camo": null,
+              "notes": "lifespan=0.1s; can target/hit camo; targeting: Depends on targeting option; attack range=47; effect 'Stun': layers=1, isUnique=True, matchLayersWithDamage=True, mutationId=Stun:Weak, lifespan=1.3",
+              "damage_vs": {}
+            },
+            {
+              "tag": "sticky_bomb",
+              "name": "Sticky Bomb",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 4.5,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 1,
+              "camo": null,
+              "notes": "no direct damage listed; filterOutNonMoabs=True; maxPierce=1; lifespan=1s; speed=300; can target/hit camo; targeting: First / Last / Close / Strong; attack range=47; effect 'Damage to target': layers=1, lifespan=3, damage=450, interval=2.95 (damage type normal); effect 'Delay': layers=1, lifespan=3, interval=2.95; projectile radius=0",
+              "damage_vs": {}
+            },
+            {
+              "tag": "sticky_bomb_explosion",
+              "name": "Sticky Bomb/Explosion",
+              "damage": 100,
+              "pierce": 10,
+              "cooldown": 4.5,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 40,
+              "projectile_speed": null,
+              "lifespan": 0.05,
+              "camo": null,
+              "notes": "lifespan=0.05s; can target/hit camo; targeting: First / Last / Close / Strong; attack range=47",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "Master Bomber",
+        "cost": 40000,
+        "description": "One Monkey MOAB demolition machine.",
+        "state": {
+          "range": 47,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 4,
+              "cooldown": 0.62,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 0.62,
+              "camo": null,
+              "notes": "+19 damage vs stunned; +19 damage vs stickied; seekDistance=9999999; lifespan=0.62s; speed=300; can target/hit camo; targeting: Depends on targeting option; attack range=47; projectile radius=3",
+              "damage_vs": {
+                "stunned": 19,
+                "stickied": 19
+              }
+            },
+            {
+              "tag": "caltrops",
+              "name": "Caltrops",
+              "damage": 5,
+              "pierce": 6,
+              "cooldown": 3.9,
+              "damage_type": "sharp",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 35,
+              "camo": null,
+              "notes": "+5 damage vs ceramic; clearHitBloonsInterval=0.001; lifespan=35s; can target/hit camo; targeting: Normal (track); attack range=47; projectile radius=4",
+              "damage_vs": {
+                "ceramic": 5
+              }
+            },
+            {
+              "tag": "attack_flash_bomb",
+              "name": "Attack/Flash Bomb",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 0.62,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": 5,
+              "projectile_speed": 300,
+              "lifespan": 0.57,
+              "camo": null,
+              "notes": "every 4th shuriken attack is replaced by a flash bomb (wiki upgrade text); Attack/Explosion is the flash bomb's on-impact blast",
+              "damage_vs": {}
+            },
+            {
+              "tag": "attack_explosion",
+              "name": "Attack/Explosion",
+              "damage": 10,
+              "pierce": 30,
+              "cooldown": 0.62,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 40,
+              "projectile_speed": null,
+              "lifespan": 0.1,
+              "camo": null,
+              "notes": "lifespan=0.1s; can target/hit camo; targeting: Depends on targeting option; attack range=47; effect 'Stun': layers=1, isUnique=True, matchLayersWithDamage=True, mutationId=Stun:Weak, lifespan=1.3, lifespanForMoabs=0.325",
+              "damage_vs": {}
+            },
+            {
+              "tag": "sticky_bomb",
+              "name": "Sticky Bomb",
+              "damage": 0,
+              "pierce": 1,
+              "cooldown": 2.25,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 300,
+              "lifespan": 1,
+              "camo": null,
+              "notes": "no direct damage listed; filterOutNonMoabs=True; maxPierce=1; lifespan=1s; speed=300; can target/hit camo; targeting: First / Last / Close / Strong; attack range=9999999; effect 'Damage to target': layers=1, lifespan=3, damage=3000, interval=2.95 (damage type normal); effect 'Stun': layers=1, mutationId=Stun:Sticky, lifespan=1; effect 'Delay': layers=1, lifespan=3, interval=2.95; projectile radius=0",
+              "damage_vs": {}
+            },
+            {
+              "tag": "sticky_bomb_explosion",
+              "name": "Sticky Bomb/Explosion",
+              "damage": 600,
+              "pierce": 10,
+              "cooldown": 2.25,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": 40,
+              "projectile_speed": null,
+              "lifespan": 0.05,
+              "camo": null,
+              "notes": "lifespan=0.05s; can target/hit camo; targeting: First / Last / Close / Strong; attack range=9999999",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      }
+    ]
+  }
+}

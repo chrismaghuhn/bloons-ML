@@ -1,0 +1,954 @@
+{
+  "id": "wizard_monkey",
+  "name": "Wizard Monkey",
+  "category": "magic",
+  "cost": 250,
+  "placement": "land",
+  "footprint": {
+    "radius": 7
+  },
+  "game_version": "56.1",
+  "sources": [
+    "https://www.bloonswiki.com/Wizard_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Stats:Wizard_Monkey_(BTD6)",
+    "https://www.bloonswiki.com/Module:BTD6_stats/Wizard_Monkey/new"
+  ],
+  "abilities": [
+    {
+      "name": "Summon Phoenix (Ability)",
+      "cooldown": 45,
+      "description": "Summon Phoenix ability: Powerful phoenix wreaks Bloon havoc for 20 seconds. [unlocked by middle path tier 4]"
+    }
+  ],
+  "base": {
+    "range": 40,
+    "camo": false,
+    "reach": "radius",
+    "attacks": [
+      {
+        "tag": "attack",
+        "name": "Attack",
+        "damage": 1,
+        "pierce": 3,
+        "cooldown": 1.1,
+        "damage_type": "energy",
+        "projectiles": 1,
+        "blast_radius": null,
+        "projectile_speed": 200,
+        "lifespan": 0.4,
+        "camo": null,
+        "notes": "lifespan=0.4s; speed=200; targeting: Depends on targeting option; attack range=40; projectile radius=4",
+        "damage_vs": {}
+      }
+    ]
+  },
+  "paths": {
+    "top": [
+      {
+        "tier": 1,
+        "name": "Guided Magic",
+        "cost": 175,
+        "description": "Magic shots last longer and seek out the Bloons, even behind cover.",
+        "state": {
+          "range": 40,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 3,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.8,
+              "camo": null,
+              "notes": "seekDistance=80; lifespan=0.8s; speed=200; targeting: Depends on targeting option; attack range=40; projectile radius=4",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Arcane Blast",
+        "cost": 450,
+        "description": "Bigger, more powerful magic blasts pop through 2 layers of Bloon.",
+        "state": {
+          "range": 40,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 2,
+              "pierce": 3,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.8,
+              "camo": null,
+              "notes": "seekDistance=80; lifespan=0.8s; speed=200; targeting: Depends on targeting option; attack range=40; projectile radius=6",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Arcane Mastery",
+        "cost": 1450,
+        "description": "Faster attacks with increased range, damage, and popping power.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 3,
+              "pierce": 7,
+              "cooldown": 0.55,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 1.4,
+              "camo": null,
+              "notes": "seekDistance=80; lifespan=1.4s; speed=200; targeting: Depends on targeting option; attack range=60; projectile radius=6",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Arcane Spike",
+        "cost": 10000,
+        "description": "Faster firing magic does huge damage to most Bloon types, especially to MOABs.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 6,
+              "pierce": 7,
+              "cooldown": 0.275,
+              "damage_type": "plasma",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 1.4,
+              "camo": null,
+              "notes": "+10 damage vs MOAB-class; seekDistance=80; lifespan=1.4s; speed=200; targeting: Depends on targeting option; attack range=60; projectile radius=6",
+              "damage_vs": {
+                "moab": 10
+              }
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "Archmage",
+        "cost": 32000,
+        "description": "A true master of magical wizardry. Attacks faster and does more damage to MOAB-class Bloons.",
+        "state": {
+          "range": 60,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 8,
+              "pierce": 11,
+              "cooldown": 0.1375,
+              "damage_type": "plasma",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 1.4,
+              "camo": null,
+              "notes": "+19 damage vs MOAB-class; seekDistance=80; lifespan=1.4s; speed=200; targeting: Depends on targeting option; attack range=60; projectile radius=6",
+              "damage_vs": {
+                "moab": 19
+              }
+            },
+            {
+              "tag": "shimmer",
+              "name": "Shimmer",
+              "damage": 0,
+              "pierce": 500,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 0.05,
+              "camo": null,
+              "notes": "no direct damage listed; cleanseCamo=True; lifespan=0.05s; can target/hit camo; camo only; attack range=60; projectile radius=75",
+              "damage_vs": {}
+            },
+            {
+              "tag": "dragon_s_breath",
+              "name": "Dragon's Breath",
+              "damage": 2,
+              "pierce": 3,
+              "cooldown": 0.0675,
+              "damage_type": "plasma",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 125,
+              "lifespan": 1.4,
+              "camo": null,
+              "notes": "+8 damage vs MOAB-class; lifespan=1.4s; speed=125; targeting: First / Last / Close / Strong; attack range=60; effect 'Damage over time': layers=9999999, lifespan=3.1, applyOnlyIfDamaged=True, damage=1, interval=1.5 (damage type fire); projectile radius=6",
+              "damage_vs": {
+                "moab": 8
+              }
+            }
+          ]
+        },
+        "effects": {}
+      }
+    ],
+    "middle": [
+      {
+        "tier": 1,
+        "name": "Fireball",
+        "cost": 300,
+        "description": "Every few seconds casts an explosive fireball spell.",
+        "state": {
+          "range": 40,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 3,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=200; targeting: Depends on targeting option; attack range=40; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball",
+              "name": "Fireball",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 2.2,
+              "damage_type": "fire",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "maxPierce=1; lifespan=0.4s; speed=200; targeting: First / Last / Close / Strong; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball_explosion",
+              "name": "Fireball/Explosion",
+              "damage": 1,
+              "pierce": 15,
+              "cooldown": 2.2,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 10,
+              "projectile_speed": null,
+              "lifespan": 0.1,
+              "camo": null,
+              "notes": "lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=40",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Wall of Fire",
+        "cost": 800,
+        "description": "Creates a super hot wall of fire across the track to roast the Bloons as they pass.",
+        "state": {
+          "range": 40,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 3,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=200; targeting: Depends on targeting option; attack range=40; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball",
+              "name": "Fireball",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 2.2,
+              "damage_type": "fire",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "maxPierce=1; lifespan=0.4s; speed=200; targeting: First / Last / Close / Strong; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball_explosion",
+              "name": "Fireball/Explosion",
+              "damage": 1,
+              "pierce": 15,
+              "cooldown": 2.2,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 10,
+              "projectile_speed": null,
+              "lifespan": 0.1,
+              "camo": null,
+              "notes": "lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=40",
+              "damage_vs": {}
+            },
+            {
+              "tag": "wall_of_fire",
+              "name": "Wall of Fire",
+              "damage": 1,
+              "pierce": 10,
+              "cooldown": 6.5,
+              "damage_type": "fire",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 4.5,
+              "camo": null,
+              "notes": "clearHitBloonsInterval=0.15; refreshPierceInterval=0.15; lifespan=4.5s; targeting: Track or Default; attack range=40; attack customStartCooldown=0.5; projectile radius=15",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Dragon's Breath",
+        "cost": 3300,
+        "description": "Spews endless flames at nearby Bloons and enhances Fireball and Wall of Fire.",
+        "state": {
+          "range": 40,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 3,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=200; targeting: Depends on targeting option; attack range=40; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball",
+              "name": "Fireball",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 2.2,
+              "damage_type": "fire",
+              "projectiles": 3,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "angle=60; maxPierce=1; lifespan=0.4s; speed=200; targeting: First / Last / Close / Strong; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball_explosion",
+              "name": "Fireball/Explosion",
+              "damage": 3,
+              "pierce": 15,
+              "cooldown": 2.2,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 14,
+              "projectile_speed": null,
+              "lifespan": 0.1,
+              "camo": null,
+              "notes": "lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=40",
+              "damage_vs": {}
+            },
+            {
+              "tag": "wall_of_fire",
+              "name": "Wall of Fire",
+              "damage": 1,
+              "pierce": 20,
+              "cooldown": 4.49995,
+              "damage_type": "fire",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 4.5,
+              "camo": null,
+              "notes": "clearHitBloonsInterval=0.1; refreshPierceInterval=0.1; lifespan=4.5s; targeting: Track or Default; attack range=40; attack customStartCooldown=0.5; projectile radius=15",
+              "damage_vs": {}
+            },
+            {
+              "tag": "dragon_s_breath",
+              "name": "Dragon's Breath",
+              "damage": 2,
+              "pierce": 3,
+              "cooldown": 0.135,
+              "damage_type": "plasma",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 125,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=125; targeting: First / Last / Close / Strong; attack range=40; effect 'Damage over time': layers=9999999, lifespan=3.1, applyOnlyIfDamaged=True, damage=1, interval=1.5 (damage type fire); projectile radius=6",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Summon Phoenix",
+        "cost": 6000,
+        "description": "Summon Phoenix ability: Powerful phoenix wreaks Bloon havoc for 20 seconds.",
+        "state": {
+          "range": 40,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 3,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=200; targeting: Depends on targeting option; attack range=40; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball",
+              "name": "Fireball",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 2.2,
+              "damage_type": "fire",
+              "projectiles": 3,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "angle=60; maxPierce=1; lifespan=0.4s; speed=200; targeting: First / Last / Close / Strong; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball_explosion",
+              "name": "Fireball/Explosion",
+              "damage": 3,
+              "pierce": 15,
+              "cooldown": 2.2,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 14,
+              "projectile_speed": null,
+              "lifespan": 0.1,
+              "camo": null,
+              "notes": "lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=40",
+              "damage_vs": {}
+            },
+            {
+              "tag": "wall_of_fire",
+              "name": "Wall of Fire",
+              "damage": 1,
+              "pierce": 20,
+              "cooldown": 4.49995,
+              "damage_type": "fire",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 4.5,
+              "camo": null,
+              "notes": "clearHitBloonsInterval=0.1; refreshPierceInterval=0.1; lifespan=4.5s; targeting: Track or Default; attack range=40; attack customStartCooldown=0.5; projectile radius=15",
+              "damage_vs": {}
+            },
+            {
+              "tag": "dragon_s_breath",
+              "name": "Dragon's Breath",
+              "damage": 2,
+              "pierce": 3,
+              "cooldown": 0.135,
+              "damage_type": "plasma",
+              "projectiles": 2,
+              "blast_radius": null,
+              "projectile_speed": 125,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "angle=10; lifespan=0.4s; speed=125; targeting: First / Last / Close / Strong; attack range=40; effect 'Damage over time': layers=9999999, lifespan=3.1, applyOnlyIfDamaged=True, damage=2, interval=1.5 (damage type fire); projectile radius=6",
+              "damage_vs": {}
+            },
+            {
+              "tag": "phoenix_attack",
+              "name": "Phoenix: Attack",
+              "damage": 5,
+              "pierce": 8,
+              "cooldown": 0.1,
+              "damage_type": "plasma",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 450,
+              "lifespan": 0.8889,
+              "camo": null,
+              "notes": "attack of sub-tower 'Phoenix' (sub-tower lifespan 20s); lifespan=0.8889s; speed=450; attack range=9999999; projectile radius=6",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "new_ability": {
+            "name": "Ability",
+            "cooldown": 45,
+            "effect_stats": ""
+          }
+        }
+      },
+      {
+        "tier": 5,
+        "name": "Wizard Lord Phoenix",
+        "cost": 50000,
+        "description": "Wizard Lord becomes a master of the flame, turning into a super powerful Lava Phoenix for a short time.",
+        "state": {
+          "range": 40,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 3,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=200; targeting: Depends on targeting option; attack range=40; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball",
+              "name": "Fireball",
+              "damage": 1,
+              "pierce": 1,
+              "cooldown": 2.2,
+              "damage_type": "fire",
+              "projectiles": 3,
+              "blast_radius": null,
+              "projectile_speed": 200,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "angle=60; maxPierce=1; lifespan=0.4s; speed=200; targeting: First / Last / Close / Strong; attack range=40; projectile radius=3",
+              "damage_vs": {}
+            },
+            {
+              "tag": "fireball_explosion",
+              "name": "Fireball/Explosion",
+              "damage": 9,
+              "pierce": 15,
+              "cooldown": 2.2,
+              "damage_type": "explosive",
+              "projectiles": 1,
+              "blast_radius": 14,
+              "projectile_speed": null,
+              "lifespan": 0.1,
+              "camo": null,
+              "notes": "lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=40",
+              "damage_vs": {}
+            },
+            {
+              "tag": "wall_of_fire",
+              "name": "Wall of Fire",
+              "damage": 5,
+              "pierce": 20,
+              "cooldown": 4.49995,
+              "damage_type": "fire",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 4.5,
+              "camo": null,
+              "notes": "clearHitBloonsInterval=0.1; refreshPierceInterval=0.1; lifespan=4.5s; targeting: Track or Default; attack range=40; attack customStartCooldown=0.5; projectile radius=15",
+              "damage_vs": {}
+            },
+            {
+              "tag": "dragon_s_breath",
+              "name": "Dragon's Breath",
+              "damage": 2,
+              "pierce": 15,
+              "cooldown": 0.135,
+              "damage_type": "plasma",
+              "projectiles": 3,
+              "blast_radius": null,
+              "projectile_speed": 125,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "angle=15; lifespan=0.4s; speed=125; targeting: First / Last / Close / Strong; attack range=40; effect 'Damage over time': layers=9999999, lifespan=15.1, applyOnlyIfDamaged=True, damage=30, interval=1.5 (damage type fire); projectile radius=6",
+              "damage_vs": {}
+            },
+            {
+              "tag": "phoenix_attack",
+              "name": "Phoenix: Attack",
+              "damage": 5,
+              "pierce": 8,
+              "cooldown": 0.1,
+              "damage_type": "plasma",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 450,
+              "lifespan": 0.8889,
+              "camo": null,
+              "notes": "attack of sub-tower 'Phoenix'; lifespan=0.8889s; speed=450; attack range=9999999; projectile radius=6",
+              "damage_vs": {}
+            },
+            {
+              "tag": "lava_phoenix_attack",
+              "name": "Lava Phoenix: Attack",
+              "damage": 20,
+              "pierce": 50,
+              "cooldown": 0.1,
+              "damage_type": "fire",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 450,
+              "lifespan": 0.8889,
+              "camo": null,
+              "notes": "attack of sub-tower 'Lava Phoenix' (sub-tower lifespan 20s); lifespan=0.8889s; speed=450; attack range=9999999; projectile radius=6",
+              "damage_vs": {}
+            },
+            {
+              "tag": "lava_phoenix_fireballs",
+              "name": "Lava Phoenix: Fireballs",
+              "damage": 50,
+              "pierce": 300,
+              "cooldown": 1,
+              "damage_type": "normal",
+              "projectiles": 8,
+              "blast_radius": null,
+              "projectile_speed": 85,
+              "lifespan": 2.9412,
+              "camo": null,
+              "notes": "attack of sub-tower 'Lava Phoenix' (sub-tower lifespan 20s); angle=360; lifespan=2.9412s; speed=85; attack range=9999999; projectile radius=15",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "ability.Ability.effect_stats": "pauseAllOtherAttacks=20"
+        }
+      }
+    ],
+    "bottom": [
+      {
+        "tier": 1,
+        "name": "Intense Magic",
+        "cost": 300,
+        "description": "More powerful magic shots move faster and can pop more Bloons.",
+        "state": {
+          "range": 40,
+          "camo": false,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 8,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 400,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=400; targeting: Depends on targeting option; attack range=40; projectile radius=4",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 2,
+        "name": "Monkey Sense",
+        "cost": 300,
+        "description": "Increases range slightly and allows the Wizard to hit Camo Bloons.",
+        "state": {
+          "range": 50,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 8,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 400,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=400; can target/hit camo; targeting: Depends on targeting option; attack range=50; projectile radius=4",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 3,
+        "name": "Shimmer",
+        "cost": 1500,
+        "description": "Gains a dark magic attack that periodically reveals location of all nearby Camo Bloons permanently.",
+        "state": {
+          "range": 60,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 8,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 400,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=400; can target/hit camo; targeting: Depends on targeting option; attack range=60; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "shimmer",
+              "name": "Shimmer",
+              "damage": 0,
+              "pierce": 500,
+              "cooldown": 2,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 0.05,
+              "camo": null,
+              "notes": "no direct damage listed; cleanseCamo=True; lifespan=0.05s; can target/hit camo; camo only; attack range=60; projectile radius=75",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 4,
+        "name": "Necromancer: Unpopped Army",
+        "cost": 2800,
+        "description": "Reanimate recently popped enemies as servants that can destroy Bloons of any type.",
+        "state": {
+          "range": 60,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 8,
+              "cooldown": 1.1,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 400,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=400; can target/hit camo; targeting: Depends on targeting option; attack range=60; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "shimmer",
+              "name": "Shimmer",
+              "damage": 0,
+              "pierce": 500,
+              "cooldown": 2,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 0.05,
+              "camo": null,
+              "notes": "no direct damage listed; cleanseCamo=True; lifespan=0.05s; can target/hit camo; camo only; attack range=60; projectile radius=75",
+              "damage_vs": {}
+            },
+            {
+              "tag": "reanimate",
+              "name": "Reanimate",
+              "damage": 2,
+              "pierce": 1,
+              "cooldown": 1.5,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 25,
+              "lifespan": 7,
+              "camo": null,
+              "notes": "lifespan=7s; speed=25; targeting: Normal (track); attack range=60; projectile radius=3",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {}
+      },
+      {
+        "tier": 5,
+        "name": "Prince of Darkness",
+        "cost": 26500,
+        "description": "Reanimate even more powerful Bloon servants to obliterate the enemy and enhances all other Necromancers.",
+        "state": {
+          "range": 80,
+          "camo": true,
+          "reach": "radius",
+          "attacks": [
+            {
+              "tag": "attack",
+              "name": "Attack",
+              "damage": 1,
+              "pierce": 8,
+              "cooldown": 0.275,
+              "damage_type": "energy",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 400,
+              "lifespan": 0.4,
+              "camo": null,
+              "notes": "lifespan=0.4s; speed=400; can target/hit camo; targeting: Depends on targeting option; attack range=80; projectile radius=4",
+              "damage_vs": {}
+            },
+            {
+              "tag": "shimmer",
+              "name": "Shimmer",
+              "damage": 0,
+              "pierce": 500,
+              "cooldown": 1,
+              "damage_type": null,
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": null,
+              "lifespan": 0.05,
+              "camo": null,
+              "notes": "no direct damage listed; cleanseCamo=True; lifespan=0.05s; can target/hit camo; camo only; attack range=80; projectile radius=100",
+              "damage_vs": {}
+            },
+            {
+              "tag": "reanimate",
+              "name": "Reanimate",
+              "damage": 2,
+              "pierce": 1,
+              "cooldown": 1.5,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 25,
+              "lifespan": 7,
+              "camo": null,
+              "notes": "lifespan=7s; speed=25; targeting: Normal (track); attack range=80; projectile radius=3",
+              "damage_vs": {}
+            },
+            {
+              "tag": "moab_moab",
+              "name": "MOAB/MOAB",
+              "damage": 40,
+              "pierce": 20,
+              "cooldown": 3,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 15,
+              "lifespan": 15,
+              "camo": null,
+              "notes": "lifespan=15s; speed=15; targeting: Normal (track); attack range=80; projectile radius=10",
+              "damage_vs": {}
+            },
+            {
+              "tag": "moab_bfb",
+              "name": "MOAB/BFB",
+              "damage": 100,
+              "pierce": 50,
+              "cooldown": 3,
+              "damage_type": "normal",
+              "projectiles": 1,
+              "blast_radius": null,
+              "projectile_speed": 15,
+              "lifespan": 10,
+              "camo": null,
+              "notes": "lifespan=10s; speed=15; targeting: Normal (track); attack range=80; projectile radius=20",
+              "damage_vs": {}
+            }
+          ]
+        },
+        "effects": {
+          "buff:Undead Bloon buff": "damageAdditive=3, lifespanMultiplier=1.5"
+        }
+      }
+    ]
+  }
+}
