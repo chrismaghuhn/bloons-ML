@@ -138,24 +138,42 @@ Wiki-API ──tools/wiki/*.py──▶ raw/ ──tools/normalize.py──▶ b
   `base/`-Format. Quelle der Wahrheit für Stats sind die Wiki-Module
   `Module:BTD6 stats/<Tower>/new`. Was nicht übersetzt werden kann, landet in einem Report
   und wird über `patches/020_missing_values.json` nachgetragen.
-- In `base/` stehen pro Tier **Absolutwerte**, keine Deltas. Die `Modifier` aus §5 erzeugt
-  `btd-data` beim Laden aus der Differenz zum vorherigen Tier.
+- In `base/` steht pro Tier beides (Format: `data/schema/tower.schema.json`):
+  - **`ops`**: die Änderungen dieses Tiers als `{target, stat, op: set|add|mul|remove, value}`,
+    `target` = `"tower"` oder ein Angriffs-`tag`. Daraus erzeugt `btd-data` die `Modifier` aus §5.
+    Nur so lassen sich Crosspaths (z. B. 3-2-0) zusammensetzen: aus zwei Absolutwerten ist nicht
+    ablesbar, ob ein Upgrade addiert, multipliziert oder ersetzt. Wo das Wiki nur Absolutwerte
+    liefert (Primary-Agent), sind die ops `set`. Für Crosspaths muss das später per Patch präzisiert werden.
+  - **`state`**: der vollständige Zustand mit Absolutwerten. Er dient als geprüfter Snapshot für
+    Tests (Modifier-Fold von `base` + `ops` muss `state` ergeben) und für Menschen zum Lesen.
+- **Camo** gehört zum Turm (`state.camo`). Auf Angriffs-Ebene steht `camo: false` nur als explizite
+  Ausnahme (Turm hat Camo, dieser Angriff nicht). Solche Fälle listet der Report.
+- **`damage_vs`** nutzt ein festes Vokabular aus Bloon-Klassen (`moab bfb zomg ddt bad ceramic lead
+  fortified camo purple boss`) und Status (`stunned frozen stickied glued shocked burning`).
+  Zusammengesetzte Bedingungen werden mit `+` verbunden, z. B. `fortified+moab` = nur fortified MOABs.
+- **`range` am Angriff** ist nur gesetzt, wenn er von der Turm-Range abweicht (`RangeOverride`).
+- `tests/test_normalize.py` deckt jede Rohformat-Konvention ab und prüft, dass `data/base/` zum
+  aktuellen `normalize.py` passt.
 
 **Patch-Format** (angelehnt an Civs `<Update>`/`<Delete>`):
 
 ```json
 {
   "patches": [
-    { "op": "set",    "path": "towers/mortar_monkey/upgrades/bottom/0/changes/camo", "value": false,
+    { "op": "set",    "path": "towers/mortar_monkey/paths/bottom/0/ops/0/value", "value": false,
       "why": "Game-Data-Modul zeigt Camo erst ab 0-0-3, Text sagt 0-0-1" },
-    { "op": "set",    "path": "towers/heli_pilot/footprint", "value": { "rect": [14, 14] } },
-    { "op": "delete", "path": "towers/super_monkey/attacks/3" }
+    { "op": "set",    "path": "towers/heli_pilot/footprint", "value": { "rect": [14, 14] },
+      "why": "Wiki gibt Rechteck statt Radius" },
+    { "op": "merge",  "path": "towers/dart_monkey/paths/top/2/ops/3", "value": { "op": "add", "value": 0.2 },
+      "why": "Spike-o-pult: Cooldown +0.2 s statt fest 1.15 s (Crosspath mit Mittelpfad)" }
   ]
 }
 ```
 
 - `op`: `set`, `merge` (Objekt zusammenführen), `delete`.
-- `path`: JSON-Pointer-ähnlich, relativ zu `base/`.
+- `path`: JSON-Pointer-ähnlich, relativ zu `base/`. Patches zielen auf **`ops`**, nicht auf
+  `state`. Ein Patch auf ein Tier wirkt so automatisch auf alle späteren Tiers. `normalize.py`
+  bzw. `btd-data` berechnet `state` danach neu.
 - `why` ist Pflicht. Jede Korrektur ist damit nachvollziehbar, und `btd-tools validate-data`
   listet alle Patches mit Begründung.
 - Ein Patch, dessen `path` ins Leere zeigt, ist ein **Fehler** (fängt ab, dass ein Wiki-Update
@@ -264,7 +282,13 @@ pub enum TowerStat  { Range, CostMul, SellMul, Footprint }
 pub enum AttackStat {
     Cooldown, Damage, Pierce, Projectiles, BlastRadius, ProjectileSpeed, Lifetime,
     RangeOverride,                 // falls ein Angriff eine eigene Range hat
-    DamageVs(BloonClass),          // +X gegen MOAB-Klasse / Ceramic / Fortified / Camo / Lead
+    DamageVs(BonusClass),          // +X gegen Klasse/Status, s. unten
+}
+/// Entspricht den `damage_vs`-Schlüsseln in base/ ("fortified+moab" = beide Bedingungen).
+pub struct BonusClass { pub all_of: SmallVec<[BonusTerm; 2]> }
+pub enum BonusTerm {
+    Class(BloonClass),   // Moab, Bfb, Zomg, Ddt, Bad, Ceramic, Lead, Fortified, Camo, Purple, Boss
+    Status(Status),      // Stunned, Frozen, Stickied, Glued, Shocked, Burning
 }
 pub enum Flag { Camo, CanHitLead, CanHitBlack, CanHitWhite, CanHitPurple, CanHitFrozen, … }
 
@@ -325,8 +349,13 @@ pub enum Reach {
     Radius,                 // normal: effektive Range des Turms/Angriffs
     Global,                 // Sniper: trifft überall, `range` ist nur der Anzeige-/Platzierungsbereich
     Reticle { pos: Vec2 },  // Mortar, Dartling: zielt auf einen gesetzten Punkt (Action::SetReticle)
+    Flying,                 // Monkey Ace: fliegt eine Route, Angriffe relativ zum Flugzeug
+    Follow,                 // Heli Pilot: folgt Ziel/Cursor, Angriffe relativ zum Heli
 }
 ```
+
+`Flying` und `Follow` sind in `base/` schon markiert, werden aber erst mit den jeweiligen
+Türmen (nach M2) wirklich simuliert.
 
 Die `range`-Werte im Wiki sind bei Sniper, Mortar und Dartling nur der kleine Anzeigebereich
 im Spiel und nicht die Zielreichweite. Der Konverter setzt für diese Türme `Reach` explizit.
@@ -395,6 +424,10 @@ Folgen für den Rest:
   sowie die MOAB-Health-Skalierung ab Runde 81 (aus den Wiki-Daten, §4).
 - Heroes sind in CHIMPS erlaubt, kommen bei uns aber erst später. Ohne Hero ist es schwerer,
   aber machbar.
+- **Zwischenziele vor CHIMPS:** Nur mit den 6 Primary-Türmen und ohne Hero ist CHIMPS sehr schwer.
+  Benchmarks deshalb gestaffelt: (a) Primary-Türme auf Medium Standard (Runde 1–40, danach bis 60),
+  (b) Primary-Türme auf Hard Standard (bis 80), (c) volles Turm-Set auf CHIMPS,
+  (d) CHIMPS mit Hero (M6). Stufe (a)/(b) dienen vor allem als Test für Engine und Agent.
 - **Training mit Curriculum** (in `btd-env`, nicht im Core):
   1. Leben-Puffer: erst mit vielen Leben und Leak-Strafe trainieren, den Puffer dann
      schrittweise auf 1 absenken (echtes CHIMPS).
@@ -418,6 +451,39 @@ Folgen für den Rest:
 - **Paritätstests als Pytest** in `btd-py/tests/`: dieselben Build-Orders in `btd` (Rust)
   und `btd_sim` (Python-Referenz), Rundenergebnisse vergleichen. So braucht `btd-tools`
   kein Python.
+
+### Netz-Experimente (auf Benchmark (a), Runde 1–40)
+
+Der leichte Benchmark ist auch das Testfeld für Netzarchitekturen. Vergleich immer mit
+gleichem Budget an Env-Steps, mehreren Seeds (≥ 3) und den gleichen Kennzahlen:
+erreichte Runde (Ø/Median), Sample-Effizienz (Runde über Steps) und Zeit pro Update.
+
+| Variante | Idee |
+|---|---|
+| MLP-Größen | Baseline: `[512, 256]`, dann breiter/tiefer/schmaler |
+| CNN über das Grid | Observation als Kanäle × 15 × 20 statt flach, Ortsbezug bleibt erhalten |
+| Set/Attention über Türme | Türme als Liste von Feature-Vektoren (Typ, Tiers, Position), reihenfolge-unabhängig |
+| Faktorisierte Action-Heads | erst Aktionstyp, dann Turmtyp, dann Position, statt eines flachen Discrete |
+| Observation-Varianten | Track-Abstand pro Zelle; Runden-Vorschau und Bloon-Wissen (s. unten) |
+
+**Runden-Vorschau und Bloon-Wissen** (wie ein guter Spieler, der die Runden kennt):
+
+- **Vorschau-Fenster:** die nächsten *k* Runden (z. B. *k* = 5, zusätzlich zusammengefasst
+  „bis Runde +20“), je Runde: Anzahl pro Bloon-Typ, Anteil Camo/Regrow/Fortified, RBE,
+  max. MOAB-HP, Dauer und Dichte (Bloons pro Sekunde in der dichtesten Sekunde).
+  Außerdem pro Spezial-Typ ein Zähler „Runden bis zum nächsten Auftreten“ (und ob es das erste
+  Mal ist): Black, White, Zebra, Lead (Metall), Purple, Rainbow, Ceramic, MOAB, BFB, ZOMG,
+  DDT, BAD sowie die Eigenschaften Camo, Regrow, Fortified. Das erste Auftreten ist der
+  kritische Moment, auf den gute Spieler hinbauen.
+- **Bloon-Tabelle:** statische Eigenschaften pro Typ (Speed, HP, RBE, Immunitäten,
+  Kinder) als feste Embeddings bzw. Lookup im Netz, statt sie in jede Observation zu kopieren.
+- Weil die Standard-Runden fix sind, könnte das Netz sie theoretisch auch über die
+  Rundennummer auswendig lernen. Die explizite Vorschau lernt aber schneller und überträgt
+  auf andere Rundensätze (Alternate Bloon Rounds, eigene Runden, Domain Randomization).
+  Experiment: mit vs. ohne Vorschau.
+
+`btd-env` liefert die Observation deshalb in mehreren Formen (flach, Grid-Tensor,
+Turm-Liste), ausgewählt per Config. Die Netze selbst sind sb3-`features_extractor`s in Python.
 
 ## 7. Zufall & Domain Randomization
 
@@ -467,7 +533,9 @@ der Sim verglichen. Ergebnisse kommen als Testfälle nach `tests/calibration/`.
    Python-Engine (4 Türme, Hitscan, prozedurale Runden), Paritätstests grün.
    `btd-env`/`btd-py` minimal, damit PPO einmal **durchläuft**. Kein ernsthaftes Training.
 2. **M2 – Echte Physik & Daten:** Projektile mit Flugzeit, Wiki-Runden 1–40 inkl.
-   Camo/Regrow/Fortified, Ceramic, MOAB; `tools/normalize.py` + Patches; 6–8 Landtürme für Monkey Meadow;
+   Camo/Regrow/Fortified, Ceramic, MOAB; `tools/normalize.py` + Patches; Start-Türme = die klassischen
+   Primary-Türme **Dart, Boomerang, Bomb, Tack, Ice, Glue** (ohne Desperado; Patch Notes 56/57
+   für genau diese prüfen und Abweichungen als Patches eintragen);
    Modifier mit Selektoren und `DamageVs`.
 3. **M3 – Ernsthaftes Training:** VecEnv mit rayon, Benchmarks, MaskablePPO auf Rust-Env
    mit Domain Randomization.

@@ -49,11 +49,12 @@
         "damage_type": "sharp",
         "projectiles": 1,
         "blast_radius": null,
+        "range": null,
         "projectile_speed": null,
         "lifespan": null,
-        "camo": false,
-        "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-        "damage_vs": {}
+        "damage_vs": {},
+        "camo": null,
+        "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
       }
     ]
   },
@@ -64,6 +65,7 @@
         "name": "Quickdraw",
         "cost": 200,
         "description": "Attacks faster the further Bloons are from Desperado.",
+        "ops": [],
         "state": {
           "range": 60,
           "camo": false,
@@ -78,11 +80,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -93,6 +96,7 @@
         "name": "Standoff",
         "cost": 200,
         "description": "Attacks faster the fewer Bloons are in range.",
+        "ops": [],
         "state": {
           "range": 60,
           "camo": false,
@@ -107,11 +111,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +60%; Penalty per additional Bloon in range: -15%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +60%; Penalty per additional Bloon in range: -15%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -122,6 +127,14 @@
         "name": "Big Iron",
         "cost": 1200,
         "description": "Upgrades pistol to a 6-shot revolver that can pop Lead Bloons. Attacks even faster the fewer Bloons are in range.",
+        "ops": [
+          {
+            "target": "revolver",
+            "stat": "damage",
+            "op": "set",
+            "value": 2
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -136,11 +149,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 6; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 2; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 6; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 2; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -151,6 +165,14 @@
         "name": "Twin Sixes",
         "cost": 5800,
         "description": "Gains twin higher damage revolvers.",
+        "ops": [
+          {
+            "target": "revolver",
+            "stat": "damage",
+            "op": "set",
+            "value": 6
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -165,11 +187,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 12; Burst interval: 0.05s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 6; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 12; Burst interval: 0.05s; Cooldown: 1.2s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 6; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -180,6 +203,34 @@
         "name": "The Blazing Sun",
         "cost": 16500,
         "description": "They say Desperado shoots so fast them revolvers catch alight.",
+        "ops": [
+          {
+            "target": "revolver",
+            "stat": "damage",
+            "op": "set",
+            "value": 20
+          },
+          {
+            "target": "revolver",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.3
+          },
+          {
+            "target": "revolver",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "revolver",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 40
+            }
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -194,13 +245,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": 0.1,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 12; Burst interval: 0.05s; Cooldown: 0.3s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Area of effect {Pierce: 8; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo; Damage over time {Damage: 75; Damage type: Fire; Duration: 12.05s; Interval: 1.5s; Layers: ∞}}; Projectile {Pierce: 1; Damage: 20; Damage to Ceramic: +40; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}",
+              "lifespan": null,
               "damage_vs": {
                 "ceramic": 40
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 12; Burst interval: 0.05s; Cooldown: 0.3s; Targeting range: 60 units; Speed per distance from target: +1%; Speed per distance from target max: +50%; Speed with 0 or 1 Bloon in range: +120%; Penalty per additional Bloon in range: -30%; Filters: Cannot target Camo; Area of effect {Pierce: 8; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo; Damage over time {Damage: 75; Damage type: Fire; Duration: 12.05s; Interval: 1.5s; Layers: ∞}}; Projectile {Pierce: 1; Damage: 20; Damage to Ceramic: +40; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -213,6 +265,14 @@
         "name": "Eagle Eye",
         "cost": 150,
         "description": "Desperado can see Camo Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "camo",
+            "op": "set",
+            "value": true
+          }
+        ],
         "state": {
           "range": 60,
           "camo": true,
@@ -227,11 +287,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -242,6 +303,7 @@
         "name": "Bullseye",
         "cost": 350,
         "description": "Shots get a chance to Crit. Chance to Crit goes up when target Bloon is further away.",
+        "ops": [],
         "state": {
           "range": 60,
           "camo": true,
@@ -256,11 +318,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -271,6 +334,38 @@
         "name": "Deadeye",
         "cost": 3000,
         "description": "Take Aim ability: target Monkey gains improved range, accuracy, and Camo detection. Desperado gains a long range rifle to use against distant targets. Rifle shots excel against Fortified targets and can pop Lead Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 80
+          },
+          {
+            "target": "revolver",
+            "stat": "damage",
+            "op": "set",
+            "value": 6
+          },
+          {
+            "target": "revolver",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "rifle",
+            "stat": "attack",
+            "op": "add",
+            "value": "rifle"
+          },
+          {
+            "target": "revolver",
+            "stat": "range",
+            "op": "set",
+            "value": 40
+          }
+        ],
         "state": {
           "range": 80,
           "camo": true,
@@ -285,11 +380,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 40,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": true,
-              "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 6; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 6; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}"
             },
             {
               "tag": "rifle",
@@ -300,13 +396,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 1.59s; Targeting range: 80 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 4; Damage: 10; Damage to Fortified: +10; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}",
               "damage_vs": {
                 "fortified": 10
-              }
+              },
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 1.59s; Targeting range: 80 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 4; Damage: 10; Damage to Fortified: +10; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}"
             }
           ]
         },
@@ -325,6 +422,31 @@
         "name": "Bounty Hunter",
         "cost": 6000,
         "description": "Marked to Pop ability: Marks extra Bloons, then proceeds to attack all Marked Bloons. Marked Bloons take more damage and give more cash. All Desperados can target Marked Bloons.",
+        "ops": [
+          {
+            "target": "mark",
+            "stat": "attack",
+            "op": "add",
+            "value": "mark"
+          },
+          {
+            "target": "revolver",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 6
+            }
+          },
+          {
+            "target": "rifle",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 10,
+              "fortified": 10
+            }
+          }
+        ],
         "state": {
           "range": 80,
           "camo": true,
@@ -339,13 +461,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 40,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": true,
-              "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 6; Damage to Ceramic: +6; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}",
               "damage_vs": {
                 "ceramic": 6
-              }
+              },
+              "camo": null,
+              "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 6; Damage to Ceramic: +6; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target}"
             },
             {
               "tag": "rifle",
@@ -356,13 +479,15 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 1.59s; Targeting range: 80 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 4; Damage: 10; Damage to Ceramic or Fortified: +10; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}",
               "damage_vs": {
-                "ceramic or fortified": 10
-              }
+                "ceramic": 10,
+                "fortified": 10
+              },
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 1.59s; Targeting range: 80 units; Crit multiplier: ×4; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 4; Damage: 10; Damage to Ceramic or Fortified: +10; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}"
             },
             {
               "tag": "mark",
@@ -373,11 +498,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": true,
-              "notes": "no direct damage listed on wiki; can target Camo; wiki stats: Cooldown: 6s; Min. cooldown: 3s; Targeting range: 80 units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 2; Max pierce: 2; Radius: 18 units; Mark {Duration: ∞s; Layers: 1}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "no direct damage listed on wiki; can target Camo; wiki stats: Cooldown: 6s; Min. cooldown: 3s; Targeting range: 80 units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 2; Max pierce: 2; Radius: 18 units; Mark {Duration: ∞s; Layers: 1}}"
             }
           ]
         },
@@ -401,6 +527,61 @@
         "name": "Golden Justice",
         "cost": 42000,
         "description": "They say Desperado's longarm can hit clean through an army of Bloons.",
+        "ops": [
+          {
+            "target": "revolver",
+            "stat": "damage",
+            "op": "set",
+            "value": 24
+          },
+          {
+            "target": "revolver",
+            "stat": "blast_radius",
+            "op": "set",
+            "value": 0
+          },
+          {
+            "target": "rifle",
+            "stat": "damage",
+            "op": "set",
+            "value": 280
+          },
+          {
+            "target": "rifle",
+            "stat": "pierce",
+            "op": "set",
+            "value": 9999999
+          },
+          {
+            "target": "rifle",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 3.18
+          },
+          {
+            "target": "mark",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 3
+          },
+          {
+            "target": "revolver",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 24
+            }
+          },
+          {
+            "target": "rifle",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 280,
+              "fortified": 280
+            }
+          }
+        ],
         "state": {
           "range": 80,
           "camo": true,
@@ -415,13 +596,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 0,
+              "range": 40,
               "projectile_speed": null,
-              "lifespan": 0.1,
-              "camo": true,
-              "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×8; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 24; Damage to Ceramic: +24; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}; Explosion {Pierce: 8; Damage: 24; Damage to Ceramic: +24; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 0 units}",
+              "lifespan": null,
               "damage_vs": {
                 "ceramic": 24
-              }
+              },
+              "camo": null,
+              "notes": "targeting range 40 units; can target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 40 units; Crit multiplier: ×8; Crit base chance: 2.5%; Crit chance per distance from target: +0.25%; Filters: Cannot target Bloons that the alternate attack can target; Projectile {Pierce: 1; Damage: 24; Damage to Ceramic: +24; Damage type: Normal [Can damage any Bloon type]; Radius: 2 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}; Explosion {Pierce: 8; Damage: 24; Damage to Ceramic: +24; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 0 units}"
             },
             {
               "tag": "rifle",
@@ -432,13 +614,15 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 3.18s; Targeting range: 80 units; Crit multiplier: ×8; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 9,999,999; Damage: 280; Damage to Ceramic or Fortified: +280; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}",
               "damage_vs": {
-                "ceramic or fortified": 280
-              }
+                "ceramic": 280,
+                "fortified": 280
+              },
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 3.18s; Targeting range: 80 units; Crit multiplier: ×8; Crit base chance: 2.5%; Crit chance per distance from target: +0.4%; Projectile {Pierce: 9,999,999; Damage: 280; Damage to Ceramic or Fortified: +280; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 6 units}"
             },
             {
               "tag": "mark",
@@ -449,11 +633,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": true,
-              "notes": "no direct damage listed on wiki; can target Camo; wiki stats: Cooldown: 3s; Min. cooldown: 1s; Targeting range: 80 units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 2; Max pierce: 2; Radius: 18 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "no direct damage listed on wiki; can target Camo; wiki stats: Cooldown: 3s; Min. cooldown: 1s; Targeting range: 80 units; Filters: Cannot target Bloons with Marked; Projectile {Pierce: 2; Max pierce: 2; Radius: 18 units; Filters: Can only hit the target; Mark {Duration: ∞s; Layers: 1}}"
             }
           ]
         },
@@ -474,6 +659,7 @@
         "name": "Wanderer",
         "cost": 220,
         "description": "A Wanderer works best alone. Desperado attacks much faster, but less so when more Monkeys are in each weapon's attack range.",
+        "ops": [],
         "state": {
           "range": 60,
           "camo": false,
@@ -488,11 +674,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -503,6 +690,7 @@
         "name": "Nomad",
         "cost": 280,
         "description": "Attacks faster the more Bloons are in range. When lives are lost gets temporary range and attack speed increase, plus a small amount of cash if a Bloon leaked.",
+        "ops": [],
         "state": {
           "range": 60,
           "camo": false,
@@ -517,11 +705,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             }
           ]
         },
@@ -539,6 +728,20 @@
         "name": "Enforcer",
         "cost": 2100,
         "description": "Uses a shotgun that can knock back Bloons when they get within close range.",
+        "ops": [
+          {
+            "target": "revolver",
+            "stat": "damage",
+            "op": "set",
+            "value": 6
+          },
+          {
+            "target": "shotgun",
+            "stat": "attack",
+            "op": "add",
+            "value": "shotgun"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -553,11 +756,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 6; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 6; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             },
             {
               "tag": "shotgun",
@@ -568,11 +772,12 @@
               "damage_type": "shatter",
               "projectiles": 3,
               "blast_radius": null,
+              "range": 36,
               "projectile_speed": 300,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 3; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-1; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.2s}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 3; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-1; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.2s}}"
             }
           ]
         },
@@ -583,6 +788,22 @@
         "name": "Avenger",
         "cost": 9500,
         "description": "Shotgun hits release shrapnel and can even knock back MOABs. When lives are lost, weaker Bloons only take 1 life each for a short time.",
+        "ops": [
+          {
+            "target": "revolver",
+            "stat": "damage",
+            "op": "set",
+            "value": 18
+          },
+          {
+            "target": "revolver",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 18
+            }
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -597,13 +818,14 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 18; Damage to Ceramic: +18; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
               "damage_vs": {
                 "ceramic": 18
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 1.2s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 18; Damage to Ceramic: +18; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             },
             {
               "tag": "shotgun",
@@ -614,11 +836,12 @@
               "damage_type": "shatter",
               "projectiles": 3,
               "blast_radius": null,
+              "range": 36,
               "projectile_speed": 300,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 3; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-2; Multiplier for Lead: ×-2; Multiplier for Ceramic: ×-2; Multiplier for MOAB-Class: ×-0.5; Duration: 0.2s}}; Shrapnel {Count: 3; Angle: 120°; Pierce: 6; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.1067s; Radius: 0.2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 3; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-2; Multiplier for Lead: ×-2; Multiplier for Ceramic: ×-2; Multiplier for MOAB-Class: ×-0.5; Duration: 0.2s}}; Shrapnel {Count: 3; Angle: 120°; Pierce: 6; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.1067s; Radius: 0.2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -629,6 +852,48 @@
         "name": "The Desert Phantom",
         "cost": 31000,
         "description": "They say Desperado hits so hard it's like a mine blast.",
+        "ops": [
+          {
+            "target": "revolver",
+            "stat": "damage",
+            "op": "set",
+            "value": 50
+          },
+          {
+            "target": "revolver",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.6
+          },
+          {
+            "target": "shotgun",
+            "stat": "damage",
+            "op": "set",
+            "value": 10
+          },
+          {
+            "target": "shotgun",
+            "stat": "blast_radius",
+            "op": "set",
+            "value": 8
+          },
+          {
+            "target": "revolver",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 50
+            }
+          },
+          {
+            "target": "shotgun",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 15
+            }
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -643,13 +908,14 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 0.6s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 50; Damage to Ceramic: +50; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}",
               "damage_vs": {
                 "ceramic": 50
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.1s; Cooldown: 0.6s; Targeting range: 60 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Bloons that the alternate attack can target; Cannot target Camo; Projectile {Pierce: 1; Damage: 50; Damage to Ceramic: +50; Damage type: Sharp [Cannot damage Lead or frozen]; Radius: 2 units; Filters: Can only hit the target}"
             },
             {
               "tag": "shotgun",
@@ -660,14 +926,14 @@
               "damage_type": "shatter",
               "projectiles": 3,
               "blast_radius": 8,
+              "range": 36,
               "projectile_speed": 300,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 10; Damage to MOAB-Class: +40; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-3; Multiplier for Ceramic: ×-3; Multiplier for MOAB-Class: ×-2; Duration: 0.2s}}; Shrapnel {Count: 3; Angle: 120°; Pierce: 10; Damage: 3; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.2133s; Radius: 0.2 units; Filters: Cannot hit Camo; Damage over time {Damage: 10; Damage to Ceramic: +10; Damage type: Fire; Duration: 9.05s; Interval: 1.5s; Layers: ∞}}; Explosion {Pierce: 3; Max pierce: 3; Damage: 5; Damage to Ceramic: +15; Damage type: Fire [Cannot damage Purple]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 8 units; Filters: Cannot hit Camo}",
               "damage_vs": {
-                "moab": 40,
-                "ceramic": 10
-              }
+                "ceramic": 15
+              },
+              "camo": null,
+              "notes": "targeting range 36 units; cannot target Camo; wiki stats: Burst count: 2; Burst interval: 0.2s; Cooldown: 1.97s; Targeting range: 36 units; Speed with no towers in range: +45%; Penalty per tower in range: -15%; Speed per Bloon in range: +2%; Speed per Bloon in range max: +50%; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 35°; Pierce: 3; Damage: 10; Damage to MOAB-Class: +40; Damage type: Shatter [Cannot damage Lead]; Speed: 300 units/s; Lifespan: 0.2s; Radius: 2 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-3; Multiplier for Ceramic: ×-3; Multiplier for MOAB-Class: ×-2; Duration: 0.2s}}; Shrapnel {Count: 3; Angle: 120°; Pierce: 10; Damage: 3; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.2133s; Radius: 0.2 units; Filters: Cannot hit Camo; Damage over time {Damage: 10; Damage to Ceramic: +10; Damage type: Fire; Duration: 9.05s; Interval: 1.5s; Layers: ∞}}; Explosion {Pierce: 3; Max pierce: 3; Damage: 5; Damage to Ceramic: +15; Damage type: Fire [Cannot damage Purple]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 8 units; Filters: Cannot hit Camo}"
             }
           ]
         },

@@ -39,11 +39,12 @@
         "damage_type": "sharp",
         "projectiles": 5,
         "blast_radius": null,
+        "range": null,
         "projectile_speed": 340,
         "lifespan": 0.3,
+        "damage_vs": {},
         "camo": null,
-        "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-        "damage_vs": {}
+        "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0"
       }
     ]
   },
@@ -54,6 +55,20 @@
         "name": "Hard Thorns",
         "cost": 350,
         "description": "Hard thorns can pop 2 Bloons each and pop any Bloon type.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "pierce",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "attack",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          }
+        ],
         "state": {
           "range": 35,
           "camo": false,
@@ -68,11 +83,12 @@
               "damage_type": "normal",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             }
           ]
         },
@@ -83,6 +99,14 @@
         "name": "Heart of Thunder",
         "cost": 850,
         "description": "Unleashes regular blasts of forked lightning that arc from Bloon to Bloon.",
+        "ops": [
+          {
+            "target": "lightning",
+            "stat": "attack",
+            "op": "add",
+            "value": "Lightning"
+          }
+        ],
         "state": {
           "range": 35,
           "camo": false,
@@ -97,11 +121,12 @@
               "damage_type": "normal",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "lightning",
@@ -112,11 +137,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "bounceDistance=86; maxBounces=2; maxPierce=5; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "bounceDistance=86; maxBounces=2; maxPierce=5; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             }
           ]
         },
@@ -127,6 +153,14 @@
         "name": "Druid of the Storm",
         "cost": 1700,
         "description": "Gusts of wind blow Bloons off the track away from the exit.",
+        "ops": [
+          {
+            "target": "tornado",
+            "stat": "attack",
+            "op": "add",
+            "value": "Tornado"
+          }
+        ],
         "state": {
           "range": 35,
           "camo": false,
@@ -141,11 +175,12 @@
               "damage_type": "normal",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "lightning",
@@ -156,11 +191,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "bounceDistance=86; maxBounces=2; maxPierce=5; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "bounceDistance=86; maxBounces=2; maxPierce=5; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "tornado",
@@ -171,11 +207,12 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 72,
-              "lifespan": 1.0417,
+              "lifespan": 1.042,
+              "damage_vs": {},
               "camo": null,
-              "notes": "seekDistance=9999999; piercePenaltyForCeramic=1; filterOutMoabs=True; filterOutDdt=True; lifespan=1.0417s; speed=72; targeting: First / Last / Close / Strong; attack range=35; effect 'Blowback': distanceMin=100, distanceMax=200, chance=1; projectile radius=16",
-              "damage_vs": {}
+              "notes": "seekDistance=9999999; piercePenaltyForCeramic=1; filterOutMoabs=True; filterOutDdt=True; lifespan=1.0417s; speed=72; targeting: First / Last / Close / Strong; attack range=35; effect 'Blowback': distanceMin=100, distanceMax=200, chance=1; projectile radius=16"
             }
           ]
         },
@@ -186,6 +223,38 @@
         "name": "Ball Lightning",
         "cost": 4500,
         "description": "Able to perceive Camo Bloons. Creates powerful balls of lightning that can freeze Bloons. Additional lightning bolts arc off main attack to nearby Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "camo",
+            "op": "set",
+            "value": true
+          },
+          {
+            "target": "lightning",
+            "stat": "damage",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "tornado",
+            "stat": "pierce",
+            "op": "add",
+            "value": 25
+          },
+          {
+            "target": "ball_lightning_spawning_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "Ball Lightning/Spawning projectile"
+          },
+          {
+            "target": "ball_lightning_lightning",
+            "stat": "attack",
+            "op": "add",
+            "value": "Ball Lightning/Lightning"
+          }
+        ],
         "state": {
           "range": 35,
           "camo": true,
@@ -200,11 +269,12 @@
               "damage_type": "normal",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.3s; speed=340; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.3s; speed=340; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "lightning",
@@ -215,11 +285,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "bounceDistance=86; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "bounceDistance=86; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "tornado",
@@ -230,11 +301,12 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 72,
-              "lifespan": 1.0417,
+              "lifespan": 1.042,
+              "damage_vs": {},
               "camo": null,
-              "notes": "seekDistance=9999999; filterOutMoabs=True; filterOutDdt=True; lifespan=1.0417s; speed=72; can target/hit camo; targeting: First / Last / Close / Strong; attack range=35; effect 'Blowback': distanceMin=150, distanceMax=250, chance=1; projectile radius=16",
-              "damage_vs": {}
+              "notes": "seekDistance=9999999; filterOutMoabs=True; filterOutDdt=True; lifespan=1.0417s; speed=72; can target/hit camo; targeting: First / Last / Close / Strong; attack range=35; effect 'Blowback': distanceMin=150, distanceMax=250, chance=1; projectile radius=16"
             },
             {
               "tag": "ball_lightning_spawning_projectile",
@@ -245,11 +317,12 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 24,
               "lifespan": 3.75,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=3.75s; speed=24; can target/hit camo; targeting: Depends on targeting option; attack range=35; effect 'Freeze': layers=4, lifespan=4.5, mutationId=Ice:Regular:Freeze; projectile radius=8",
-              "damage_vs": {}
+              "notes": "lifespan=3.75s; speed=24; can target/hit camo; targeting: Depends on targeting option; attack range=35; effect 'Freeze': layers=4, lifespan=4.5, mutationId=Ice:Regular:Freeze; projectile radius=8"
             },
             {
               "tag": "ball_lightning_lightning",
@@ -260,11 +333,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "bounceDistance=43; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "bounceDistance=43; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             }
           ]
         },
@@ -275,6 +349,38 @@
         "name": "Monarch of Storms",
         "cost": 60000,
         "description": "Calls forth a relentless barrage of superstorms. Blasts all Bloon types for massive damage and blows them away from the exit.",
+        "ops": [
+          {
+            "target": "ball_lightning_lightning",
+            "stat": "damage",
+            "op": "add",
+            "value": 7
+          },
+          {
+            "target": "lightning",
+            "stat": "damage",
+            "op": "add",
+            "value": 27
+          },
+          {
+            "target": "superstorm",
+            "stat": "attack",
+            "op": "add",
+            "value": "Superstorm"
+          },
+          {
+            "target": "superstorm_spawning_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "Superstorm/Spawning projectile"
+          },
+          {
+            "target": "superstorm_lightning",
+            "stat": "attack",
+            "op": "add",
+            "value": "Superstorm/Lightning"
+          }
+        ],
         "state": {
           "range": 35,
           "camo": true,
@@ -289,11 +395,12 @@
               "damage_type": "normal",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.3s; speed=340; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.3s; speed=340; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "lightning",
@@ -304,11 +411,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "bounceDistance=86; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "bounceDistance=86; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "tornado",
@@ -319,11 +427,12 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 72,
-              "lifespan": 1.0417,
+              "lifespan": 1.042,
+              "damage_vs": {},
               "camo": null,
-              "notes": "seekDistance=9999999; filterOutMoabs=True; filterOutDdt=True; lifespan=1.0417s; speed=72; can target/hit camo; targeting: First / Last / Close / Strong; attack range=35; effect 'Blowback': distanceMin=150, distanceMax=250, chance=1; projectile radius=16",
-              "damage_vs": {}
+              "notes": "seekDistance=9999999; filterOutMoabs=True; filterOutDdt=True; lifespan=1.0417s; speed=72; can target/hit camo; targeting: First / Last / Close / Strong; attack range=35; effect 'Blowback': distanceMin=150, distanceMax=250, chance=1; projectile radius=16"
             },
             {
               "tag": "ball_lightning_spawning_projectile",
@@ -334,11 +443,12 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 24,
               "lifespan": 3.75,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=3.75s; speed=24; can target/hit camo; targeting: Depends on targeting option; attack range=35; effect 'Freeze': layers=4, lifespan=4.5, mutationId=Ice:Regular:Freeze; projectile radius=8",
-              "damage_vs": {}
+              "notes": "lifespan=3.75s; speed=24; can target/hit camo; targeting: Depends on targeting option; attack range=35; effect 'Freeze': layers=4, lifespan=4.5, mutationId=Ice:Regular:Freeze; projectile radius=8"
             },
             {
               "tag": "ball_lightning_lightning",
@@ -349,11 +459,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "bounceDistance=43; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "bounceDistance=43; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "superstorm",
@@ -364,11 +475,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 35,
-              "lifespan": 12.8571,
+              "lifespan": 12.86,
+              "damage_vs": {},
               "camo": null,
-              "notes": "clearHitBloonsInterval=1; filterOutBoss=True; lifespan=12.8571s; speed=35; can target/hit camo; targeting: Depends on targeting option; attack range=35; effect 'Blowback': distanceMin=100, distanceMax=9999999, chance=1, affectMoab=True, zomgMultiplier=0.5; projectile radius=40",
-              "damage_vs": {}
+              "notes": "clearHitBloonsInterval=1; filterOutBoss=True; lifespan=12.8571s; speed=35; can target/hit camo; targeting: Depends on targeting option; attack range=35; effect 'Blowback': distanceMin=100, distanceMax=9999999, chance=1, affectMoab=True, zomgMultiplier=0.5; projectile radius=40"
             },
             {
               "tag": "superstorm_spawning_projectile",
@@ -379,11 +491,12 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 24,
               "lifespan": 3.75,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=120; lifespan=3.75s; speed=24; can target/hit camo; targeting: Depends on targeting option; attack range=35; effect 'Freeze': layers=4, lifespan=4.5, mutationId=Ice:Regular:Freeze; projectile radius=8",
-              "damage_vs": {}
+              "notes": "angle=120; lifespan=3.75s; speed=24; can target/hit camo; targeting: Depends on targeting option; attack range=35; effect 'Freeze': layers=4, lifespan=4.5, mutationId=Ice:Regular:Freeze; projectile radius=8"
             },
             {
               "tag": "superstorm_lightning",
@@ -394,11 +507,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "bounceDistance=43; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "bounceDistance=43; maxBounces=2; maxPierce=5; can target/hit camo; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             }
           ]
         },
@@ -411,6 +525,14 @@
         "name": "Thorn Swarm",
         "cost": 250,
         "description": "Shoots 8 thorns per shot instead of 5.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "projectiles",
+            "op": "add",
+            "value": 3
+          }
+        ],
         "state": {
           "range": 35,
           "camo": false,
@@ -425,11 +547,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             }
           ]
         },
@@ -440,6 +563,7 @@
         "name": "Heart of Oak",
         "cost": 350,
         "description": "Attacks convert Regrow Bloons into normal Bloons. Gains 1% pierce for every life gained from the starting value after the upgrade. Maxes at 100% and diminishes if lives are lost.",
+        "ops": [],
         "state": {
           "range": 35,
           "camo": false,
@@ -454,11 +578,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; cleanseRegen=True; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; cleanseRegen=True; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             }
           ]
         },
@@ -469,6 +594,20 @@
         "name": "Druid of the Jungle",
         "cost": 1050,
         "description": "Calls a vine from the ground to entangle and crush Bloons one at a time, leaving behind a deadly thorn pile.",
+        "ops": [
+          {
+            "target": "vine_collidable",
+            "stat": "attack",
+            "op": "add",
+            "value": "Vine/Collidable"
+          },
+          {
+            "target": "vine",
+            "stat": "attack",
+            "op": "add",
+            "value": "Vine"
+          }
+        ],
         "state": {
           "range": 35,
           "camo": false,
@@ -483,11 +622,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; cleanseRegen=True; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; cleanseRegen=True; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=35; projectile radius=0"
             },
             {
               "tag": "vine_collidable",
@@ -498,11 +638,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 9999999,
               "projectile_speed": null,
               "lifespan": 0.1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "filterOutMoabs=True; lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=4",
-              "damage_vs": {}
+              "notes": "filterOutMoabs=True; lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=4"
             },
             {
               "tag": "vine",
@@ -513,11 +654,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 9999999,
               "projectile_speed": null,
               "lifespan": 4.5,
+              "damage_vs": {},
               "camo": null,
-              "notes": "clearHitBloonsInterval=0.3; refreshPierceInterval=0.3; cleanseRegen=True; lifespan=4.5s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=2",
-              "damage_vs": {}
+              "notes": "clearHitBloonsInterval=0.3; refreshPierceInterval=0.3; cleanseRegen=True; lifespan=4.5s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=2"
             }
           ]
         },
@@ -528,6 +670,32 @@
         "name": "Jungle's Bounty",
         "cost": 4900,
         "description": "Vines create stronger thorn piles. Druid generates cash and lives at the end of each round, plus extra cash per Banana Farm near the Druid. Vine Crush Ability: Vines grab many Bloons at once, following Druid's target priority.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 10
+          },
+          {
+            "target": "vine",
+            "stat": "damage",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "vine",
+            "stat": "pierce",
+            "op": "add",
+            "value": 10
+          },
+          {
+            "target": "vine",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 9
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -542,11 +710,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; cleanseRegen=True; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; cleanseRegen=True; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0"
             },
             {
               "tag": "vine_collidable",
@@ -557,11 +726,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 9999999,
               "projectile_speed": null,
               "lifespan": 0.1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "filterOutMoabs=True; lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=4",
-              "damage_vs": {}
+              "notes": "filterOutMoabs=True; lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=4"
             },
             {
               "tag": "vine",
@@ -572,11 +742,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 9999999,
               "projectile_speed": null,
               "lifespan": 9,
+              "damage_vs": {},
               "camo": null,
-              "notes": "clearHitBloonsInterval=0.2; refreshPierceInterval=0.2; cleanseRegen=True; lifespan=9s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=2",
-              "damage_vs": {}
+              "notes": "clearHitBloonsInterval=0.2; refreshPierceInterval=0.2; cleanseRegen=True; lifespan=9s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=2"
             }
           ]
         },
@@ -593,6 +764,20 @@
         "name": "Spirit of the Forest",
         "cost": 35000,
         "description": "Grows thorned vines along the path that deal constant damage and bonus damage to ceramics. Vines nearest the Spirit of the Forest do more damage. Activated ability grabs more Bloons.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "damage",
+            "op": "add",
+            "value": 5
+          },
+          {
+            "target": "vine",
+            "stat": "damage",
+            "op": "add",
+            "value": 3
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -607,11 +792,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.3,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; cleanseRegen=True; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; cleanseRegen=True; lifespan=0.3s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0"
             },
             {
               "tag": "vine_collidable",
@@ -622,11 +808,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 9999999,
               "projectile_speed": null,
               "lifespan": 0.1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "filterOutMoabs=True; lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=4",
-              "damage_vs": {}
+              "notes": "filterOutMoabs=True; lifespan=0.1s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=4"
             },
             {
               "tag": "vine",
@@ -637,11 +824,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 9999999,
               "projectile_speed": null,
               "lifespan": 9,
+              "damage_vs": {},
               "camo": null,
-              "notes": "clearHitBloonsInterval=0.1; refreshPierceInterval=0.1; cleanseRegen=True; lifespan=9s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=2",
-              "damage_vs": {}
+              "notes": "clearHitBloonsInterval=0.1; refreshPierceInterval=0.1; cleanseRegen=True; lifespan=9s; targeting: First / Last / Close / Strong; attack range=9999999; projectile radius=2"
             }
           ]
         },
@@ -661,6 +849,20 @@
         "name": "Druidic Reach",
         "cost": 100,
         "description": "Increases range by a large amount.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 10
+          },
+          {
+            "target": "attack",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.4
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -675,11 +877,12 @@
               "damage_type": "sharp",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.4,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.4s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.4s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0"
             }
           ]
         },
@@ -690,6 +893,7 @@
         "name": "Heart of Vengeance",
         "cost": 300,
         "description": "Gains 10% attack speed and 1% for every life lost from the starting value after the upgrade. Maxes at 50% and diminishes if lives are restored.",
+        "ops": [],
         "state": {
           "range": 45,
           "camo": false,
@@ -704,11 +908,12 @@
               "damage_type": "sharp",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.4,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.4s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.4s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0"
             }
           ]
         },
@@ -721,6 +926,7 @@
         "name": "Druid of Wrath",
         "cost": 600,
         "description": "Gains attack speed during the round as long as the Druid is attacking Bloons.",
+        "ops": [],
         "state": {
           "range": 45,
           "camo": false,
@@ -735,11 +941,12 @@
               "damage_type": "sharp",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.4,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.4s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.4s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0"
             }
           ]
         },
@@ -755,6 +962,7 @@
         "name": "Poplust",
         "cost": 2350,
         "description": "Boosts attack speed and pierce for other Druids in the radius. Can stack up to 5 times on any single Druid.",
+        "ops": [],
         "state": {
           "range": 45,
           "camo": false,
@@ -769,11 +977,12 @@
               "damage_type": "sharp",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.4,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.4s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.4s; speed=340; targeting: Depends on targeting option; attack range=45; projectile radius=0"
             }
           ]
         },
@@ -786,6 +995,32 @@
         "name": "Avatar of Wrath",
         "cost": 45000,
         "description": "The more Bloons there are, the more damage it does!",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 5
+          },
+          {
+            "target": "attack",
+            "stat": "damage",
+            "op": "add",
+            "value": 3
+          },
+          {
+            "target": "attack",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          },
+          {
+            "target": "attack",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.8
+          }
+        ],
         "state": {
           "range": 50,
           "camo": false,
@@ -800,11 +1035,12 @@
               "damage_type": "sharp",
               "projectiles": 5,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 340,
               "lifespan": 0.8,
+              "damage_vs": {},
               "camo": null,
-              "notes": "angle=25; lifespan=0.8s; speed=340; targeting: Depends on targeting option; attack range=50; projectile radius=0",
-              "damage_vs": {}
+              "notes": "angle=25; lifespan=0.8s; speed=340; targeting: Depends on targeting option; attack range=50; projectile radius=0"
             }
           ]
         },

@@ -32,11 +32,12 @@
         "damage_type": "sharp",
         "projectiles": 8,
         "blast_radius": null,
-        "projectile_speed": null,
-        "lifespan": null,
-        "camo": false,
-        "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
-        "damage_vs": {}
+        "range": null,
+        "projectile_speed": 120,
+        "lifespan": 1.4,
+        "damage_vs": {},
+        "camo": null,
+        "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
       }
     ]
   },
@@ -47,6 +48,14 @@
         "name": "Rapid Fire",
         "cost": 450,
         "description": "Shoots faster than normal. Wiki: This upgrade reduces the attack cooldown of all of Monkey Ace's attacks by 25%, for a ~33.33% increase in attack speed. Dart volleys are shot every 1.26 seconds instead of 1.68 seconds.",
+        "ops": [
+          {
+            "target": "attack_main_projectile",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.75
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -61,11 +70,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             }
           ]
         },
@@ -76,6 +86,14 @@
         "name": "Lots More Darts",
         "cost": 550,
         "description": "Shoots 12 darts at a time. Wiki: This upgrade increases the number of darts shot per volley from 8 to 12.",
+        "ops": [
+          {
+            "target": "attack_main_projectile",
+            "stat": "projectiles",
+            "op": "add",
+            "value": 4
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -90,11 +108,12 @@
               "damage_type": "sharp",
               "projectiles": 12,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             }
           ]
         },
@@ -105,6 +124,14 @@
         "name": "Fighter Plane",
         "cost": 1000,
         "description": "Flies fast and launches anti-MOAB missiles. Wiki: This upgrade increases the Monkey Ace's flight speed by 20% and adds a new attack, firing twin missiles that can only target and damage MOAB-Class Bloons. The missiles are shot out every 3 seconds and only while MOAB-Class Bloons are present on screen, locked on Strong, each dealing 18 damage with 4 pierce. They also home in towards their targets and can rapidly accelerate and turn during flight. The missiles cannot damage Black Bloons, and therefore cannot damage DDTs on their own. With Exploding Pineapple, missile pierce is increased from 4 to 6 and each missile explosion leaves behind an Exploding Pineapple.",
+        "ops": [
+          {
+            "target": "missile_attack_explosion",
+            "stat": "attack",
+            "op": "add",
+            "value": "Missile attack/Explosion"
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -119,11 +146,12 @@
               "damage_type": "sharp",
               "projectiles": 12,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             },
             {
               "tag": "missile_attack_explosion",
@@ -134,11 +162,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 30,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "hits MOAB-class only; cannot hit Camo; attack targets MOAB-class only",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "hits MOAB-class only; cannot hit Camo; attack targets MOAB-class only"
             }
           ]
         },
@@ -151,6 +180,32 @@
         "name": "Operation: Dart Storm",
         "cost": 3300,
         "description": "Shoots 16 darts per volley, and twice as fast. Wiki: This upgrade doubles the attack speed of Monkey Ace's darts and MOAB missiles, increases the number of darts fired per volley from 12 to 16, and increases the damage of MOAB missiles from 18 to 24.",
+        "ops": [
+          {
+            "target": "attack_main_projectile",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "projectiles",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "missile_attack_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 6
+          },
+          {
+            "target": "missile_attack_explosion",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -165,11 +220,12 @@
               "damage_type": "sharp",
               "projectiles": 16,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             },
             {
               "tag": "missile_attack_explosion",
@@ -180,11 +236,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 30,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "hits MOAB-class only; cannot hit Camo; attack targets MOAB-class only",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "hits MOAB-class only; cannot hit Camo; attack targets MOAB-class only"
             }
           ]
         },
@@ -195,6 +252,78 @@
         "name": "Sky Shredder",
         "cost": 42500,
         "description": "The Bloons will wish they had never come. Wiki: Its dart volleys attack twice as fast and shoots 32 darts per volley instead of 16, both its darts and anti-MOAB homing missiles deal much more damage and have the Normal damage type, and gain more pierce. Dart: Each volley shoots 32 per shot instead of 16, damage increases from 1 to 3,[fn 1] and +2 Ceramic damage, base pierce increased from 5 to 8 (6 to 9 with Airforce Upgrades), and attack cooldown reduced from 0.63 seconds to 0.315 seconds. Darts also have 3× projectile speed (360 units/s) with the same lifespan of 1.4 seconds. Missile: Damage of each missile increased from 24 to 150, +2 to Ceramics,[fn 2] and base pierce increased from 4 to 5. It is shot every 1.5 seconds. Its pineapples are identical to Fighter Plane except they also deal +2 Ceramic damage.",
+        "ops": [
+          {
+            "target": "attack_main_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "pierce",
+            "op": "add",
+            "value": 3
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "projectiles",
+            "op": "add",
+            "value": 16
+          },
+          {
+            "target": "missile_attack_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 126
+          },
+          {
+            "target": "missile_attack_explosion",
+            "stat": "pierce",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "missile_attack_explosion",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 360
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 2
+            }
+          },
+          {
+            "target": "missile_attack_explosion",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 2
+            }
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -209,13 +338,14 @@
               "damage_type": "normal",
               "projectiles": 32,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "+2 damage vs Ceramic; cannot hit Camo; speed 360; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
+              "range": null,
+              "projectile_speed": 360,
+              "lifespan": 1.4,
               "damage_vs": {
                 "ceramic": 2
-              }
+              },
+              "camo": null,
+              "notes": "+2 damage vs Ceramic; cannot hit Camo; speed 360; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             },
             {
               "tag": "missile_attack_explosion",
@@ -226,13 +356,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 30,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+2 damage vs Ceramic; hits MOAB-class only; cannot hit Camo; attack targets MOAB-class only",
               "damage_vs": {
                 "ceramic": 2
-              }
+              },
+              "camo": null,
+              "notes": "+2 damage vs Ceramic; hits MOAB-class only; cannot hit Camo; attack targets MOAB-class only"
             }
           ]
         },
@@ -245,6 +376,14 @@
         "name": "Exploding Pineapple",
         "cost": 200,
         "description": "Drops pineapples to the ground that explode violently after a few seconds. Ace's explosive attacks are improved. Wiki: This upgrade adds an additional attack that drops a pineapple on the map at the Monkey Ace's location every 1.6 seconds (1.2 seconds with Rapid Fire). Pineapples explode after 2 seconds, dealing 1 Explosion-type damage with 20 pierce (32 with Sharper Darts) in a 35-unit radius. Visually, each pineapple displays a countdown that starts at 3 and counts down by 1 every two-thirds of a second, exploding when it would reach zero. With Targeted Pineapples, the Monkey Ace only drops pineapples while flying over the path. This upgrade has crosspathing benefits: With Fighter Plane and above, it increases the pierce and blast radius of their missiles, and causes them to drop pineapples after exploding. With Sky Shredder, the pineapples deal +2 damage to Ceramic Bloons. With Spectre, it increases the pierce of the bombs by 10 and blast radius by 3 units. With Flying Fortress, it increases the pierce of the bombs by 15 and blast radius by 3 units.",
+        "ops": [
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "attack",
+            "op": "add",
+            "value": "Bomb attack/Explosion"
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -259,11 +398,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             },
             {
               "tag": "bomb_attack_explosion",
@@ -274,11 +414,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 35,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo"
             }
           ]
         },
@@ -289,6 +430,30 @@
         "name": "Spy Plane",
         "cost": 350,
         "description": "Allows Monkey Ace to hit Camo Bloons and do more damage to them. Wiki: This upgrade grants Camo detection to all of Monkey Ace's attacks, and increases the Camo damage of all attacks by 2× except for the MOAB Missiles of Fighter Plane and subsequent upgrades.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "camo",
+            "op": "set",
+            "value": true
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "camo": 1
+            }
+          },
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "camo": 1
+            }
+          }
+        ],
         "state": {
           "range": 22,
           "camo": true,
@@ -303,13 +468,14 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "+1 damage vs Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
               "damage_vs": {
                 "camo": 1
-              }
+              },
+              "camo": null,
+              "notes": "+1 damage vs Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             },
             {
               "tag": "bomb_attack_explosion",
@@ -320,13 +486,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 35,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+1 damage vs Camo",
               "damage_vs": {
                 "camo": 1
-              }
+              },
+              "camo": null,
+              "notes": "+1 damage vs Camo"
             }
           ]
         },
@@ -337,6 +504,22 @@
         "name": "Bomber Ace",
         "cost": 900,
         "description": "Drops a line of bombs when crossing the Bloon track. Wiki: This upgrade replaces each of Monkey Ace's pineapples with bombing runs. Bombing runs each drop 4 bombs in quick succession, and only occur when Monkey Ace is over a track. Bombs explode 2 seconds after being dropped, deal 3 damage, and have 20 pierce and 35 radius. Bombs inherit Spy Plane's double Camo damage. Bombs cannot damage Black Bloons. The bombing run has a cooldown of 1.6 seconds. Sharper Darts grants +12 pierce to each of its bombs. Rapid Fire increases attack speed of the bombing run by 33.33% (attack cooldown decreased to 1.2 seconds).",
+        "ops": [
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "camo": 3
+            }
+          }
+        ],
         "state": {
           "range": 22,
           "camo": true,
@@ -351,13 +534,14 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "+1 damage vs Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
               "damage_vs": {
                 "camo": 1
-              }
+              },
+              "camo": null,
+              "notes": "+1 damage vs Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             },
             {
               "tag": "bomb_attack_explosion",
@@ -368,13 +552,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 35,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+3 damage vs Camo",
               "damage_vs": {
                 "camo": 3
-              }
+              },
+              "camo": null,
+              "notes": "+3 damage vs Camo"
             }
           ]
         },
@@ -385,6 +570,28 @@
         "name": "Ground Zero",
         "cost": 16000,
         "description": "Bomb damage increased significantly. Ground Zero Ability: Drops a huge bomb that destroys most things on screen. Wiki: This upgrade grants Monkey Ace the Ground Zero ability, which when activated drops a bomb on the screen which deals 700 damage and has 2,000 pierce. This bomb has a full-screen blast radius, and can damage all Bloon types, affecting up to 2000 Bloons nearest the landing pad. This ability has a cooldown of 35 seconds and an initial cooldown of ~11.67 seconds. Once dropped, it has a delay of about 0.7 seconds. This upgrade also increases the damage of Monkey Ace's bombs from 3 to 15, and increases their pierce from 20 to 40. Double damage to Camos via Spy Plane is inherited and affects both the bomb salvos and the ability bomb.",
+        "ops": [
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 12
+          },
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "pierce",
+            "op": "add",
+            "value": 20
+          },
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "camo": 15
+            }
+          }
+        ],
         "state": {
           "range": 22,
           "camo": true,
@@ -399,13 +606,14 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "+1 damage vs Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
               "damage_vs": {
                 "camo": 1
-              }
+              },
+              "camo": null,
+              "notes": "+1 damage vs Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             },
             {
               "tag": "bomb_attack_explosion",
@@ -416,13 +624,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 35,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+15 damage vs Camo",
               "damage_vs": {
                 "camo": 15
-              }
+              },
+              "camo": null,
+              "notes": "+15 damage vs Camo"
             }
           ]
         },
@@ -441,6 +650,23 @@
         "name": "Tsar Bomba",
         "cost": 26000,
         "description": "A very, very large bomb. Someone put a stop to this craziness! Wiki: This upgrade significantly improves the Bomber Ace's bombs, and replaces its Ground Zero ability with an improved version. Ability: Does 3,000 damage onto up to 5,000 Bloons on screen (prioritizing the closest to the landing pad), and applies an 8 second stun to all Bloons that survive the explosion. It deals double damage to Camos. It has a cooldown of 35 seconds. Bombing run: Base damage per bomb increased from 15 to 20, and Camo bonus damage from +15 to +20. Each bomb also gains +10 bonus Ceramic damage.",
+        "ops": [
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 5
+          },
+          {
+            "target": "bomb_attack_explosion",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "camo": 20,
+              "ceramic": 10
+            }
+          }
+        ],
         "state": {
           "range": 22,
           "camo": true,
@@ -455,13 +681,14 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "+1 damage vs Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
               "damage_vs": {
                 "camo": 1
-              }
+              },
+              "camo": null,
+              "notes": "+1 damage vs Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             },
             {
               "tag": "bomb_attack_explosion",
@@ -472,14 +699,15 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 35,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+20 damage vs Camo; +10 damage vs Ceramic",
               "damage_vs": {
                 "camo": 20,
                 "ceramic": 10
-              }
+              },
+              "camo": null,
+              "notes": "+20 damage vs Camo; +10 damage vs Ceramic"
             }
           ]
         },
@@ -500,6 +728,14 @@
         "name": "Sharper Darts",
         "cost": 500,
         "description": "Darts can pop 8 Bloons each. Wiki: This upgrade increases the pierce of Monkey Ace's darts from 5 to 8. If Exploding Pineapple is purchased, this upgrade increases the pierce of pineapples and bombs by +12, from 20 to 32, or 40 to 52 for Ground Zero and Tsar Bomba.",
+        "ops": [
+          {
+            "target": "attack_main_projectile",
+            "stat": "pierce",
+            "op": "add",
+            "value": 3
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -514,11 +750,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             }
           ]
         },
@@ -529,6 +766,7 @@
         "name": "Centered Path",
         "cost": 550,
         "description": "New central flight path for maximum map coverage. Wiki: This upgrade grants Monkey Ace a new targeting option named \"Centered Path\". When this option is selected, Monkey Ace flies in a circle around a point that may be set anywhere on the map. Upon buying the upgrade, the Monkey Ace is automatically set to Centered Path, defaulting its point at the centre of the map. This circle has a radius of 90 units, slightly larger than that of Circle targeting which is 80 units.",
+        "ops": [],
         "state": {
           "range": 22,
           "camo": false,
@@ -543,11 +781,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 120,
+              "lifespan": 1.4,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 120; collision radius 3; lifespan 1.4s; spread angle 360; attack range 22"
             }
           ]
         },
@@ -562,6 +801,20 @@
         "name": "Neva-Miss Targeting",
         "cost": 2550,
         "description": "Darts automatically seek out and pop Bloons by themselves. Wiki: With this upgrade, the Monkey Ace's darts will seek Bloons out, targeting them over any distance. It also increases the darts' projectile speed and lifespan from 1.4 seconds to ~3.3333 seconds, though in practice it's actually 1 second, as its lifespan switches to its homing lifespan.",
+        "ops": [
+          {
+            "target": "attack_main_projectile",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 180
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 3.333
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -576,11 +829,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 180; collision radius 3; lifespan 3.3333s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 180,
+              "lifespan": 3.333,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 180; collision radius 3; lifespan 3.3333s; spread angle 360; attack range 22"
             }
           ]
         },
@@ -591,6 +845,32 @@
         "name": "Spectre",
         "cost": 23400,
         "description": "Rapidly fires darts and bombs, dominating most Bloon types easily. Wiki: This upgrade grants Monkey Ace a new attack which rapidly fires darts and bombs directly at Bloons. This new attack has a cooldown of 0.06 seconds, and alternates between firing: Darts, which deal 6 damage, have 4 pierce, and have the Sharp damage type. Bombs, which deal 3 damage with +4 Ceramic damage, have 20 pierce, and have the Explosion damage type. Both of these types of projectiles seek their target. This attack is always on First targeting. This upgrade also increases the damage of Monkey Ace's main seeking darts from 1 to 3 and significantly improves their homing capability.",
+        "ops": [
+          {
+            "target": "attack_main_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "front_attack_explosion",
+            "stat": "attack",
+            "op": "add",
+            "value": "Front attack/Explosion"
+          },
+          {
+            "target": "front_attack_dart",
+            "stat": "attack",
+            "op": "add",
+            "value": "Front attack/Dart"
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 5
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -605,11 +885,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 180; collision radius 3; lifespan 5s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 180,
+              "lifespan": 5,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 180; collision radius 3; lifespan 5s; spread angle 360; attack range 22"
             },
             {
               "tag": "front_attack_explosion",
@@ -620,13 +901,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 20,
+              "range": 600,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+4 damage vs Ceramic; cannot hit Camo; attack range 600",
               "damage_vs": {
                 "ceramic": 4
-              }
+              },
+              "camo": null,
+              "notes": "+4 damage vs Ceramic; cannot hit Camo; attack range 600"
             },
             {
               "tag": "front_attack_dart",
@@ -637,11 +919,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; seeking; speed 400; collision radius 2; lifespan 1.125s; attack range 600",
-              "damage_vs": {}
+              "range": 600,
+              "projectile_speed": 400,
+              "lifespan": 1.125,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; seeking; speed 400; collision radius 2; lifespan 1.125s; attack range 600"
             }
           ]
         },
@@ -652,6 +935,76 @@
         "name": "Flying Fortress",
         "cost": 90000,
         "description": "This is a BIG plane. Wiki: The Monkey Ace's Spectre attack now shoots 3 projectiles per shot from its attack instead of only 1. One of these projectiles targets First, one targets Last, and one targets Close (relative to the Monkey Ace, not its runway). This upgrade reduces the attack cooldown of the Spectre attack by 33.33%, increasing its attack speed by ~50%. The darts from the Spectre barrage now deal +14 MOAB-Class damage, the barrage's bombs are improved (damage from 3 to 5, while keeping +4 Ceramic damage, and pierce from 20 to 30), and increases the damage of Monkey Ace's main homing darts from 3 to 6. All attacks now gain the Normal damage type.",
+        "ops": [
+          {
+            "target": "front_attack_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "front_attack_explosion",
+            "stat": "pierce",
+            "op": "add",
+            "value": 10
+          },
+          {
+            "target": "front_attack_explosion",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.667
+          },
+          {
+            "target": "front_attack_explosion",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "front_attack_dart",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.667
+          },
+          {
+            "target": "front_attack_dart",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 3
+          },
+          {
+            "target": "attack_main_projectile",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "side_attacks_explosion",
+            "stat": "attack",
+            "op": "add",
+            "value": "Side attacks/Explosion"
+          },
+          {
+            "target": "side_attacks_dart",
+            "stat": "attack",
+            "op": "add",
+            "value": "Side attacks/Dart"
+          },
+          {
+            "target": "front_attack_dart",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 14
+            }
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -666,11 +1019,12 @@
               "damage_type": "normal",
               "projectiles": 8,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 180; collision radius 3; lifespan 5s; spread angle 360; attack range 22",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 180,
+              "lifespan": 5,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 180; collision radius 3; lifespan 5s; spread angle 360; attack range 22"
             },
             {
               "tag": "front_attack_explosion",
@@ -681,13 +1035,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 20,
+              "range": 600,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+4 damage vs Ceramic; cannot hit Camo; attack range 600",
               "damage_vs": {
                 "ceramic": 4
-              }
+              },
+              "camo": null,
+              "notes": "+4 damage vs Ceramic; cannot hit Camo; attack range 600"
             },
             {
               "tag": "front_attack_dart",
@@ -698,13 +1053,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "+14 damage vs Moabs; cannot hit Camo; seeking; speed 400; collision radius 2; lifespan 1.125s; attack range 600",
+              "range": 600,
+              "projectile_speed": 400,
+              "lifespan": 1.125,
               "damage_vs": {
                 "moab": 14
-              }
+              },
+              "camo": null,
+              "notes": "+14 damage vs Moabs; cannot hit Camo; seeking; speed 400; collision radius 2; lifespan 1.125s; attack range 600"
             },
             {
               "tag": "side_attacks_explosion",
@@ -715,13 +1071,14 @@
               "damage_type": "normal",
               "projectiles": 2,
               "blast_radius": 20,
+              "range": 600,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+4 damage vs Ceramic; cannot hit Camo; attack range 600",
               "damage_vs": {
                 "ceramic": 4
-              }
+              },
+              "camo": null,
+              "notes": "+4 damage vs Ceramic; cannot hit Camo; attack range 600"
             },
             {
               "tag": "side_attacks_dart",
@@ -732,13 +1089,14 @@
               "damage_type": "normal",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "+14 damage vs Moabs; cannot hit Camo; seeking; speed 400; collision radius 2; lifespan 1.5s; attack range 600",
+              "range": 600,
+              "projectile_speed": 400,
+              "lifespan": 1.5,
               "damage_vs": {
                 "moab": 14
-              }
+              },
+              "camo": null,
+              "notes": "+14 damage vs Moabs; cannot hit Camo; seeking; speed 400; collision radius 2; lifespan 1.5s; attack range 600"
             }
           ]
         },

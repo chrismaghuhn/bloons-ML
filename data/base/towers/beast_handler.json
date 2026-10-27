@@ -38,11 +38,12 @@
         "damage_type": "energy",
         "projectiles": 1,
         "blast_radius": 12,
+        "range": null,
         "projectile_speed": null,
         "lifespan": null,
+        "damage_vs": {},
         "camo": null,
-        "notes": "short range staff stab; can pop frozen but not Lead or Purple (Energy); ignores line of sight. Upgrades replace this attack with a Beast sub-tower whose stats scale with Beast Power (merging handlers adds power). Handler can hold beasts from more than one path. Beast Power base/max per tier: T1 1/1, T2 3/6, T3 8/24, T4 16/64, T5 36/132 (T5 requires power 64 at T4). Stat at power P = base + floor(range * (P-min)/(max-min)).",
-        "damage_vs": {}
+        "notes": "short range staff stab; can pop frozen but not Lead or Purple (Energy); ignores line of sight. Upgrades replace this attack with a Beast sub-tower whose stats scale with Beast Power (merging handlers adds power). Handler can hold beasts from more than one path. Beast Power base/max per tier: T1 1/1, T2 3/6, T3 8/24, T4 16/64, T5 36/132 (T5 requires power 64 at T4). Stat at power P = base + floor(range * (P-min)/(max-min))."
       }
     ]
   },
@@ -53,6 +54,26 @@
         "name": "Piranha",
         "cost": 160,
         "description": "Command a small but feisty little fish to leap from the water at the Bloons. Wiki: The Beast Handler no longer uses its short-range staff attack, instead handling a piranha that leaps and bites Bloons. This upgrade can only be purchased when there's water within 60 units of the tower, and range buffs do not allow the upgrade to be purchased when further from water. The Piranha takes 0.4 seconds to jump to the target and creates a small radius (4) that pops up to 1 Bloon and does 1 Shatter-type damage, with an attack cooldown of 0.6 seconds. It has a range of 25 units.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 60
+          },
+          {
+            "target": "staff",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "piranha",
+            "stat": "attack",
+            "op": "add",
+            "value": "piranha"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -67,11 +88,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": 4,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "beast range 25 per main page text, Stats page says 30; requires water within 60 units; beast power 1",
-              "damage_vs": {}
+              "notes": "beast range 25 per main page text, Stats page says 30; requires water within 60 units; beast power 1"
             }
           ]
         },
@@ -82,6 +104,20 @@
         "name": "Barracuda",
         "cost": 810,
         "description": "The Barracuda slaps Bloons backwards and pops multiple layers with their razor sharp teeth. Wiki: The Beast Handler now handles a barracuda instead of a piranha. Its Beast Power is increased by +2, changing its Beast Power scale from 1 to 3–6. The Barracuda has more range (25 → 35), more pierce (1 → 4–12), more damage (1 → 2–4), and a bigger splash radius (4 → 8), and can knock back regular Bloons on damage, knocking them backwards by 50% for 0.2 seconds, with only 25% backwards on Lead and Ceramic Bloons. Beast merges increase its pierce, damage, and attack speed.",
+        "ops": [
+          {
+            "target": "piranha",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "barracuda",
+            "stat": "attack",
+            "op": "add",
+            "value": "barracuda"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -96,11 +132,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": 8,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "beast range 35; knockback 50% (25% Lead/Ceramic) for 0.2s; beast power 3-6: damage 2-4, pierce 4-12 across power",
-              "damage_vs": {}
+              "notes": "beast range 35; knockback 50% (25% Lead/Ceramic) for 0.2s; beast power 3-6: damage 2-4, pierce 4-12 across power"
             }
           ]
         },
@@ -111,6 +148,20 @@
         "name": "Great White",
         "cost": 2010,
         "description": "The Great White will crush Bloons, including Lead Bloons in its jaws, dragging them back to the water if needed. At max Beast Power the Great White can drag down MOABs. Wiki: The Beast Handler now handles a great white instead of a barracuda. Its Beast Power is increased by +5, changing its Beast Power scale from 3–6 to 8–24. The Great White jumps out of the water at set intervals, latches onto a Bloon or MOAB-Class Bloon, including Lead Bloons, and thrashes multiple times before returning to the water, as opposed to Barracuda's rate-buffable, single-attack jumps. Thrashes are centered on the Great White. The thrash's damage (2–4 → 12–36), pierce (4–12 → 10–30), and radius (8 → 15) are all improved. Thrashes can be affected by all external buffs. Thrashes occur every 0.6 seconds and do not trigger immediately after grabbing. Merges increase the thrash's damage, pierce, attack cooldown, and knockback duration. The Great White itself has 40 range instead of 35. If the target can be one-shot, the Great White drags it into the water; the target is immediately popped while the Great White moves at a constant speed towards the location it jumped from. If it cannot be one-shot, the Great White latches onto it for up to 3 seconds before disappearing. At max beast power, the shark can drag down a MOAB.",
+        "ops": [
+          {
+            "target": "barracuda",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "great_white_thrash",
+            "stat": "attack",
+            "op": "add",
+            "value": "great_white_thrash"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -125,11 +176,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 15,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "beast range 40; jump attack cooldown 1.1s, thrashes every 0.6s while latched (up to 3s); grabs Bloons incl. Lead; drags one-shottable targets; MOAB at max power; beast power 8-24: damage 12-36, pierce 10-30",
-              "damage_vs": {}
+              "notes": "beast range 40; jump attack cooldown 1.1s, thrashes every 0.6s while latched (up to 3s); grabs Bloons incl. Lead; drags one-shottable targets; MOAB at max power; beast power 8-24: damage 12-36, pierce 10-30"
             }
           ]
         },
@@ -140,6 +192,20 @@
         "name": "Orca",
         "cost": 12500,
         "description": "The mighty Orca's huge mouth can grab and drag all but the very largest Bloons into the depths. At max Beast Power the Orca can drag down ZOMGs. Wiki: The Beast Handler now handles an orca instead of a great white. Its Beast Power is increased by +8, changing its Beast Power scale from 8–24 to 16–64. The Orca's thrash has increased radius (15 → 24), more damage (12–36 → 30–90) and pierce (10–30 → 20–60), and 50% increased knockback duration and strength against both Bloons (-100% speed versus Bloons, -75% speed versus Lead and Ceramics) and MOAB-Class Bloons (-50% speed). Additionally, Orca now drags all types of Bloons for only 1 second and can drag MOABs and BFBs for Remaining HP120 seconds, with a minimum of 1 second and maximum of 6 seconds. The Orca itself has 50 range instead of 40. At max Beast Power, Orca can drag ZOMGs and visible DDTs.",
+        "ops": [
+          {
+            "target": "great_white_thrash",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "orca_thrash",
+            "stat": "attack",
+            "op": "add",
+            "value": "orca_thrash"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -154,11 +220,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 24,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "beast range 50; jump cooldown 1.1s; drags MOAB/BFB (ZOMG/DDT at max power); stronger knockback; beast power 16-64: damage 30-90, pierce 20-60",
-              "damage_vs": {}
+              "notes": "beast range 50; jump cooldown 1.1s; drags MOAB/BFB (ZOMG/DDT at max power); stronger knockback; beast power 16-64: damage 30-90, pierce 20-60"
             }
           ]
         },
@@ -169,6 +236,20 @@
         "name": "Megalodon",
         "cost": 45000,
         "description": "A truly colossal shark with a taste for Bloon. Requires 3 additional Orca Handlers to control. Wiki: The Beast Handler now handles a megalodon instead of an orca. In order to upgrade to Megalodon, the Orca must have 3 additional merged Orcas. Its Beast Power is increased by +20, changing its Beast Power scale from 16–64 to 36–132, with the default being 84 with the three extra tier 4s. The Megalodon's thrash splash has more damage (30–90 → 600–1800) and pierce (20–60 → 50–90), radius (24 → 48), and improves knockback against MOAB-Class Bloons, moving them backwards at 50% speed. Additionally, Megalodon now drags MOAB-Class Bloons much faster, for RemainingHP5000 seconds. Megalodon can also drag down BADs, but the maximum dragging time is 30 seconds for BADs instead of 6 seconds. The range of the Megalodon itself is 60 instead of 50. NOTE: Requires 3 additional merged tier-4 Orca handlers.",
+        "ops": [
+          {
+            "target": "orca_thrash",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "megalodon_thrash",
+            "stat": "attack",
+            "op": "add",
+            "value": "megalodon_thrash"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -183,11 +264,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 48,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "beast range 60; jump cooldown 1.1s; drags MOAB-class incl. BAD (max 30s); requires 3 extra merged Orcas (power 64); beast power 36-132: damage 600-1800, pierce 50-90",
-              "damage_vs": {}
+              "notes": "beast range 60; jump cooldown 1.1s; drags MOAB-class incl. BAD (max 30s); requires 3 extra merged Orcas (power 64); beast power 36-132: damage 600-1800, pierce 50-90"
             }
           ]
         },
@@ -200,6 +282,26 @@
         "name": "Microraptor",
         "cost": 175,
         "description": "Command a sharp clawed little dinosaur. Wiki: The Beast Handler no longer uses its short-range staff attack, instead handling a microraptor that claws at Bloons. The Microraptor has 20 range and attacks once every second, has 5 pierce, and does 1 Sharp-type damage over 10 radius. This upgrade can be bought even if there's zero available land space for the dinosaur.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 60
+          },
+          {
+            "target": "staff",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "microraptor",
+            "stat": "attack",
+            "op": "add",
+            "value": "microraptor"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -214,11 +316,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": 10,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "beast range 20; beast power 1",
-              "damage_vs": {}
+              "notes": "beast range 20; beast power 1"
             }
           ]
         },
@@ -229,6 +332,20 @@
         "name": "Adasaurus",
         "cost": 830,
         "description": "The sharp teeth of the Adasaurus deal high short range damage that can tear through Lead. Wiki: The Beast Handler now handles an adasaurus instead of a microraptor. Its Beast Power is increased by +2, changing its Beast Power scale from 1 to 3–6. The Adasaurus has improved damage (1 to 2–4) and pierce (5 to 8–20), a +50% larger radius (10 to 15), and does Normal-type damage. Its damage, pierce, and attack speed can be improved by merges.",
+        "ops": [
+          {
+            "target": "microraptor",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "adasaurus",
+            "stat": "attack",
+            "op": "add",
+            "value": "adasaurus"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -243,11 +360,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 15,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {
+                "ceramic": 1
+              },
               "camo": null,
-              "notes": "beast range 20; +1 Ceramic damage; beast power 3-6: damage 2-4, pierce 8-20",
-              "damage_vs": {}
+              "notes": "beast range 20; +1 Ceramic damage; beast power 3-6: damage 2-4, pierce 8-20"
             }
           ]
         },
@@ -258,6 +378,20 @@
         "name": "Velociraptor",
         "cost": 2065,
         "description": "Velociraptor viciously slashes and chomps, dealing more damage to stunned Bloons. Wiki: The Beast Handler now handles a velociraptor instead of an adasaurus. Its Beast Power is increased by +5, changing its Beast Power scale from 3–6 to 8–24. The Velociraptor has 24 range instead of 20, and each bite has 18 radius instead of 15, plus increased damage, gains a 1.5× damage multiplier against stunned Bloons, and more pierce. Merges improve its damage and pierce, plus reduced attack cooldowns. Its bonus Ceramic damage is also increased from +1 to +4, regardless of Beast Power. Damage: Increased from 2–4 to 4–16. Pierce: Increased from 8–20 to 12–26. Attack cooldown: Starts at 1 second, which decreases to 0.6561 second at max Beast Power.",
+        "ops": [
+          {
+            "target": "adasaurus",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "velociraptor",
+            "stat": "attack",
+            "op": "add",
+            "value": "velociraptor"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -272,11 +406,15 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {
+                "ceramic": 4,
+                "stunned": 3
+              },
               "camo": null,
-              "notes": "beast range 24; +4 Ceramic, +3 to stunned, x1.5 vs stunned; beast power 8-24: damage 4-16, pierce 12-26, cooldown 1.0-0.6561s",
-              "damage_vs": {}
+              "notes": "beast range 24; +4 Ceramic, +3 to stunned, x1.5 vs stunned; beast power 8-24: damage 4-16, pierce 12-26, cooldown 1.0-0.6561s"
             }
           ]
         },
@@ -287,6 +425,20 @@
         "name": "Tyrannosaurus Rex",
         "cost": 9500,
         "description": "The Tyrannosaurus Rex's huge jaw and sharp teeth deal a ton of damage with each bite. T Rex Stomp ability: Stuns up to ZOMG Bloons in a wide area. Wiki: The Beast Handler now handles a tyrannosaurus rex instead of a velociraptor. Its Beast Power is increased by +8, changing its Beast Power scale from 8–24 to 16–64. The T-Rex has 30 range instead of 24, and its bites have 18 radius, plus increased damage, further bonus damage to stunned Bloons, and more pierce. Merges improve its damage, bonus stunned damage, and pierce, plus reduced attack cooldowns. Its bonus Ceramic damage is also increased from +4 to +5, but doesn't improve from merges. Damage: Increased from 4–16 to 20–60. Bonus stunned damage: Increased from +3–7 to +8–21 Pierce: Increased from 12–26 to 20–45. Attack cooldown: Starts at 1 second, which decreases to 0.6561 second at max Beast Power. Additionally, it gains the Stomp ability, creating a blast over 100 radius that deals high damage and stuns affected Bloons, including MOAB-Class Bloons (excluding BADs and Boss Bloons), with a cooldown of 40 seconds (down to 19.03 seconds at max Power). Bloons stunned by the Stomp ability are stunned for 6 seconds, 3 for MOABs and BFBs, and 2 for ZOMGs and DDTs. Merges improve the damage and pierce and speed up ability cooldowns. Damage: 150–202 Pierce: 400–433 Ability cooldown: 40–19.03 seconds At Power 64, all of its attacks can penetrate damage through layers of MOAB-class Bloons.",
+        "ops": [
+          {
+            "target": "velociraptor",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "t_rex",
+            "stat": "attack",
+            "op": "add",
+            "value": "t_rex"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -301,11 +453,15 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {
+                "ceramic": 5,
+                "stunned": 8
+              },
               "camo": null,
-              "notes": "beast range 30; +5 Ceramic, +8 to stunned (main page: +8-21 over power); beast power 16-64: damage 20-60, pierce 20-45 (Stats page lists 22), cooldown 1.0-0.6561s; at power 64 damages through MOAB layers",
-              "damage_vs": {}
+              "notes": "beast range 30; +5 Ceramic, +8 to stunned (main page: +8-21 over power); beast power 16-64: damage 20-60, pierce 20-45 (Stats page lists 22), cooldown 1.0-0.6561s; at power 64 damages through MOAB layers"
             }
           ]
         },
@@ -318,6 +474,20 @@
         "name": "Giganotosaurus",
         "cost": 60000,
         "description": "The biggest and most fierce dinosaur of them all, Giganotosaurus can shred almost any Bloon instantly and with ease. Stomp ability hits the whole map and lasts longer. Requires 3 additional Tyrannosaurus Handlers to control. Wiki: The Beast Handler now handles a giganotosaurus instead of a tyrannosaurus rex. In order to upgrade to Giganotosaurus, the T-Rex must have 3 additional merged T-Rexes. Its Beast Power is increased by +20, changing its Beast Power scale from 16–64 to 36–132, with the default being 84 with the three extra tier 4s. The Giganotosaurus' bite its base range is increased to 50, bite radius increases from 18 to 24, can see over all obstacles, can penetrate blimp layers at any Beast Power (instead of only at max Power), and gains a variety of stat changes that are improved by merges: Damage: Increased from 20–60 to 500–2,000, with a default of 1250 at 84/132 Beast Power. Bonus stunned damage: Increased from +8–21 to +250–516 Pierce: Increased from 20–45 to 33–83, starting at 58 pierce at 84/132. Attack cooldown: Increased from 1 to 1.25 seconds, 0.9061 seconds at max Beast Power, and starts at 1.078 seconds at 84/132. Additionally, the Stomp ability covers the whole screen, and stuns all affected Bloons for at least twice as long (in seconds — Bloons: 12, MOAB: 8, BFB: 6, ZOMG and DDT: 4). Its stat changes are also improved from merges: Damage: Increased from 150–202 to 300–1100, with 700 at 84/132. Pierce: Increased from 400–433 to 600–690, with 645 at 84/132. Ability cooldown: Decreased from 40–19.03 seconds to 25–15.51 seconds, with 20.255s at 84/132. NOTE: Requires 3 additional merged tier-4 T-Rex handlers.",
+        "ops": [
+          {
+            "target": "t_rex",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "giganotosaurus",
+            "stat": "attack",
+            "op": "add",
+            "value": "giganotosaurus"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -332,11 +502,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 24,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "Stats-page value (v55.2); main page gives power range 36-132: damage 500-2000 (1250 at 84), pierce 33-83 (58 at 84), +250-516 to stunned, cooldown 1.25-0.9061s; beast range 50; ignores blockers; damage soaks through MOAB layers; requires 3 extra merged T-Rexes",
-              "damage_vs": {}
+              "notes": "Stats-page value (v55.2); main page gives power range 36-132: damage 500-2000 (1250 at 84), pierce 33-83 (58 at 84), +250-516 to stunned, cooldown 1.25-0.9061s; beast range 50; ignores blockers; damage soaks through MOAB layers; requires 3 extra merged T-Rexes"
             }
           ]
         },
@@ -351,6 +522,26 @@
         "name": "Gyrfalcon",
         "cost": 190,
         "description": "Command a noble little bird of prey that can grab and move Bloons to the drop-off target. Bloons up-track of the target get scratched. Wiki: The Beast Handler no longer uses its short-range staff attack, instead handling a gyrfalcon that moves and scratches Bloons. The Gyrfalcon can only target the track, and this upgrade cannot be bought if there is no track in range, and cannot be changed by external range buffs. The Gyrfalcon has a range of 60 (centered at the Handler), and uses a targetable reticle to control the bird to scratch or grab Bloons depending on percentage distance along the track. Gyrfalcon pursues a Bloon based on the handler's targeting and will not pursue additional Bloons while grabbing. It has 80 flight speed and flies twice as fast while pursuing a Bloon. If the Bloon is closer to the entrance than the reticle, it scratches the targeted Bloon without grabbing it. If the Bloon is further from the entrance than the reticle, it grabs the targeted Bloon. While picking up Bloons, it damages them every second with the same stats as the grab. Gyrfalcon does 1 damage, deals +1 damage to Regrow Bloons, has 3 pierce, and 10 radius. After scratching or grabbing Bloons, it has an attack cooldown of 1 second. Bloons attacked by Gyrfalcon lose their children when popped by it. Its pierce and attack rate cannot be buffed. It cannot target Ceramic Bloons and above, and cannot target Lead Bloons without lead-popping. If picked up, a Lead Bloon has +1 pierce penalty.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 60
+          },
+          {
+            "target": "staff",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "gyrfalcon",
+            "stat": "attack",
+            "op": "add",
+            "value": "gyrfalcon"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -365,11 +556,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": 10,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "flying beast: range 60, flight speed 80; grabs Bloons past reticle and carries them back toward drop-off point, scratches those before it; +1 damage to Regrow; cannot target Ceramic+ or Lead; popped Bloons lose children; pierce/attack rate unbuffable",
-              "damage_vs": {}
+              "notes": "flying beast: range 60, flight speed 80; grabs Bloons past reticle and carries them back toward drop-off point, scratches those before it; +1 damage to Regrow; cannot target Ceramic+ or Lead; popped Bloons lose children; pierce/attack rate unbuffable"
             }
           ]
         },
@@ -380,6 +572,26 @@
         "name": "Horned Owl",
         "cost": 860,
         "description": "The Horned Owl is strong enough to grab Ceramic Bloons, and has keen eyes that can detect Camo Bloons. Wiki: The Beast Handler now handles a horned owl instead of a gyrfalcon. Its Beast Power is increased by +2, changing its Beast Power scale from 1 to 3–6. The Horned Owl gains Camo detection, has improved pierce and grabbing radius, and can grab 1 (up to 3 at Power 6) Ceramics at a time. Ceramics consume +4 pierce, and it cannot pick up an extra Ceramic if its pierce would overflow. Beast merges increase its attack speed, pierce, and flight speed, and at max power also increases its damage from 1 to 2. Unlike the other Beast Handler paths, which only gain intel range from merged Handlers with ranges that intersect with its range, Horned Owl (and all succeeding upgrades) can gain intel range from Handlers merged from anywhere on the map.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "camo",
+            "op": "set",
+            "value": true
+          },
+          {
+            "target": "gyrfalcon",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "horned_owl",
+            "stat": "attack",
+            "op": "add",
+            "value": "horned_owl"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": true,
@@ -394,11 +606,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": 20,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "camo detection; can grab Ceramics (+4 pierce penalty, 1-3 at a time); Lead +1 pierce penalty; merges increase attack speed, pierce and flight speed (Golden Eagle text implies owl pierce range 6-18, damage 1-2); damage 2 at max power",
-              "damage_vs": {}
+              "notes": "camo detection; can grab Ceramics (+4 pierce penalty, 1-3 at a time); Lead +1 pierce penalty; merges increase attack speed, pierce and flight speed (Golden Eagle text implies owl pierce range 6-18, damage 1-2); damage 2 at max power"
             }
           ]
         },
@@ -409,6 +622,20 @@
         "name": "Golden Eagle",
         "cost": 2120,
         "description": "The Golden Eagle's huge talons make it an expert at grabbing large numbers of Bloons at once. At max Beast Power the Golden Eagle can grab lowest tiers of MOAB. Wiki: The Beast Handler now handles a golden eagle instead of a horned owl. Its Beast Power is increased by +5, changing its Beast Power scale from 3–6 to 8–24. The Golden Eagle has increased pierce (6–18 to 30–90), damage (1–2 to 1–3), and grab radius (20 to 25). It no longer has +1 pierce penalty against targetable Lead Bloons, and its pierce penalty against Ceramics is reduced from +4 to +1. Unlike Horned Owl, Golden Eagle can allow its pierce to overflow while picking up Ceramics (e.g. Power 12 Golden Eagle picks up to 23 Ceramics, not 22). At Power 24, it gains the ability to grab MOABs, with a pierce penalty of +1089 that is there to limit the amount of MOABs it can grab per attack to 1. Its pierce is allowed to overflow when grabbing MOABs (meaning that it can grab them without needing 1090 pierce remaining), and it applies to all succeeding upgrades when grabbing MOAB-Class Bloons. If it destroys a MOAB by popping it while grabbed mid-flight, it spawns no children; this also applies to subsequent upgrades on all blimps.",
+        "ops": [
+          {
+            "target": "horned_owl",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "golden_eagle",
+            "stat": "attack",
+            "op": "add",
+            "value": "golden_eagle"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": true,
@@ -423,11 +650,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": 25,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "Ceramic pierce penalty +1; no Lead penalty; at power 24 can grab MOAB (pierce penalty +1089); beast power 8-24: pierce 30-90, damage 1-3",
-              "damage_vs": {}
+              "notes": "Ceramic pierce penalty +1; no Lead penalty; at power 24 can grab MOAB (pierce penalty +1089); beast power 8-24: pierce 30-90, damage 1-3"
             }
           ]
         },
@@ -438,6 +666,20 @@
         "name": "Giant Condor",
         "cost": 9000,
         "description": "The huge talons of the fearsome Giant Condor can pick up smaller MOAB-Class Bloons. Wiki: The Beast Handler now handles a giant condor instead of a golden eagle. Its Beast Power is increased by +8, changing its Beast Power scale from 8–24 to 16–64. The Giant Condor has its base damage increased from 1–3 to 2–6, consumes less pierce on MOABs, can pick up BFBs, can pick up DDTs if the Lead property is countered, and does +11 damage to MOAB-Class Bloons. It cannot target Lead Bloons or DDTs without stripping Lead properties or having external lead-popping. Merging to a Power 64 Condor allows it to target and damage, but not grab, BADs and Boss Bloons. A Power 64 Condor still cannot affect ZOMGs. Giant Condor has the following pierce penalties: Ceramic: +1 MOAB: +14 BFB: +29 DDT: +29",
+        "ops": [
+          {
+            "target": "golden_eagle",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "giant_condor",
+            "stat": "attack",
+            "op": "add",
+            "value": "giant_condor"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": true,
@@ -452,11 +694,14 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": 25,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {
+                "moab": 11
+              },
               "camo": null,
-              "notes": "+11 MOAB-class damage; grabs MOAB (+14 pierce penalty), BFB (+29), DDT (+29, needs lead popping); beast power 16-64: damage 2-6; cannot target Lead/DDT without lead popping",
-              "damage_vs": {}
+              "notes": "+11 MOAB-class damage; grabs MOAB (+14 pierce penalty), BFB (+29), DDT (+29, needs lead popping); beast power 16-64: damage 2-6; cannot target Lead/DDT without lead popping"
             }
           ]
         },
@@ -467,6 +712,20 @@
         "name": "Pouākai",
         "cost": 30000,
         "description": "The legendary Pouākai: a bird so large that it can pick up, carry off and destroy almost any number of Bloons of almost any size. Requires 3 additional Condor Handlers to control. Wiki: The Beast Handler now handles a pouākai instead of a giant condor. In order to upgrade to Pouākai, the Giant Condor must have 3 additional merged Giant Condors. Its Beast Power is increased by +20, changing its Beast Power scale from 16–64 to 36–132, with the default being 84 with the three extra tier 4s. Pouākai's damage type changes to Normal (therefore, can innately pick up DDTs and Leads), has increased base damage (2–6 to 10–90) and +80 MOAB-Class damage instead of +11, has much more pierce (150–450), decreases base attack cooldown from 1 to 0.85 seconds (1–0.48 to 0.8–0.28 seconds), no longer has a flight speed penalty while picking up MOAB-Class Bloons, and can pick up ZOMGs. Ceramics no longer consume extra pierce. All Bloon types can be targeted, even BADs and Boss Bloons, though they cannot be grabbed and only take scratch damage. Pouākai has the following pierce penalties: MOAB: +14 BFB: +29 DDT: +29 ZOMG: +59 NOTE: Requires 3 additional merged tier-4 Condor handlers.",
+        "ops": [
+          {
+            "target": "giant_condor",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "pouakai",
+            "stat": "attack",
+            "op": "add",
+            "value": "pouakai"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": true,
@@ -481,11 +740,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 45,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {
+                "moab": 80
+              },
               "camo": null,
-              "notes": "+80 MOAB-class damage; grabs MOAB(+14)/BFB(+29)/DDT(+29)/ZOMG(+59 pierce penalty); can damage but not grab BAD/Boss; beast power 36-132: damage 10-90, pierce 150-450, cooldown 0.8-0.28s; requires 3 extra merged Condors",
-              "damage_vs": {}
+              "notes": "+80 MOAB-class damage; grabs MOAB(+14)/BFB(+29)/DDT(+29)/ZOMG(+59 pierce penalty); can damage but not grab BAD/Boss; beast power 36-132: damage 10-90, pierce 150-450, cooldown 0.8-0.28s; requires 3 extra merged Condors"
             }
           ]
         },

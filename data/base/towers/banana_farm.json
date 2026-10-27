@@ -35,11 +35,12 @@
         "damage_type": null,
         "projectiles": 4,
         "blast_radius": null,
+        "range": null,
         "projectile_speed": null,
         "lifespan": null,
+        "damage_vs": {},
         "camo": null,
-        "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-        "damage_vs": {}
+        "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
       }
     ]
   },
@@ -50,6 +51,7 @@
         "name": "Increased Production",
         "cost": 500,
         "description": "Grows 2 extra Banana bunches per round. Wiki: This upgrade increases the number of banana bunches the Banana Farm generates per round from 4 to 6, effectively increasing its total cash production to $120 per round ($150 with Valuable Bananas, or $156 with [img:More Valuable Bananas] More Valuable Bananas).",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -64,11 +66,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -82,6 +85,7 @@
         "name": "Greater Production",
         "cost": 600,
         "description": "Grows 2 MORE extra Banana bunches per round. Wiki: This upgrade increases the number of banana bunches the Banana Farm generates per round from 6 to 8, effectively increasing its total cash production to $160 per round ($200 with Valuable Bananas, or $208 with [img:More Valuable Bananas] More Valuable Bananas).",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -96,11 +100,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -114,6 +119,7 @@
         "name": "Banana Plantation",
         "cost": 3000,
         "description": "Grows 16 Banana bunches per round. Wiki: This upgrade increases the number of banana bunches the Banana Farm generates per round from 8 to 16, effectively increasing its total cash production to $320 per round ($400 with Valuable Bananas, or $416 with [img:More Valuable Bananas] More Valuable Bananas).",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -128,11 +134,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -146,6 +153,7 @@
         "name": "Banana Research Facility",
         "cost": 19000,
         "description": "Produces 5 large Banana crates every round worth $300 each. Wiki: This upgrade causes the Banana Farm to generate 5 crates per round instead of generating bananas. Each crate is worth $300, so it effectively produces a total of $1,500 per round. With Valuable Bananas, each crate is worth $375 and it produces a total of $1,875 per round, and with [img:More Valuable Bananas] More Valuable Bananas, each crate is worth $390 and it produces a total of $1,950 per round.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -160,11 +168,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -179,6 +188,7 @@
         "name": "Banana Central",
         "cost": 115000,
         "description": "You want Banana? We have Banana! Wiki: This upgrade increases the value of each crate it produces to $1,200 ($1,500 with Valuable Bananas, or $1,560 with [img:More Valuable Bananas] More Valuable Bananas), for a total of $7,000 per round ($7,500 with Valuable Bananas, or $7,800 with More Valuable Bananas). Additionally, this upgrade unlocks a buff that grants at +25% income to all Banana Research Facilities on the map.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -193,11 +203,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -219,6 +230,7 @@
         "name": "Long Life Bananas",
         "cost": 300,
         "description": "Bananas last 30 seconds before rotting instead of 15. Wiki: This upgrade doubles the lifespan of its banana collectibles from 15 seconds to 30 seconds. It has absolutely no crosspathing benefits for Marketplace and above. Visually, all bananas from this Farm become green.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -233,11 +245,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -250,6 +263,7 @@
         "name": "Valuable Bananas",
         "cost": 800,
         "description": "Bananas are worth 25% more cash per bunch. Wiki: This upgrade increases the value of all bananas by +25% and +30% with [img:More Valuable Bananas] More Valuable Bananas. This upgrade is additive with most income buffs (e.g. Monkey City's +20% income buff), but not Geraldo's Fertilizer.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -264,11 +278,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -282,6 +297,7 @@
         "name": "Monkey Bank",
         "cost": 3650,
         "description": "All money generated by this farm is now stored in the bank and earns 15% interest each round. Wiki: Instead of producing collectable bananas, Banana Farm generates cash in its internal balance on each round, which is not directly added to the player's cash pool but can be withdrawn at any time. At the end of each round, it increases its balance by 15% in interest. It has a maximum balance of $7,000 ($9,500 with [img:Bigger Banks] Bigger Banks), and when it is full, it ceases to produce cash until its balance is withdrawn. If crosspathed with EZ Collect, the dollar sign glows when full, which reminds the player to collect its cash. If crosspathed with Banana Salvage, the Bank autocollects itself at the end of the round when full.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -296,11 +312,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -316,6 +333,7 @@
         "name": "IMF Loan",
         "cost": 7200,
         "description": "IMF Loan ability: Gives you $9,000 but you have to pay it back over time. Wiki: This upgrade increases its bank capacity from $7,000 to $10,000 ($12,500 with [img:Bigger Banks] Bigger Banks), and grants the IMF Loan Activated Ability. This ability grants the player $9,000 ($10,000 with [img:Backroom Deals] Backroom Deals), and an equal amount of debt. The ability has an 85-second cooldown, has a full initial cooldown, has a limit of 2 uses per round, is disabled if the round lasts longer than 3 minutes, and cannot be used between rounds. Additionally, it cannot be activated while the corresponding IMF Loan has outstanding debt. The amount of money granted by the ability cannot be increased from any source except Monkey City. With [img:Bank Deposits] Bank Deposits, cash may be deposited into the IMF Loan to gain interest on it. Deposited cash only begins to accrue interest after being in the IMF Loan for 2 rounds, unlike normally generated cash which accrues interest after 1 round.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -330,11 +348,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -348,6 +367,7 @@
         "name": "Monkey-Nomics",
         "cost": 100000,
         "description": "For when you're too big to fail... Wiki: This upgrade replaces the IMF Loan ability with a new ability that grants $9,000 ($10,000 with [img:Backroom Deals] Backroom Deals) debt-free. The ability has a 60-second cooldown, has a full initial cooldown, has a limit of 2 uses per round, is disabled if the round lasts longer than 3 minutes, and cannot be used between rounds. The amount of money granted by the ability can be increased via the Monkey City buff, but not any other external buff.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -362,11 +382,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -382,6 +403,7 @@
         "name": "EZ Collect",
         "cost": 250,
         "description": "The collect radius of Bananas is larger and uncollected Bananas auto-collect for half value. Monkey Banks will glow when full and ready to collect. Wiki: This upgrade raises the maximum distance that the Banana Farm's bananas can magnetize to the player's pointer from, increasing from 50 units to 75 units, and causes bananas that expire to generate 50% of their normal value. For Monkey Banks, this upgrade instead causes the sign to glow when its balance is full.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -396,11 +418,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -414,6 +437,7 @@
         "name": "Banana Salvage",
         "cost": 400,
         "description": "Uncollected Bananas auto-collect for almost their full amount, and Banks auto-collect when full. Farm sellback rate increased by 10% Wiki: With this upgrade, bananas that spoil will be harvested automatically for 85% of their normal value or, if crosspathed with Monkey Bank or above, it automatically collects its balance when full. It also increases the sellback rate of the Banana Farm by 10%.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -428,11 +452,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -447,6 +472,7 @@
         "name": "Marketplace",
         "cost": 2700,
         "description": "Generates money each round and adds it to your total. No fuss. Wiki: This upgrade makes the Banana Farm automatically generates 16 packets of $20 per round[fn 1], instead of generating collectibles. The total income per round is $320 if all are generated. Crosspathing with Path 1 (Increased Production and Greater Production) adds +2 packets each. Long Life Bananas does nothing, but Valuable Bananas increases value of each packet from $20 to $25 or $26 with [img:More Valuable Bananas] More Valuable Bananas. Marketplaces generate 1 life at the end of each round with [img:Healthy Bananas] Healthy Bananas.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -461,11 +487,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -482,6 +509,7 @@
         "name": "Central Market",
         "cost": 15000,
         "description": "Earns heaps of money each round and gives Merchantmen +10% income. Wiki: This upgrade increases the amount of cash generated by Marketplace from $20 per collection to $70, for a total of +$1,120 per round before crosspathing. Increased Production and Greater Production each increase the number of collections per round by 2. Long Life Bananas does nothing to Central Market, but Valuable Bananas increases the value of each collection by +25% (+30% with [img:More Valuable Bananas] More Valuable Bananas). Also, each Central Market provides all Merchantmen and subsequent upgrades +10% increased income. This buff to merchantmen stacks additively with multiple Central Markets, and has a maximum benefit of +100%. Central Markets generate 3 lives at the end of each round with [img:Healthy Bananas] Healthy Bananas.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -496,11 +524,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },
@@ -518,6 +547,14 @@
         "name": "Monkey Wall Street",
         "cost": 70000,
         "description": "Hub of Monkey trades earns colossal income, generates lives each round, and collects income in radius. Wiki: In addition to the benefits of Central Market and the previous path 3 upgrades, this upgrade generates an additional $4,000 and 15 lives at the end of each round. This end-of-round cash gain is not affected by crosspathing, but it can be buffed with effects such as Monkey City and Geraldo's Fertilizer. Additionally, it automatically collects collectibles in its range such as bananas, Bloon traps, and Supply Drop crates. Its range is also increased from 40 to 75 units (~3.5x more range).",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 75
+          }
+        ],
         "state": {
           "range": 75,
           "camo": false,
@@ -532,11 +569,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}",
-              "damage_vs": {}
+              "notes": "{\"income_per_round\": 80, \"bananas_per_round\": 4, \"value_per_banana\": 20, \"banana_lifespan_s\": 15, \"collect_radius\": 50, \"description\": \"Does not attack. Produces bananas spread over the round (each 1/4 of the round); collectibles must be harvested. Each banana counts as an 'attack' for Overclock etc.\"}"
             }
           ]
         },

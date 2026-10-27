@@ -2,34 +2,34 @@
 
 Erzeugt von `tools/normalize.py`. Nicht von Hand bearbeiten.
 
-| Turm | Version | Angriffe (Basis) | unparsed | fehlend | nicht modelliert |
-|---|---|---|---|---|---|
-| alchemist | 55.1 | 1 | 0 | 0 | 2 |
-| banana_farm | 49.1 (page 'last updated' marker); no Stats page exists for Banana Farm | 1 | 0 | 1 | 43 |
-| beast_handler | 55.2 (Stats page last updated) | 1 | 0 | 0 | 2 |
-| bomb_shooter | stats last updated for 56.3 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 3 |
-| boomerang_monkey | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 2 |
-| dart_monkey | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 3 |
-| dartling_gunner | 55.1 | 1 | 0 | 0 | 3 |
-| desperado | stats last updated for 55.2 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 4 |
-| druid | 55.1 | 1 | 0 | 0 | 16 |
-| engineer_monkey | 55.1 (Stats page last updated) | 1 | 0 | 0 | 24 |
-| glue_gunner | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 2 |
-| heli_pilot | 55.1 | 1 | 0 | 1 | 11 |
-| ice_monkey | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 6 |
-| mermonkey | 55.1 | 2 | 0 | 0 | 6 |
-| monkey_ace | 55.1 | 1 | 0 | 1 | 4 |
-| monkey_buccaneer | 55.1 | 1 | 0 | 0 | 12 |
-| monkey_sub | 55.1 | 1 | 0 | 0 | 6 |
-| monkey_village | 49.1 (main page); Stats page last updated 46.2 and is incomplete (only 0-0-0, 1-0-0, 5-0-0) | 1 | 0 | 1 | 20 |
-| mortar_monkey | 55.1 | 1 | 0 | 0 | 3 |
-| ninja_monkey | 55.1 | 1 | 0 | 0 | 3 |
-| skywarden | 56.3 | 1 | 0 | 1 | 32 |
-| sniper_monkey | 55.1 | 1 | 0 | 0 | 5 |
-| spike_factory | 55.1 (stats page last updated); main page last updated 55.2 | 1 | 0 | 0 | 18 |
-| super_monkey | 55.1 | 1 | 0 | 0 | 8 |
-| tack_shooter | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 3 |
-| wizard_monkey | 56.1 | 1 | 0 | 0 | 3 |
+| Turm | Version | Angriffe (Basis) | unparsed | fehlend | Camo-Ausnahmen | nicht modelliert |
+|---|---|---|---|---|---|---|
+| alchemist | 55.1 | 1 | 0 | 0 | 0 | 2 |
+| banana_farm | 49.1 (page 'last updated' marker); no Stats page exists for Banana Farm | 1 | 0 | 1 | 0 | 43 |
+| beast_handler | 55.2 (Stats page last updated) | 1 | 0 | 0 | 0 | 2 |
+| bomb_shooter | stats last updated for 56.3 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 0 | 3 |
+| boomerang_monkey | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 0 | 2 |
+| dart_monkey | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 0 | 3 |
+| dartling_gunner | 55.1 | 1 | 0 | 0 | 0 | 3 |
+| desperado | stats last updated for 55.2 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 0 | 4 |
+| druid | 55.1 | 1 | 0 | 0 | 0 | 16 |
+| engineer_monkey | 55.1 (Stats page last updated) | 1 | 0 | 0 | 0 | 24 |
+| glue_gunner | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 0 | 2 |
+| heli_pilot | 55.1 | 1 | 0 | 1 | 0 | 11 |
+| ice_monkey | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 0 | 6 |
+| mermonkey | 55.1 | 2 | 0 | 0 | 0 | 6 |
+| monkey_ace | 55.1 | 1 | 0 | 1 | 0 | 4 |
+| monkey_buccaneer | 55.1 | 1 | 0 | 0 | 0 | 12 |
+| monkey_sub | 55.1 | 1 | 0 | 0 | 0 | 6 |
+| monkey_village | 49.1 (main page); Stats page last updated 46.2 and is incomplete (only 0-0-0, 1-0-0, 5-0-0) | 1 | 0 | 1 | 0 | 20 |
+| mortar_monkey | 55.1 | 1 | 0 | 0 | 2 | 3 |
+| ninja_monkey | 55.1 | 1 | 0 | 0 | 0 | 3 |
+| skywarden | 56.3 | 1 | 0 | 1 | 0 | 32 |
+| sniper_monkey | 55.1 | 1 | 0 | 0 | 0 | 5 |
+| spike_factory | 55.1 (stats page last updated); main page last updated 55.2 | 1 | 0 | 0 | 0 | 18 |
+| super_monkey | 55.1 | 1 | 0 | 0 | 0 | 8 |
+| tack_shooter | stats last updated for 55.1 per wiki Stats page; latest BTD6 version on wiki: 57.4 | 1 | 0 | 0 | 0 | 3 |
+| wizard_monkey | 56.1 | 1 | 0 | 0 | 0 | 3 |
 
 ## Schema
 
@@ -144,6 +144,12 @@ Erzeugt von `tools/normalize.py`. Nicht von Hand bearbeiten.
 
 ## Nicht interpretierbare Werte
 
+- keine
+
+## Camo-Ausnahmen (Turm hat Camo, Angriff laut Notizen nicht)
+
+- mortar_monkey bottom1 (Increased Accuracy): Turm hat Camo, Angriff `attack_explosion` laut Notizen nicht (Patch prüfen)
+- mortar_monkey bottom2 (Burny Stuff): Turm hat Camo, Angriff `attack_explosion` laut Notizen nicht (Patch prüfen)
 
 ## Fehlende Werte (null im Wiki)
 
@@ -152,3 +158,12 @@ Erzeugt von `tools/normalize.py`. Nicht von Hand bearbeiten.
 - Monkey Ace: footprint unbekannt (null)
 - Monkey Village: footprint unbekannt (null)
 - skywarden top4 (Galesage) cooldown: Wert im Wiki unbekannt (null)
+
+## Hinweise
+
+- dartling_gunner top2 (Laser Shock) Attack/Projectile.notes: Shocked-Stufe 1 zu 'shocked' zusammengefasst
+- dartling_gunner top3 (Laser Cannon) Attack/Projectile.notes: Shocked-Stufe 2 zu 'shocked' zusammengefasst
+- dartling_gunner top4 (Plasma Accelerator) Attack/Projectile.notes: Shocked-Stufe 3 zu 'shocked' zusammengefasst
+- dartling_gunner top4 (Plasma Accelerator): Shocked-Stufe 3 zu 'shocked' zusammengefasst
+- dartling_gunner top5 (Ray of Doom) Attack/Projectile.notes: Shocked-Stufe 4 zu 'shocked' zusammengefasst
+- dartling_gunner top5 (Ray of Doom): Shocked-Stufe 4 zu 'shocked' zusammengefasst

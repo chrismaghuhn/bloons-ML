@@ -44,11 +44,12 @@
         "damage_type": "explosive",
         "projectiles": 1,
         "blast_radius": 12,
+        "range": null,
         "projectile_speed": 180,
         "lifespan": 0.6,
-        "camo": false,
-        "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}",
-        "damage_vs": {}
+        "damage_vs": {},
+        "camo": null,
+        "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}"
       }
     ]
   },
@@ -59,6 +60,20 @@
         "name": "Bigger Bombs",
         "cost": 250,
         "description": "Shoots larger bombs, they have a larger blast area and more popping power.",
+        "ops": [
+          {
+            "target": "bomb",
+            "stat": "pierce",
+            "op": "set",
+            "value": 28
+          },
+          {
+            "target": "bomb",
+            "stat": "blast_radius",
+            "op": "set",
+            "value": 18
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -73,11 +88,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 28; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 18 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 28; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 18 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -88,6 +104,20 @@
         "name": "Heavy Bombs",
         "cost": 650,
         "description": "Heavy duty bombs can smash through 2 layers of Bloon at once and pop more Bloons.",
+        "ops": [
+          {
+            "target": "bomb",
+            "stat": "damage",
+            "op": "set",
+            "value": 2
+          },
+          {
+            "target": "bomb",
+            "stat": "pierce",
+            "op": "set",
+            "value": 38
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -102,11 +132,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 38; Damage: 2; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 18 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 38; Damage: 2; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 18 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -117,6 +148,26 @@
         "name": "Really Big Bombs",
         "cost": 1100,
         "description": "Huge bombs deal greater damage in a large area and knock Bloons back along the path.",
+        "ops": [
+          {
+            "target": "bomb",
+            "stat": "damage",
+            "op": "set",
+            "value": 4
+          },
+          {
+            "target": "bomb",
+            "stat": "pierce",
+            "op": "set",
+            "value": 80
+          },
+          {
+            "target": "bomb",
+            "stat": "blast_radius",
+            "op": "set",
+            "value": 27
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -131,11 +182,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 27,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 80; Damage: 4; Damage type: Explosion [Cannot damage Black]; Pushback: 20 units; Pushback for MOABs: ×0; Pushback for BFBs: ×0; Pushback for ZOMGs: ×0; Pushback for DDTs: ×0; Lifespan: 0.1s; Persists between rounds: 1; Radius: 27 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 80; Damage: 4; Damage type: Explosion [Cannot damage Black]; Pushback: 20 units; Pushback for MOABs: ×0; Pushback for BFBs: ×0; Pushback for ZOMGs: ×0; Pushback for DDTs: ×0; Lifespan: 0.1s; Persists between rounds: 1; Radius: 27 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -146,6 +198,14 @@
         "name": "Bloon Impact",
         "cost": 2800,
         "description": "Explosions become so violent Bloons are stunned for a short time when they are hit. Range is increased and frags are even more effective.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 43
+          }
+        ],
         "state": {
           "range": 43,
           "camo": false,
@@ -160,11 +220,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 27,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 80; Damage: 4; Damage type: Explosion [Cannot damage Black]; Pushback: 20 units; Pushback for MOABs: ×0; Pushback for BFBs: ×0; Pushback for ZOMGs: ×0; Pushback for DDTs: ×0; Lifespan: 0.1s; Persists between rounds: 1; Radius: 27 units; Filters: Ignores Black if its damage type cannot damage it; Cannot hit Camo; Stun {Multiplier: ×0; Duration: 1.4s; Duration for MOAB-Class: 0s; Layers: ∞}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 80; Damage: 4; Damage type: Explosion [Cannot damage Black]; Pushback: 20 units; Pushback for MOABs: ×0; Pushback for BFBs: ×0; Pushback for ZOMGs: ×0; Pushback for DDTs: ×0; Lifespan: 0.1s; Persists between rounds: 1; Radius: 27 units; Filters: Ignores Black if its damage type cannot damage it; Cannot hit Camo; Stun {Multiplier: ×0; Duration: 1.4s; Duration for MOAB-Class: 0s; Layers: ∞}}"
             }
           ]
         },
@@ -175,6 +236,26 @@
         "name": "Bloon Crush",
         "cost": 55000,
         "description": "Bloon shattering explosions do massive damage and can stun MOAB-Class Bloons.",
+        "ops": [
+          {
+            "target": "bomb",
+            "stat": "damage",
+            "op": "set",
+            "value": 24
+          },
+          {
+            "target": "bomb",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "bomb",
+            "stat": "blast_radius",
+            "op": "set",
+            "value": 33.48
+          }
+        ],
         "state": {
           "range": 43,
           "camo": false,
@@ -189,11 +270,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 33.48,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 80; Damage: 24; Damage type: Normal [Can damage any Bloon type]; Pushback: 20 units; Pushback for MOABs: ×0.25; Pushback for BFBs: ×0.25; Pushback for ZOMGs: ×0.25; Pushback for DDTs: ×0.25; Lifespan: 0.1s; Persists between rounds: 1; Radius: 33.48 units; Filters: Cannot hit Camo; Stun {Multiplier: ×0; Duration: 2s; Layers: ∞}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 43 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 5 units; Filters: Cannot hit Camo}; Explosion {Pierce: 80; Damage: 24; Damage type: Normal [Can damage any Bloon type]; Pushback: 20 units; Pushback for MOABs: ×0.25; Pushback for BFBs: ×0.25; Pushback for ZOMGs: ×0.25; Pushback for DDTs: ×0.25; Lifespan: 0.1s; Persists between rounds: 1; Radius: 33.48 units; Filters: Cannot hit Camo; Stun {Multiplier: ×0; Duration: 2s; Layers: ∞}}"
             }
           ]
         },
@@ -206,6 +288,14 @@
         "name": "Faster Reload",
         "cost": 250,
         "description": "Reloads faster.",
+        "ops": [
+          {
+            "target": "bomb",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 1.125
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -220,11 +310,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.125s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.125s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -235,6 +326,26 @@
         "name": "Missile Launcher",
         "cost": 400,
         "description": "Exchanges bombs for missiles, which fire faster, fly faster, and increase range.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 44
+          },
+          {
+            "target": "bomb",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.825
+          },
+          {
+            "target": "bomb",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 270
+          }
+        ],
         "state": {
           "range": 44,
           "camo": false,
@@ -249,11 +360,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 270,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.825s; Targeting range: 44 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 270 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.825s; Targeting range: 44 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 270 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -264,6 +376,22 @@
         "name": "MOAB Mauler",
         "cost": 1000,
         "description": "MOAB Maulers do much more damage to MOAB-Class Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 49
+          },
+          {
+            "target": "bomb",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 15
+            }
+          }
+        ],
         "state": {
           "range": 49,
           "camo": false,
@@ -278,13 +406,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 270,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.825s; Targeting range: 49 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 270 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage to MOAB-Class: +15; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}",
               "damage_vs": {
                 "moab": 15
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.825s; Targeting range: 49 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 270 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage to MOAB-Class: +15; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -295,6 +424,22 @@
         "name": "MOAB Assassin",
         "cost": 3450,
         "description": "Assassinate MOAB Ability: Special missile flies out and does massive damage to MOAB class Bloons. Regular attack range and MOAB-class damage also increased.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 54
+          },
+          {
+            "target": "bomb",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 30
+            }
+          }
+        ],
         "state": {
           "range": 54,
           "camo": false,
@@ -309,13 +454,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 270,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.825s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 270 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage to MOAB-Class: +30; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}",
               "damage_vs": {
                 "moab": 30
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.825s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 270 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage to MOAB-Class: +30; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -334,6 +480,16 @@
         "name": "MOAB Eliminator",
         "cost": 26000,
         "description": "Massive damage to MOABs and Assassinate ability deals 6x damage with a short cooldown.",
+        "ops": [
+          {
+            "target": "bomb",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 99
+            }
+          }
+        ],
         "state": {
           "range": 54,
           "camo": false,
@@ -348,13 +504,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 270,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.825s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 270 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage to MOAB-Class: +99; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}",
               "damage_vs": {
                 "moab": 99
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.825s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 270 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage to MOAB-Class: +99; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -375,6 +532,14 @@
         "name": "Extra Range",
         "cost": 200,
         "description": "Increases attack range.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 52
+          }
+        ],
         "state": {
           "range": 52,
           "camo": false,
@@ -389,11 +554,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 52 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 52 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -404,6 +570,14 @@
         "name": "Frag Bombs",
         "cost": 300,
         "description": "Explosions throw out sharp fragments that can pop more Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 54
+          }
+        ],
         "state": {
           "range": 54,
           "camo": false,
@@ -418,11 +592,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Frag {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.1667s; Radius: 2 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Frag {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.1667s; Radius: 2 units; Filters: Cannot hit Camo}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -433,6 +608,7 @@
         "name": "Cluster Bombs",
         "cost": 700,
         "description": "Throws out secondary bombs instead of sharp fragments every shot.",
+        "ops": [],
         "state": {
           "range": 54,
           "camo": false,
@@ -447,11 +623,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Cluster projectile {Count: 8; Angle: 360°; Pierce: 1; Max pierce: 1; Speed: 130 units/s; Min travel distance: 22 units; Max travel distance: 40 units; Radius: 5 units}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}; Cluster explosion {Pierce: 8; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 15 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Cluster projectile {Count: 8; Angle: 360°; Pierce: 1; Max pierce: 1; Speed: 130 units/s; Min travel distance: 22 units; Max travel distance: 40 units; Radius: 5 units}; Explosion {Pierce: 22; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}; Cluster explosion {Pierce: 8; Damage: 1; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Persists between rounds: 1; Radius: 15 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -462,6 +639,20 @@
         "name": "Recursive Cluster",
         "cost": 2500,
         "description": "Every second shot the cluster bombs send out more cluster bombs for even more destruction.",
+        "ops": [
+          {
+            "target": "bomb",
+            "stat": "damage",
+            "op": "set",
+            "value": 2
+          },
+          {
+            "target": "bomb",
+            "stat": "pierce",
+            "op": "set",
+            "value": 18
+          }
+        ],
         "state": {
           "range": 54,
           "camo": false,
@@ -476,11 +667,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Cluster projectile {Count: 8; Angle: 360°; Pierce: 1; Max pierce: 1; Speed: 130 units/s; Min travel distance: 20 units; Max travel distance: 30 units; Radius: 5 units}; Secondary cluster projectile {Pierce: 1; Max pierce: 1; Lifespan: 0.45s; Persists between rounds: 1; Radius: 0 units}; Explosion {Pierce: 18; Damage: 2; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}; Cluster explosion {Pierce: 8; Damage: 2; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 15 units; Filters: Cannot hit Camo}; Secondary cluster explosion {Pierce: 24; Damage: 2; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 34 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.5s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Cluster projectile {Count: 8; Angle: 360°; Pierce: 1; Max pierce: 1; Speed: 130 units/s; Min travel distance: 20 units; Max travel distance: 30 units; Radius: 5 units}; Secondary cluster projectile {Pierce: 1; Max pierce: 1; Lifespan: 0.45s; Persists between rounds: 1; Radius: 0 units}; Explosion {Pierce: 18; Damage: 2; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}; Cluster explosion {Pierce: 8; Damage: 2; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 15 units; Filters: Cannot hit Camo}; Secondary cluster explosion {Pierce: 24; Damage: 2; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 34 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -491,6 +683,20 @@
         "name": "Bomb Blitz",
         "cost": 30000,
         "description": "Deals much more damage and gains the passive Bomb Storm Ability - when lives would be lost, the Bomb Storm automatically triggers, which destroys all but the biggest of Bloons.",
+        "ops": [
+          {
+            "target": "bomb",
+            "stat": "damage",
+            "op": "set",
+            "value": 5
+          },
+          {
+            "target": "bomb",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.9
+          }
+        ],
         "state": {
           "range": 54,
           "camo": false,
@@ -505,11 +711,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": 180,
               "lifespan": 0.6,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.9s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Cluster projectile {Count: 8; Angle: 360°; Pierce: 1; Max pierce: 1; Speed: 130 units/s; Min travel distance: 20 units; Max travel distance: 30 units; Radius: 5 units}; Secondary cluster projectile {Pierce: 1; Max pierce: 1; Lifespan: 0.45s; Persists between rounds: 1; Radius: 0 units}; Explosion {Pierce: 18; Damage: 5; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}; Cluster explosion {Pierce: 8; Damage: 5; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 15 units; Filters: Cannot hit Camo}; Secondary cluster explosion {Pierce: 24; Damage: 5; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 34 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.9s; Targeting range: 54 units; Filters: Cannot target Camo; Projectile {Pierce: 1; Max pierce: 1; Speed: 180 units/s; Lifespan: 0.6s; Radius: 4 units; Filters: Cannot hit Camo}; Cluster projectile {Count: 8; Angle: 360°; Pierce: 1; Max pierce: 1; Speed: 130 units/s; Min travel distance: 20 units; Max travel distance: 30 units; Radius: 5 units}; Secondary cluster projectile {Pierce: 1; Max pierce: 1; Lifespan: 0.45s; Persists between rounds: 1; Radius: 0 units}; Explosion {Pierce: 18; Damage: 5; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 12 units; Filters: Cannot hit Camo}; Cluster explosion {Pierce: 8; Damage: 5; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 15 units; Filters: Cannot hit Camo}; Secondary cluster explosion {Pierce: 24; Damage: 5; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.05s; Persists between rounds: 1; Radius: 34 units; Filters: Cannot hit Camo}"
             }
           ]
         },

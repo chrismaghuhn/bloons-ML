@@ -39,11 +39,12 @@
         "damage_type": "sharp",
         "projectiles": 1,
         "blast_radius": null,
+        "range": null,
         "projectile_speed": 300,
         "lifespan": 0.25,
-        "camo": false,
-        "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
-        "damage_vs": {}
+        "damage_vs": {},
+        "camo": null,
+        "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
       }
     ]
   },
@@ -54,6 +55,14 @@
         "name": "Sharp Shots",
         "cost": 140,
         "description": "Can pop 1 extra Bloon per shot.",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "pierce",
+            "op": "set",
+            "value": 3
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -68,11 +77,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.25,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 3; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 3; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -83,6 +93,14 @@
         "name": "Razor Sharp Shots",
         "cost": 200,
         "description": "Can pop 2 more Bloons per shot.",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "pierce",
+            "op": "set",
+            "value": 5
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -97,11 +115,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.25,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 5; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 5; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -112,6 +131,50 @@
         "name": "Spike-o-pult",
         "cost": 320,
         "description": "Converts the Dart Monkey into a slower attacking Spike-o-pult that hurls large spiked balls. Each ball can pop lots of Bloons and rebounds off obstacles.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 36.8
+          },
+          {
+            "target": "dart",
+            "stat": "damage",
+            "op": "set",
+            "value": 2
+          },
+          {
+            "target": "dart",
+            "stat": "pierce",
+            "op": "set",
+            "value": 18
+          },
+          {
+            "target": "dart",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 1.15
+          },
+          {
+            "target": "dart",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "shatter"
+          },
+          {
+            "target": "dart",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 150
+          },
+          {
+            "target": "dart",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 1
+          }
+        ],
         "state": {
           "range": 36.8,
           "camo": false,
@@ -126,11 +189,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 150,
               "lifespan": 1,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.15s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 18; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 150 units/s; Lifespan: 1s; Radius: 5 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.15s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 18; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 150 units/s; Lifespan: 1s; Radius: 5 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -141,6 +205,41 @@
         "name": "Juggernaut",
         "cost": 1800,
         "description": "Hurls a giant spiked ball that pops Lead and excels at crushing Ceramic and Fortified Bloons.",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "pierce",
+            "op": "set",
+            "value": 60
+          },
+          {
+            "target": "dart",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 1
+          },
+          {
+            "target": "dart",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "dart",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 300
+          },
+          {
+            "target": "dart",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 3,
+              "fortified": 2
+            }
+          }
+        ],
         "state": {
           "range": 36.8,
           "camo": false,
@@ -155,14 +254,15 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 1,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 60; Damage: 2; Damage to Ceramic: +3; Damage to Fortified: +2; Damage type: Normal [Can damage any Bloon type]; Speed: 300 units/s; Lifespan: 1s; Radius: 7 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.15s}}",
               "damage_vs": {
                 "ceramic": 3,
                 "fortified": 2
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 60; Damage: 2; Damage to Ceramic: +3; Damage to Fortified: +2; Damage type: Normal [Can damage any Bloon type]; Speed: 300 units/s; Lifespan: 1s; Radius: 7 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.15s}}"
             }
           ]
         },
@@ -173,6 +273,30 @@
         "name": "Ultra-Juggernaut",
         "cost": 15000,
         "description": "Gigantic spiked ball splits twice into 6 Juggernaut balls for even more destructive power against Ceramic, Fortified and Lead Bloons.",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "damage",
+            "op": "set",
+            "value": 5
+          },
+          {
+            "target": "dart",
+            "stat": "pierce",
+            "op": "set",
+            "value": 210
+          },
+          {
+            "target": "dart",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "lead": 20,
+              "ceramic": 8,
+              "fortified": 5
+            }
+          }
+        ],
         "state": {
           "range": 36.8,
           "camo": false,
@@ -187,15 +311,16 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 1,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 210; Damage: 5; Damage to Lead: +20; Damage to Ceramic: +8; Damage to Fortified: +5; Damage type: Normal [Can damage any Bloon type]; Speed: 300 units/s; Lifespan: 1s; Radius: 9 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.15s}}; Mini-projectile {Count: 6; Angle: 360°; Pierce: 50; Damage: 2; Damage to Ceramic: +3; Damage to Fortified: +2; Damage type: Normal [Can damage any Bloon type]; Speed: 150 units/s; Lifespan: 1s; Radius: 7 units; Filters: Cannot hit Camo}",
               "damage_vs": {
                 "lead": 20,
                 "ceramic": 8,
                 "fortified": 5
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1s; Targeting range: 36.8 units; Filters: Cannot target Camo; Projectile {Pierce: 210; Damage: 5; Damage to Lead: +20; Damage to Ceramic: +8; Damage to Fortified: +5; Damage type: Normal [Can damage any Bloon type]; Speed: 300 units/s; Lifespan: 1s; Radius: 9 units; Filters: Cannot hit Camo; Knockback {Multiplier: ×-3; Multiplier for Lead: ×-1; Multiplier for Ceramic: ×-1; Multiplier for MOAB-Class: ×1; Duration: 0.15s}}; Mini-projectile {Count: 6; Angle: 360°; Pierce: 50; Damage: 2; Damage to Ceramic: +3; Damage to Fortified: +2; Damage type: Normal [Can damage any Bloon type]; Speed: 150 units/s; Lifespan: 1s; Radius: 7 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -208,6 +333,14 @@
         "name": "Quick Shots",
         "cost": 100,
         "description": "Shoots 15% faster.",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.8075
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -222,11 +355,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.25,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.8075s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.8075s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -237,6 +371,14 @@
         "name": "Very Quick Shots",
         "cost": 190,
         "description": "Shoots 33% faster!",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.6365
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -251,11 +393,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.25,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.6365s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.6365s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -266,6 +409,20 @@
         "name": "Triple Shot",
         "cost": 450,
         "description": "Throws 3 darts at a time instead of 1.",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.4774
+          },
+          {
+            "target": "dart",
+            "stat": "projectiles",
+            "op": "set",
+            "value": 3
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -280,11 +437,12 @@
               "damage_type": "sharp",
               "projectiles": 3,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.25,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.4774s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 30°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.4774s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 30°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -295,6 +453,14 @@
         "name": "Super Monkey Fan Club",
         "cost": 7200,
         "description": "Super Monkey Fan Club Ability: Converts up to 10 nearby Dart Monkeys including itself into Super Monkeys for 15 seconds. Regular attack speed also increased.",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.2387
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -309,11 +475,12 @@
               "damage_type": "sharp",
               "projectiles": 3,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.25,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.2387s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 30°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.2387s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 30°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -332,6 +499,7 @@
         "name": "Plasma Monkey Fan Club",
         "cost": 45000,
         "description": "Elite membership of this club grants the Dart Monkeys even more power!",
+        "ops": [],
         "state": {
           "range": 32,
           "camo": false,
@@ -346,11 +514,12 @@
               "damage_type": "sharp",
               "projectiles": 3,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.25,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.2387s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 30°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.2387s; Targeting range: 32 units; Filters: Cannot target Camo; Projectile {Count: 3; Angle: 30°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.25s; Radius: 2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -371,6 +540,20 @@
         "name": "Long Range Darts",
         "cost": 90,
         "description": "Makes the Dart Monkey shoot further than normal.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 40
+          },
+          {
+            "target": "dart",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.3375
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -385,11 +568,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.3375,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.3375s; Radius: 2 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 40 units; Filters: Cannot target Camo; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 300 units/s; Lifespan: 0.3375s; Radius: 2 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -400,6 +584,32 @@
         "name": "Enhanced Eyesight",
         "cost": 200,
         "description": "Shoots even further and can detect Camo Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 48
+          },
+          {
+            "target": "tower",
+            "stat": "camo",
+            "op": "set",
+            "value": true
+          },
+          {
+            "target": "dart",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 350
+          },
+          {
+            "target": "dart",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.3616
+          }
+        ],
         "state": {
           "range": 48,
           "camo": true,
@@ -414,11 +624,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 350,
               "lifespan": 0.3616,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 48 units; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 350 units/s; Lifespan: 0.3616s; Radius: 2 units}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 48 units; Projectile {Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 350 units/s; Lifespan: 0.3616s; Radius: 2 units}"
             }
           ]
         },
@@ -431,6 +642,38 @@
         "name": "Crossbow",
         "cost": 575,
         "description": "Uses a long range Crossbow that can pop 3 layers of Bloon for every hit.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 60
+          },
+          {
+            "target": "dart",
+            "stat": "damage",
+            "op": "set",
+            "value": 3
+          },
+          {
+            "target": "dart",
+            "stat": "pierce",
+            "op": "set",
+            "value": 4
+          },
+          {
+            "target": "dart",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 400
+          },
+          {
+            "target": "dart",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.3164
+          }
+        ],
         "state": {
           "range": 60,
           "camo": true,
@@ -445,11 +688,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 400,
               "lifespan": 0.3164,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 60 units; Projectile {Pierce: 4; Damage: 3; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 400 units/s; Lifespan: 0.3164s; Radius: 2 units}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 0.95s; Targeting range: 60 units; Projectile {Pierce: 4; Damage: 3; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 400 units/s; Lifespan: 0.3164s; Radius: 2 units}"
             }
           ]
         },
@@ -460,6 +704,32 @@
         "name": "Sharp Shooter",
         "cost": 2050,
         "description": "Sharp Shooter attacks faster and does powerful Crit shots every few shots that do a lot more damage.",
+        "ops": [
+          {
+            "target": "dart",
+            "stat": "damage",
+            "op": "set",
+            "value": 6
+          },
+          {
+            "target": "dart",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.475
+          },
+          {
+            "target": "dart",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 600
+          },
+          {
+            "target": "dart",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.2109
+          }
+        ],
         "state": {
           "range": 60,
           "camo": true,
@@ -474,11 +744,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 600,
               "lifespan": 0.2109,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 0.475s; Targeting range: 60 units; Projectile {Pierce: 4; Damage: 6; Crit damage: 50; Shots to crit: 10; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 600 units/s; Lifespan: 0.2109s; Radius: 2 units}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 0.475s; Targeting range: 60 units; Projectile {Pierce: 4; Damage: 6; Crit damage: 50; Shots to crit: 10; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 600 units/s; Lifespan: 0.2109s; Radius: 2 units}"
             }
           ]
         },
@@ -489,6 +760,38 @@
         "name": "Crossbow Master",
         "cost": 21500,
         "description": "Crossbow Master shoots really fast and devastates most Bloon types with ease.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 80
+          },
+          {
+            "target": "dart",
+            "stat": "damage",
+            "op": "set",
+            "value": 8
+          },
+          {
+            "target": "dart",
+            "stat": "pierce",
+            "op": "set",
+            "value": 8
+          },
+          {
+            "target": "dart",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.2375
+          },
+          {
+            "target": "dart",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          }
+        ],
         "state": {
           "range": 80,
           "camo": true,
@@ -503,11 +806,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 600,
               "lifespan": 0.2109,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 0.2375s; Targeting range: 80 units; Projectile {Pierce: 8; Damage: 8; Crit damage: 80; Shots to crit: 5; Damage type: Normal [Can damage any Bloon type]; Speed: 600 units/s; Lifespan: 0.2109s; Radius: 2 units}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 0.2375s; Targeting range: 80 units; Projectile {Pierce: 8; Damage: 8; Crit damage: 80; Shots to crit: 5; Damage type: Normal [Can damage any Bloon type]; Speed: 600 units/s; Lifespan: 0.2109s; Radius: 2 units}"
             }
           ]
         },

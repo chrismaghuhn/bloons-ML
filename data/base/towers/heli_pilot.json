@@ -42,11 +42,12 @@
         "damage_type": "sharp",
         "projectiles": 2,
         "blast_radius": null,
-        "projectile_speed": null,
-        "lifespan": null,
-        "camo": false,
-        "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42",
-        "damage_vs": {}
+        "range": 42,
+        "projectile_speed": 260,
+        "lifespan": 1,
+        "damage_vs": {},
+        "camo": null,
+        "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42"
       }
     ]
   },
@@ -57,6 +58,14 @@
         "name": "Quad Darts",
         "cost": 800,
         "description": "Shoots 4 darts per volley instead of 2. Wiki: This upgrade actually grants Heli Pilot a new attack which has identical stats to its standard attack, and which fires simultaneously.[fn 1] In effect, this increases the number of darts fired per shot from 2 to 4. If Comanche Defense is purchased, this upgrade increases the number of darts fired by mini-comanches from 3 to 5 per shot.",
+        "ops": [
+          {
+            "target": "attack_projectile",
+            "stat": "projectiles",
+            "op": "add",
+            "value": 2
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -71,11 +80,12 @@
               "damage_type": "sharp",
               "projectiles": 4,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42"
             }
           ]
         },
@@ -86,6 +96,7 @@
         "name": "Pursuit",
         "cost": 500,
         "description": "A new targeting option enables Heli to seek and pursue the Bloons automatically. Wiki: This upgrade grants Heli Pilot a new Pursuit targeting option. When selected, Heli Pilot tries to move just in front of the farthest Bloon on the track. If set to Patrol Points, the Heli Pilot with the Pursuit upgrade acts in Pursuit targeting if bloons are between the two points.",
+        "ops": [],
         "state": {
           "range": 22,
           "camo": false,
@@ -100,11 +111,12 @@
               "damage_type": "sharp",
               "projectiles": 4,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42"
             }
           ]
         },
@@ -119,6 +131,14 @@
         "name": "Razor Rotors",
         "cost": 1450,
         "description": "Razor Rotor blades rip up Bloons on contact, including Lead and Frozen Bloons. Wiki: This upgrade grants Heli Pilot a new razor rotor attack, which has the Normal damage type. This attack is a damage aura with a radius of 35 units around the Heli Pilot. It deals 2 damage, has 10 pierce, and has an attack cooldown of 0.45 seconds (0.3 seconds with Rapid Razors). Exclusive to this upgrade, the Pursuit targeting option causes this Heli to move closer to the Bloons so it can take advantage of the rotors.",
+        "ops": [
+          {
+            "target": "rotors_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "Rotors/Projectile"
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -133,11 +153,12 @@
               "damage_type": "sharp",
               "projectiles": 4,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42"
             },
             {
               "tag": "rotors_projectile",
@@ -148,11 +169,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 35,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; attack range 2000",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; attack range 2000"
             }
           ]
         },
@@ -163,6 +185,38 @@
         "name": "Apache Dartship",
         "cost": 20000,
         "description": "Adds a large missile array and powerful machine guns. Wiki: This upgrade grants Heli Pilot two new attacks, a machine gun and a missile launcher, and enhances its existing attacks. Additionally its base flight speed increases by 25%. The machine gun fires darts which deal 1 damage, have 7 pierce, and have an attack cooldown of 0.05 seconds. These darts cannot damage Lead or Frozen Bloons. The missile launcher fires 4 homing rockets per shot which deal 2 damage, have 40 pierce, and have an attack cooldown of 1 second. These rockets cannot damage Black Bloons. The missile launcher has a range of 84 units, twice that of Heli Pilot's other attacks. The quad darts has 25% reduced attack cooldown, for an attack speed increase of ~33.33%, and the razor rotors attack is improved to deal 4 damage (instead of 2) and have 20 pierce (instead of 10).",
+        "ops": [
+          {
+            "target": "attack_projectile",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.75
+          },
+          {
+            "target": "rotors_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "rotors_projectile",
+            "stat": "pierce",
+            "op": "add",
+            "value": 10
+          },
+          {
+            "target": "machine_gun_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "Machine gun/Projectile"
+          },
+          {
+            "target": "missile_array_explosion",
+            "stat": "attack",
+            "op": "add",
+            "value": "Missile array/Explosion"
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -177,11 +231,12 @@
               "damage_type": "sharp",
               "projectiles": 4,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42"
             },
             {
               "tag": "rotors_projectile",
@@ -192,11 +247,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 35,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; attack range 2000",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; attack range 2000"
             },
             {
               "tag": "machine_gun_projectile",
@@ -207,11 +263,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
+              "range": 42,
+              "projectile_speed": 375,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 375; collision radius 3; spread angle 8; attack range 42",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 375; collision radius 3; spread angle 8; attack range 42"
             },
             {
               "tag": "missile_array_explosion",
@@ -222,11 +279,12 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 25,
+              "range": 84,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; attack range 84",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; attack range 84"
             }
           ]
         },
@@ -239,6 +297,64 @@
         "name": "Apache Prime",
         "cost": 45000,
         "description": "The Apache Prime leaves most Bloons wishing they'd never been inflated. Wiki: This upgrade significantly improves all of the attacks of the Apache Dartship, dealing significantly more damage and often more pierce. All of its darts are replaced by red and purple lasers. The quad darts are replaced with quad lasers. These lasers have increased damage from 1 to 6 and increased pierce from 3 to 23 compared to darts. They can damage Frozen Bloons but cannot damage Lead or Purple Bloons. The machine gun fires thin plasma lasers instead of darts. They increased damage from 1 to 5 and increased pierce from 7 to 11, and can damage all Bloon types except for Purple. Rockets deal +15 MOAB-Class damage. The razor rotor attack has its damage increased from 4 to 8 and its pierce from 20 to 40.",
+        "ops": [
+          {
+            "target": "attack_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 5
+          },
+          {
+            "target": "attack_projectile",
+            "stat": "pierce",
+            "op": "add",
+            "value": 20
+          },
+          {
+            "target": "attack_projectile",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "energy"
+          },
+          {
+            "target": "machine_gun_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "machine_gun_projectile",
+            "stat": "pierce",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "machine_gun_projectile",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "plasma"
+          },
+          {
+            "target": "rotors_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "rotors_projectile",
+            "stat": "pierce",
+            "op": "add",
+            "value": 20
+          },
+          {
+            "target": "missile_array_explosion",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 15
+            }
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -253,11 +369,12 @@
               "damage_type": "energy",
               "projectiles": 4,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42"
             },
             {
               "tag": "rotors_projectile",
@@ -268,11 +385,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 35,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; attack range 2000",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; attack range 2000"
             },
             {
               "tag": "machine_gun_projectile",
@@ -283,11 +401,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
+              "range": 42,
+              "projectile_speed": 375,
               "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 375; collision radius 3; spread angle 8; attack range 42",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 375; collision radius 3; spread angle 8; attack range 42"
             },
             {
               "tag": "missile_array_explosion",
@@ -298,13 +417,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 25,
+              "range": 84,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+15 damage vs Moabs; cannot hit Camo; attack range 84",
               "damage_vs": {
                 "moab": 15
-              }
+              },
+              "camo": null,
+              "notes": "+15 damage vs Moabs; cannot hit Camo; attack range 84"
             }
           ]
         },
@@ -317,6 +437,7 @@
         "name": "Bigger Jets",
         "cost": 300,
         "description": "Powerful jets make Heli move much faster. Wiki: This upgrade increases the movement speed of Heli Pilot by 30 units per second. If MOAB Shove is purchased, this upgrade enhances the power of its shove attack.",
+        "ops": [],
         "state": {
           "range": 22,
           "camo": false,
@@ -331,11 +452,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 260; collision radius 3; lifespan 1s; attack range 42"
             }
           ]
         },
@@ -348,6 +470,14 @@
         "name": "IFR",
         "cost": 600,
         "description": "Allows Heli Pilot to detect and shoot Camo Bloons. Wiki: This upgrade grants Camo detection to the Heli Pilot, allowing all of its attacks to target and pop Camo Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "camo",
+            "op": "set",
+            "value": true
+          }
+        ],
         "state": {
           "range": 22,
           "camo": true,
@@ -362,11 +492,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "speed 260; collision radius 3; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "speed 260; collision radius 3; lifespan 1s; attack range 42"
             }
           ]
         },
@@ -377,6 +508,14 @@
         "name": "Downdraft",
         "cost": 3500,
         "description": "Blows Bloons away from the Heli, back toward the entrance. Wiki: This upgrade grants Heli Pilot a new downdraft aura attack. This new attack deals no damage, but sends Bloons backwards 32-150 units. This attack has a cooldown of 0.18 seconds, and a pierce of 2. Blowing back a Ceramic Bloon uses up 2 pierce. The downdraft cannot affect MOAB-Class Bloons or Lead Bloons[fn 2]. Bloons which get blown back lose their glued and frozen properties if they had it.",
+        "ops": [
+          {
+            "target": "downdraft_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "Downdraft/Projectile"
+          }
+        ],
         "state": {
           "range": 22,
           "camo": true,
@@ -391,11 +530,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "speed 260; collision radius 3; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "speed 260; collision radius 3; lifespan 1s; attack range 42"
             },
             {
               "tag": "downdraft_projectile",
@@ -406,11 +546,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": 32,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "cannot hit MOAB-class; cannot hit Lead; Blowback(distanceMin=32, distanceMax=150, chance=1, affectMoab=False); attack range 2000",
-              "damage_vs": {}
+              "notes": "cannot hit MOAB-class; cannot hit Lead; Blowback(distanceMin=32, distanceMax=150, chance=1, affectMoab=False); attack range 2000"
             }
           ]
         },
@@ -421,6 +562,26 @@
         "name": "Support Chinook",
         "cost": 9500,
         "description": "Blows back many more Bloons and gains abilities: Drops lives and cash crates, and can pick up and redeploy most Monkey types. Wiki: This upgrade grants Heli Pilot two new abilities: Reposition, and Supply Crate. Reposition allows the Chinook to pick up a \"non-heavy\" tower to a new location. Supply Crate simultaneously drops two crates containing cash and lives. Additionally, this upgrade increases the damage of Heli Pilot's darts from 1 to 2, dart projectile size from 3 to 6, reduces the attack cooldown of downdraft from 0.18 to 0.15 seconds, increases downdraft's pierce from 2 to 4, minimum blowback distance from 32 to 64 units, and flight speed from 70 to 80 units per second.",
+        "ops": [
+          {
+            "target": "attack_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "downdraft_projectile",
+            "stat": "pierce",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "downdraft_projectile",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.833
+          }
+        ],
         "state": {
           "range": 22,
           "camo": true,
@@ -435,11 +596,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "speed 260; collision radius 6; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "speed 260; collision radius 6; lifespan 1s; attack range 42"
             },
             {
               "tag": "downdraft_projectile",
@@ -450,11 +612,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": 32,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "cannot hit MOAB-class; cannot hit Lead; Blowback(distanceMin=64, distanceMax=150, chance=1, affectMoab=False); attack range 2000",
-              "damage_vs": {}
+              "notes": "cannot hit MOAB-class; cannot hit Lead; Blowback(distanceMin=64, distanceMax=150, chance=1, affectMoab=False); attack range 2000"
             }
           ]
         },
@@ -479,6 +642,20 @@
         "name": "Special Poperations",
         "cost": 30000,
         "description": "Deploys a powerful special Monkey Marine with a machine gun. Wiki: This upgrade improves Support Chinook's abilities, and grants a new Monkey Marine ability which drops a marine sub-tower. With Door Gunner, this upgrade also grants an ability which allows the Heli Pilot to hold a tower inside it, allowing it to continue attacking. This upgrade also increases the movement speed of the Heli Pilot by 25% and reduces Downdraft attack cooldown from 0.15 seconds to 0.075 seconds.",
+        "ops": [
+          {
+            "target": "downdraft_projectile",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          },
+          {
+            "target": "marine_attack_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "[Marine] Attack/Projectile"
+          }
+        ],
         "state": {
           "range": 22,
           "camo": true,
@@ -493,11 +670,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "speed 260; collision radius 6; lifespan 1s; attack range 42",
-              "damage_vs": {}
+              "range": 42,
+              "projectile_speed": 260,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "speed 260; collision radius 6; lifespan 1s; attack range 42"
             },
             {
               "tag": "downdraft_projectile",
@@ -508,11 +686,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": 32,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "cannot hit MOAB-class; cannot hit Lead; Blowback(distanceMin=64, distanceMax=150, chance=1, affectMoab=False); attack range 2000",
-              "damage_vs": {}
+              "notes": "cannot hit MOAB-class; cannot hit Lead; Blowback(distanceMin=64, distanceMax=150, chance=1, affectMoab=False); attack range 2000"
             },
             {
               "tag": "marine_attack_projectile",
@@ -523,11 +702,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
+              "range": 50,
+              "projectile_speed": 300,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "subtower Marine (range 50); speed 300; collision radius 2; attack range 50",
-              "damage_vs": {}
+              "notes": "subtower Marine (range 50); speed 300; collision radius 2; attack range 50"
             }
           ]
         },
@@ -561,6 +741,20 @@
         "name": "Faster Darts",
         "cost": 250,
         "description": "Darts are propelled much faster through the air. Wiki: This upgrade increases the projectile speed and lifespan of Heli Pilot's main darts, and the helicopter's range increases by +30% (from 42 to 54.6). The projectile speed, lifespan, and range of other weapons don't increase.",
+        "ops": [
+          {
+            "target": "attack_projectile",
+            "stat": "range",
+            "op": "set",
+            "value": 54.6
+          },
+          {
+            "target": "attack_projectile",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 416
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -575,11 +769,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6",
-              "damage_vs": {}
+              "range": 54.6,
+              "projectile_speed": 416,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
             }
           ]
         },
@@ -590,6 +785,14 @@
         "name": "Faster Firing",
         "cost": 350,
         "description": "Faster attack speed for all Heli attacks. Wiki: This upgrade reduces the attack cooldown of all of Heli Pilot's attacks by 20%, for an attack speed increase of 25%.",
+        "ops": [
+          {
+            "target": "attack_projectile",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.8
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -604,11 +807,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6",
-              "damage_vs": {}
+              "range": 54.6,
+              "projectile_speed": 416,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
             }
           ]
         },
@@ -619,6 +823,14 @@
         "name": "MOAB Shove",
         "cost": 3400,
         "description": "Can collide with and shove MOAB-class Bloons, reversing or slowing their movement. Shove is amplified by Bigger Jets and IFR upgrades. Wiki: This upgrade grants Heli Pilot a new shove attack, which can slow or reverse the movement of MOAB-Class Bloons below ZOMG. This attack deals no damage, and has 1 pierce that cannot be buffed. Bigger Jets enhances the shove's strength. This upgrade also grants Heli Pilot a new homing missile attack. This attack deals 2 damage with +2 Ceramic damage, +5 MOAB-Class damage, 10 pierce, and a 3 second attack cooldown. Missiles have infinite range, unlike Heli Pilot's other attacks. These missiles cannot damage Black Bloons. This upgrade's description is misleading: the shove is not amplified by the IFR upgrade except that it gains Camo detection.",
+        "ops": [
+          {
+            "target": "ballistic_missile_explosion",
+            "stat": "attack",
+            "op": "add",
+            "value": "Ballistic Missile/Explosion"
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -633,11 +845,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6",
-              "damage_vs": {}
+              "range": 54.6,
+              "projectile_speed": 416,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
             },
             {
               "tag": "ballistic_missile_explosion",
@@ -648,14 +861,15 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+5 damage vs Moabs; +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000",
               "damage_vs": {
                 "moab": 5,
-                "ceramicexceptcas": 2
-              }
+                "ceramic": 2
+              },
+              "camo": null,
+              "notes": "+5 damage vs Moabs; +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000"
             }
           ]
         },
@@ -675,6 +889,44 @@
         "name": "Comanche Defense",
         "cost": 8500,
         "description": "Automatically calls in mini Comanches when they're most needed. Wiki: This upgrade grants Heli Pilot the ability to summon mini Comanche sub-towers when Bloons reach certain thresholds along the track. Mini Comanches fly fast towards its targets, spawning from the edge of the map closest to them, and are equipped with faster-firing darts and high-damage missiles. This upgrade also increases the damage of Heli Pilot's main darts from 1 to 2. The missile granted by MOAB Shove is enhanced, increasing its damage from 2 to 3, increasing the missile's pierce from 10 to 30, and reducing its attack cooldown by 66.67%, effectively tripling its attack speed. Comanche Defense also enhances the MOAB knockback of MOAB Shove and can affect ZOMGs.",
+        "ops": [
+          {
+            "target": "attack_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "ballistic_missile_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "ballistic_missile_explosion",
+            "stat": "pierce",
+            "op": "add",
+            "value": 20
+          },
+          {
+            "target": "ballistic_missile_explosion",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.333
+          },
+          {
+            "target": "mini_comanche_attack_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "[Mini-Comanche] Attack/Projectile"
+          },
+          {
+            "target": "mini_comanche_ballistic_missile_explosion",
+            "stat": "attack",
+            "op": "add",
+            "value": "[Mini-Comanche] Ballistic Missile/Explosion"
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -689,11 +941,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6",
-              "damage_vs": {}
+              "range": 54.6,
+              "projectile_speed": 416,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
             },
             {
               "tag": "ballistic_missile_explosion",
@@ -704,14 +957,15 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+5 damage vs Moabs; +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000",
               "damage_vs": {
                 "moab": 5,
-                "ceramicexceptcas": 2
-              }
+                "ceramic": 2
+              },
+              "camo": null,
+              "notes": "+5 damage vs Moabs; +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000"
             },
             {
               "tag": "mini_comanche_attack_projectile",
@@ -722,11 +976,12 @@
               "damage_type": "sharp",
               "projectiles": 3,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "subtower Mini-Comanche (range 54.6); cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6",
-              "damage_vs": {}
+              "range": 54.6,
+              "projectile_speed": 416,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "subtower Mini-Comanche (range 54.6); cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
             },
             {
               "tag": "mini_comanche_ballistic_missile_explosion",
@@ -737,13 +992,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "subtower Mini-Comanche (range 54.6); +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000",
               "damage_vs": {
-                "ceramicexceptcas": 2
-              }
+                "ceramic": 2
+              },
+              "camo": null,
+              "notes": "subtower Mini-Comanche (range 54.6); +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000"
             }
           ]
         },
@@ -763,6 +1019,49 @@
         "name": "Comanche Commander",
         "cost": 35000,
         "description": "Upgraded weapons. Also automatically calls in 3 more Comanches. Permanently. Wiki: This upgrade improves most of Heli Pilot's attacks, and summons 3 mini-Comanches permanently, instead of summoning them as Bloons reach different parts of the track. Upon purchase, the mini-Comanches spawn from the main helipad. This upgrade also increases the damage of Heli Pilot's main darts from 2 to 4. The damage of its MOAB Shove missile is increased from 3 to 13, and its MOAB-Class damage from +5 to +8. All of its mini-Comanche's attack are improved, the damage of darts goes from 1 to 3, the damage of their rockets goes from 2 to 15 and the rockets' Ceramic damage from +2 to +10. The Heli Pilot's movement speed is increased by 10, including mini-Commanches.",
+        "ops": [
+          {
+            "target": "attack_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "ballistic_missile_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 12
+          },
+          {
+            "target": "mini_comanche_attack_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "mini_comanche_ballistic_missile_explosion",
+            "stat": "damage",
+            "op": "add",
+            "value": 11
+          },
+          {
+            "target": "ballistic_missile_explosion",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 8,
+              "ceramic": 2
+            }
+          },
+          {
+            "target": "mini_comanche_ballistic_missile_explosion",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 10
+            }
+          }
+        ],
         "state": {
           "range": 22,
           "camo": false,
@@ -777,11 +1076,12 @@
               "damage_type": "sharp",
               "projectiles": 2,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6",
-              "damage_vs": {}
+              "range": 54.6,
+              "projectile_speed": 416,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
             },
             {
               "tag": "ballistic_missile_explosion",
@@ -792,14 +1092,15 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "+8 damage vs Moabs; +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000",
               "damage_vs": {
                 "moab": 8,
-                "ceramicexceptcas": 2
-              }
+                "ceramic": 2
+              },
+              "camo": null,
+              "notes": "+8 damage vs Moabs; +2 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000"
             },
             {
               "tag": "mini_comanche_attack_projectile",
@@ -810,11 +1111,12 @@
               "damage_type": "sharp",
               "projectiles": 3,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "subtower Mini-Comanche (range 54.6); cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6",
-              "damage_vs": {}
+              "range": 54.6,
+              "projectile_speed": 416,
+              "lifespan": 1,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "subtower Mini-Comanche (range 54.6); cannot hit Camo; speed 416; collision radius 3; lifespan 1s; attack range 54.6"
             },
             {
               "tag": "mini_comanche_ballistic_missile_explosion",
@@ -825,13 +1127,14 @@
               "damage_type": "explosive",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": 2000,
               "projectile_speed": null,
               "lifespan": null,
-              "camo": false,
-              "notes": "subtower Mini-Comanche (range 54.6); +10 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000",
               "damage_vs": {
-                "ceramicexceptcas": 10
-              }
+                "ceramic": 10
+              },
+              "camo": null,
+              "notes": "subtower Mini-Comanche (range 54.6); +10 damage vs CeramicExceptCAS; cannot hit Camo; attack range 2000"
             }
           ]
         },

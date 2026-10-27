@@ -39,11 +39,12 @@
         "damage_type": "cold",
         "projectiles": 1,
         "blast_radius": null,
+        "range": null,
         "projectile_speed": null,
         "lifespan": 0.05,
-        "camo": false,
-        "notes": "cannot target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}",
-        "damage_vs": {}
+        "damage_vs": {},
+        "camo": null,
+        "notes": "cannot target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}"
       }
     ]
   },
@@ -54,6 +55,7 @@
         "name": "Permafrost",
         "cost": 150,
         "description": "Bloons move slowly even after thawing out.",
+        "ops": [],
         "state": {
           "range": 20,
           "camo": false,
@@ -68,11 +70,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}; Permafrost {Multiplier: ×0.5; Duration: ∞s; Layers: 2}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}; Permafrost {Multiplier: ×0.5; Duration: ∞s; Layers: 2}}"
             }
           ]
         },
@@ -83,6 +86,20 @@
         "name": "Cold Snap",
         "cost": 350,
         "description": "Can freeze and pop Lead and Camo Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "camo",
+            "op": "set",
+            "value": true
+          },
+          {
+            "target": "freeze",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "glacier"
+          }
+        ],
         "state": {
           "range": 20,
           "camo": true,
@@ -97,11 +114,12 @@
               "damage_type": "glacier",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 20 units; Filters: Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Glacier [Cannot damage White]; Lifespan: 0.05s; Radius: 20 units; Filters: Cannot hit MOAB-Class; Cannot hit frozen Bloons; Permafrost {Multiplier: ×0.5; Duration: ∞s; Layers: 2}; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 20 units; Filters: Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Glacier [Cannot damage White]; Lifespan: 0.05s; Radius: 20 units; Filters: Cannot hit MOAB-Class; Cannot hit frozen Bloons; Permafrost {Multiplier: ×0.5; Duration: ∞s; Layers: 2}; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}"
             }
           ]
         },
@@ -112,6 +130,14 @@
         "name": "Ice Shards",
         "cost": 1500,
         "description": "Removes Camo and Regrow properties when damaging Bloons. Razor sharp shards fly out when Frozen Bloons pop.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 25
+          }
+        ],
         "state": {
           "range": 25,
           "camo": true,
@@ -126,11 +152,12 @@
               "damage_type": "glacier",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": 250,
+              "range": null,
+              "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 25 units; Filters: Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Glacier [Cannot damage White]; Lifespan: 0.05s; Radius: 20 units; Filters: Cannot hit MOAB-Class; Cannot hit frozen Bloons; Permafrost {Multiplier: ×0.5; Duration: ∞s; Layers: 2}; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}; Ice shard {Count: 3; Angle: 360°; Pierce: 3; Max pierce: 3; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 250 units/s; Lifespan: 0.08s; Radius: 2 units}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 25 units; Filters: Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Glacier [Cannot damage White]; Lifespan: 0.05s; Radius: 20 units; Filters: Cannot hit MOAB-Class; Cannot hit frozen Bloons; Permafrost {Multiplier: ×0.5; Duration: ∞s; Layers: 2}; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}; Ice shard {Count: 3; Angle: 360°; Pierce: 3; Max pierce: 3; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 250 units/s; Lifespan: 0.08s; Radius: 2 units}"
             }
           ]
         },
@@ -141,6 +168,7 @@
         "name": "Embrittlement",
         "cost": 2300,
         "description": "Can hit MOAB-class Bloons. All hit Bloons become brittle, taking extra damage while frozen, and losing Lead immunity for a short time.",
+        "ops": [],
         "state": {
           "range": 25,
           "camo": true,
@@ -155,11 +183,12 @@
               "damage_type": "glacier",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": 250,
+              "range": null,
+              "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 25 units; Projectile {Pierce: 40; Damage: 1; Damage type: Glacier [Cannot damage White]; Lifespan: 0.05s; Radius: 20 units; Permafrost {Multiplier: ×0.5; Multiplier for MOAB-Class: ×0.75; Duration: ∞s; Duration for MOAB-Class: 0s; Layers: 3}; Remove immunities {Duration: 2s; Layers: 3}; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 3}; Bonus damage {Duration: 2s; Layers: 3}}; Ice shard {Count: 3; Angle: 360°; Pierce: 3; Max pierce: 3; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 250 units/s; Lifespan: 0.08s; Radius: 2 units}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 25 units; Projectile {Pierce: 40; Damage: 1; Damage type: Glacier [Cannot damage White]; Lifespan: 0.05s; Radius: 20 units; Permafrost {Multiplier: ×0.5; Multiplier for MOAB-Class: ×0.75; Duration: ∞s; Duration for MOAB-Class: 0s; Layers: 3}; Remove immunities {Duration: 2s; Layers: 3}; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 3}; Bonus damage {Duration: 2s; Layers: 3}}; Ice shard {Count: 3; Angle: 360°; Pierce: 3; Max pierce: 3; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 250 units/s; Lifespan: 0.08s; Radius: 2 units}"
             }
           ]
         },
@@ -170,6 +199,34 @@
         "name": "Super Brittle",
         "cost": 28000,
         "description": "Bloons take huge damage while frozen, while Ice Shards rip through Ceramic Bloons like paper!",
+        "ops": [
+          {
+            "target": "freeze",
+            "stat": "damage",
+            "op": "set",
+            "value": 5
+          },
+          {
+            "target": "freeze",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 1.2
+          },
+          {
+            "target": "freeze",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "freeze",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 5
+            }
+          }
+        ],
         "state": {
           "range": 25,
           "camo": true,
@@ -184,13 +241,14 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": 250,
+              "range": null,
+              "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": true,
-              "notes": "can target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 25 units; Projectile {Pierce: 40; Damage: 5; Damage to Ceramic: +5; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 20 units; Permafrost {Multiplier: ×0.5; Multiplier for MOAB-Class: ×0.75; Duration: ∞s; Duration for MOAB-Class: 0s; Layers: 6}; Remove immunities {Duration: 3s; Layers: 6}; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 6}; Bonus damage {Duration: 3s; Layers: 6}}; Ice shard {Count: 6; Angle: 360°; Pierce: 3; Max pierce: 3; Damage: 5; Damage type: Shatter [Cannot damage Lead]; Speed: 250 units/s; Lifespan: 0.16s; Radius: 2 units}",
               "damage_vs": {
                 "ceramic": 5
-              }
+              },
+              "camo": null,
+              "notes": "can target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 25 units; Projectile {Pierce: 40; Damage: 5; Damage to Ceramic: +5; Damage type: Normal [Can damage any Bloon type]; Lifespan: 0.05s; Radius: 20 units; Permafrost {Multiplier: ×0.5; Multiplier for MOAB-Class: ×0.75; Duration: ∞s; Duration for MOAB-Class: 0s; Layers: 6}; Remove immunities {Duration: 3s; Layers: 6}; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 6}; Bonus damage {Duration: 3s; Layers: 6}}; Ice shard {Count: 6; Angle: 360°; Pierce: 3; Max pierce: 3; Damage: 5; Damage type: Shatter [Cannot damage Lead]; Speed: 250 units/s; Lifespan: 0.16s; Radius: 2 units}"
             }
           ]
         },
@@ -203,6 +261,14 @@
         "name": "Enhanced Freeze",
         "cost": 200,
         "description": "Attacks faster and freezes for longer.",
+        "ops": [
+          {
+            "target": "freeze",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 1.8
+          }
+        ],
         "state": {
           "range": 20,
           "camo": false,
@@ -217,11 +283,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 1.75s; Layers: 2}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 1.75s; Layers: 2}}"
             }
           ]
         },
@@ -232,6 +299,14 @@
         "name": "Deep Freeze",
         "cost": 300,
         "description": "Increases pierce, freezes an extra layer and freeze lasts longer.",
+        "ops": [
+          {
+            "target": "freeze",
+            "stat": "pierce",
+            "op": "set",
+            "value": 45
+          }
+        ],
         "state": {
           "range": 20,
           "camo": false,
@@ -246,11 +321,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 45; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 2.2s; Layers: 3}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 45; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 2.2s; Layers: 3}}"
             }
           ]
         },
@@ -261,6 +337,7 @@
         "name": "Arctic Wind",
         "cost": 2750,
         "description": "Gains a super cold aura that slows Bloons and freezes water nearby.",
+        "ops": [],
         "state": {
           "range": 20,
           "camo": false,
@@ -275,11 +352,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 45; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 2.2s; Layers: 3}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 20 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 45; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 2.2s; Layers: 3}}"
             }
           ]
         },
@@ -297,6 +375,14 @@
         "name": "Snowstorm",
         "cost": 4750,
         "description": "Snowstorm Ability: Freezes all regular Bloons on screen, briefly freezes White, Zebra, and Camo, and slows MOAB-class.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 30
+          }
+        ],
         "state": {
           "range": 30,
           "camo": false,
@@ -311,11 +397,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 30 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 45; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 3s; Layers: 3}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 30 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 45; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 3s; Layers: 3}}"
             }
           ]
         },
@@ -340,6 +427,20 @@
         "name": "Absolute Zero",
         "cost": 21000,
         "description": "Each attack freezes all Bloons everywhere for a short time. Snowstorm freezes all Bloon types for even longer while greatly increasing attack speed of all Ice Monkeys for the duration.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 40
+          },
+          {
+            "target": "freeze",
+            "stat": "pierce",
+            "op": "set",
+            "value": 300
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -354,13 +455,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 40 units; Filters: Cannot target Camo; Cannot target frozen Bloons; Projectile {Pierce: 300; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 3s; Layers: 8}}; Global projectile {Pierce: 999; Damage: 1; Damage to Ceramic: +3; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: ∞ units; Filters: Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 0.6s; Layers: 1}}",
-              "damage_vs": {
-                "ceramic": 3
-              }
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.8s; Targeting range: 40 units; Filters: Cannot target Camo; Cannot target frozen Bloons; Projectile {Pierce: 300; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 3s; Layers: 8}}; Global projectile {Pierce: 999; Damage: 1; Damage to Ceramic: +3; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: ∞ units; Filters: Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 0.6s; Layers: 1}}"
             }
           ]
         },
@@ -387,6 +487,14 @@
         "name": "Larger Radius",
         "cost": 150,
         "description": "Larger freeze area.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 27
+          }
+        ],
         "state": {
           "range": 27,
           "camo": false,
@@ -401,11 +509,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 27 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 27 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 27 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Cannot target frozen Bloons; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 27 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Cannot hit frozen Bloons; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}"
             }
           ]
         },
@@ -416,6 +525,7 @@
         "name": "Re-Freeze",
         "cost": 200,
         "description": "Can re-freeze Bloons that are already frozen.",
+        "ops": [],
         "state": {
           "range": 27,
           "camo": false,
@@ -430,11 +540,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 27 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 27 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 2.4s; Targeting range: 27 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 27 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 2}}"
             }
           ]
         },
@@ -445,6 +556,20 @@
         "name": "Cryo Cannon",
         "cost": 1900,
         "description": "Rapidly shoots smaller ice bombs over longer range.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 46
+          },
+          {
+            "target": "freeze",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 1.2
+          }
+        ],
         "state": {
           "range": 46,
           "camo": false,
@@ -459,11 +584,12 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": 300,
-              "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Ice bomb {Pierce: 1; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.2s; Radius: 4 units; Filters: Cannot hit Camo}; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 3}}",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": null,
+              "lifespan": 0.05,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.2s; Targeting range: 46 units; Filters: Cannot target Camo; Cannot target MOAB-Class; Ice bomb {Pierce: 1; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.2s; Radius: 4 units; Filters: Cannot hit Camo}; Projectile {Pierce: 40; Damage: 1; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Cannot hit MOAB-Class; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 3}}"
             }
           ]
         },
@@ -476,6 +602,28 @@
         "name": "Icicles",
         "cost": 2750,
         "description": "Does bonus damage to MOAB-Class Bloons. Frozen Bloons grow sharp icicles that can pop Bloons that touch them.",
+        "ops": [
+          {
+            "target": "freeze",
+            "stat": "damage",
+            "op": "set",
+            "value": 2
+          },
+          {
+            "target": "freeze",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.75
+          },
+          {
+            "target": "freeze",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 8
+            }
+          }
+        ],
         "state": {
           "range": 46,
           "camo": false,
@@ -490,13 +638,14 @@
               "damage_type": "cold",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": 300,
-              "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.75s; Targeting range: 46 units; Filters: Cannot target Camo; Ice bomb {Pierce: 1; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.2s; Radius: 5 units; Filters: Cannot hit Camo}; Projectile {Pierce: 40; Damage: 2; Damage to MOAB-Class: +8; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Freeze {Multiplier: ×0; Duration: 1.5s; Duration for MOAB-Class: 0s; Layers: 3}; Carry icicles {Duration: 1.5s; Chance: 25%; Layers: ∞}}; Icicle {Pierce: 6; Max pierce: 6; Damage: 6; Max damage: 6; Damage type: Shatter [Cannot damage Lead]; Lifespan: ∞s; Radius: 0.2 units; Rehit interval: 0.2s; Filters: Ignores Lead or White if its damage type cannot damage it; Cannot hit Camo; Cannot hit Bloons with Frozen, Absolute Zero freeze}",
+              "range": null,
+              "projectile_speed": null,
+              "lifespan": 0.05,
               "damage_vs": {
                 "moab": 8
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.75s; Targeting range: 46 units; Filters: Cannot target Camo; Ice bomb {Pierce: 1; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.2s; Radius: 5 units; Filters: Cannot hit Camo}; Projectile {Pierce: 40; Damage: 2; Damage to MOAB-Class: +8; Damage type: Cold [Cannot damage Lead or White]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Freeze {Multiplier: ×0; Duration: 1.5s; Duration for MOAB-Class: 0s; Layers: 3}; Carry icicles {Duration: 1.5s; Chance: 25%; Layers: ∞}}; Icicle {Pierce: 6; Max pierce: 6; Damage: 6; Max damage: 6; Damage type: Shatter [Cannot damage Lead]; Lifespan: ∞s; Radius: 0.2 units; Rehit interval: 0.2s; Filters: Ignores Lead or White if its damage type cannot damage it; Cannot hit Camo; Cannot hit Bloons with Frozen, Absolute Zero freeze}"
             }
           ]
         },
@@ -507,6 +656,22 @@
         "name": "Icicle Impale",
         "cost": 30000,
         "description": "Shoots huge icicle spikes that do huge damage to MOAB-Class Bloons and freezes them.",
+        "ops": [
+          {
+            "target": "freeze",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "shatter"
+          },
+          {
+            "target": "freeze",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 48
+            }
+          }
+        ],
         "state": {
           "range": 46,
           "camo": false,
@@ -521,13 +686,14 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": 300,
-              "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.75s; Targeting range: 46 units; Filters: Cannot target Camo; Ice bomb {Pierce: 1; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.2s; Radius: 6 units; Filters: Cannot hit Camo}; Projectile {Pierce: 40; Damage: 2; Damage to MOAB-Class: +48; Damage type: Shatter [Cannot damage Lead]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 3}; Carry icicles {Duration: 1.5s; Chance: 25%; Layers: ∞}}; Icicle {Pierce: 6; Max pierce: 6; Damage: 6; Max damage: 6; Damage type: Shatter [Cannot damage Lead]; Lifespan: ∞s; Radius: 0.2 units; Rehit interval: 0.2s; Filters: Ignores Lead or White if its damage type cannot damage it; Cannot hit Camo; Cannot hit Bloons with Frozen, Absolute Zero freeze}",
+              "range": null,
+              "projectile_speed": null,
+              "lifespan": 0.05,
               "damage_vs": {
                 "moab": 48
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.75s; Targeting range: 46 units; Filters: Cannot target Camo; Ice bomb {Pierce: 1; Max pierce: 1; Speed: 300 units/s; Lifespan: 0.2s; Radius: 6 units; Filters: Cannot hit Camo}; Projectile {Pierce: 40; Damage: 2; Damage to MOAB-Class: +48; Damage type: Shatter [Cannot damage Lead]; Lifespan: 0.05s; Radius: 20 units; Filters: Ignores Lead if its damage type cannot damage it; Cannot hit Camo; Freeze {Multiplier: ×0; Duration: 1.5s; Layers: 3}; Carry icicles {Duration: 1.5s; Chance: 25%; Layers: ∞}}; Icicle {Pierce: 6; Max pierce: 6; Damage: 6; Max damage: 6; Damage type: Shatter [Cannot damage Lead]; Lifespan: ∞s; Radius: 0.2 units; Rehit interval: 0.2s; Filters: Ignores Lead or White if its damage type cannot damage it; Cannot hit Camo; Cannot hit Bloons with Frozen, Absolute Zero freeze}"
             }
           ]
         },

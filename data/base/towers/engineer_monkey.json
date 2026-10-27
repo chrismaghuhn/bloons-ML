@@ -38,11 +38,12 @@
         "damage_type": "sharp",
         "projectiles": 1,
         "blast_radius": null,
-        "projectile_speed": null,
-        "lifespan": null,
-        "camo": false,
-        "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-        "damage_vs": {}
+        "range": null,
+        "projectile_speed": 375,
+        "lifespan": 0.24,
+        "damage_vs": {},
+        "camo": null,
+        "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
       }
     ]
   },
@@ -53,6 +54,14 @@
         "name": "Sentry Gun",
         "cost": 500,
         "description": "Creates temporary sentry guns and deploys them close to track anywhere in radius. Wiki: With this upgrade, the Engineer can deploy Sentry sub-towers within its range to pop Bloons. Every 10 seconds, it passively deploys a Sentry in its range, and each one lasts for 25 seconds (30 seconds with [img:Vigilant Sentries] Vigilant Sentries). If possible, an Engineer will spawn Sentries at locations where the range of its Sentries can cover at least 20% of the track. By default, Sentries attack every 0.95 seconds, pop up to 2 Bloons, and have 45 range.",
+        "ops": [
+          {
+            "target": "sentry_spawner",
+            "stat": "attack",
+            "op": "add",
+            "value": "sentry_spawner"
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -67,11 +76,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "sentry_spawner",
@@ -82,11 +92,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": null,
+              "lifespan": 25,
+              "damage_vs": {},
               "camo": null,
-              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s",
-              "damage_vs": {}
+              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s"
             }
           ]
         },
@@ -108,6 +119,7 @@
         "name": "Faster Engineering",
         "cost": 400,
         "description": "Increased efficiency allows the Engineer to produce sentries, foam and bloon traps more often. Wiki: This upgrade reduces the cooldown of the Engineer Monkey's sentry-spawner attack from 10 seconds to 5 seconds, increasing its production rate by 100%. If crosspathed with Cleansing Foam, it reduces the foam gun cooldown by 50%. If crosspathed with Bloon Trap, it reduces the time it takes for the Engineer Monkey to stockpile a new trap by 50%, and reduces the replacement delay by 0.7 seconds from the base amount.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -122,11 +134,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "sentry_spawner",
@@ -137,11 +150,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": null,
+              "lifespan": 25,
+              "damage_vs": {},
               "camo": null,
-              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s",
-              "damage_vs": {}
+              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s"
             }
           ]
         },
@@ -155,6 +169,14 @@
         "name": "Sprockets",
         "cost": 575,
         "description": "Increases sentry gun and Engineer attack speed. Wiki: This upgrade halves the cooldown of the Engineer Monkey's nailgun attack and newly placed sentries' attacks, effectively doubling their attack speed. It does not improve the speed at which the Engineer deploys its sentries. Additionally, sentries with Sprockets are now able to stun Bloons when crosspathed with Pin.",
+        "ops": [
+          {
+            "target": "nail",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.35
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -169,11 +191,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "sentry_spawner",
@@ -184,11 +207,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": null,
+              "lifespan": 25,
+              "damage_vs": {},
               "camo": null,
-              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s",
-              "damage_vs": {}
+              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s"
             }
           ]
         },
@@ -202,6 +226,7 @@
         "name": "Sentry Expert",
         "cost": 2500,
         "description": "Sentries deploy with different damage types based on your need. Wiki: This upgrade replaces its Sentries with four different types of Sentries that each have a different attack. It can spawn Crushing Sentries, Boom Sentries, Cold Sentries, and Energy Sentries, and it spawns them in that order by default, but it can prioritize and deprioritize each Sentry type depending on what Bloons and Sentries are currently on-screen.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -216,11 +241,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "sentry_spawner",
@@ -231,11 +257,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": null,
+              "lifespan": 25,
+              "damage_vs": {},
               "camo": null,
-              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s",
-              "damage_vs": {}
+              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s"
             }
           ]
         },
@@ -290,6 +317,14 @@
         "name": "Sentry Champion",
         "cost": 32000,
         "description": "Creates super-powerful but highly unstable sentries. Wiki: The Engineer now deploys Champion Sentries that self-destruct after expiring, causing a large explosion that pops 50 Bloons (75 with Oversize Nails) and deals 100 damage. Champion Sentries shoot plasma balls that pop up to 5 Bloons (10 with Oversize Nails), and deal 3 damage (+1 MOAB-Class and +1 Fortified damage with Deconstruction), with an attack cooldown of 0.06 seconds, and have 50 range (54 with Larger Service Area). This upgrade also reduces the attack cooldown of the Engineer's nail attack from 0.35 to 0.3 seconds.",
+        "ops": [
+          {
+            "target": "nail",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.3
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -304,11 +339,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "sentry_spawner",
@@ -319,11 +355,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": null,
+              "lifespan": 25,
+              "damage_vs": {},
               "camo": null,
-              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s",
-              "damage_vs": {}
+              "notes": "spawns a Sentry at random position within 40 range every 10s; Sentry: 1 dmg sharp, 2 pierce, 0.95s cooldown, range 45, lifespan 25s"
             }
           ]
         },
@@ -347,6 +384,14 @@
         "name": "Larger Service Area",
         "cost": 250,
         "description": "Shoots further and deploys sentries in a much larger area. Sentries have longer range. Wiki: This upgrade increases the range of all the Engineer Monkey's attacks by +20, from 40 to 60, effectively gaining +50% base range. If crosspathed with Sentry Gun or above, it also increases the attack range of the Sentries by +4. If crosspathed with Bloon Trap, the player can set the point where traps are deployed to anywhere within the Engineer Monkey's range, autocollecting the trap after the cooldown of the trap passes.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 20
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -361,11 +406,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             }
           ]
         },
@@ -378,6 +424,7 @@
         "name": "Deconstruction",
         "cost": 350,
         "description": "Nail gun and Sentry shots do extra damage to MOAB-class and Fortified Bloons. Wiki: The nailgun and newly spawned sentries gain +1 damage to MOAB-class bloons and +1 damage to Fortified properties. For Bloon Trap and above, newly placed traps remove Fortified properties before trapping Bloons.",
+        "ops": [],
         "state": {
           "range": 60,
           "camo": false,
@@ -392,11 +439,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             }
           ]
         },
@@ -410,6 +458,14 @@
         "name": "Cleansing Foam",
         "cost": 900,
         "description": "Sprays foam that removes Camo and Regrow and pops Lead Bloons. Wiki: This upgrade adds an additional foam attack that can be targeted anywhere within the Engineer Monkey's range, continuously spraying its target with foam. Bloons that touch the foam will lose their Camo and Regrow properties, if they have it. Additionally, Lead Bloons (not DDTs) will lose their outer layers instantly upon touching the foam, even if Fortified. All attacks' speed is quadrupled for 1 second at the start of each round.",
+        "ops": [
+          {
+            "target": "cleansing_foam",
+            "stat": "attack",
+            "op": "add",
+            "value": "cleansing_foam"
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -424,11 +480,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "cleansing_foam",
@@ -439,11 +496,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "targeted anywhere in range (locked); foam splat radius 7, lasts 8.5s, 10 pierce; removes Camo, Regrow, and Lead layer (not DDT); no damage",
-              "damage_vs": {}
+              "notes": "targeted anywhere in range (locked); foam splat radius 7, lasts 8.5s, 10 pierce; removes Camo, Regrow, and Lead layer (not DDT); no damage"
             }
           ]
         },
@@ -459,6 +517,14 @@
         "name": "Overclock",
         "cost": 13500,
         "description": "Overclock Ability: Target another tower to supercharge its attack speed for a short time. Wiki: This upgrade adds the Overclock ability, which lets the player apply a temporarily buff to a selected tower, increasing attack speed by +66.67% (increases range by +10% if used on a Monkey Village) for a short time. The duration of the buff depends on the target's highest upgrade tier, between 30 to 60 seconds, and lasts only 30 seconds on Heroes. Additionally, this upgrade increases the base pierce of the Engineer Monkey's main attack by 12 (15 in total) and increases the pierce of its Cleansing Foam puddles by 4 (14 in total). It also doubles the projectile speed of its nails, but halves their lifespan, so their maximum travel distance remains the same.",
+        "ops": [
+          {
+            "target": "nail",
+            "stat": "pierce",
+            "op": "set",
+            "value": 15
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -473,11 +539,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "cleansing_foam",
@@ -488,11 +555,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "targeted anywhere in range (locked); foam splat radius 7, lasts 8.5s, 10 pierce; removes Camo, Regrow, and Lead layer (not DDT); no damage",
-              "damage_vs": {}
+              "notes": "targeted anywhere in range (locked); foam splat radius 7, lasts 8.5s, 10 pierce; removes Camo, Regrow, and Lead layer (not DDT); no damage"
             }
           ]
         },
@@ -506,6 +574,14 @@
         "name": "Ultraboost",
         "cost": 72000,
         "description": "Ultra-Overclocked Monkeys gain a small but permanent boost every time they are overclocked. Wiki: This upgrade replaces the Engineer Monkey's Overclock Activated Ability with the Ultraboost ability, which on top of the Overclock effect, reduces attack cooldown by 4% and increases range by 1.5% on Villages. This buff stacks up to 10 times additively on a single tower (up to 40% attack cooldown reduction, equal to +66.67% attack speed, and +15% range on Villages). The permanent cooldown decrease also applies to Banana Farms, making them produce more cash per round permanently. Ultraboost and Overclock buffs do not stack with each other, though both stack with the permanent boosts. The Ultraboost has a cooldown of 35 seconds, and the buff lasts 60 seconds on all towers and Heroes regardless of tier. The Ultraboost ability can only be used 10 times per round by a single Engineer Monkey, unlike Overclock which can be used without limit. Ultraboost's cooldown also resets to full when this tower is upgraded. In addition to the ability changes, Ultraboost increases the base pierce of the Engineer Monkey's main attack by +15 (increased to 30), and increases the pierce of its Cleansing Foam puddles by +10 (increased to 24).",
+        "ops": [
+          {
+            "target": "nail",
+            "stat": "pierce",
+            "op": "set",
+            "value": 30
+          }
+        ],
         "state": {
           "range": 60,
           "camo": false,
@@ -520,11 +596,12 @@
               "damage_type": "sharp",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "cleansing_foam",
@@ -535,11 +612,12 @@
               "damage_type": null,
               "projectiles": 4,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "targeted anywhere in range (locked); foam splat radius 7, lasts 8.5s, 10 pierce; removes Camo, Regrow, and Lead layer (not DDT); no damage",
-              "damage_vs": {}
+              "notes": "targeted anywhere in range (locked); foam splat radius 7, lasts 8.5s, 10 pierce; removes Camo, Regrow, and Lead layer (not DDT); no damage"
             }
           ]
         },
@@ -556,6 +634,20 @@
         "name": "Oversize Nails",
         "cost": 450,
         "description": "Massivization allows nails to pop 8 Bloons at once, including frozen. Also increases Foam and Sentry effectiveness. Wiki: This upgrade increases the pierce of the Engineer Monkey's base attack by 5 and changes its damage type from Sharp to Shatter, allowing it to pop frozen Bloons. It has the following special crosspath bonuses: Sentry Gun: Increases Sentry pierce by 1 and changes its damage type from Sharp to Shatter. Sentry Expert: Increases pierce of all Sentries by +50%, rounded up. Sentry Champion: Increases the pierce of Champion Sentries' plasma by 5 and self-destruct by 25. Cleansing Foam: Increases the pierce of the foam splash by 5. Overclock: Increases the pierce of the foam splash by 7. Ultraboost: Increases the pierce of the foam splash by 12. Despite the \"massivization\" referenced in the upgrade description, the projectile radius of nails does not increase.",
+        "ops": [
+          {
+            "target": "nail",
+            "stat": "pierce",
+            "op": "add",
+            "value": 5
+          },
+          {
+            "target": "nail",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "shatter"
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -570,11 +662,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             }
           ]
         },
@@ -587,6 +680,7 @@
         "name": "Pin",
         "cost": 220,
         "description": "Pins Bloons in place for a short time when struck. Wiki: Nailgun shots can now pin Bloons that are not MOAB-Class, causing the next layer to be stunned for 1 second. Sentries cannot pin Bloons unless crosspathed with Sprockets or above. Pinned bloons are marked with nails embedded on them. Because pinning is technically a type of \"stun\", affected Bloons take more damage from attacks that do more damage to stunned targets.",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -601,11 +695,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             }
           ]
         },
@@ -622,6 +717,14 @@
         "name": "Double Gun",
         "cost": 450,
         "description": "Two guns for twice the fun. Wiki: This upgrade halves the cooldown of the Engineer Monkey's base attack, doubling its attack speed, attacking every 0.35 seconds. It alternates between its left and right guns, which are offset from each other by 6.16 distance units. With the Sentry Gun crosspath, sentries shoot 2 projectiles in parallel, instead of 1.",
+        "ops": [
+          {
+            "target": "nail",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.35
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -636,11 +739,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             }
           ]
         },
@@ -653,6 +757,14 @@
         "name": "Bloon Trap",
         "cost": 3600,
         "description": "Bloon trap captures Bloons until full. Select to empty full trap for cash. Wiki: The Engineer now creates a trap that collects and insta-kill Bloons. Each trap holds up to 500 RBE of Bloons (530 with [img:Big Traps] Big Traps), and once full or overflowed, the trap can be collected for cash. Outside of modes that disable income (e.g. CHIMPS and Deflation), the Bloon Trap provides +100% more cash than usual from Bloons that it collects. After the trap is collected, the Engineer takes a short cooldown before it creates a new trap. The traps do not affect MOAB-Class Bloons, nor Camo Bloons unless the Engineer Monkey could detect Camo Bloons prior to deploying the trap. Trap deployment ignores obstacles, allowing traps to be placed behind obstacles. Selling or sacrificing the Engineer removes its trap. Crosspathing with Larger Service Area allows traps to be repositioned and autocollected before getting full, Deconstruction lets new traps strip Fortified Bloon properties before insta-killing Bloons, and Faster Engineering decreases the cooldown to deploy a new trap by 50% and the delay between new traps by 25%.",
+        "ops": [
+          {
+            "target": "bloon_trap",
+            "stat": "attack",
+            "op": "add",
+            "value": "bloon_trap"
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -667,11 +779,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "bloon_trap",
@@ -682,11 +795,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "trap placed on nearest track; captures up to 500 RBE then collect for cash with +100% cash from captured Bloons; no MOAB-class, no Camo unless detected; radius 10",
-              "damage_vs": {}
+              "notes": "trap placed on nearest track; captures up to 500 RBE then collect for cash with +100% cash from captured Bloons; no MOAB-class, no Camo unless detected; radius 10"
             }
           ]
         },
@@ -697,6 +811,7 @@
         "name": "XXXL Trap",
         "cost": 45000,
         "description": "Huge Bloon traps can trap some of the largest Bloons in them... Wiki: This upgrade replaces the Engineer's trap with a larger XXXL Trap, which is able to collect and insta-kill MOAB-Class Bloons (excluding BADs and Boss Bloons). XXXL Traps have a creation cooldown of 4.6 seconds by default, have 10,000 RBE capacity, and grant +200% cash per pop (except in game modes that disable cash generation, such as CHIMPS and Deflation).",
+        "ops": [],
         "state": {
           "range": 40,
           "camo": false,
@@ -711,11 +826,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": null,
-              "lifespan": null,
-              "camo": false,
-              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen",
-              "damage_vs": {}
+              "range": null,
+              "projectile_speed": 375,
+              "lifespan": 0.24,
+              "damage_vs": {},
+              "camo": null,
+              "notes": "projectile speed 375, lifespan 0.24s, radius 2; cannot target Camo; cannot pop Lead or Frozen"
             },
             {
               "tag": "bloon_trap",
@@ -726,11 +842,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "trap placed on nearest track; captures up to 500 RBE then collect for cash with +100% cash from captured Bloons; no MOAB-class, no Camo unless detected; radius 10",
-              "damage_vs": {}
+              "notes": "trap placed on nearest track; captures up to 500 RBE then collect for cash with +100% cash from captured Bloons; no MOAB-class, no Camo unless detected; radius 10"
             }
           ]
         },

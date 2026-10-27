@@ -34,11 +34,12 @@
         "damage_type": null,
         "projectiles": 1,
         "blast_radius": null,
-        "projectile_speed": 200,
-        "lifespan": 1,
+        "range": null,
+        "projectile_speed": null,
+        "lifespan": null,
+        "damage_vs": {},
         "camo": null,
-        "notes": "no direct damage listed; lifespan=1s; speed=200; targeting: Depends on targeting option; attack range=28; projectile radius=2; tower-level passive (wiki data): {\"buff:Buff when in water\": \"rangeMultiplier=1.35\"}",
-        "damage_vs": {}
+        "notes": "no direct damage listed; lifespan=1s; speed=200; targeting: Depends on targeting option; attack range=28; projectile radius=2; tower-level passive (wiki data): {\"buff:Buff when in water\": \"rangeMultiplier=1.35\"}"
       },
       {
         "tag": "attack_splash",
@@ -49,11 +50,12 @@
         "damage_type": "shatter",
         "projectiles": 1,
         "blast_radius": null,
+        "range": null,
         "projectile_speed": null,
         "lifespan": 0.05,
+        "damage_vs": {},
         "camo": null,
-        "notes": "maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3",
-        "damage_vs": {}
+        "notes": "maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3"
       }
     ]
   },
@@ -64,6 +66,32 @@
         "name": "Trident Efficiency",
         "cost": 150,
         "description": "Acclimation to local water density allows Mermonkey to attack faster with all attacks.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.8
+          },
+          {
+            "target": "attack_splash",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.8
+          },
+          {
+            "target": "attack",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 200
+          },
+          {
+            "target": "attack",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 1
+          }
+        ],
         "state": {
           "range": 28,
           "camo": false,
@@ -78,11 +106,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 200,
               "lifespan": 1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; lifespan=1s; speed=200; targeting: Depends on targeting option; attack range=28; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; lifespan=1s; speed=200; targeting: Depends on targeting option; attack range=28; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -93,11 +122,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3",
-              "damage_vs": {}
+              "notes": "maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3"
             }
           ]
         },
@@ -108,6 +138,32 @@
         "name": "Trident Swiftness",
         "cost": 250,
         "description": "Tridents are thrown faster and travel further.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.6875
+          },
+          {
+            "target": "attack_splash",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.6875
+          },
+          {
+            "target": "attack",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 300
+          },
+          {
+            "target": "attack",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.6667
+          }
+        ],
         "state": {
           "range": 28,
           "camo": false,
@@ -122,11 +178,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.6667,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; lifespan=0.6667s; speed=300; targeting: Depends on targeting option; attack range=28; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; lifespan=0.6667s; speed=300; targeting: Depends on targeting option; attack range=28; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -137,11 +194,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3",
-              "damage_vs": {}
+              "notes": "maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3"
             }
           ]
         },
@@ -152,6 +210,20 @@
         "name": "Abyss Dweller",
         "cost": 1800,
         "description": "The Abyssal Creature awakens, angrily lashing out at Bloons with powerful tentacles and granting nearby Monkeys a small pierce increase.",
+        "ops": [
+          {
+            "target": "attack_splash",
+            "stat": "damage",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "tentacle",
+            "stat": "attack",
+            "op": "add",
+            "value": "Tentacle"
+          }
+        ],
         "state": {
           "range": 28,
           "camo": false,
@@ -166,11 +238,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.6667,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; lifespan=0.6667s; speed=300; targeting: Depends on targeting option; attack range=28; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; lifespan=0.6667s; speed=300; targeting: Depends on targeting option; attack range=28; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -181,11 +254,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3",
-              "damage_vs": {}
+              "notes": "maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3"
             },
             {
               "tag": "tentacle",
@@ -196,11 +270,12 @@
               "damage_type": "shatter",
               "projectiles": 8,
               "blast_radius": 8,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "rounds=1; lifespan=0.1s; targeting: Depends on targeting option; attack range=28; attack customStartCooldown=0.5",
-              "damage_vs": {}
+              "notes": "rounds=1; lifespan=0.1s; targeting: Depends on targeting option; attack range=28; attack customStartCooldown=0.5"
             }
           ]
         },
@@ -213,6 +288,46 @@
         "name": "Abyssal Warrior",
         "cost": 4200,
         "description": "Coats tridents in a thick ink that slows bloons. Abyssal creature grows in power, destroying most Bloons with ease and enhancing nearby Monkeys with more pierce.",
+        "ops": [
+          {
+            "target": "attack_splash",
+            "stat": "damage",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "tentacle",
+            "stat": "damage",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "tentacle",
+            "stat": "pierce",
+            "op": "add",
+            "value": 10
+          },
+          {
+            "target": "tentacle",
+            "stat": "blast_radius",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "tentacle",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.8333
+          },
+          {
+            "target": "tentacle",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 6
+            }
+          }
+        ],
         "state": {
           "range": 28,
           "camo": false,
@@ -227,11 +342,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.6667,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; lifespan=0.6667s; speed=300; targeting: Depends on targeting option; attack range=28; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; lifespan=0.6667s; speed=300; targeting: Depends on targeting option; attack range=28; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -242,28 +358,30 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "filterOutLead=True; maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; effect 'Ink': layers=999, isUnique=True, mutationId=SlowInk, lifespan=10, multiplier=0.6, multiplierForMoabs=1.2; projectile radius=3",
-              "damage_vs": {}
+              "notes": "filterOutLead=True; maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; effect 'Ink': layers=999, isUnique=True, mutationId=SlowInk, lifespan=10, multiplier=0.6, multiplierForMoabs=1.2; projectile radius=3"
             },
             {
               "tag": "tentacle",
               "name": "Tentacle",
               "damage": 12,
               "pierce": 25,
-              "cooldown": 2.4999,
+              "cooldown": 2.5,
               "damage_type": "shatter",
               "projectiles": 8,
               "blast_radius": 12,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.1,
-              "camo": null,
-              "notes": "+6 damage vs ceramic; rounds=1; lifespan=0.1s; targeting: Depends on targeting option; attack range=28; attack customStartCooldown=0.5",
               "damage_vs": {
                 "ceramic": 6
-              }
+              },
+              "camo": null,
+              "notes": "+6 damage vs ceramic; rounds=1; lifespan=0.1s; targeting: Depends on targeting option; attack range=28; attack customStartCooldown=0.5"
             }
           ]
         },
@@ -276,6 +394,62 @@
         "name": "Lord of the Abyss",
         "cost": 23000,
         "description": "The fully unleashed wrath of the Abyssal Creature brings the power of the depths to the surface, annihilating most Bloons, and greatly enhancing the pierce of nearby Monkeys.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "attack",
+            "stat": "pierce",
+            "op": "add",
+            "value": 7
+          },
+          {
+            "target": "attack",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          },
+          {
+            "target": "attack_splash",
+            "stat": "damage",
+            "op": "add",
+            "value": 2
+          },
+          {
+            "target": "attack_splash",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          },
+          {
+            "target": "tentacle",
+            "stat": "damage",
+            "op": "add",
+            "value": 38
+          },
+          {
+            "target": "tentacle",
+            "stat": "pierce",
+            "op": "add",
+            "value": 25
+          },
+          {
+            "target": "tentacle",
+            "stat": "blast_radius",
+            "op": "add",
+            "value": 12
+          },
+          {
+            "target": "tentacle",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.6
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -290,11 +464,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 300,
               "lifespan": 0.6667,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; lifespan=0.6667s; speed=300; targeting: Depends on targeting option; attack range=32; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; lifespan=0.6667s; speed=300; targeting: Depends on targeting option; attack range=32; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -305,28 +480,30 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "filterOutLead=True; maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=32; effect 'Ink': layers=999, isUnique=True, mutationId=SlowInk, lifespan=10, multiplier=0.6, multiplierForMoabs=1.2; projectile radius=3",
-              "damage_vs": {}
+              "notes": "filterOutLead=True; maxPierce=3; lifespan=0.05s; targeting: Depends on targeting option; attack range=32; effect 'Ink': layers=999, isUnique=True, mutationId=SlowInk, lifespan=10, multiplier=0.6, multiplierForMoabs=1.2; projectile radius=3"
             },
             {
               "tag": "tentacle",
               "name": "Tentacle",
               "damage": 50,
               "pierce": 50,
-              "cooldown": 1.49994,
+              "cooldown": 1.5,
               "damage_type": "shatter",
               "projectiles": 8,
               "blast_radius": 24,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.1,
-              "camo": null,
-              "notes": "+6 damage vs ceramic; rounds=1; lifespan=0.1s; targeting: Depends on targeting option; attack range=32; attack customStartCooldown=0.5",
               "damage_vs": {
                 "ceramic": 6
-              }
+              },
+              "camo": null,
+              "notes": "+6 damage vs ceramic; rounds=1; lifespan=0.1s; targeting: Depends on targeting option; attack range=32; attack customStartCooldown=0.5"
             }
           ]
         },
@@ -341,6 +518,32 @@
         "name": "Sharper Prongs",
         "cost": 200,
         "description": "Can pop more Bloons with each attack.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "pierce",
+            "op": "add",
+            "value": 1
+          },
+          {
+            "target": "attack_splash",
+            "stat": "pierce",
+            "op": "add",
+            "value": 3
+          },
+          {
+            "target": "attack",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 200
+          },
+          {
+            "target": "attack",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 1
+          }
+        ],
         "state": {
           "range": 28,
           "camo": false,
@@ -355,11 +558,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 200,
               "lifespan": 1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; lifespan=1s; speed=200; targeting: Depends on targeting option; attack range=28; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; lifespan=1s; speed=200; targeting: Depends on targeting option; attack range=28; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -370,11 +574,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=6; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3",
-              "damage_vs": {}
+              "notes": "maxPierce=6; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; projectile radius=3"
             }
           ]
         },
@@ -385,6 +590,7 @@
         "name": "Tidal Chill",
         "cost": 225,
         "description": "Icy tridents are larger and can freeze Bloons.",
+        "ops": [],
         "state": {
           "range": 28,
           "camo": false,
@@ -399,11 +605,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 200,
               "lifespan": 1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; lifespan=1s; speed=200; targeting: Depends on targeting option; attack range=28; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; lifespan=1s; speed=200; targeting: Depends on targeting option; attack range=28; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -414,11 +621,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=6; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; effect 'Freeze': layers=4, lifespan=0.5, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=4.5",
-              "damage_vs": {}
+              "notes": "maxPierce=6; lifespan=0.05s; targeting: Depends on targeting option; attack range=28; effect 'Freeze': layers=4, lifespan=0.5, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=4.5"
             }
           ]
         },
@@ -429,6 +637,70 @@
         "name": "Riptide Champion",
         "cost": 2000,
         "description": "Mermonkey draws energy from the sea. Tridents can pop Lead Bloons, grow in power as they travel, and crash with devastating force.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "attack",
+            "stat": "damage",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "attack",
+            "stat": "pierce",
+            "op": "add",
+            "value": 22
+          },
+          {
+            "target": "attack",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 1.25
+          },
+          {
+            "target": "attack",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "frigid"
+          },
+          {
+            "target": "attack_split_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "Attack/Split projectile"
+          },
+          {
+            "target": "attack_splash",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          },
+          {
+            "target": "attack",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 130
+          },
+          {
+            "target": "attack",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 1.538
+          },
+          {
+            "target": "attack",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "frozen": 2
+            }
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -443,13 +715,14 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 130,
-              "lifespan": 1.5385,
-              "camo": null,
-              "notes": "+2 damage vs frozen; scaleDamagePerSecond=0.5; maxScaleDamage=3; scaleProjectilePerSecond=10; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=32; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1",
+              "lifespan": 1.538,
               "damage_vs": {
                 "frozen": 2
-              }
+              },
+              "camo": null,
+              "notes": "+2 damage vs frozen; scaleDamagePerSecond=0.5; maxScaleDamage=3; scaleProjectilePerSecond=10; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=32; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1"
             },
             {
               "tag": "attack_split_projectile",
@@ -460,13 +733,14 @@
               "damage_type": "frigid",
               "projectiles": 2,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 100,
               "lifespan": 2,
-              "camo": null,
-              "notes": "+2 damage vs frozen; angle=180; maxScaleDamage=20; scaleProjectilePerSecond=-20; maxScaleProjectile=20; lifespan=2s; speed=100; targeting: Depends on targeting option; attack range=32; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1",
               "damage_vs": {
                 "frozen": 2
-              }
+              },
+              "camo": null,
+              "notes": "+2 damage vs frozen; angle=180; maxScaleDamage=20; scaleProjectilePerSecond=-20; maxScaleProjectile=20; lifespan=2s; speed=100; targeting: Depends on targeting option; attack range=32; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1"
             }
           ]
         },
@@ -477,6 +751,38 @@
         "name": "Arctic Knight",
         "cost": 8000,
         "description": "Tridents grow in power faster. Ice Jet ability: Launches a barrage of bouncing ice balls following target priority, or targeted point.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "damage",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "attack_split_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "attack",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 8,
+              "frozen": 4
+            }
+          },
+          {
+            "target": "attack_split_projectile",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 8,
+              "frozen": 4
+            }
+          }
+        ],
         "state": {
           "range": 32,
           "camo": false,
@@ -491,14 +797,15 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 130,
-              "lifespan": 1.5385,
-              "camo": null,
-              "notes": "+8 damage vs MOAB-class; +4 damage vs frozen; scaleDamagePerSecond=0.75; maxScaleDamage=3; scaleProjectilePerSecond=10; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=32; effect 'Freeze': layers=5, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1",
+              "lifespan": 1.538,
               "damage_vs": {
                 "moab": 8,
                 "frozen": 4
-              }
+              },
+              "camo": null,
+              "notes": "+8 damage vs MOAB-class; +4 damage vs frozen; scaleDamagePerSecond=0.75; maxScaleDamage=3; scaleProjectilePerSecond=10; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=32; effect 'Freeze': layers=5, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1"
             },
             {
               "tag": "attack_split_projectile",
@@ -509,14 +816,15 @@
               "damage_type": "frigid",
               "projectiles": 2,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 100,
               "lifespan": 2,
-              "camo": null,
-              "notes": "+8 damage vs MOAB-class; +4 damage vs frozen; angle=180; maxScaleDamage=20; scaleProjectilePerSecond=-20; maxScaleProjectile=20; lifespan=2s; speed=100; targeting: Depends on targeting option; attack range=32; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1",
               "damage_vs": {
                 "moab": 8,
                 "frozen": 4
-              }
+              },
+              "camo": null,
+              "notes": "+8 damage vs MOAB-class; +4 damage vs frozen; angle=180; maxScaleDamage=20; scaleProjectilePerSecond=-20; maxScaleProjectile=20; lifespan=2s; speed=100; targeting: Depends on targeting option; attack range=32; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1"
             }
           ]
         },
@@ -533,6 +841,68 @@
         "name": "Popseidon",
         "cost": 52000,
         "description": "Popseidon's Ice Jet ability draws such power that a rogue wave floods the map with supercooled water, freezing all Bloons and reclaiming the weak for the sea.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 8
+          },
+          {
+            "target": "attack",
+            "stat": "damage",
+            "op": "add",
+            "value": 7
+          },
+          {
+            "target": "attack",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          },
+          {
+            "target": "attack_split_projectile",
+            "stat": "damage",
+            "op": "add",
+            "value": 7
+          },
+          {
+            "target": "attack_split_projectile",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.5
+          },
+          {
+            "target": "side_tridents",
+            "stat": "attack",
+            "op": "add",
+            "value": "Side tridents"
+          },
+          {
+            "target": "side_tridents_split_projectile",
+            "stat": "attack",
+            "op": "add",
+            "value": "Side tridents/Split projectile"
+          },
+          {
+            "target": "attack",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 15,
+              "frozen": 7.5
+            }
+          },
+          {
+            "target": "attack_split_projectile",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 15,
+              "frozen": 7.5
+            }
+          }
+        ],
         "state": {
           "range": 40,
           "camo": false,
@@ -547,14 +917,15 @@
               "damage_type": "frigid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 130,
-              "lifespan": 1.5385,
-              "camo": null,
-              "notes": "+15 damage vs MOAB-class; +7.5 damage vs frozen; scaleDamagePerSecond=0.75; maxScaleDamage=3; scaleProjectilePerSecond=10; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=40; effect 'Freeze': layers=5, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1",
+              "lifespan": 1.538,
               "damage_vs": {
                 "moab": 15,
                 "frozen": 7.5
-              }
+              },
+              "camo": null,
+              "notes": "+15 damage vs MOAB-class; +7.5 damage vs frozen; scaleDamagePerSecond=0.75; maxScaleDamage=3; scaleProjectilePerSecond=10; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=40; effect 'Freeze': layers=5, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1"
             },
             {
               "tag": "attack_split_projectile",
@@ -565,14 +936,15 @@
               "damage_type": "frigid",
               "projectiles": 2,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 100,
               "lifespan": 2,
-              "camo": null,
-              "notes": "+15 damage vs MOAB-class; +7.5 damage vs frozen; angle=180; maxScaleDamage=20; scaleProjectilePerSecond=-20; maxScaleProjectile=20; lifespan=2s; speed=100; targeting: Depends on targeting option; attack range=40; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1",
               "damage_vs": {
                 "moab": 15,
                 "frozen": 7.5
-              }
+              },
+              "camo": null,
+              "notes": "+15 damage vs MOAB-class; +7.5 damage vs frozen; angle=180; maxScaleDamage=20; scaleProjectilePerSecond=-20; maxScaleProjectile=20; lifespan=2s; speed=100; targeting: Depends on targeting option; attack range=40; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1"
             },
             {
               "tag": "side_tridents",
@@ -583,14 +955,15 @@
               "damage_type": "frigid",
               "projectiles": 2,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 130,
-              "lifespan": 1.5385,
-              "camo": null,
-              "notes": "+15 damage vs MOAB-class; +7.5 damage vs frozen; angle=45; scaleDamagePerSecond=0.75; maxScaleDamage=3; scaleProjectilePerSecond=9; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=40; effect 'Freeze': layers=5, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1",
+              "lifespan": 1.538,
               "damage_vs": {
                 "moab": 15,
                 "frozen": 7.5
-              }
+              },
+              "camo": null,
+              "notes": "+15 damage vs MOAB-class; +7.5 damage vs frozen; angle=45; scaleDamagePerSecond=0.75; maxScaleDamage=3; scaleProjectilePerSecond=9; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=40; effect 'Freeze': layers=5, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1"
             },
             {
               "tag": "side_tridents_split_projectile",
@@ -601,14 +974,15 @@
               "damage_type": "frigid",
               "projectiles": 2,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 130,
-              "lifespan": 1.5385,
-              "camo": null,
-              "notes": "+15 damage vs MOAB-class; +7.5 damage vs frozen; angle=180; maxScaleDamage=20; scaleProjectilePerSecond=-20; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=40; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1",
+              "lifespan": 1.538,
               "damage_vs": {
                 "moab": 15,
                 "frozen": 7.5
-              }
+              },
+              "camo": null,
+              "notes": "+15 damage vs MOAB-class; +7.5 damage vs frozen; angle=180; maxScaleDamage=20; scaleProjectilePerSecond=-20; maxScaleProjectile=20; lifespan=1.5385s; speed=130; targeting: Depends on targeting option; attack range=40; effect 'Freeze': layers=9999999, lifespan=1, mutationId=Ice: MermonkeyFreeze, applyAfterDamage=True; projectile radius=1"
             }
           ]
         },
@@ -623,6 +997,26 @@
         "name": "Echosense Precision",
         "cost": 200,
         "description": "Tridents can detect Camo bloons and tridents seek their target.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "camo",
+            "op": "set",
+            "value": true
+          },
+          {
+            "target": "attack",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 200
+          },
+          {
+            "target": "attack",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 1
+          }
+        ],
         "state": {
           "range": 28,
           "camo": true,
@@ -637,11 +1031,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 200,
               "lifespan": 1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -652,11 +1047,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=3; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=3",
-              "damage_vs": {}
+              "notes": "maxPierce=3; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=3"
             }
           ]
         },
@@ -667,6 +1063,7 @@
         "name": "Echosense Network",
         "cost": 280,
         "description": "Increases range for all Echosense Mermonkeys. Stacks up to 10 times.",
+        "ops": [],
         "state": {
           "range": 28,
           "camo": true,
@@ -681,11 +1078,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 200,
               "lifespan": 1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=2",
-              "damage_vs": {}
+              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=2"
             },
             {
               "tag": "attack_splash",
@@ -696,11 +1094,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=3; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=3",
-              "damage_vs": {}
+              "notes": "maxPierce=3; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=3"
             }
           ]
         },
@@ -713,6 +1112,20 @@
         "name": "Alluring Melody",
         "cost": 2000,
         "description": "Entrances non MOAB-Class Bloons with a hypnotic tune, magically detonating all damage over time effects, disrupting Bloon movement, and strips Camo.",
+        "ops": [
+          {
+            "target": "attack_splash",
+            "stat": "pierce",
+            "op": "add",
+            "value": 6
+          },
+          {
+            "target": "trance_attack",
+            "stat": "attack",
+            "op": "add",
+            "value": "Trance attack"
+          }
+        ],
         "state": {
           "range": 28,
           "camo": true,
@@ -727,11 +1140,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 200,
               "lifespan": 1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=1",
-              "damage_vs": {}
+              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=1"
             },
             {
               "tag": "attack_splash",
@@ -742,11 +1156,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=9; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=4",
-              "damage_vs": {}
+              "notes": "maxPierce=9; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=28; projectile radius=4"
             },
             {
               "tag": "trance_attack",
@@ -757,11 +1172,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 6,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; clearHitBloonsInterval=0.3; refreshPierceInterval=0.3; piercePenaltyForCeramic=1; filterOutMoabs=True; cleanseCamo=True; lifespan=6s; can target/hit camo; targeting: First; attack range=28; effect 'Trance': multiplier=3, multiplierForMoabs=1, lifespan=6, orbitRadius=30, radiusBloonSizeMultiplier=8, cooldown=4, maxDotDamage=50 (damage type plasma); projectile radius=28",
-              "damage_vs": {}
+              "notes": "no direct damage listed; clearHitBloonsInterval=0.3; refreshPierceInterval=0.3; piercePenaltyForCeramic=1; filterOutMoabs=True; cleanseCamo=True; lifespan=6s; can target/hit camo; targeting: First; attack range=28; effect 'Trance': multiplier=3, multiplierForMoabs=1, lifespan=6, orbitRadius=30, radiusBloonSizeMultiplier=8, cooldown=4, maxDotDamage=50 (damage type plasma); projectile radius=28"
             }
           ]
         },
@@ -772,6 +1188,26 @@
         "name": "Symphonic Resonance",
         "cost": 7600,
         "description": "Hypnotic tune can affect low tier MOAB-Class Bloons. Can be set to echo from a nearby point.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 4
+          },
+          {
+            "target": "trance_totem_trance_attack",
+            "stat": "attack",
+            "op": "add",
+            "value": "Trance totem: Trance attack"
+          },
+          {
+            "target": "trance_attack",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          }
+        ],
         "state": {
           "range": 32,
           "camo": true,
@@ -786,11 +1222,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 200,
               "lifespan": 1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=32; projectile radius=1",
-              "damage_vs": {}
+              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=32; projectile radius=1"
             },
             {
               "tag": "attack_splash",
@@ -801,11 +1238,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=9; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=32; projectile radius=4",
-              "damage_vs": {}
+              "notes": "maxPierce=9; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=32; projectile radius=4"
             },
             {
               "tag": "trance_totem_trance_attack",
@@ -816,11 +1254,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 6,
+              "damage_vs": {},
               "camo": null,
-              "notes": "attack of sub-tower 'Trance totem'; no direct damage listed; clearHitBloonsInterval=0.3; refreshPierceInterval=0.3; piercePenaltyForMoabs=2; filterOutBfb=True; filterOutZomg=True; filterOutBad=True; cleanseCamo=True; lifespan=6s; can target/hit camo; targeting: First; attack range=32; effect 'Trance': multiplier=3, multiplierForMoabs=1, lifespan=6, orbitRadius=30, radiusBloonSizeMultiplier=8, cooldown=4, maxDotDamage=125 (damage type plasma); attack customStartCooldown=1.5; projectile radius=32",
-              "damage_vs": {}
+              "notes": "attack of sub-tower 'Trance totem'; no direct damage listed; clearHitBloonsInterval=0.3; refreshPierceInterval=0.3; piercePenaltyForMoabs=2; filterOutBfb=True; filterOutZomg=True; filterOutBad=True; cleanseCamo=True; lifespan=6s; can target/hit camo; targeting: First; attack range=32; effect 'Trance': multiplier=3, multiplierForMoabs=1, lifespan=6, orbitRadius=30, radiusBloonSizeMultiplier=8, cooldown=4, maxDotDamage=125 (damage type plasma); attack customStartCooldown=1.5; projectile radius=32"
             }
           ]
         },
@@ -831,6 +1270,20 @@
         "name": "The Final Harmonic",
         "cost": 25000,
         "description": "This elder can echo its irresistible tune anywhere. While devastating to Bloons, the call inspires nearby Heroes with improved range and cooldowns, and Magic Monkeys extra pierce.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "add",
+            "value": 6
+          },
+          {
+            "target": "attack_splash",
+            "stat": "pierce",
+            "op": "add",
+            "value": 9
+          }
+        ],
         "state": {
           "range": 38,
           "camo": true,
@@ -845,11 +1298,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 200,
               "lifespan": 1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=38; projectile radius=1",
-              "damage_vs": {}
+              "notes": "no direct damage listed; seekDistance=80; lifespan=1s; speed=200; can target/hit camo; targeting: Depends on targeting option; attack range=38; projectile radius=1"
             },
             {
               "tag": "attack_splash",
@@ -860,11 +1314,12 @@
               "damage_type": "shatter",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "maxPierce=18; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=38; projectile radius=4",
-              "damage_vs": {}
+              "notes": "maxPierce=18; lifespan=0.05s; can target/hit camo; targeting: Depends on targeting option; attack range=38; projectile radius=4"
             },
             {
               "tag": "trance_totem_trance_attack",
@@ -875,11 +1330,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 6,
+              "damage_vs": {},
               "camo": null,
-              "notes": "attack of sub-tower 'Trance totem'; no direct damage listed; clearHitBloonsInterval=0.3; refreshPierceInterval=0.3; piercePenaltyForMoabs=2; cleanseCamo=True; lifespan=6s; can target/hit camo; targeting: First; attack range=38; effect 'Trance': multiplier=3, multiplierForMoabs=1, lifespan=6, orbitRadius=30, radiusBloonSizeMultiplier=8, cooldown=1, maxDotDamage=10000 (damage type plasma); attack customStartCooldown=1.5; projectile radius=38",
-              "damage_vs": {}
+              "notes": "attack of sub-tower 'Trance totem'; no direct damage listed; clearHitBloonsInterval=0.3; refreshPierceInterval=0.3; piercePenaltyForMoabs=2; cleanseCamo=True; lifespan=6s; can target/hit camo; targeting: First; attack range=38; effect 'Trance': multiplier=3, multiplierForMoabs=1, lifespan=6, orbitRadius=30, radiusBloonSizeMultiplier=8, cooldown=1, maxDotDamage=10000 (damage type plasma); attack customStartCooldown=1.5; projectile radius=38"
             }
           ]
         },

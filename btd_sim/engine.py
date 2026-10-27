@@ -17,6 +17,7 @@ import numpy as np
 GRID_W, GRID_H = 20, 15
 CELL_PX = 100
 DT = 0.05  # Sekunden pro Simulationsschritt
+CD_EPS = 1e-9  # Toleranz für Float-Fehler beim Cooldown-Vergleich
 
 # Pfad-Mittellinie in Zellkoordinaten (Zellmittelpunkte), aus dem Screenshot abgelesen
 MONKEY_MEADOW = [
@@ -313,16 +314,19 @@ class Game:
                         self.lives = 0
                         break
 
-            # Türme schießen
+            # Türme schießen. Cooldowns laufen jeden Tick (auch ohne Bloons) und der Überschuss
+            # wird übertragen (cd_left += cooldown), sonst rasten sie auf das Tick-Raster ein.
+            for tw in towers:
+                tw.cd_left -= DT
             if len(dist):
                 bx, by = track.xy(dist)
                 for tw in towers:
-                    tw.cd_left -= DT
-                    if tw.cd_left > 0 or not len(dist):
+                    if tw.cd_left > CD_EPS or not len(dist):
                         continue
                     cx, cy = tw.x + 0.5, tw.y + 0.5
                     in_range = np.flatnonzero((bx - cx) ** 2 + (by - cy) ** 2 <= tw.range ** 2)
                     if not len(in_range):
+                        tw.cd_left = 0.0  # schussbereit, aber kein Ziel: nicht weiter "ansparen"
                         continue
                     first = in_range[np.argmax(dist[in_range])]  # Targeting: "First"
                     if tw.blast > 0:
@@ -330,7 +334,7 @@ class Game:
                     else:
                         hit = in_range
                     hit = hit[np.argsort(-dist[hit])][: tw.pierce]
-                    tw.cd_left = tw.cooldown
+                    tw.cd_left = max(tw.cd_left, -DT) + tw.cooldown
 
                     keep = np.ones(len(dist), dtype=bool)
                     add_d, add_k = [], []

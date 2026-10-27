@@ -34,11 +34,12 @@
         "damage_type": "acid",
         "projectiles": 1,
         "blast_radius": null,
+        "range": null,
         "projectile_speed": null,
         "lifespan": 0.05,
+        "damage_vs": {},
         "camo": null,
-        "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=14",
-        "damage_vs": {}
+        "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=14"
       }
     ]
   },
@@ -49,6 +50,14 @@
         "name": "Larger Potions",
         "cost": 250,
         "description": "Potions splash over more Bloons in a larger area.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "pierce",
+            "op": "add",
+            "value": 5
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -63,11 +72,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21",
-              "damage_vs": {}
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21"
             }
           ]
         },
@@ -78,6 +88,14 @@
         "name": "Acidic Mixture Dip",
         "cost": 350,
         "description": "Throws a helpful potion at nearby Monkeys that allows them to pop Lead Bloons and do extra damage to Ceramic and MOAB-class Bloons. Wears off after several attacks.",
+        "ops": [
+          {
+            "target": "acidic_mixture_dip",
+            "stat": "attack",
+            "op": "add",
+            "value": "Acidic Mixture Dip"
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -92,11 +110,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21",
-              "damage_vs": {}
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21"
             },
             {
               "tag": "acidic_mixture_dip",
@@ -107,11 +126,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=10, maxCharges=30}, count=1, range=45",
-              "damage_vs": {}
+              "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=10, maxCharges=30}, count=1, range=45"
             }
           ]
         },
@@ -122,6 +142,14 @@
         "name": "Berserker Brew",
         "cost": 1400,
         "description": "Throws special brew to a nearby Monkey giving it increased damage, range, and attack speed briefly. Multiple Monkeys can be buffed at once.",
+        "ops": [
+          {
+            "target": "berserker_brew",
+            "stat": "attack",
+            "op": "add",
+            "value": "Berserker Brew"
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -136,11 +164,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21",
-              "damage_vs": {}
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21"
             },
             {
               "tag": "acidic_mixture_dip",
@@ -151,11 +180,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=10, maxCharges=30}, count=1, range=45",
-              "damage_vs": {}
+              "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=10, maxCharges=30}, count=1, range=45"
             },
             {
               "tag": "berserker_brew",
@@ -166,11 +196,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": null,
+              "lifespan": 5,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no projectile data; rate=8, buff 'Buff' {lifespan=5, damageAdditive=1, pierceAdditive=2, ratePercentage=0.1, rangePercentage=0.1, charges=25, rebuffCooldown=5}, count=1, range=45",
-              "damage_vs": {}
+              "notes": "no projectile data; rate=8, buff 'Buff' {lifespan=5, damageAdditive=1, pierceAdditive=2, ratePercentage=0.1, rangePercentage=0.1, charges=25, rebuffCooldown=5}, count=1, range=45"
             }
           ]
         },
@@ -181,6 +212,14 @@
         "name": "Stronger Stimulant",
         "cost": 2850,
         "description": "Extra strong berserker brew has even more powerful effect on the target. Lasts even longer.",
+        "ops": [
+          {
+            "target": "berserker_brew",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 12
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -195,11 +234,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21",
-              "damage_vs": {}
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21"
             },
             {
               "tag": "acidic_mixture_dip",
@@ -210,11 +250,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=10, maxCharges=30}, count=1, range=45",
-              "damage_vs": {}
+              "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=10, maxCharges=30}, count=1, range=45"
             },
             {
               "tag": "berserker_brew",
@@ -225,11 +266,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": null,
+              "lifespan": 12,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no projectile data; rate=8, buff 'Buff' {lifespan=12, damageAdditive=1, pierceAdditive=3, ratePercentage=0.15, rangePercentage=0.15, charges=40, rebuffCooldown=5}, count=1, range=45",
-              "damage_vs": {}
+              "notes": "no projectile data; rate=8, buff 'Buff' {lifespan=12, damageAdditive=1, pierceAdditive=3, ratePercentage=0.15, rangePercentage=0.15, charges=40, rebuffCooldown=5}, count=1, range=45"
             }
           ]
         },
@@ -240,6 +282,14 @@
         "name": "Permanent Brew",
         "cost": 48000,
         "description": "Berserker brew becomes PERMANENT on Monkeys who drink it.",
+        "ops": [
+          {
+            "target": "berserker_brew",
+            "stat": "lifespan",
+            "op": "set",
+            "value": -1
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -254,11 +304,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21",
-              "damage_vs": {}
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=21"
             },
             {
               "tag": "acidic_mixture_dip",
@@ -269,11 +320,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": null,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=9999999, maxCharges=9999999}, count=1, range=45",
-              "damage_vs": {}
+              "notes": "no projectile data; rate=10, buff 'Buff' {damageAdditiveForCeramic=1, damageAdditiveForMoabs=1, damageAdditiveForFortifiedLead=1, charges=9999999, maxCharges=9999999}, count=1, range=45"
             },
             {
               "tag": "berserker_brew",
@@ -284,11 +336,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
-              "lifespan": null,
+              "lifespan": -1,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no projectile data; rate=8, buff 'Buff' {lifespan=-1, damageAdditive=1, pierceAdditive=3, ratePercentage=0.15, rangePercentage=0.15, charges=9999999, rebuffCooldown=-1}, count=1, range=45",
-              "damage_vs": {}
+              "notes": "no projectile data; rate=8, buff 'Buff' {lifespan=-1, damageAdditive=1, pierceAdditive=3, ratePercentage=0.15, rangePercentage=0.15, charges=9999999, rebuffCooldown=-1}, count=1, range=45"
             }
           ]
         },
@@ -301,6 +354,7 @@
         "name": "Stronger Acid",
         "cost": 250,
         "description": "Acid potions dissolve Bloons faster.",
+        "ops": [],
         "state": {
           "range": 45,
           "camo": false,
@@ -315,11 +369,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14",
-              "damage_vs": {}
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14"
             }
           ]
         },
@@ -330,6 +385,17 @@
         "name": "Perishing Potions",
         "cost": 475,
         "description": "Attack potions deal more damage to MOAB-class Bloons and strip Fortified off smaller Bloons. Buff potions last longer.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 4,
+              "fortified+moab": 15
+            }
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -344,14 +410,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": null,
-              "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14",
               "damage_vs": {
                 "moab": 4,
-                "fortified": 15
-              }
+                "fortified+moab": 15
+              },
+              "camo": null,
+              "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14"
             }
           ]
         },
@@ -362,6 +429,20 @@
         "name": "Unstable Concoction",
         "cost": 2800,
         "description": "Coats MOAB-Class in an explosive substance that causes a large explosion when they are popped.",
+        "ops": [
+          {
+            "target": "unstable_concoction_splash",
+            "stat": "attack",
+            "op": "add",
+            "value": "Unstable Concoction/Splash"
+          },
+          {
+            "target": "unstable_concoction_explosion",
+            "stat": "attack",
+            "op": "add",
+            "value": "Unstable Concoction/Explosion"
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -376,14 +457,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": null,
-              "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14",
               "damage_vs": {
                 "moab": 4,
-                "fortified": 15
-              }
+                "fortified+moab": 15
+              },
+              "camo": null,
+              "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14"
             },
             {
               "tag": "unstable_concoction_splash",
@@ -394,11 +476,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 67.5,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "filterOutNonMoabs=True; lifespan=0.05s; attack range=67.5; projectile radius=14",
-              "damage_vs": {}
+              "notes": "filterOutNonMoabs=True; lifespan=0.05s; attack range=67.5; projectile radius=14"
             },
             {
               "tag": "unstable_concoction_explosion",
@@ -409,11 +492,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 40,
+              "range": 67.5,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "flag damageModifierUnstableConcoction=true; lifespan=0.05s; attack range=67.5",
-              "damage_vs": {}
+              "notes": "flag damageModifierUnstableConcoction=true; lifespan=0.05s; attack range=67.5"
             }
           ]
         },
@@ -424,6 +508,7 @@
         "name": "Transforming Tonic",
         "cost": 4200,
         "description": "Transformation ability: Turns Alchemist into powerful attack Monster for 20 seconds.",
+        "ops": [],
         "state": {
           "range": 45,
           "camo": false,
@@ -438,14 +523,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": null,
-              "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14",
               "damage_vs": {
                 "moab": 4,
-                "fortified": 15
-              }
+                "fortified+moab": 15
+              },
+              "camo": null,
+              "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14"
             },
             {
               "tag": "unstable_concoction_splash",
@@ -456,11 +542,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 67.5,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "filterOutNonMoabs=True; lifespan=0.05s; attack range=67.5; projectile radius=14",
-              "damage_vs": {}
+              "notes": "filterOutNonMoabs=True; lifespan=0.05s; attack range=67.5; projectile radius=14"
             },
             {
               "tag": "unstable_concoction_explosion",
@@ -471,11 +558,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 40,
+              "range": 67.5,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "flag damageModifierUnstableConcoction=true; lifespan=0.05s; attack range=67.5",
-              "damage_vs": {}
+              "notes": "flag damageModifierUnstableConcoction=true; lifespan=0.05s; attack range=67.5"
             }
           ]
         },
@@ -492,6 +580,14 @@
         "name": "Total Transformation",
         "cost": 45000,
         "description": "Transforms five Monkeys nearby into crazy attack monsters for 20 seconds.",
+        "ops": [
+          {
+            "target": "transformed_monkey_attack",
+            "stat": "attack",
+            "op": "add",
+            "value": "Transformed Monkey: Attack"
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -506,14 +602,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": null,
-              "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14",
               "damage_vs": {
                 "moab": 4,
-                "fortified": 15
-              }
+                "fortified+moab": 15
+              },
+              "camo": null,
+              "notes": "+4 damage vs MOAB-class; +15 damage vs fortified MOAB-class; cleanseFortified=True; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.55, damage=1, interval=1.5 (damage type acid); projectile radius=14"
             },
             {
               "tag": "unstable_concoction_splash",
@@ -524,11 +621,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 67.5,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "filterOutNonMoabs=True; lifespan=0.05s; attack range=67.5; projectile radius=14",
-              "damage_vs": {}
+              "notes": "filterOutNonMoabs=True; lifespan=0.05s; attack range=67.5; projectile radius=14"
             },
             {
               "tag": "unstable_concoction_explosion",
@@ -539,11 +637,12 @@
               "damage_type": "normal",
               "projectiles": 1,
               "blast_radius": 40,
+              "range": 67.5,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "flag damageModifierUnstableConcoction=true; lifespan=0.05s; attack range=67.5",
-              "damage_vs": {}
+              "notes": "flag damageModifierUnstableConcoction=true; lifespan=0.05s; attack range=67.5"
             },
             {
               "tag": "transformed_monkey_attack",
@@ -554,11 +653,12 @@
               "damage_type": "plasma",
               "projectiles": 1,
               "blast_radius": null,
+              "range": 72,
               "projectile_speed": 280,
               "lifespan": 0.6,
+              "damage_vs": {},
               "camo": null,
-              "notes": "attack of sub-tower 'Transformed Monkey'; lifespan=0.6s; speed=280; targeting: Depends on targeting option; attack range=72; projectile radius=6",
-              "damage_vs": {}
+              "notes": "attack of sub-tower 'Transformed Monkey'; lifespan=0.6s; speed=280; targeting: Depends on targeting option; attack range=72; projectile radius=6"
             }
           ]
         },
@@ -573,6 +673,14 @@
         "name": "Faster Throwing",
         "cost": 650,
         "description": "Throws potions and attacks faster.",
+        "ops": [
+          {
+            "target": "attack",
+            "stat": "cooldown",
+            "op": "mul",
+            "value": 0.8
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -587,11 +695,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=14",
-              "damage_vs": {}
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=14"
             }
           ]
         },
@@ -602,6 +711,26 @@
         "name": "Acid Pool",
         "cost": 450,
         "description": "Every few attacks spills an acid pool on the track, and if no Bloons are nearby Alchemist can drench nearby track with acid.",
+        "ops": [
+          {
+            "target": "attack_acid_pool",
+            "stat": "attack",
+            "op": "add",
+            "value": "Attack/Acid Pool"
+          },
+          {
+            "target": "attack_splash",
+            "stat": "attack",
+            "op": "add",
+            "value": "Attack/Splash"
+          },
+          {
+            "target": "attack",
+            "stat": "attack",
+            "op": "remove",
+            "value": null
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -616,11 +745,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 6.95,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=7",
-              "damage_vs": {}
+              "notes": "lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=7"
             },
             {
               "tag": "attack_splash",
@@ -631,11 +761,12 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=14",
-              "damage_vs": {}
+              "notes": "lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2 (damage type acid); projectile radius=14"
             }
           ]
         },
@@ -646,6 +777,26 @@
         "name": "Lead to Gold",
         "cost": 1000,
         "description": "Converts Lead Bloons to GOLD! Special solvents do extra damage to Lead Bloons, destroying them in one shot and generating cash.",
+        "ops": [
+          {
+            "target": "attack_acid_pool",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "lead": 9,
+              "ddt": 9
+            }
+          },
+          {
+            "target": "attack_splash",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "lead": 9,
+              "ddt": 9
+            }
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -660,13 +811,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 6.95,
-              "camo": null,
-              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=7",
               "damage_vs": {
-                "lead": 9
-              }
+                "lead": 9,
+                "ddt": 9
+              },
+              "camo": null,
+              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=7"
             },
             {
               "tag": "attack_splash",
@@ -677,13 +830,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": null,
-              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=14",
               "damage_vs": {
-                "lead": 9
-              }
+                "lead": 9,
+                "ddt": 9
+              },
+              "camo": null,
+              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=14"
             }
           ]
         },
@@ -694,6 +849,14 @@
         "name": "Rubber to Gold",
         "cost": 2750,
         "description": "Converts all Bloons partially into gold, disabling Bloon immunity and getting more cash per pop from affected Bloons.",
+        "ops": [
+          {
+            "target": "rubber_to_gold",
+            "stat": "attack",
+            "op": "add",
+            "value": "Rubber to Gold"
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -708,13 +871,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 6.95,
-              "camo": null,
-              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=7",
               "damage_vs": {
-                "lead": 9
-              }
+                "lead": 9,
+                "ddt": 9
+              },
+              "camo": null,
+              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=7"
             },
             {
               "tag": "attack_splash",
@@ -725,13 +890,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": null,
-              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=14",
               "damage_vs": {
-                "lead": 9
-              }
+                "lead": 9,
+                "ddt": 9
+              },
+              "camo": null,
+              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=14"
             },
             {
               "tag": "rubber_to_gold",
@@ -742,11 +909,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; filterOutBad=True; increaseBloonWorthMultiplier=2; lifespan=0.05s; attack range=45; effect 'Rubber to Gold': cashMultiplier=2, lifespan=14, mutationId=RubberToGold; projectile radius=21",
-              "damage_vs": {}
+              "notes": "no direct damage listed; filterOutBad=True; increaseBloonWorthMultiplier=2; lifespan=0.05s; attack range=45; effect 'Rubber to Gold': cashMultiplier=2, lifespan=14, mutationId=RubberToGold; projectile radius=21"
             }
           ]
         },
@@ -757,6 +925,14 @@
         "name": "Bloon Master Alchemist",
         "cost": 40000,
         "description": "Secret shrink potion converts all affected Bloons to Red Bloons.",
+        "ops": [
+          {
+            "target": "shrink_potion",
+            "stat": "attack",
+            "op": "add",
+            "value": "Shrink Potion"
+          }
+        ],
         "state": {
           "range": 45,
           "camo": false,
@@ -771,13 +947,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 6.95,
-              "camo": null,
-              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=7",
               "damage_vs": {
-                "lead": 9
-              }
+                "lead": 9,
+                "ddt": 9
+              },
+              "camo": null,
+              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=6.95s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=7"
             },
             {
               "tag": "attack_splash",
@@ -788,13 +966,15 @@
               "damage_type": "acid",
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": null,
-              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=14",
               "damage_vs": {
-                "lead": 9
-              }
+                "lead": 9,
+                "ddt": 9
+              },
+              "camo": null,
+              "notes": "+9 damage vs lead/DDT; increaseBloonWorthLeadCash=50; lifespan=0.05s; targeting: Depends on targeting option; attack range=45; effect 'Damage over time': layers=9999999, lifespan=4.05, damage=1, interval=2, damageModifierForLeadOrDdt=9 (damage type acid); effect 'Lead to Gold': layers=1, lifespan=-1, filterOutNonLead=True; projectile radius=14"
             },
             {
               "tag": "rubber_to_gold",
@@ -805,11 +985,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; filterOutBad=True; increaseBloonWorthMultiplier=2; lifespan=0.05s; attack range=45; effect 'Rubber to Gold': cashMultiplier=2, lifespan=14, mutationId=RubberToGold; projectile radius=21",
-              "damage_vs": {}
+              "notes": "no direct damage listed; filterOutBad=True; increaseBloonWorthMultiplier=2; lifespan=0.05s; attack range=45; effect 'Rubber to Gold': cashMultiplier=2, lifespan=14, mutationId=RubberToGold; projectile radius=21"
             },
             {
               "tag": "shrink_potion",
@@ -820,11 +1001,12 @@
               "damage_type": null,
               "projectiles": 1,
               "blast_radius": null,
+              "range": 999,
               "projectile_speed": null,
               "lifespan": 0.05,
+              "damage_vs": {},
               "camo": null,
-              "notes": "no direct damage listed; lifespan=0.05s; targeting: Strong; attack range=999; projectile radius=25",
-              "damage_vs": {}
+              "notes": "no direct damage listed; lifespan=0.05s; targeting: Strong; attack range=999; projectile radius=25"
             }
           ]
         },

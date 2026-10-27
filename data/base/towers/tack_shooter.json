@@ -39,11 +39,12 @@
         "damage_type": "sharp",
         "projectiles": 8,
         "blast_radius": null,
+        "range": null,
         "projectile_speed": 160,
         "lifespan": 0.2,
-        "camo": false,
-        "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
-        "damage_vs": {}
+        "damage_vs": {},
+        "camo": null,
+        "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
       }
     ]
   },
@@ -54,6 +55,14 @@
         "name": "Faster Shooting",
         "cost": 150,
         "description": "Shoots tacks faster.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.84
+          }
+        ],
         "state": {
           "range": 23,
           "camo": false,
@@ -68,11 +77,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 160,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.84s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.84s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -83,6 +93,14 @@
         "name": "Even Faster Shooting",
         "cost": 220,
         "description": "Shoots tacks even faster.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.63
+          }
+        ],
         "state": {
           "range": 23,
           "camo": false,
@@ -97,11 +115,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 160,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.63s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.63s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -112,6 +131,20 @@
         "name": "Hot Shots",
         "cost": 600,
         "description": "Shoots superhot tacks that do extra damage and can pop Lead Bloons.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "damage",
+            "op": "set",
+            "value": 2
+          },
+          {
+            "target": "tacks",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          }
+        ],
         "state": {
           "range": 23,
           "camo": false,
@@ -126,11 +159,12 @@
               "damage_type": "normal",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 160,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.63s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 2; Damage type: Normal [Can damage any Bloon type]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.63s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 2; Damage type: Normal [Can damage any Bloon type]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -141,6 +175,50 @@
         "name": "Ring of Fire",
         "cost": 3500,
         "description": "Damages many more Bloons with a deadly ring of flame instead of tacks.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "damage",
+            "op": "set",
+            "value": 5
+          },
+          {
+            "target": "tacks",
+            "stat": "pierce",
+            "op": "set",
+            "value": 30
+          },
+          {
+            "target": "tacks",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.315
+          },
+          {
+            "target": "tacks",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "fire"
+          },
+          {
+            "target": "tacks",
+            "stat": "projectiles",
+            "op": "set",
+            "value": 1
+          },
+          {
+            "target": "tacks",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": null
+          },
+          {
+            "target": "tacks",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.05
+          }
+        ],
         "state": {
           "range": 23,
           "camo": false,
@@ -155,11 +233,12 @@
               "damage_type": "fire",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": 160,
+              "range": null,
+              "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.315s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Pierce: 30; Damage: 5; Damage type: Fire [Cannot damage Purple]; Lifespan: 0.05s; Radius: 25 units; Filters: Ignores Purple if its damage type cannot damage it; Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.315s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Pierce: 30; Damage: 5; Damage type: Fire [Cannot damage Purple]; Lifespan: 0.05s; Radius: 25 units; Filters: Ignores Purple if its damage type cannot damage it; Cannot hit Camo}"
             }
           ]
         },
@@ -170,6 +249,46 @@
         "name": "Inferno Ring",
         "cost": 45500,
         "description": "Deadly inferno of flame roasts Bloons into oblivion.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 34.5
+          },
+          {
+            "target": "tacks",
+            "stat": "damage",
+            "op": "set",
+            "value": 8
+          },
+          {
+            "target": "tacks",
+            "stat": "pierce",
+            "op": "set",
+            "value": 45
+          },
+          {
+            "target": "tacks",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.1
+          },
+          {
+            "target": "meteor",
+            "stat": "attack",
+            "op": "add",
+            "value": "meteor"
+          },
+          {
+            "target": "tacks",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 4
+            }
+          }
+        ],
         "state": {
           "range": 34.5,
           "camo": false,
@@ -184,13 +303,14 @@
               "damage_type": "fire",
               "projectiles": 1,
               "blast_radius": null,
-              "projectile_speed": 160,
+              "range": null,
+              "projectile_speed": null,
               "lifespan": 0.05,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.1s; Targeting: Close; Targeting range: 34.5 units; Filters: Cannot target Camo; Projectile {Pierce: 45; Damage: 8; Damage to MOAB-Class: +4; Damage type: Fire [Cannot damage Purple]; Lifespan: 0.05s; Radius: 36.5 units; Filters: Ignores Purple if its damage type cannot damage it; Cannot hit Camo}",
               "damage_vs": {
                 "moab": 4
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.1s; Targeting: Close; Targeting range: 34.5 units; Filters: Cannot target Camo; Projectile {Pierce: 45; Damage: 8; Damage to MOAB-Class: +4; Damage type: Fire [Cannot damage Purple]; Lifespan: 0.05s; Radius: 36.5 units; Filters: Ignores Purple if its damage type cannot damage it; Cannot hit Camo}"
             },
             {
               "tag": "meteor",
@@ -201,11 +321,12 @@
               "damage_type": "fire",
               "projectiles": 1,
               "blast_radius": 18,
+              "range": null,
               "projectile_speed": 100,
               "lifespan": 20,
-              "camo": false,
-              "notes": "targeting range ∞ units; cannot target Camo; wiki stats: Cooldown: 4s; Targeting range: ∞ units; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 700; Damage type: Fire [Cannot damage Purple]; Speed: 100 units/s; Seeking distance: ∞ units; Seeking angle: 360°; Seeking rotation speed: 130 °/s; Lifespan: 20s; Radius: 5 units; Filters: Cannot hit Camo; Can only hit the target}; Explosion {Pierce: 10; Damage: 50; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Radius: 18 units; Filters: Cannot hit Camo; Damage over time {Damage: 50; Damage type: Fire; Duration: 4.1s; Interval: 1s; Layers: ∞}}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "targeting range ∞ units; cannot target Camo; wiki stats: Cooldown: 4s; Targeting range: ∞ units; Filters: Cannot target Camo; Projectile {Pierce: 1; Damage: 700; Damage type: Fire [Cannot damage Purple]; Speed: 100 units/s; Seeking distance: ∞ units; Seeking angle: 360°; Seeking rotation speed: 130 °/s; Lifespan: 20s; Radius: 5 units; Filters: Cannot hit Camo; Can only hit the target}; Explosion {Pierce: 10; Damage: 50; Damage type: Explosion [Cannot damage Black]; Lifespan: 0.1s; Radius: 18 units; Filters: Cannot hit Camo; Damage over time {Damage: 50; Damage type: Fire; Duration: 4.1s; Interval: 1s; Layers: ∞}}"
             }
           ]
         },
@@ -220,6 +341,26 @@
         "name": "Long Range Tacks",
         "cost": 100,
         "description": "Tacks fly out further than normal.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 26.91
+          },
+          {
+            "target": "tacks",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 187.2
+          },
+          {
+            "target": "tacks",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.234
+          }
+        ],
         "state": {
           "range": 26.91,
           "camo": false,
@@ -234,11 +375,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 187.2,
               "lifespan": 0.234,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 26.91 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 187.2 units/s; Lifespan: 0.234s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 26.91 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 187.2 units/s; Lifespan: 0.234s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -249,6 +391,26 @@
         "name": "Super Range Tacks",
         "cost": 225,
         "description": "Even longer range tacks that can pop more Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 30.82
+          },
+          {
+            "target": "tacks",
+            "stat": "pierce",
+            "op": "set",
+            "value": 4
+          },
+          {
+            "target": "tacks",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.2631
+          }
+        ],
         "state": {
           "range": 30.82,
           "camo": false,
@@ -263,11 +425,12 @@
               "damage_type": "sharp",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 187.2,
               "lifespan": 0.2631,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 30.82 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 4; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 187.2 units/s; Lifespan: 0.2631s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 30.82 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 4; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 187.2 units/s; Lifespan: 0.2631s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -278,6 +441,32 @@
         "name": "Blade Shooter",
         "cost": 550,
         "description": "Switches tacks out for ultra-sharp, high pierce blades that can shatter frozen Bloons.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 46
+          },
+          {
+            "target": "tacks",
+            "stat": "pierce",
+            "op": "set",
+            "value": 8
+          },
+          {
+            "target": "tacks",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "shatter"
+          },
+          {
+            "target": "tacks",
+            "stat": "lifespan",
+            "op": "set",
+            "value": 0.3419
+          }
+        ],
         "state": {
           "range": 46,
           "camo": false,
@@ -292,11 +481,12 @@
               "damage_type": "shatter",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 187.2,
               "lifespan": 0.3419,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 46 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 8; Damage: 1; Damage type: Shatter [Cannot damage Lead]; Speed: 187.2 units/s; Lifespan: 0.3419s; Radius: 4 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 46 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 8; Damage: 1; Damage type: Shatter [Cannot damage Lead]; Speed: 187.2 units/s; Lifespan: 0.3419s; Radius: 4 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -307,6 +497,14 @@
         "name": "Blade Maelstrom",
         "cost": 2700,
         "description": "Blade Maelstrom ability: Covers the area in a storm of blades.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "damage",
+            "op": "set",
+            "value": 2
+          }
+        ],
         "state": {
           "range": 46,
           "camo": false,
@@ -321,11 +519,12 @@
               "damage_type": "shatter",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 187.2,
               "lifespan": 0.3419,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 46 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 8; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 187.2 units/s; Lifespan: 0.3419s; Radius: 4 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 46 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 8; Damage: 2; Damage type: Shatter [Cannot damage Lead]; Speed: 187.2 units/s; Lifespan: 0.3419s; Radius: 4 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -344,6 +543,28 @@
         "name": "Super Maelstrom",
         "cost": 15000,
         "description": "Even more powerful Maelstrom ability and lasts longer.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "damage",
+            "op": "set",
+            "value": 5
+          },
+          {
+            "target": "tacks",
+            "stat": "damage_type",
+            "op": "set",
+            "value": "normal"
+          },
+          {
+            "target": "tacks",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "ceramic": 5
+            }
+          }
+        ],
         "state": {
           "range": 46,
           "camo": false,
@@ -358,13 +579,14 @@
               "damage_type": "normal",
               "projectiles": 8,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 187.2,
               "lifespan": 0.3419,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 46 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 8; Damage: 5; Damage to Ceramic: +5; Damage type: Normal [Can damage any Bloon type]; Speed: 187.2 units/s; Lifespan: 0.3419s; Radius: 4 units; Filters: Cannot hit Camo}",
               "damage_vs": {
                 "ceramic": 5
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 46 units; Filters: Cannot target Camo; Projectile {Count: 8; Angle: 360°; Pierce: 8; Damage: 5; Damage to Ceramic: +5; Damage type: Normal [Can damage any Bloon type]; Speed: 187.2 units/s; Lifespan: 0.3419s; Radius: 4 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -385,6 +607,14 @@
         "name": "More Tacks",
         "cost": 150,
         "description": "Shoots 10 tacks instead of 8, plus increases Ring of Fire damage.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "projectiles",
+            "op": "set",
+            "value": 10
+          }
+        ],
         "state": {
           "range": 23,
           "camo": false,
@@ -399,11 +629,12 @@
               "damage_type": "sharp",
               "projectiles": 10,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 160,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 10; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 10; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -414,6 +645,14 @@
         "name": "Even More Tacks",
         "cost": 150,
         "description": "Shoots out 12 tacks per shot and increases Ring of Fire damage further.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "projectiles",
+            "op": "set",
+            "value": 12
+          }
+        ],
         "state": {
           "range": 23,
           "camo": false,
@@ -428,11 +667,12 @@
               "damage_type": "sharp",
               "projectiles": 12,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 160,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 12; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 12; Angle: 360°; Pierce: 1; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -443,6 +683,20 @@
         "name": "Tack Sprayer",
         "cost": 450,
         "description": "Sprays out 16 higher pierce tacks per volley.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "pierce",
+            "op": "set",
+            "value": 2
+          },
+          {
+            "target": "tacks",
+            "stat": "projectiles",
+            "op": "set",
+            "value": 16
+          }
+        ],
         "state": {
           "range": 23,
           "camo": false,
@@ -457,11 +711,12 @@
               "damage_type": "sharp",
               "projectiles": 16,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 160,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 16; Angle: 360°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 1.12s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 16; Angle: 360°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -472,6 +727,14 @@
         "name": "Overdrive",
         "cost": 3200,
         "description": "Shoots incredibly fast.",
+        "ops": [
+          {
+            "target": "tacks",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.3733
+          }
+        ],
         "state": {
           "range": 23,
           "camo": false,
@@ -486,11 +749,12 @@
               "damage_type": "sharp",
               "projectiles": 16,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 160,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.3733s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 16; Angle: 360°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
-              "damage_vs": {}
+              "damage_vs": {},
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.3733s; Targeting range: 23 units; Filters: Cannot target Camo; Projectile {Count: 16; Angle: 360°; Pierce: 2; Damage: 1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 160 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },
@@ -501,6 +765,40 @@
         "name": "The Tack Zone",
         "cost": 20000,
         "description": "Many, many tacks.",
+        "ops": [
+          {
+            "target": "tower",
+            "stat": "range",
+            "op": "set",
+            "value": 30
+          },
+          {
+            "target": "tacks",
+            "stat": "cooldown",
+            "op": "set",
+            "value": 0.224
+          },
+          {
+            "target": "tacks",
+            "stat": "projectiles",
+            "op": "set",
+            "value": 32
+          },
+          {
+            "target": "tacks",
+            "stat": "projectile_speed",
+            "op": "set",
+            "value": 240
+          },
+          {
+            "target": "tacks",
+            "stat": "damage_vs",
+            "op": "set",
+            "value": {
+              "moab": 1
+            }
+          }
+        ],
         "state": {
           "range": 30,
           "camo": false,
@@ -515,13 +813,14 @@
               "damage_type": "sharp",
               "projectiles": 32,
               "blast_radius": null,
+              "range": null,
               "projectile_speed": 240,
               "lifespan": 0.2,
-              "camo": false,
-              "notes": "cannot target Camo; wiki stats: Cooldown: 0.224s; Targeting range: 30 units; Filters: Cannot target Camo; Projectile {Count: 32; Angle: 360°; Pierce: 2; Damage: 1; Damage to MOAB-Class: +1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 240 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}",
               "damage_vs": {
                 "moab": 1
-              }
+              },
+              "camo": null,
+              "notes": "cannot target Camo; wiki stats: Cooldown: 0.224s; Targeting range: 30 units; Filters: Cannot target Camo; Projectile {Count: 32; Angle: 360°; Pierce: 2; Damage: 1; Damage to MOAB-Class: +1; Damage type: Sharp [Cannot damage Lead or frozen]; Speed: 240 units/s; Lifespan: 0.2s; Radius: 0 units; Filters: Cannot hit Camo}"
             }
           ]
         },

@@ -5,3 +5,4 @@ sb3-contrib
 tensorboard
 torch  # CPU: --index-url https://download.pytorch.org/whl/cpu
 jsonschema
+pytest
