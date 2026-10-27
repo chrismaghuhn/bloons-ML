@@ -239,7 +239,6 @@ Damit sind die **[prüfen]**-Punkte aus den Abschnitten 1–4 beantwortet:
   (102 Blue, wie im Spiel). Für einen `StartState` mit `round` geschafften Runden: `SetRound(state.round, false)`.
   `spawner.SetRound` (Mod Helper) wurde nicht gebraucht.
 - **Nebenbefund für den Recorder:** `Bloon.spawnRound` ist hier für alle Bloons 0, also nicht die Rundennummer;
-  der Trace-Schlüssel muss die Runde aus `round_start` nehmen (`mod/tools/analyze_trace.py` nutzt bisher
-  `spawnRound`, in Runde-1-Aufnahmen fiel das nicht auf).
+  `mod/tools/analyze_trace.py` nimmt die Runde für den Bloon-Schlüssel deshalb jetzt aus `round_start`.
 
 Damit kann Schritt 2 (Player für `btd-replay/2` zwischen den Runden, Weg A) ohne offene API-Fragen beginnen.
