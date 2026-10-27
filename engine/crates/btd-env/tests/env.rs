@@ -205,6 +205,7 @@ fn vec_env_auto_resets_and_matches_single_env() {
     let mut obs = vec![0.0; 3 * n_obs];
     let mut tobs = vec![0.0; 3 * n_obs];
     let (mut rew, mut done, mut rounds) = (vec![0.0; 3], vec![false; 3], vec![0; 3]);
+    let mut kinds = vec![0u8; 3];
     let mut masks = vec![false; 3 * n_act];
     let mut sobs = vec![0.0; n_obs];
     v.reset(&mut obs);
@@ -223,6 +224,7 @@ fn vec_env_auto_resets_and_matches_single_env() {
                 dones: &mut done,
                 terminal_obs: &mut tobs,
                 rounds: &mut rounds,
+                start_kinds: &mut kinds,
             },
         );
         let info = single.step(0, &mut sobs);

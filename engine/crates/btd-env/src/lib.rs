@@ -8,11 +8,12 @@
 
 pub mod preview;
 pub mod replay;
+pub mod start;
 
 use std::path::Path;
 use std::sync::Arc;
 
-use btd_core::{Action, Game, RoundReport};
+use btd_core::{Action, Game, Money, RoundReport};
 use btd_data::v1::GameV1;
 use btd_data::DataError;
 use rayon::prelude::*;
@@ -20,6 +21,11 @@ use xxhash_rust::xxh3::xxh3_64_with_seed;
 
 pub use preview::RoundPreview;
 pub use replay::{Recorder, Replay, ReplayError};
+pub use start::{StartConfig, StartKind, StartOutcome, StartState};
+
+use std::collections::VecDeque;
+
+use start::{Dice, CHECK_ROUNDS};
 
 /// Seed für den Hash der Datendatei im Replay-Header.
 const DATA_HASH_SEED: u64 = 0xDA7A;
@@ -213,6 +219,12 @@ pub struct Env {
     /// das Bauen; Replays speichern sie nicht, geladene Türme gesperrter Typen bleiben nutzbar.
     banned: Vec<bool>,
     rng: u64,
+    /// Startzustände (alle Envs teilen sich die Einstellungen), Herkunft der laufenden Episode,
+    /// noch nicht abgeholte Ergebnisse und Zustände zu Rundenbeginn (Quelle A).
+    starts: Option<Arc<StartConfig>>,
+    start: EpisodeStart,
+    outcomes: Vec<StartOutcome>,
+    snapshots: VecDeque<StartState>,
     recorder: Option<Recorder>,
     last_replay: Option<Replay>,
 }
@@ -241,6 +253,10 @@ impl Env {
             map_ok: Arc::new(map_ok),
             banned: vec![false; layout.towers],
             rng: splitmix64(cfg.seed),
+            starts: None,
+            start: EpisodeStart::default(),
+            outcomes: Vec::new(),
+            snapshots: VecDeque::new(),
             builds_left: cfg.max_builds_per_round,
             game,
             layout,
@@ -277,11 +293,157 @@ impl Env {
     pub fn reset(&mut self, obs: &mut [f32]) {
         self.draw_bans();
         self.game.reset();
+        self.start = EpisodeStart::default();
+        if let Some(sc) = self.starts.clone() {
+            if self.unit() < sc.p_start {
+                self.start_from_config(&sc);
+            }
+        }
         self.builds_left = self.cfg.max_builds_per_round;
         if self.recorder.is_some() {
+            // Episoden aus einem Startzustand lassen sich nicht ab Runde 1 nachspielen
             self.recorder = Some(Recorder::new(&self.spec, &self.cfg));
         }
         self.observe(obs);
+    }
+
+    /// Neue Episode ab einem festen Startzustand (ohne Störung), z.B. für die Auswertung.
+    /// Bei ungültigem Zustand bleibt die Env im normalen Startzustand.
+    pub fn reset_from(&mut self, obs: &mut [f32], state: &StartState) -> Result<(), String> {
+        self.reset(obs);
+        let res = state.build(&mut self.game);
+        if res.is_err() {
+            self.game.reset();
+        } else {
+            self.start = EpisodeStart { kind: StartKind::Pool, ..EpisodeStart::default() };
+        }
+        self.observe(obs);
+        res
+    }
+
+    /// Einstellungen für Startzustände (VecEnv: für alle Envs gemeinsam).
+    pub fn set_starts(&mut self, starts: Option<Arc<StartConfig>>) {
+        self.starts = starts;
+    }
+
+    /// Herkunft der laufenden Episode.
+    pub fn start_kind(&self) -> StartKind {
+        self.start.kind
+    }
+
+    /// Abgeschlossene 3-Runden-Prüfungen seit dem letzten Aufruf.
+    pub fn take_outcomes(&mut self) -> Vec<StartOutcome> {
+        std::mem::take(&mut self.outcomes)
+    }
+
+    /// Zustände zu Rundenbeginn aus normalen Episoden seit dem letzten Aufruf (höchstens die letzten 8).
+    pub fn take_snapshots(&mut self) -> Vec<StartState> {
+        self.snapshots.drain(..).collect()
+    }
+
+    fn start_from_config(&mut self, sc: &StartConfig) {
+        if self.unit() < sc.p_random {
+            if self.random_build(sc) {
+                self.start.kind = StartKind::Random;
+                self.start.lives_perturbed = self.perturb_lives();
+            } else {
+                self.game.reset();
+            }
+            return;
+        }
+        let Some(base) = sc.sample(&mut RngDice(&mut self.rng)) else { return };
+        // gestörter Zustand; ist er ungültig (z.B. Turm auf den Track verschoben), neu würfeln
+        for _ in 0..8 {
+            let p = start::perturb(&sc.pool[base], &self.game, self.layout.cell, &mut RngDice(&mut self.rng));
+            if p.state.build(&mut self.game).is_ok() {
+                if let Some(i) = p.sell {
+                    let _ = self.game.apply(Action::Sell { tower: i as btd_core::TowerId });
+                }
+                self.start = EpisodeStart {
+                    kind: StartKind::Pool,
+                    base: Some(base),
+                    lives_perturbed: p.lives_perturbed,
+                    rounds: 0,
+                    checked: false,
+                };
+                return;
+            }
+        }
+        self.game.reset(); // nichts Gültiges gefunden: normaler Start
+    }
+
+    /// Zufälliger Build (Quelle C): Runde gleichverteilt über 1..=Endrunde-5, Budget aus der
+    /// Budgetkurve ± Streuung, zufällig aufgeteilt in Cash und Türme (bebaubare Plätze,
+    /// erlaubte Upgrades, keine gesperrten Typen).
+    fn random_build(&mut self, sc: &StartConfig) -> bool {
+        let rules = &self.game.data().rules;
+        let (first, last) = (rules.start_round.saturating_sub(1), rules.end_round.saturating_sub(5));
+        if sc.budget.is_empty() || last <= first {
+            return false;
+        }
+        let round = first + RngDice(&mut self.rng).below((last - first) as usize) as u32;
+        let base = sc.budget[(round as usize).min(sc.budget.len() - 1)];
+        let budget = (base * (1.0 + sc.budget_spread * (2.0 * self.unit() - 1.0))).max(0.0);
+        let share = 0.3 + 0.6 * self.unit();
+        let lives = self.game.lives;
+        self.game.cash = Money::from_f64(budget * share);
+        let l = self.layout;
+        for _ in 0..60 {
+            let towers = self.game.towers.len();
+            if towers == 0 || self.unit() < 0.4 {
+                let kind = RngDice(&mut self.rng).below(l.towers);
+                let c = RngDice(&mut self.rng).below(l.cells);
+                let (x, y) = l.center(c);
+                if !self.banned[kind] && self.map_ok[kind * l.cells + c] {
+                    let _ = self.game.apply(Action::Place { kind: kind as u8, x, y });
+                }
+            } else {
+                let id = self.game.towers[RngDice(&mut self.rng).below(towers)].id;
+                let path = RngDice(&mut self.rng).below(l.paths) as u8;
+                let _ = self.game.apply(Action::Upgrade { tower: id, path });
+            }
+        }
+        self.game.cash += Money::from_f64(budget * (1.0 - share));
+        self.game.lives = lives;
+        self.game.round = round;
+        true
+    }
+
+    /// In einem Drittel der Fälle Leben auf 50–100 %.
+    fn perturb_lives(&mut self) -> bool {
+        if RngDice(&mut self.rng).below(3) != 0 {
+            return false;
+        }
+        let f = 0.5 + 0.5 * self.unit();
+        self.game.lives = ((self.game.lives as f64 * f).ceil() as i32).max(1);
+        true
+    }
+
+    fn unit(&mut self) -> f64 {
+        RngDice(&mut self.rng).unit()
+    }
+
+    /// Nach jeder Runde: 3-Runden-Prüfung für Starts aus Zuständen, Snapshot für Quelle A.
+    fn after_round(&mut self) {
+        let s = &mut self.start;
+        if s.kind != StartKind::Normal && !s.checked {
+            s.rounds += 1;
+            if s.rounds >= CHECK_ROUNDS || self.game.over() {
+                s.checked = true;
+                self.outcomes.push(StartOutcome {
+                    kind: s.kind,
+                    base: s.base,
+                    survived: self.game.lives > 0,
+                    lives_perturbed: s.lives_perturbed,
+                });
+            }
+        }
+        if s.kind == StartKind::Normal && self.starts.is_some() && !self.game.over() {
+            if self.snapshots.len() == 8 {
+                self.snapshots.pop_front();
+            }
+            self.snapshots.push_back(StartState::from_game(&self.game));
+        }
     }
 
     pub fn step(&mut self, action: usize, obs: &mut [f32]) -> StepInfo {
@@ -301,6 +463,7 @@ impl Env {
             }
             self.builds_left = self.cfg.max_builds_per_round;
             info.round_played = Some(report);
+            self.after_round();
             if let Some(r) = &mut self.recorder {
                 r.round_played(round, &self.game, &report);
             }
@@ -357,8 +520,7 @@ impl Env {
     }
 
     fn next_rand(&mut self) -> u64 {
-        self.rng = splitmix64(self.rng);
-        self.rng
+        RngDice(&mut self.rng).next_u64()
     }
 
     /// Der Turm, der für eine Zelle steht: der erste (in Bau-Reihenfolge), dessen Mittelpunkt in
@@ -516,6 +678,8 @@ pub struct VecStepBuffers<'a> {
     /// Observation vor dem Auto-Reset (nur gültig, wo `dones[i]`).
     pub terminal_obs: &'a mut [f32],
     pub rounds: &'a mut [u32],
+    /// Herkunft der Episode, zu der der Schritt gehörte (`StartKind` als Zahl, vor dem Auto-Reset).
+    pub start_kinds: &'a mut [u8],
 }
 
 impl VecEnv {
@@ -551,7 +715,10 @@ impl VecEnv {
             b.obs.len() == k * n && b.terminal_obs.len() == k * n,
             "Observation-Buffer: n_envs * obs_size"
         );
-        assert!(b.rewards.len() == k && b.dones.len() == k && b.rounds.len() == k, "Buffer: n_envs");
+        assert!(
+            b.rewards.len() == k && b.dones.len() == k && b.rounds.len() == k && b.start_kinds.len() == k,
+            "Buffer: n_envs"
+        );
         self.envs
             .par_iter_mut()
             .zip(actions.par_iter())
@@ -560,7 +727,9 @@ impl VecEnv {
             .zip(b.rewards.par_iter_mut())
             .zip(b.dones.par_iter_mut())
             .zip(b.rounds.par_iter_mut())
-            .for_each(|((((((e, &a), o), to), r), d), rd)| {
+            .zip(b.start_kinds.par_iter_mut())
+            .for_each(|(((((((e, &a), o), to), r), d), rd), sk)| {
+                *sk = e.start_kind() as u8;
                 let info = e.step(a, o);
                 *r = info.reward;
                 *d = info.terminated;
@@ -570,6 +739,24 @@ impl VecEnv {
                     e.reset(o);
                 }
             });
+    }
+
+    /// Startzustände für alle Envs (gilt ab dem nächsten Reset; `None` = aus).
+    pub fn set_starts(&mut self, starts: Option<StartConfig>) {
+        let starts = starts.map(Arc::new);
+        for e in &mut self.envs {
+            e.set_starts(starts.clone());
+        }
+    }
+
+    /// 3-Runden-Ergebnisse aller Envs seit dem letzten Aufruf.
+    pub fn take_outcomes(&mut self) -> Vec<StartOutcome> {
+        self.envs.iter_mut().flat_map(|e| e.take_outcomes()).collect()
+    }
+
+    /// Zustände zu Rundenbeginn aus normalen Episoden aller Envs (Quelle A).
+    pub fn take_snapshots(&mut self) -> Vec<StartState> {
+        self.envs.iter_mut().flat_map(|e| e.take_snapshots()).collect()
     }
 
     pub fn action_masks(&self, masks: &mut [bool]) {
@@ -585,4 +772,24 @@ fn splitmix64(x: u64) -> u64 {
     z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
     z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
     z ^ (z >> 31)
+}
+
+/// Herkunft und 3-Runden-Prüfung der laufenden Episode.
+#[derive(Clone, Copy, Debug, Default)]
+struct EpisodeStart {
+    kind: StartKind,
+    base: Option<usize>,
+    lives_perturbed: bool,
+    rounds: u32,
+    checked: bool,
+}
+
+/// Der Env-Zufall als `Dice` (SplitMix64-Kette, wie bei den Sperren).
+struct RngDice<'a>(&'a mut u64);
+
+impl Dice for RngDice<'_> {
+    fn next_u64(&mut self) -> u64 {
+        *self.0 = splitmix64(*self.0);
+        *self.0
+    }
 }

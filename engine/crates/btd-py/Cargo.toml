@@ -16,5 +16,6 @@ f64 = ["btd-env/f64"]
 btd-core.workspace = true
 btd-data.workspace = true
 btd-env.workspace = true
+serde_json.workspace = true
 numpy = "0.27.1"
 pyo3 = { version = "0.27.2", features = ["extension-module", "abi3-py310"] }

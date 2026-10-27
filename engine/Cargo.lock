@@ -52,6 +52,7 @@ dependencies = [
  "btd-env",
  "numpy",
  "pyo3",
+ "serde_json",
 ]
 
 [[package]]

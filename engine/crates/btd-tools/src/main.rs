@@ -178,6 +178,7 @@ fn bench(args: &[String]) -> Result<(), String> {
     let (no, na) = (v.layout.obs_size, v.layout.n_actions);
     let (mut obs, mut tobs) = (vec![0.0; n_envs * no], vec![0.0; n_envs * no]);
     let (mut rew, mut done, mut rnd) = (vec![0.0; n_envs], vec![false; n_envs], vec![0; n_envs]);
+    let mut kinds = vec![0u8; n_envs];
     let mut masks = vec![false; n_envs * na];
     let mut actions = vec![0usize; n_envs];
     let mut rngs: Vec<Rng> = (0..n_envs as u64).map(|i| Rng(1000 + i)).collect();
@@ -200,6 +201,7 @@ fn bench(args: &[String]) -> Result<(), String> {
                 dones: &mut done,
                 terminal_obs: &mut tobs,
                 rounds: &mut rnd,
+                start_kinds: &mut kinds,
             },
         );
         env_time += t0.elapsed().as_secs_f64();
