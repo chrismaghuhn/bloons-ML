@@ -556,3 +556,14 @@ fn tower_bans_reproducible_and_differ_between_vec_envs() {
     let avail: Vec<&[f32]> = (0..8).map(|i| &obs[i * n + n - 4..(i + 1) * n]).collect();
     assert!(avail.iter().any(|a| *a != avail[0]), "Envs würfeln unterschiedlich");
 }
+
+#[test]
+fn last_replay_survives_the_next_reset() {
+    let mut e = env(true);
+    let mut obs = vec![0.0; e.layout.obs_size];
+    e.reset(&mut obs);
+    while !e.step(0, &mut obs).terminated {}
+    let done = e.last_replay().cloned().expect("Replay der beendeten Episode");
+    e.reset(&mut obs);
+    assert_eq!(e.last_replay(), Some(&done), "bleibt nach dem Auto-Reset abrufbar");
+}

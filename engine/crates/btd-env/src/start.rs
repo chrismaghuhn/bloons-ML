@@ -85,20 +85,23 @@ impl StartState {
 /// Obergrenze für Cash und Budgets (schützt die Fixed-Point-Rechnung vor Überlauf).
 pub const MAX_CASH: f64 = 1e9;
 
-/// Footprint-Radius eines Turmtyps (Basis-Variante, wie beim Platzieren).
-fn footprint(game: &Game, name: &str) -> Option<f64> {
-    let d = game.data().towers.iter().find(|d| d.name == name)?;
-    Some(d.variants[d.variant_id([0; PATHS])? as usize].footprint)
+/// Footprint-Radius eines Turms mit diesen Stufen (die Kollision im Core nutzt den aktuellen).
+fn footprint(game: &Game, t: &TowerState) -> Option<f64> {
+    let d = game.data().towers.iter().find(|d| d.name == t.tower)?;
+    Some(d.variant(t.tiers)?.footprint)
 }
 
 /// Ob Turm `i` von `s` bei (x, y) stehen dürfte (Karte + die anderen Türme des Zustands).
 fn can_move(game: &Game, s: &StartState, i: usize, x: f64, y: f64) -> bool {
     let t = &s.towers[i];
     let Some(kind) = game.data().towers.iter().position(|d| d.name == t.tower) else { return false };
-    let Some(r) = footprint(game, &t.tower) else { return false };
+    // beim Platzieren zählt der Basis-Footprint, danach der der aktuellen Stufen: beide prüfen
+    let base = TowerState { tiers: [0; PATHS], ..t.clone() };
+    let (Some(r), Some(r0)) = (footprint(game, t), footprint(game, &base)) else { return false };
+    let r = r.max(r0);
     game.map_allows(kind as u8, x, y)
         && s.towers.iter().enumerate().filter(|&(j, _)| j != i).all(|(_, o)| {
-            let ro = footprint(game, &o.tower).unwrap_or(0.0);
+            let ro = footprint(game, o).unwrap_or(0.0);
             let (dx, dy) = (x - o.x, y - o.y);
             dx * dx + dy * dy >= (r + ro) * (r + ro)
         })

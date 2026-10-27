@@ -294,3 +294,29 @@ fn failed_starts_are_counted_and_reset_from_ignores_starts() {
     assert_eq!((e.start_kind(), e.game.round, e.game.towers.len()), (StartKind::Normal, 0, 0));
     assert_eq!(e.take_fallbacks(), 0);
 }
+
+#[test]
+fn record_and_start_states() {
+    let base = StartState::from_game(&played().game);
+    let mut e = Env::new(spec(), EnvConfig { record: true, ..Default::default() }).unwrap();
+    let mut obs = vec![0.0; e.layout.obs_size];
+    // normale Episode bis zum Ende: Replay vorhanden
+    e.reset(&mut obs);
+    while !e.step(0, &mut obs).terminated {}
+    assert!(e.last_replay().is_some());
+    // Episode aus einem Zustand: kein Replay, auch nicht das alte
+    e.reset_from(&mut obs, &base).unwrap();
+    assert!(e.replay().is_none());
+    while !e.step(0, &mut obs).terminated {}
+    assert!(e.last_replay().is_none(), "kein Replay der vorigen Episode stehen lassen");
+    // load_replay nimmt die Aufnahme wieder auf
+    let mut f = Env::new(spec(), EnvConfig { record: true, ..Default::default() }).unwrap();
+    f.reset(&mut obs);
+    for _ in 0..3 {
+        f.step(0, &mut obs);
+    }
+    let rep = f.replay().unwrap().clone();
+    e.reset_from(&mut obs, &base).unwrap();
+    e.load_replay(&rep, None, true).unwrap();
+    assert!(e.replay().is_some(), "Aufnahme läuft nach load_replay weiter");
+}

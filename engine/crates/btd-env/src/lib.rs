@@ -320,7 +320,6 @@ impl Env {
         // Episoden aus einem Startzustand lassen sich nicht ab Runde 1 nachspielen: kein Replay
         self.recorder = (self.cfg.record && self.start.kind == StartKind::Normal)
             .then(|| Recorder::new(&self.spec, &self.cfg));
-        self.last_replay = None;
     }
 
     /// Neue Episode ab einem festen Startzustand (ohne Störung), z.B. für die Auswertung.
@@ -354,8 +353,9 @@ impl Env {
         std::mem::take(&mut self.outcomes)
     }
 
-    /// Zustände zu Rundenbeginn aus normalen Episoden seit dem letzten Aufruf: je beendeter Episode
-    /// ein zufällig gewählter Rundenbeginn, höchstens die letzten `SNAPSHOTS`.
+    /// Zustände zu Rundenbeginn aus normalen Episoden seit dem letzten Aufruf: je Episode (beim
+    /// nächsten Reset abgelegt, auch bei vorzeitigem Reset) ein zufällig gewählter Rundenbeginn,
+    /// höchstens die letzten `SNAPSHOTS`.
     pub fn take_snapshots(&mut self) -> Vec<StartState> {
         self.snapshots.drain(..).collect()
     }
@@ -526,8 +526,9 @@ impl Env {
         info.terminated = self.game.over();
         if info.terminated {
             info.reward += if self.game.won() { self.cfg.reward_win } else { self.cfg.reward_loss };
-            if let Some(r) = &self.recorder {
-                self.last_replay = Some(r.replay().clone());
+            if self.cfg.record {
+                // Episoden aus Startzuständen haben kein Replay: nicht das der vorigen stehen lassen
+                self.last_replay = self.recorder.as_ref().map(|r| r.replay().clone());
             }
         }
         self.observe(obs);
@@ -687,7 +688,7 @@ impl Env {
         self.game = game;
         self.builds_left = self.cfg.max_builds_per_round;
         self.last_replay = None;
-        if self.recorder.is_some() {
+        if self.cfg.record {
             let r = Recorder::resume(&self.spec, &self.cfg, &checks);
             if self.game.over() {
                 self.last_replay = Some(r.replay().clone());
