@@ -127,7 +127,7 @@ Auswertung: `.venv/bin/python mod/tools/analyze_trace.py TRACE [TRACE2]` (mit zw
 Test für `docs/design-replay-player.md`: in einer **Wegwerf-Partie** (Monkey Meadow, CHIMPS) vor dem ersten
 Rundenstart **F10** drücken. Der Test setzt Dart Monkeys an exakte und krumme Koordinaten, probiert Fehlerfälle
 (belegt, auf der Strecke, zu wenig Geld), ein Upgrade, setzt Geld, Leben und Runde und schreibt die Ergebnisse nach
-`data/raw/recordings/<Zeit>_probe.json` (Trace wird für die Sitzung eingeschaltet). Danach die Runde starten und
+`data/raw/recordings/<Zeit>_probe.json` (Trace wird bis zum Ende der Partie eingeschaltet). Danach die Runde starten und
 **vorspulen**: bei den Rundenschritten 300, 301 und 302 setzt er aus dem `Simulate`-Prefix je einen weiteren Turm
 (Teil 2, ergänzt dieselbe Datei, mit der Position des Schritts im Frame).
 

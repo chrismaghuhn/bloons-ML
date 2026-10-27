@@ -134,9 +134,10 @@ Runde). `result.cash` sind ganze Dollar, im Spiel ist Cash ein Bruch: verglichen
 **Später (`btd-replay/3`, `docs/design-recorder.md` §1): mit Frame.** Aktion `{"frame": n, …}` = Rundenzeit in
 Sim-Schritten. Der Player führt sie in einem Harmony-**Prefix** auf `Simulation.Simulate` aus, sobald
 `roundTime.elapsed` den Wert erreicht. Gemessen (§10): auch der Aufruf aus dem Prefix geht in die Warteschlange und
-wird **einen Schritt später** ausgeführt, und zwar im nächsten Schritt desselben Frames (Aufruf beim 1. von 3
-Schritten des Frames, Turm beim 2.). Das spricht dafür, dass die Warteschlange vor jedem Sim-Schritt geleert wird,
-nicht einmal je Frame; dann ist der Versatz immer 1, und der Player ruft für Schritt N im Prefix bei N − 1 auf.
+wird **einen Schritt später** wirksam, noch im selben Frame (Aufruf im Prefix des 2. von 3 Schritten des Frames,
+Turm noch in diesem Schritt nach dem Zeitschritt oder spätestens vor dem 3.). Die Warteschlange wird also nicht erst
+einmal je Frame nach der Schritt-Schleife geleert; dann ist der Versatz immer 1, und der Player ruft für Schritt N
+im Prefix bei N − 1 auf.
 Bestätigung steht noch aus: vorgespult an drei aufeinanderfolgenden Rundenschritten messen, also an jeder Position
 im Frame einmal (Player-Test, Teil 2). Der Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt
 eine Abweichung sofort auf. Karte, Modus,
@@ -226,11 +227,14 @@ Damit sind die offenen Punkte aus den Abschnitten 1, 2, 3 (Weg A) und 4 beantwor
   Zwischen den Runden heißt das: Aktion → einen Frame warten → bestätigt, bevor die Simulation weiterläuft.
 - **Aus dem `Simulate`-Prefix: ein Schritt Versatz.** Aufruf im Prefix bei Rundenzeit 300 (`t` 5017): auch hier
   Warteschlange (`queuedActionsAfterCall` 1, `callbackFiredDuringCall` false); Callback im selben Frame, Turm bei
-  Rundenzeit **301** (`t` 5018), laut Recorder ebenfalls 301. Vorgespult, 3 Schritte je Frame; der Aufruf lag beim
-  **1.** Schritt von Frame 6090, der Turm kam beim **2.** Schritt desselben Frames. Würde die Warteschlange nur einmal
-  je Frame nach der Schritt-Schleife geleert, wäre der Turm frühestens nach dem 3. Schritt gekommen; die Messung
-  spricht also für Leeren vor jedem Schritt (fester Versatz 1). Eine Messung; die Bestätigung an allen drei
-  Positionen im Frame macht der erweiterte Player-Test (Teil 2 setzt Türme bei Rundenzeit 300, 301 und 302).
+  Rundenzeit **301** (`t` 5018), laut Recorder ebenfalls 301. Vorgespult, 3 Schritte je Frame. Der Recorder schreibt
+  `step` im Postfix, der Prefix sieht also die Zeit des vorigen Schritts: der Aufruf (Prefix sieht `t` 5017) gehört
+  zum Schritt, dessen Postfix `t` 5018 meldet, dem **2.** Schritt von Frame 6090; der Turm wurde in diesem Schritt
+  nach dem Zeitschritt oder vor dem 3. Schritt wirksam (der Trace unterscheidet das nicht). Würde die Warteschlange
+  nur einmal je Frame nach der Schritt-Schleife geleert, stünde der Turm erst bei `t` 5019; die Messung spricht also
+  für einen festen Versatz von 1. Eine Messung; die Bestätigung an allen drei Positionen im Frame macht der
+  erweiterte Player-Test (Teil 2 setzt Türme bei Rundenzeit 300, 301 und 302 und zählt die Position im Frame im
+  Prefix, `stepInFrameAtCall`).
 - **Koordinaten:** `CreateTowerAt` nimmt Sim-Koordinaten (im `UnityEngine.Vector2`); (−35, 39) und (−35,37, 59,81)
   landen exakt (Abweichung 0), nichts rastet ein. `QueryPlacementPosition` gibt die Position unverändert zurück.
 - **Fehlerfälle:** belegter Platz und Strecke: `positionValid`/`CanPlaceTowerAt` schon vorher `false`; zu wenig Geld
