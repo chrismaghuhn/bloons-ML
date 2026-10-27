@@ -126,7 +126,7 @@ def test_slow_modifiers_reset_scale_and_override():
     sl = b.convert_variant(dart_like(proj_extra=[slow, *mods]), [0, 0, 0])["attacks"][0]["extras"]["slow"]
     assert sl["multiplier_for"] == [{"tag": "Moabs", "factor": 0.625}, {"tag": "Bad", "factor": 1.0},
                                     {"tag": "Boss", "factor": 1.0}]
-    assert sl["seconds_for"] == [{"tag": "Moabs", "factor": 6.75}]
+    assert sl["seconds_for"] == [{"tag": "Moabs", "factor": 6.75}] and sl["id"] == "Glue"
     other = T("SlowModifierForTagModel", tag="Moabs", slowId="Stun", slowMultiplier=1.0)
     with pytest.raises(b.Unsupported, match="fremder Slow"):
         b.convert_variant(dart_like(proj_extra=[slow, other]), [0, 0, 0])
@@ -178,7 +178,7 @@ def test_cluster_shards_explode_when_exhausted():
     explosion = T("ProjectileModel", pierce=8.0, radius=15.0, filters=[],
                   behaviors=[T("DamageModel", damage=1.0, maxDamage=0.0, immuneBloonProperties=2),
                              T("AgeModel", lifespan=0.1)])
-    cluster = T("ProjectileModel", pierce=1.0, maxPierce=1.0, radius=5.0, behaviors=[
+    cluster = T("ProjectileModel", pierce=1.0, maxPierce=1.0, radius=5.0, dontUseCollisionChecker=True, behaviors=[
         T("CreateProjectileOnExhaustFractionModel", projectile=explosion, emission=T("SingleEmissionModel"),
           fraction=1.0, durationfraction=-1.0),
         T("RandomRangeTravelStraitModel", minRange=22.0, maxRange=40.0, speed=130.0)])
@@ -187,6 +187,11 @@ def test_cluster_shards_explode_when_exhausted():
     c = b.convert_variant(dart_like(proj_extra=[contact]), [0, 0, 0])["attacks"][0]["delivery"]["on_contact"][0]
     assert (c["kind"], c["speed"], c["lifespan"]) == ("shards", 130.0, 31.0 / 130.0)
     assert [e["kind"] for e in c["on_exhaust"]] == ["explosion"] and c["on_exhaust"][0]["pierce"] == 8
+    assert c["collide"] is False
+    # ohne Verbrauchs-Effekt wäre ein Projektil ohne Kollision wirkungslos -> gesperrt
+    cluster["behaviors"] = cluster["behaviors"][1:]
+    with pytest.raises(b.Unsupported, match="ohne Kollision"):
+        b.convert_variant(dart_like(proj_extra=[contact]), [0, 0, 0])
 
 
 def test_slow_zone_bound_to_tower_range():
@@ -214,6 +219,10 @@ def test_prune_tags_drops_unknown_tags():
     b.prune_tags(towers, {"Moabs"}, dropped)
     assert dropped == {"Boss"}
     assert towers[0]["extras"]["filter"]["exclude_tags"] == ["Moabs"] and towers[0]["extras"]["damage_vs"] == []
+    # "Moabs" (Klasse) kommt hinter speziellere Tags, die Engine nimmt den ersten Treffer
+    slow = {"multiplier_for": [{"tag": "Moabs", "factor": 0.625}, {"tag": "Bad", "factor": 1.0}]}
+    b.prune_tags(slow, {"Moabs", "Bad"}, set())
+    assert [e["tag"] for e in slow["multiplier_for"]] == ["Bad", "Moabs"]
 
 
 def test_income_thresholds(tmp_path):

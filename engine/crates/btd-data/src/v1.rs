@@ -240,8 +240,8 @@ pub enum Delivery {
         /// Treffer-Set alle n Sekunden leeren, damit dasselbe Projektil erneut treffen kann.
         #[serde(default)]
         clear_hits: Option<f64>,
-        /// Was passiert, sobald der Pierce verbraucht ist (Spiel: CreateProjectileOnExhaustFraction
-        /// mit fraction 1); beim bloßen Ablaufen der Lebensdauer nichts.
+        /// Was passiert, sobald der Pierce verbraucht ist oder die Lebensdauer abläuft (Spiel:
+        /// CreateProjectileOnExhaustFraction mit fraction 1).
         #[serde(default)]
         on_exhaust: Vec<Contact>,
         /// Was bei jedem Kontakt mit einem Bloon zusätzlich passiert (Bomb: Explosion,
@@ -285,10 +285,14 @@ pub enum Contact {
         /// treffen also z.B. den Kontakt-Bloon nicht noch einmal.
         #[serde(default)]
         inherit_hit: bool,
-        /// Effekte, sobald der Pierce eines Splitters verbraucht ist (Cluster Bombs: Explosion).
-        /// Nur Explosionen, keine weiteren Splitter.
+        /// Effekte, sobald ein Splitter verbraucht oder abgelaufen ist (Cluster Bombs:
+        /// Explosion). Nur Explosionen, keine weiteren Splitter.
         #[serde(default)]
         on_exhaust: Vec<Contact>,
+        /// Splitter treffen Bloons; `false` = fliegen nur und lösen am Ende `on_exhaust` aus
+        /// (Spiel: dontUseCollisionChecker).
+        #[serde(default = "yes")]
+        collide: bool,
     },
 }
 
@@ -367,6 +371,33 @@ impl HitExtras {
     }
 }
 
+fn yes() -> bool {
+    true
+}
+
+impl GameV1 {
+    /// Alle Treffer-Extras der Türme (Angriffe, Kontakt- und Verbrauchs-Effekte, verschachtelt).
+    pub fn all_extras(&self) -> Vec<&HitExtras> {
+        fn contacts<'a>(list: &'a [Contact], out: &mut Vec<&'a HitExtras>) {
+            for c in list {
+                out.push(c.extras());
+                if let Contact::Shards { on_exhaust, .. } = c {
+                    contacts(on_exhaust, out);
+                }
+            }
+        }
+        let mut out = Vec::new();
+        for a in self.towers.iter().flat_map(|t| &t.variants).flat_map(|v| &v.attacks) {
+            out.push(&a.extras);
+            if let Delivery::Projectile { on_contact, on_exhaust, .. } = &a.delivery {
+                contacts(on_contact, &mut out);
+                contacts(on_exhaust, &mut out);
+            }
+        }
+        out
+    }
+}
+
 impl Contact {
     /// Werte, Eigenschaften und Extras gültig; Splitter (nur mit `shards_ok`) dürfen beim
     /// Verbrauch höchstens 8 Explosionen auslösen.
@@ -378,8 +409,9 @@ impl Contact {
             && self.extras().valid(tags)
             && match self {
                 Contact::Explosion { radius, damage, .. } => pos(*radius) && non_neg(*damage),
-                Contact::Shards { emission, speed, lifespan, radius, damage, on_exhaust, .. } => {
+                Contact::Shards { emission, speed, lifespan, radius, damage, on_exhaust, pierce, .. } => {
                     shards_ok
+                        && *pierce >= 1
                         && pos(*speed)
                         && pos(*lifespan)
                         && non_neg(*radius)
@@ -529,6 +561,10 @@ pub struct TagFactor {
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Slow {
+    /// Effekt-ID (Spiel: mutationId). Verlangsamungen ohne Glue-Stufe mit verschiedener ID
+    /// (Permafrost, Stun) wirken nebeneinander, gleiche ID ersetzt sich.
+    #[serde(default)]
+    pub id: String,
     /// Geschwindigkeitsfaktor (0.5 = halbe Geschwindigkeit).
     pub multiplier: f64,
     pub seconds: f64,
@@ -966,6 +1002,7 @@ impl GameV1 {
                 for a in &v.attacks {
                     let ok = pos(a.cooldown)
                         && non_neg(a.damage)
+                        && a.crit.map_or(true, |c| non_neg(c.damage) && c.every >= 1)
                         && a.range.map_or(true, pos)
                         && match &a.delivery {
                             Delivery::Hitscan {} => true,
@@ -981,7 +1018,8 @@ impl GameV1 {
                                 clear_hits,
                                 on_exhaust,
                             } => {
-                                clear_hits.map_or(true, |c| c > 0.0)
+                                a.pierce >= 1 // ohne Pierce wäre das Projektil sofort verbraucht
+                                    && clear_hits.map_or(true, |c| c > 0.0)
                                     && on_exhaust.len() <= 8
                                     && on_contact.len() <= 8
                                     && (*radius > 0.0 || min_bloon_radius > 0.0)

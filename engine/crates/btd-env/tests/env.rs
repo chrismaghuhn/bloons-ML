@@ -407,3 +407,29 @@ fn off_center_tower_from_replay_is_usable_through_its_cell() {
     assert!(!info.invalid, "maskierte Aktion ist auch ausführbar");
     assert_eq!(e.game.towers[0].tiers[0], 1);
 }
+
+#[test]
+fn round_preview_counts_down_to_special_bloons() {
+    use btd_env::preview::CATEGORIES;
+    let spec = EnvSpec::load(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/fixtures/game_v1_mini.json"),
+    )
+    .unwrap();
+    let plain = Env::new(spec.clone(), EnvConfig::default()).unwrap();
+    let mut e = Env::new(spec, EnvConfig { preview_rounds: 2, ..Default::default() }).unwrap();
+    let extra = btd_env::RoundPreview::len(2);
+    assert_eq!(e.layout.obs_size, plain.layout.obs_size + extra);
+    let mut obs = vec![0.0; e.layout.obs_size];
+    e.reset(&mut obs);
+    let tail = &obs[obs.len() - extra..];
+    let cat = |name: &str| CATEGORIES.iter().position(|c| *c == name).unwrap();
+    let until = |tail: &[f32], name: &str| tail[2 * (CATEGORIES.len() + 2) + cat(name)];
+    // Runde 1: 10 Reds; Runde 2: Camo; Runde 3: Ceramic + Lead
+    assert!(tail[cat("camo")] == 0.0 && tail[CATEGORIES.len()] > 0.0, "Runde 1 ohne Camo, RBE > 0");
+    assert!(tail[CATEGORIES.len() + 2 + cat("camo")] > 0.0, "Runde 2 mit Camo");
+    assert_eq!((until(tail, "camo"), until(tail, "lead"), until(tail, "moab")), (0.1, 0.2, 1.0));
+    e.step(0, &mut obs);
+    let tail = &obs[obs.len() - extra..];
+    assert_eq!((until(tail, "camo"), until(tail, "ceramic")), (0.0, 0.1));
+    assert!(tail.iter().all(|v| (0.0..=1.0).contains(v)));
+}

@@ -13,11 +13,16 @@ use crate::{real, Money, Real};
 
 pub type TowerId = u32;
 
-/// Tag-Name -> Bit (aus den Bloon-Tags der Daten, höchstens 32).
-pub type TagTable = HashMap<String, u32>;
+/// Nachschlage-Tabellen aus den Daten: Tag-Name -> Bit (Bloon-Tags, höchstens 32) und
+/// Slow-ID -> Slot für Verlangsamungen ohne Glue-Stufe (höchstens `CHILL_SLOTS`).
+#[derive(Clone, Debug, Default)]
+pub struct TagTable {
+    pub tags: HashMap<String, u32>,
+    pub slows: HashMap<String, u8>,
+}
 
 pub fn tag_mask(table: &TagTable, names: &[String]) -> u32 {
-    names.iter().filter_map(|n| table.get(n)).fold(0, |m, b| m | b)
+    names.iter().filter_map(|n| table.tags.get(n)).fold(0, |m, b| m | b)
 }
 
 /// (Tag-Maske, Faktor)-Paare.
@@ -77,6 +82,8 @@ pub struct SlowRt {
     pub seconds: Real,
     pub level: u8,
     pub layers: u32,
+    /// Slot für Verlangsamungen ohne Glue-Stufe (aus der Slow-ID)
+    pub slot: u8,
     /// abweichender Geschwindigkeitsfaktor je Tag
     pub multiplier_for: TagFactors,
     /// abweichende Dauer je Tag
@@ -120,6 +127,7 @@ impl ExtrasRt {
                 seconds: real(s.seconds),
                 level: s.level,
                 layers: s.layers,
+                slot: tags.slows.get(&s.id).copied().unwrap_or(0),
                 multiplier_for: tag_factors(tags, &s.multiplier_for),
                 seconds_for: tag_factors(tags, &s.seconds_for),
             }),
@@ -186,6 +194,8 @@ pub struct ProjectileDef {
     pub on_exhaust: Vec<ContactRt>,
     pub path: Option<PathRt>,
     pub clear_hits: Option<Real>,
+    /// Kollidiert mit Bloons (nur Splitter können es abschalten)
+    pub collide: bool,
 }
 
 /// Kurvenbahn (Boomerang) in lokalen Koordinaten, +y = Richtung zum Ziel.
@@ -280,6 +290,7 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
             camo,
             inherit_hit,
             on_exhaust,
+            collide,
             ..
         } => ContactRt::Shards {
             def: Arc::new(ProjectileDef {
@@ -291,6 +302,7 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
                 on_exhaust: on_exhaust.iter().map(|c| contact_rt(c, tags)).collect(),
                 path: None,
                 clear_hits: None,
+                collide: *collide,
             }),
             pierce: *pierce,
             damage: real(*damage),
@@ -411,6 +423,7 @@ impl Tower {
                             on_exhaust: on_exhaust.iter().map(|c| contact_rt(c, tags)).collect(),
                             path: path.as_ref().map(|p| PathRt::new(p)),
                             clear_hits: clear_hits.map(real),
+                            collide: true,
                         })),
                     },
                     extras: ExtrasRt::new(&a.extras, tags),

@@ -7,7 +7,7 @@ use btd_data::{DataError, TowerKind};
 use smallvec::SmallVec;
 use xxhash_rust::xxh3::Xxh3;
 
-use crate::bloon::{hit, BloonStore};
+use crate::bloon::{hit, BloonStore, Chill, CHILL_SLOTS};
 use crate::map::{placeable, Track};
 use crate::tower::{
     factor_for, AttackKind, ContactRt, EmissionRt, ExtrasRt, FilterRt, ProjectileDef, TagTable, Tower,
@@ -140,15 +140,13 @@ impl World<'_> {
 
     /// Ob ein Angriff diesen Bloon anvisieren bzw. treffen darf (Camo, Tags, Status, Immunität).
     fn eligible(&self, b: &BloonStore, i: usize, camo: bool, ex: &ExtrasRt) -> bool {
-        b.alive[i]
-            && (camo || !self.is_camo(b, i))
-            && self.passes(b, i, &ex.filter)
-            && (ex.filter.skip_props.0 == 0 || !ex.filter.skip_props.intersects(self.props(b, i)))
+        b.alive[i] && (camo || !self.is_camo(b, i)) && self.passes(b, i, &ex.filter)
     }
 
-    /// Tag- und Status-Filter (ohne Immunität).
+    /// Tag-, Status- und Eigenschafts-Filter.
     fn passes(&self, b: &BloonStore, i: usize, f: &FilterRt) -> bool {
         self.tags[b.kind[i] as usize] & f.exclude_tags == 0
+            && (f.skip_props.0 == 0 || !f.skip_props.intersects(self.props(b, i)))
             && (!f.skip_frozen || b.frozen[i] <= 0.0)
             && (f.skip_glue_level == 0 || b.glue[i] < f.skip_glue_level)
     }
@@ -274,7 +272,7 @@ struct Status {
     slow_left: Real,
     glue: u8,
     glue_layers: u32,
-    chill: (Real, Real, u32),
+    chill: [Chill; CHILL_SLOTS],
     dot: (Real, Real, Real, Real, u32),
 }
 
@@ -287,7 +285,7 @@ impl Status {
             slow_left: b.slow_left[i],
             glue: b.glue[i],
             glue_layers: b.glue_layers[i],
-            chill: (b.chill_mul[i], b.chill_left[i], b.chill_layers[i]),
+            chill: b.chill[i],
             dot: (b.dot_damage[i], b.dot_interval[i], b.dot_timer[i], b.dot_left[i], b.dot_layers[i]),
         }
     }
@@ -304,9 +302,10 @@ impl Status {
             b.glue[c] = self.glue;
             b.glue_layers[c] = self.glue_layers - 1;
         }
-        let (mul, left, layers) = self.chill;
-        if layers > 1 && left > 0.0 {
-            (b.chill_mul[c], b.chill_left[c], b.chill_layers[c]) = (mul, left, layers - 1);
+        for (k, ch) in self.chill.iter().enumerate() {
+            if ch.layers > 1 && ch.left > 0.0 {
+                b.chill[c][k] = Chill { layers: ch.layers - 1, ..*ch };
+            }
         }
         let (dmg, interval, timer, left, layers) = self.dot;
         if layers > 1 && left > 0.0 {
@@ -327,10 +326,8 @@ fn apply_effects(b: &mut BloonStore, i: usize, ex: &ExtrasRt, tags: u32) {
         let mul = factor_for(&sl.multiplier_for, tags, sl.multiplier);
         let secs = factor_for(&sl.seconds_for, tags, sl.seconds);
         if sl.level == 0 {
-            // Verlangsamung ohne Glue (Permafrost): eigener Slot, wirkt zusätzlich [KAL: Stapeln]
-            b.chill_mul[i] = mul;
-            b.chill_left[i] = secs;
-            b.chill_layers[i] = sl.layers;
+            // Verlangsamung ohne Glue (Permafrost, Stun): Slot je ID, wirkt zusätzlich [KAL: Stapeln]
+            b.chill[i][sl.slot as usize] = Chill { mul, left: secs, layers: sl.layers };
         } else if sl.level >= b.glue[i] {
             b.slow_mul[i] = mul;
             b.slow_left[i] = secs;
@@ -413,7 +410,25 @@ impl Game {
                 names.len()
             )));
         }
-        let tags: TagTable = names.iter().enumerate().map(|(i, n)| ((*n).clone(), 1u32 << i)).collect();
+        let mut slow_ids: Vec<&String> = data
+            .all_extras()
+            .into_iter()
+            .filter_map(|e| e.slow.as_ref())
+            .filter(|s| s.level == 0)
+            .map(|s| &s.id)
+            .collect();
+        slow_ids.sort();
+        slow_ids.dedup();
+        if slow_ids.len() > CHILL_SLOTS {
+            return Err(DataError::Invalid(format!(
+                "höchstens {CHILL_SLOTS} verschiedene Verlangsamungen ohne Glue-Stufe, sind {}",
+                slow_ids.len()
+            )));
+        }
+        let tags = TagTable {
+            tags: names.iter().enumerate().map(|(i, n)| ((*n).clone(), 1u32 << i)).collect(),
+            slows: slow_ids.iter().enumerate().map(|(i, n)| ((*n).clone(), i as u8)).collect(),
+        };
         let bloon_tags = data.bloons.iter().map(|b| crate::tower::tag_mask(&tags, &b.tags)).collect();
         let mut g = Game {
             track,
@@ -598,7 +613,7 @@ impl Game {
         self.projectiles.clear();
         let mut next_id: u32 = 0;
         for tw in &mut self.towers {
-            tw.attacks.iter_mut().for_each(|a| a.cd_left = 0.0);
+            tw.attacks.iter_mut().for_each(|a| (a.cd_left, a.shots) = (0.0, 0));
         }
         let mut in_range: Vec<usize> = Vec::new();
         let mut hit_list: Vec<usize> = Vec::new();
@@ -640,11 +655,11 @@ impl Game {
                             (b.slow_left[i], b.slow_mul[i], b.glue[i], b.glue_layers[i]) = (0.0, 1.0, 0, 0);
                         }
                     }
-                    if b.chill_left[i] > 0.0 {
-                        mul *= b.chill_mul[i];
-                        b.chill_left[i] -= dt;
-                        if b.chill_left[i] <= 0.0 {
-                            (b.chill_left[i], b.chill_mul[i], b.chill_layers[i]) = (0.0, 1.0, 0);
+                    for ch in b.chill[i].iter_mut().filter(|ch| ch.left > 0.0) {
+                        mul *= ch.mul;
+                        ch.left -= dt;
+                        if ch.left <= 0.0 {
+                            *ch = Chill::default();
                         }
                     }
                     if !zones.is_empty() {
@@ -887,7 +902,9 @@ fn step_projectiles(
         }
         let def = p.def.clone();
         let contacts = def.as_ref().map_or(&[][..], |d| &d.contacts[..]);
-        for i in 0..bloons.len() {
+        // Projektile ohne Kollision (Cluster-Splitter) fliegen nur und lösen am Ende aus
+        let n = if def.as_ref().map_or(true, |d| d.collide) { bloons.len() } else { 0 };
+        for i in 0..n {
             if p.pierce <= 0.0 {
                 break;
             }
@@ -911,7 +928,8 @@ fn step_projectiles(
                 }
             }
         }
-        if p.pierce <= 0.0 {
+        // verbraucht oder abgelaufen [KAL: ob das Spiel auch beim Ablaufen auslöst]
+        if p.pierce <= 0.0 || p.ttl == 0 {
             if let Some(d) = def.as_ref().filter(|d| !d.on_exhaust.is_empty()) {
                 pops += fx.trigger(w, bloons, next_id, &d.on_exhaust, p, dt);
             }

@@ -53,6 +53,17 @@ fn hit_into(
     }
 }
 
+/// Höchstzahl verschiedener Verlangsamungen ohne Glue-Stufe in einer Konfiguration.
+pub const CHILL_SLOTS: usize = 4;
+
+/// Eine Verlangsamung ohne Glue-Stufe; aktiv solange `left > 0`.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Chill {
+    pub mul: Real,
+    pub left: Real,
+    pub layers: u32,
+}
+
 /// Alle Bloons auf dem Track. Tote werden im Tick nur markiert und am Tick-Ende stabil
 /// entfernt, damit die Reihenfolge (= Spawn-Reihenfolge) erhalten bleibt.
 #[derive(Clone, Debug, Default)]
@@ -73,10 +84,9 @@ pub struct BloonStore {
     pub slow_left: Vec<Real>,
     pub glue: Vec<u8>,
     pub glue_layers: Vec<u32>,
-    /// Zweiter Slow-Slot für Verlangsamungen ohne Glue-Stufe (Permafrost); wirkt zusätzlich zum Glue.
-    pub chill_mul: Vec<Real>,
-    pub chill_left: Vec<Real>,
-    pub chill_layers: Vec<u32>,
+    /// Slots für Verlangsamungen ohne Glue-Stufe (Permafrost, Stun), einer je Effekt-ID; alle
+    /// aktiven wirken zusätzlich zum Glue (multiplikativ).
+    pub chill: Vec<[Chill; CHILL_SLOTS]>,
     /// Schaden über Zeit: Schaden pro Tick, Intervall, Zeit bis zum nächsten Tick, Restdauer, Schichten.
     pub dot_damage: Vec<Real>,
     pub dot_interval: Vec<Real>,
@@ -108,9 +118,7 @@ impl BloonStore {
         self.slow_left.push(0.0);
         self.glue.push(0);
         self.glue_layers.push(0);
-        self.chill_mul.push(1.0);
-        self.chill_left.push(0.0);
-        self.chill_layers.push(0);
+        self.chill.push([Chill::default(); CHILL_SLOTS]);
         self.dot_damage.push(0.0);
         self.dot_interval.push(0.0);
         self.dot_timer.push(0.0);
@@ -132,9 +140,7 @@ impl BloonStore {
         self.slow_left.clear();
         self.glue.clear();
         self.glue_layers.clear();
-        self.chill_mul.clear();
-        self.chill_left.clear();
-        self.chill_layers.clear();
+        self.chill.clear();
         self.dot_damage.clear();
         self.dot_interval.clear();
         self.dot_timer.clear();
@@ -160,9 +166,7 @@ impl BloonStore {
                 self.slow_left[w] = self.slow_left[r];
                 self.glue[w] = self.glue[r];
                 self.glue_layers[w] = self.glue_layers[r];
-                self.chill_mul[w] = self.chill_mul[r];
-                self.chill_left[w] = self.chill_left[r];
-                self.chill_layers[w] = self.chill_layers[r];
+                self.chill[w] = self.chill[r];
                 self.dot_damage[w] = self.dot_damage[r];
                 self.dot_interval[w] = self.dot_interval[r];
                 self.dot_timer[w] = self.dot_timer[r];
@@ -184,9 +188,7 @@ impl BloonStore {
         self.slow_left.truncate(w);
         self.glue.truncate(w);
         self.glue_layers.truncate(w);
-        self.chill_mul.truncate(w);
-        self.chill_left.truncate(w);
-        self.chill_layers.truncate(w);
+        self.chill.truncate(w);
         self.dot_damage.truncate(w);
         self.dot_interval.truncate(w);
         self.dot_timer.truncate(w);

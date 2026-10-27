@@ -53,7 +53,6 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
            # Filter (convert_filters)
            "FilterInvisibleModel", "FilterOutTagModel", "FilterBloonIfDamageTypeModel", "FilterFrozenBloonsModel",
            "FilterGlueLevelModel", "FilterOveridingMutatedTargetModel", "FilterMoabModel", "FilterWithTagModel",
-           "FilterOutBloonModel",
            # Bonus-Schaden und Status-Effekte (convert_extras)
            "DamageModifierForTagModel", "FreezeModel", "FreezeModifierForTagsModel", "SlowModel",
            "SlowModifierForTagModel",
@@ -245,7 +244,9 @@ def build_rounds(dump: Path, round_set: str, last: int):
     rounds = []
     for r in range(1, last + 1):
         model = load(dump / "rounds" / round_set / f"{r:03d}.json")
-        rounds.append([{"bloon": g["bloon"], "count": g["count"], "start": g["start"] / 60.0, "end": g["end"] / 60.0}
+        # negative Startzeiten (CHIMPS Runde 86: -0,15 s) auf 0 klemmen; das Ende bleibt [KAL]
+        rounds.append([{"bloon": g["bloon"], "count": g["count"], "start": max(0.0, g["start"] / 60.0),
+                        "end": max(0.0, g["end"] / 60.0)}
                        for g in model["groups"] if g["count"] > 0])
     return rounds
 
@@ -402,13 +403,11 @@ def convert_filters(filters) -> tuple:
             f["skip_glue_level"] = max(f.get("skip_glue_level", 0), int(x["glueLevel"]))
         elif t == "FilterOveridingMutatedTargetModel":
             pass  # Zielreihenfolge zwischen "brüchigen" Bloons (Ice-Upgrades); ohne die Mechanik wirkungslos [KAL]
-        elif t in ("FilterMoabModel", "FilterWithTagModel", "FilterOutBloonModel"):
+        elif t in ("FilterMoabModel", "FilterWithTagModel"):
             if t == "FilterMoabModel" and x.get("flip"):
                 tag = "Moabs"
             elif t == "FilterWithTagModel" and not x.get("inclusive"):
                 tag = x["tag"]
-            elif t == "FilterOutBloonModel":
-                tag = x["bloonId"]
             else:
                 raise Unsupported(f"Filter {t} (nur bestimmte Bloons)")
             f.setdefault("exclude_tags", [])
@@ -474,7 +473,7 @@ def convert_extras(proj, filters) -> tuple:
             over.append({"tag": m["tag"], "factor": f})
             if m.get("lifespanOverride", 0.0) > 0.0:
                 secs.append({"tag": m["tag"], "factor": m["lifespanOverride"]})
-        ex["slow"] = {"multiplier": sl["multiplier"], "seconds": sl["lifespan"], "level": int(sl.get("glueLevel", 0)),
+        ex["slow"] = {"id": sl.get("mutationId") or "", "multiplier": sl["multiplier"], "seconds": sl["lifespan"], "level": int(sl.get("glueLevel", 0)),
                       "layers": int(sl["layers"]), "multiplier_for": over}
         if secs:
             ex["slow"]["seconds_for"] = secs
@@ -545,6 +544,9 @@ def convert_contact(c, nested: bool) -> dict:
               "cannot_damage": cannot_damage(sub), "camo": sub_camo, "extras": sub_ex}
     travel = straight_travel(sub)
     exhaust = convert_exhaust(sub, nested=True)
+    collide = not sub.get("dontUseCollisionChecker") and sub.get("canCollideWithBloons", True)
+    if not collide and not (travel and exhaust):
+        raise Unsupported("Projektil ohne Kollision (außer Cluster-Splitter)")
     if travel:
         if nested:
             raise Unsupported("Splitter aus Splittern")
@@ -552,7 +554,8 @@ def convert_contact(c, nested: bool) -> dict:
         # ohne useProjectileRotation zeigen die Splitter-Richtungen nicht mit der Flugrichtung mit
         return {"kind": "shards", "emission": convert_emission(em, not em.get("useProjectileRotation", False)),
                 "speed": travel[0], "lifespan": travel[1], "radius": sub["radius"],
-                "inherit_hit": bool(c.get("passOnCollidedWith")), "on_exhaust": exhaust, **common}
+                "inherit_hit": bool(c.get("passOnCollidedWith")), "on_exhaust": exhaust, "collide": collide,
+                **common}
     if exhaust:
         raise Unsupported("Explosion mit Verbrauchs-Projektilen")
     if short(c["emission"]["$type"]) != "SingleEmissionModel":
@@ -576,6 +579,8 @@ def convert_exhaust(proj, nested: bool) -> list:
 
 def convert_attack(tower, attack, weapon, idx) -> dict:
     proj = weapon["projectile"]
+    if proj.get("dontUseCollisionChecker") or not proj.get("canCollideWithBloons", True):
+        raise Unsupported("Projektil ohne Kollision")
     check_pierce_reduction(proj)
     check_damage(proj)
     dmg = behaviors(proj, "DamageModel")
@@ -667,7 +672,7 @@ TAG_LISTS = ("damage_vs", "scale", "multiplier_for", "seconds_for", "factor_for"
 
 def prune_tags(node, known: set, dropped: set):
     """Entfernt Tags, die kein Bloon der Konfiguration hat (z.B. "Boss" auf Monkey Meadow): game_v1
-    lehnt unbekannte Tags ab, damit Tippfehler auffallen."""
+    lehnt unbekannte Tags ab, damit Tippfehler auffallen. Ordnet Tag-Listen nach Vorrang."""
     if isinstance(node, dict):
         for k, v in node.items():
             if k == "exclude_tags":
@@ -675,7 +680,9 @@ def prune_tags(node, known: set, dropped: set):
                 v[:] = [t for t in v if t in known]
             elif k in TAG_LISTS and isinstance(v, list):
                 dropped.update(e["tag"] for e in v if e["tag"] not in known)
-                v[:] = [e for e in v if e["tag"] in known]
+                # die Engine nimmt den ersten passenden Eintrag: die Klasse "Moabs" zuletzt, damit
+                # z.B. "Bad" (BAD hat auch den Tag "Moabs") Vorrang hat
+                v[:] = sorted((e for e in v if e["tag"] in known), key=lambda e: e["tag"] == "Moabs")
             else:
                 prune_tags(v, known, dropped)
     elif isinstance(node, list):

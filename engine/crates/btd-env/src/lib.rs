@@ -3,8 +3,10 @@
 //!
 //! Mit dem sim_v0-Datensatz sind Aktionsraum, Observation und Rewards identisch zu
 //! `btd_sim/env.py`, damit Python- und Rust-Env austauschbar sind (Paritätstest in
-//! `tests/test_rust_env.py`).
+//! `tests/test_rust_env.py`). Die Runden-Vorschau (`EnvConfig::preview_rounds`) ist nur für die
+//! Spieldaten gedacht und erweitert die Observation; ohne sie bleibt die Parität bestehen.
 
+pub mod preview;
 pub mod replay;
 
 use std::path::Path;
@@ -16,6 +18,7 @@ use btd_data::DataError;
 use rayon::prelude::*;
 use xxhash_rust::xxh3::xxh3_64_with_seed;
 
+pub use preview::RoundPreview;
 pub use replay::{Recorder, Replay, ReplayError};
 
 /// Seed für den Hash der Datendatei im Replay-Header.
@@ -53,6 +56,9 @@ pub struct EnvConfig {
     pub reward_loss: f64,
     /// Spielprotokoll mitschreiben (`Env::replay`, `Env::last_replay`).
     pub record: bool,
+    /// Runden-Vorschau in der Observation: so viele kommende Runden plus "Runden bis zum
+    /// nächsten Spezial-Bloon" (0 = aus, wie die Python-Env).
+    pub preview_rounds: usize,
 }
 
 impl Default for EnvConfig {
@@ -65,6 +71,7 @@ impl Default for EnvConfig {
             reward_win: 10.0,
             reward_loss: -5.0,
             record: false,
+            preview_rounds: 0,
         }
     }
 }
@@ -104,7 +111,7 @@ pub enum CellAction {
 }
 
 impl Layout {
-    pub fn new(data: &GameV1) -> Self {
+    pub fn new(data: &GameV1, preview_rounds: usize) -> Self {
         let g = &data.map.grid;
         let cells = g.w * g.h;
         let towers = data.towers.len();
@@ -120,7 +127,8 @@ impl Layout {
         let a_upgrade = a_place + towers * cells;
         let a_sell = a_upgrade + paths * cells;
         let n_channels = 2 + towers + paths; // Pfad, baubar, Turmtyp one-hot, Tier je Pfad
-        let n_scalars = 4;
+        let preview = if preview_rounds > 0 { RoundPreview::len(preview_rounds) } else { 0 };
+        let n_scalars = 4 + preview;
         Layout {
             grid_w: g.w,
             grid_h: g.h,
@@ -188,6 +196,7 @@ pub struct Env {
     pub cfg: EnvConfig,
     pub builds_left: u32,
     spec: EnvSpec,
+    preview: Option<RoundPreview>,
     recorder: Option<Recorder>,
     last_replay: Option<Replay>,
 }
@@ -198,7 +207,8 @@ impl Env {
             return Err(DataError::Invalid("max_builds_per_round muss > 0 sein".into()));
         }
         let game = Game::new(Arc::clone(&spec.data))?;
-        let layout = Layout::new(&spec.data);
+        let layout = Layout::new(&spec.data, cfg.preview_rounds);
+        let preview = (cfg.preview_rounds > 0).then(|| RoundPreview::new(&spec.data, cfg.preview_rounds));
         let recorder = cfg.record.then(|| Recorder::new(&spec, &cfg));
         Ok(Env {
             builds_left: cfg.max_builds_per_round,
@@ -206,6 +216,7 @@ impl Env {
             layout,
             cfg,
             spec,
+            preview,
             recorder,
             last_replay: None,
         })
@@ -361,6 +372,9 @@ impl Env {
         obs[s + 1] = (g.lives as f64 / data.rules.start_lives as f64) as f32;
         obs[s + 2] = (g.round as f64 / g.max_round() as f64) as f32;
         obs[s + 3] = (self.builds_left as f64 / self.cfg.max_builds_per_round as f64) as f32;
+        if let Some(p) = &self.preview {
+            p.write(g.round as usize, &mut obs[s + 4..]);
+        }
     }
 
     /// Protokoll der laufenden Episode (nur mit `EnvConfig::record`).
@@ -420,7 +434,7 @@ pub struct VecStepBuffers<'a> {
 impl VecEnv {
     pub fn new(spec: EnvSpec, cfg: EnvConfig, n: usize) -> Result<Self, DataError> {
         let envs = (0..n).map(|_| Env::new(spec.clone(), cfg.clone())).collect::<Result<Vec<_>, _>>()?;
-        let layout = Layout::new(&spec.data);
+        let layout = Layout::new(&spec.data, cfg.preview_rounds);
         Ok(VecEnv { envs, layout })
     }
 

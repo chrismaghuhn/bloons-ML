@@ -9,6 +9,7 @@ publish.workspace = true
 f64 = ["btd-core/f64"]
 
 [dependencies]
+libm.workspace = true
 btd-core.workspace = true
 btd-data.workspace = true
 rayon.workspace = true

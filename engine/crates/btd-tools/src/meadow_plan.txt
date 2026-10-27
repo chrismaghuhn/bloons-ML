@@ -1,0 +1,71 @@
+# Benchmark (a): Monkey Meadow, Medium, Runde 1-40, nur die 6 Primary-Türme.
+# place TURM | up NR PFAD   (NR = n-ter gebauter Turm ab 0; Pfade 0 oben, 1 Mitte, 2 unten)
+place dart          # 0
+place dart          # 1
+up 0 2
+up 0 2              # 0-0-2: Camo
+place tack          # 2
+up 2 0
+up 2 0
+place boomerang     # 3
+up 3 0
+up 3 0
+up 3 2
+up 3 2
+place bomb          # 4
+up 4 0
+up 4 0
+up 4 2
+up 4 2
+place boomerang     # 5
+up 5 0
+up 5 0
+up 5 2
+up 5 2
+up 2 2
+up 2 2
+place glue          # 6
+up 6 0
+up 6 0
+up 6 2
+up 1 2
+up 1 2              # zweiter Camo-Dart vor den Camo-Yellows (Runde 33)
+place dart          # 7
+up 7 2
+up 7 2
+place bomb          # 8
+up 8 0
+up 8 0
+up 8 2
+up 8 2
+up 2 0              # Tack 3-0-2
+up 4 0              # Bomb 3-0-2 (Really Big Bombs)
+place tack          # 9
+up 9 0
+up 9 0
+up 9 2
+up 9 2
+up 9 0
+up 0 0
+up 0 0              # Darts 2-0-2
+up 1 0
+up 1 0
+up 7 0
+up 7 0
+place boomerang     # 10
+up 10 0
+up 10 0
+up 10 2
+up 10 2
+up 8 0              # Bomb 3-0-2
+place bomb          # 11
+up 11 0
+up 11 0
+up 11 0
+up 11 2
+up 11 2
+place boomerang     # 12
+up 12 0
+up 12 0
+up 12 2
+up 12 2

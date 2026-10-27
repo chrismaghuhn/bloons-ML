@@ -40,11 +40,20 @@ fn config(
     reward_win: f64,
     reward_loss: f64,
     record: bool,
+    preview_rounds: usize,
 ) -> PyResult<EnvConfig> {
     if max_builds_per_round == 0 {
         return Err(value_err("max_builds_per_round muss > 0 sein"));
     }
-    Ok(EnvConfig { max_builds_per_round, reward_round, reward_life, reward_win, reward_loss, record })
+    Ok(EnvConfig {
+        max_builds_per_round,
+        reward_round,
+        reward_life,
+        reward_win,
+        reward_loss,
+        record,
+        preview_rounds,
+    })
 }
 
 fn array2<'py, T: numpy::Element + Copy>(
@@ -71,7 +80,8 @@ struct PyEnv {
 impl PyEnv {
     #[new]
     #[pyo3(signature = (data_path, max_builds_per_round=6, reward_round=1.0, reward_life=-0.02,
-                        reward_win=10.0, reward_loss=-5.0, record=false))]
+                        reward_win=10.0, reward_loss=-5.0, record=false, preview_rounds=0))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         data_path: &str,
         max_builds_per_round: u32,
@@ -80,8 +90,17 @@ impl PyEnv {
         reward_win: f64,
         reward_loss: f64,
         record: bool,
+        preview_rounds: usize,
     ) -> PyResult<Self> {
-        let cfg = config(max_builds_per_round, reward_round, reward_life, reward_win, reward_loss, record)?;
+        let cfg = config(
+            max_builds_per_round,
+            reward_round,
+            reward_life,
+            reward_win,
+            reward_loss,
+            record,
+            preview_rounds,
+        )?;
         let env = Env::new(load_spec(data_path)?, cfg).map_err(data_err)?;
         let (obs, mask) = (vec![0.0; env.layout.obs_size], vec![false; env.layout.n_actions]);
         Ok(PyEnv { env, obs, mask })
@@ -205,7 +224,8 @@ struct PyVecEnv {
 impl PyVecEnv {
     #[new]
     #[pyo3(signature = (data_path, n_envs, max_builds_per_round=6, reward_round=1.0, reward_life=-0.02,
-                        reward_win=10.0, reward_loss=-5.0))]
+                        reward_win=10.0, reward_loss=-5.0, preview_rounds=0))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         data_path: &str,
         n_envs: usize,
@@ -214,11 +234,20 @@ impl PyVecEnv {
         reward_life: f64,
         reward_win: f64,
         reward_loss: f64,
+        preview_rounds: usize,
     ) -> PyResult<Self> {
         if n_envs == 0 {
             return Err(value_err("n_envs muss > 0 sein"));
         }
-        let cfg = config(max_builds_per_round, reward_round, reward_life, reward_win, reward_loss, false)?;
+        let cfg = config(
+            max_builds_per_round,
+            reward_round,
+            reward_life,
+            reward_win,
+            reward_loss,
+            false,
+            preview_rounds,
+        )?;
         let v = VecEnv::new(load_spec(data_path)?, cfg, n_envs).map_err(data_err)?;
         let (no, na) = (v.layout.obs_size, v.layout.n_actions);
         Ok(PyVecEnv {

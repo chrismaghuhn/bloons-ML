@@ -532,7 +532,7 @@ der Sim verglichen. Ergebnisse kommen als Testfälle nach `tests/calibration/`.
 1. **M1 – Parität (Pipeline-Test)** ✅ *(erledigt: Golden-Trace-Paritätstest bit-genau, Rust-Env ~100× schneller als die Python-Env, VecEnv ~480×, Replays (heute `btd-replay/2`))*: `btd-data` + `btd-core` mit dem Funktionsumfang der
    Python-Engine (4 Türme, Hitscan, prozedurale Runden), Paritätstests grün.
    `btd-env`/`btd-py` minimal, damit PPO einmal **durchläuft**. Kein ernsthaftes Training.
-2. **M2 – Echte Physik & Daten:** Projektile mit Flugzeit, Wiki-Runden 1–40 inkl.
+2. **M2 – Echte Physik & Daten** ✅ *(erledigt, Stand und Kalibrierpunkte in `docs/m2-plan.md`: Spiel-Dump → game_v1, 204/384 Kombinationen der 6 Primary-Türme, Skript-Plan schafft Medium Runde 40, PPO kurz: Runde 36)*: Projektile mit Flugzeit, Wiki-Runden 1–40 inkl.
    Camo/Regrow/Fortified, Ceramic, MOAB; `tools/normalize.py` + Patches; Start-Türme = die klassischen
    Primary-Türme **Dart, Boomerang, Bomb, Tack, Ice, Glue** (ohne Desperado; Patch Notes 56/57
    für genau diese prüfen und Abweichungen als Patches eintragen);

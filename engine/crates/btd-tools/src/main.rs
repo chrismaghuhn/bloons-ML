@@ -4,6 +4,7 @@
 //!     btd-tools replay DATEI.jsonl [--data DATEN] [--compare]
 //!     btd-tools bench [--data DATEN] [--envs N]
 //!     btd-tools demo [--data DATEN] [--tower NAME] [--max N]
+//!     btd-tools script [--data DATEN] [--plan DATEI]
 //!
 //! DATEN ist standardmäßig `data/sim_v0.game_v1.json` (relativ zum Repo-Root).
 
@@ -18,7 +19,8 @@ const USAGE: &str = "Nutzung:
   btd-tools validate-data [DATEN]
   btd-tools replay DATEI.jsonl [--data DATEN] [--compare]
   btd-tools bench [--data DATEN] [--envs N]
-  btd-tools demo [--data DATEN] [--tower NAME] [--max N]";
+  btd-tools demo [--data DATEN] [--tower NAME] [--max N]
+  btd-tools script [--data DATEN] [--plan DATEI]";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -27,6 +29,7 @@ fn main() -> ExitCode {
         Some("replay") => replay(&args[1..]),
         Some("bench") => bench(&args[1..]),
         Some("demo") => demo(&args[1..]),
+        Some("script") => script(&args[1..]),
         _ => Err(USAGE.to_string()),
     };
     match result {
@@ -278,4 +281,109 @@ fn demo(args: &[String]) -> Result<(), String> {
     };
     println!("{result} ({:.2} s Rechenzeit)", start.elapsed().as_secs_f64());
     Ok(())
+}
+
+/// Bau-Plan für Monkey Meadow (Medium, Runde 1-40) aus den 6 Primary-Türmen: Benchmark (a).
+/// Eine Zeile pro Schritt: `place TURM` oder `up NR PFAD` (NR = n-ter gebauter Turm, ab 0).
+const MEADOW_PLAN: &str = include_str!("meadow_plan.txt");
+
+/// Spielt einen festen Bau-Plan: vor jeder Runde so viele Schritte wie bezahlbar, in Reihenfolge
+/// (ein unbezahlbarer Schritt hält den Rest auf, damit gespart wird). Türme kommen auf die freie
+/// Zelle mit den meisten Pfadzellen in Reichweite.
+fn script(args: &[String]) -> Result<(), String> {
+    use btd_core::{Action, ActionError, Game};
+    let spec = load_spec(args)?;
+    let data = spec.data.clone();
+    let plan_text = match opt(args, "--plan") {
+        Some(p) => std::fs::read_to_string(p).map_err(|e| format!("{p}: {e}"))?,
+        None => MEADOW_PLAN.to_string(),
+    };
+    enum Step {
+        Place(u8),
+        Up(usize, u8),
+    }
+    let mut plan = Vec::new();
+    for (i, line) in plan_text.lines().enumerate() {
+        let line = line.split('#').next().unwrap().trim();
+        let w: Vec<&str> = line.split_whitespace().collect();
+        let bad = || format!("Plan Zeile {}: {line:?}", i + 1);
+        match w.as_slice() {
+            [] => {}
+            ["place", name] => plan
+                .push(Step::Place(data.towers.iter().position(|t| t.name == *name).ok_or_else(bad)? as u8)),
+            ["up", n, p] => plan.push(Step::Up(n.parse().map_err(|_| bad())?, p.parse().map_err(|_| bad())?)),
+            _ => return Err(bad()),
+        }
+    }
+    let grid = &data.map.grid;
+    let center = |c: usize| {
+        (grid.x0 + ((c % grid.w) as f64 + 0.5) * grid.cell, grid.y0 + ((c / grid.w) as f64 + 0.5) * grid.cell)
+    };
+    let path_cells: Vec<(f64, f64)> = (0..grid.w * grid.h).filter(|&c| grid.path[c]).map(center).collect();
+    let mut g = Game::new(data.clone()).map_err(|e| e.to_string())?;
+    let mut ids: Vec<u32> = Vec::new();
+    let mut next = 0;
+    while !g.over() {
+        while next < plan.len() {
+            let res = match plan[next] {
+                Step::Place(kind) => {
+                    let range = data.towers[kind as usize].variant([0, 0, 0]).unwrap().range;
+                    let best = (0..grid.w * grid.h)
+                        .filter(|&c| {
+                            let (x, y) = center(c);
+                            g.can_place_at(kind, x, y)
+                        })
+                        .max_by_key(|&c| {
+                            let (x, y) = center(c);
+                            path_cells.iter().filter(|(px, py)| (px - x).hypot(py - y) <= range).count()
+                        })
+                        .ok_or(ActionError::NotPlaceable);
+                    best.and_then(|c| {
+                        let (x, y) = center(c);
+                        g.apply(Action::Place { kind, x, y })
+                    })
+                    .map(|id| ids.push(id.unwrap()))
+                }
+                Step::Up(n, path) => {
+                    let tower = *ids.get(n).ok_or(format!("Plan: Turm {n} gibt es (noch) nicht"))?;
+                    g.apply(Action::Upgrade { tower, path }).map(|_| ())
+                }
+            };
+            match res {
+                Ok(()) => next += 1,
+                Err(ActionError::NotEnoughCash) => break,
+                Err(e) => return Err(format!("Plan-Schritt {}: {e:?}", next + 1)),
+            }
+        }
+        let played = g.round + 1;
+        let r = g.play_round();
+        println!(
+            "Runde {:>3}: Leben {:>4}  Cash {:>6}  Pops {:>5}  {:>5.1} s  Türme {}",
+            played,
+            g.lives,
+            g.cash.dollars(),
+            r.pops,
+            r.seconds,
+            g.towers
+                .iter()
+                .map(|t| format!(
+                    "{}:{}{}{}",
+                    data.towers[t.kind as usize].name, t.tiers[0], t.tiers[1], t.tiers[2]
+                ))
+                .collect::<Vec<_>>()
+                .join(" ")
+        );
+    }
+    if g.won() {
+        println!(
+            "Gewonnen, alle {} Runden, {} Leben übrig (Plan-Schritte {}/{})",
+            g.round,
+            g.lives,
+            next,
+            plan.len()
+        );
+        Ok(())
+    } else {
+        Err(format!("Verloren in Runde {} (Plan-Schritte {}/{})", g.round + 1, next, plan.len()))
+    }
 }

@@ -35,8 +35,20 @@ Spielkonfiguration für die Engine. Sie bleibt wie der Dump lokal (`data/local/`
 
 ```bash
 .venv/bin/python -I tools/build_game_v1.py                  # Monkey Meadow, Medium, Runde 1-40
-cd engine && cargo run --release -p btd-tools -- demo --data ../data/local/game_v1_tutorial_medium.json
+cd engine
+cargo run --release -p btd-tools -- demo --data ../data/local/game_v1_tutorial_medium.json
+# Benchmark (a): fester Bau-Plan (crates/btd-tools/src/meadow_plan.txt) schafft Runde 40
+cargo run --release -p btd-tools -- script --data ../data/local/game_v1_tutorial_medium.json
+cargo test --release -p btd-core --test dump_local -- --ignored
+cargo test --release -p btd-tools --test benchmark -- --ignored
+cd .. && .venv/bin/python train.py --data data/local/game_v1_tutorial_medium.json --preview 3 --envs 64
 ```
+
+Der Konverter schreibt neben der Datei einen Abdeckungs-Report (`*_coverage.md`): welche der 384
+Upgrade-Kombinationen der 6 Primary-Türme die Engine simuliert und was den übrigen fehlt.
+Nicht unterstützte Kombinationen sind im Aktionsraum gesperrt. `--preview N` hängt eine
+Runden-Vorschau an die Observation (Bloon-Kategorien der nächsten N Runden, Runden bis zum
+nächsten Camo/Lead/Ceramic/MOAB …).
 
 ## Spielprotokolle (Replays)
 

@@ -73,19 +73,44 @@ Camo-Green in Runde 24, halten die Leads und fallen in Runde 36. Erledigte Kalib
 Spawn-Abstand `(end − start)/(count − 1)` bestätigt (Runde 1: alle 55,3 Frames); Kinder kommen
 als eigene Spiel-Varianten (Fortified/Camo stimmen dadurch automatisch).
 
-### M2c: Tier 3, dann 4–5
+### M2c: Tier 3, dann 4–5 ✅ (Stand: 204 von 384 Kombinationen)
 
 Status-Effekte (Slow, Glue, Freeze, Schaden über Zeit), Spezialverhalten der höheren Tiers.
 Abdeckungs-Report bis alle 64 Kombinationen der 6 Türme unterstützt sind (oder bewusst
 ausgeschlossen mit Begründung).
 
-### M2d: Env und Benchmark
+Stand nach M2c: Engine kann Freeze (mit Schicht-Vererbung und Dauer-Faktor je Tag), zwei
+Slow-Slots (Glue mit Stufe; ohne Stufe ein Slot je Effekt-ID wie Permafrost und Stun, alle
+multiplikativ), Schaden über Zeit
+(Corrosive Glue), Zurückstoßen, kritische Treffer, parallele Projektile, Treffer-Reset
+(Glaives), Verlangsamungs-Zonen (Arctic Wind), Kurvenbahnen (Boomerang), Flächentreffer mit
+eigenem Radius (Ring of Fire) und Splitter, die beim Verbrauch explodieren (Cluster Bombs).
+Abdeckung pro Turm: Dart 39, Boomerang 24, Bomb 40, Tack 49, Ice 24, Glue 28 von je 64.
 
-1. Aktionsraum: Raster-Zelle → geprüfte Weltposition (Platzierungsflächen + Footprint),
-   Masken nur für unterstützte Kombinationen.
-2. Observation: Raster-Kanäle + Runden-Vorschau inkl. „Runden bis zum nächsten Spezial-Bloon“.
-3. Benchmark (a): handgeschriebene Strategie schafft Medium Runde 40; Replay-Vergleich mit einem
-   echten Testspiel des Users (Kalibrierung); kurzer PPO-Lauf.
+Bewusst offen (gesperrt, Grund im Report): Fähigkeiten (M4), Abpraller an Hindernissen und am
+Rand (Dart 3xx–5xx), Retarget/Orbit (Boomerang 3xx–5xx), Kylie/MOAB Press (easePath,
+ArriveAtTarget), Embrittlement/Shatter (Ice 4xx–5xx, 004/005), Glue 4xx–5xx (EmitOnDestroy),
+Bloon Dissolver (DoT mit Ceramic-Bonus), Cluster mit FilterAll-Crosspaths (013/023/103/203).
+
+### M2d: Env und Benchmark ✅
+
+1. Aktionsraum aus dem Raster der Karte (Monkey Meadow: 7201 Aktionen); nicht unterstützte
+   Kombinationen fehlen als Variante und sind dadurch maskiert.
+2. Observation: Raster-Kanäle wie bisher, optional (`preview_rounds`) eine Runden-Vorschau:
+   je Vorschau-Runde Anzahl Bloons in 9 Kategorien (Camo, Regrow, Fortified, Lead, Black, White,
+   Purple, Ceramic, MOAB; inkl. Nachkommen), RBE und Dauer, dazu "Runden bis zur nächsten
+   Kategorie" (Horizont 10). Ohne Vorschau bleibt die Observation identisch zur Python-Env.
+3. Benchmark (a): `btd-tools script` spielt `crates/btd-tools/src/meadow_plan.txt` (Darts mit
+   Camo, Tack, Boomerangs, Bombs, Glue) und gewinnt Medium Runde 1–40 mit 131/150 Leben
+   (Verluste nur in Runde 37). Lokaler Test: `tests/benchmark.rs`.
+4. Kurzer PPO-Lauf auf den Spieldaten (`train.py --data … --preview 3 --envs 64`, 600k Schritte,
+   ~13 min auf der RTX 4060 Ti, ~800 Schritte/s inkl. Training): die Policy kommt deterministisch
+   bis Runde 36 (4 von 5 stochastischen Episoden ebenso), baut dafür aber über 30 meist kleine
+   Türme. Zufallspolicy: Runde ~6. Reward-Kurve flacht bei ~28 ab; für Runde 40 braucht es
+   längeres Training und die Architektur-Experimente aus M3.
+
+Offen für M3: Replay-Vergleich mit einem echten Testspiel des Users (Kalibrierung), die
+Kalibrierpunkte unten, Regrow.
 
 ## Offene Kalibrierpunkte aus M2a
 
@@ -96,5 +121,25 @@ ausgeschlossen mit Begründung).
   Runden im Dump prüfen.
 - Flag-Vererbung: Kinder erben alle Flags; im Spiel sind z.B. Kinder von Fortified-Lead/Ceramic
   nicht fortified.
+
+## Offene Kalibrierpunkte aus M2b–M2d
+
+Annahmen, die gegen das Spiel (Testspiel/Replay oder dekompilierten Code) zu prüfen sind; im
+Code mit [KAL] markiert:
+
+- Freeze-Schichten: `layers` zählt inklusive des getroffenen Bloons, Kinder erben mit einer
+  Schicht weniger. Evtl. friert Basis-Ice dadurch eine Generation zu viel.
+- `cascadeMutators` (Freeze/Permafrost true, Glue false) wird nicht ausgewertet.
+- Slows verschiedener Effekt-IDs (Glue, Permafrost, Stun) wirken multiplikativ; im Spiel evtl. nur
+  der stärkste.
+- Schaden über Zeit trifft alle Eigenschaften; Immunitäts-Bit 64 (unbekannt) wird ignoriert.
+- Pierce wird auch von immunen Bloons verbraucht.
+- Zufallsreichweite (Cluster) und Crit-Intervall als Mittelwert.
+- Projektile starten in der Turmmitte (Abwurf-Versatz ignoriert), Boomerang-Kurven werden nicht
+  gespiegelt (FlipFollowPath), keine Sichtlinie, Explosionen sofort statt nach 0,1 s.
+- Bonus-Schaden (`damage_vs`) geht als Überschuss an die Kinder weiter.
+- Verbrauchs-Effekte (`on_exhaust`) lösen auch beim Ablaufen der Lebensdauer aus (Cluster-Splitter
+  kollidieren im Spiel nicht: dontUseCollisionChecker).
+- Negative Spawn-Zeiten (CHIMPS Runde 86) werden auf 0 geklemmt.
 
 Nach jeder Phase: Commit, unabhängiger Review-Agent, Funde fixen, vor dem Push fragen.

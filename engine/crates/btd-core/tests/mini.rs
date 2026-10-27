@@ -520,7 +520,15 @@ fn shards_explode_when_their_pierce_is_used_up() {
 }
 
 fn slow(level: u8, seconds: f64) -> Slow {
-    Slow { multiplier: 0.5, seconds, level, layers: 3, multiplier_for: vec![], seconds_for: vec![] }
+    Slow {
+        id: String::new(),
+        multiplier: 0.5,
+        seconds,
+        level,
+        layers: 3,
+        multiplier_for: vec![],
+        seconds_for: vec![],
+    }
 }
 
 #[test]
@@ -640,5 +648,136 @@ fn area_radius_can_differ_from_range() {
 fn unknown_tags_are_rejected() {
     let mut d = data();
     atk(&mut d, GLUE).extras.filter.exclude_tags = vec!["Ceramics".into()];
+    assert!(d.validate().is_err());
+}
+
+#[test]
+fn slows_with_different_ids_coexist() {
+    // Permafrost (dauerhaft 0.5) vom Pin, kurzer Stun (0.0) vom Glue: der Stun darf den
+    // Permafrost nicht ersetzen und beim Ablaufen löschen
+    let build = |stun: bool| {
+        let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
+        let a = atk(&mut d, PIN);
+        a.damage = 0.0;
+        a.extras.slow = Some(Slow { id: "perma".into(), ..slow(0, 1000.0) });
+        atk(&mut d, GLUE).extras.slow = Some(Slow { id: "stun".into(), multiplier: 0.0, ..slow(0, 0.5) });
+        run(d, move |g: &mut Game| {
+            g.apply(Action::Place { kind: PIN, x: -40.0, y: 15.0 }).unwrap();
+            if stun {
+                g.apply(Action::Place { kind: GLUE, x: -40.0, y: -15.0 }).unwrap();
+            }
+        })
+    };
+    let (perma, both) = (build(false), build(true));
+    assert!(both.seconds > perma.seconds + 0.3, "{both:?} vs {perma:?}");
+}
+
+#[test]
+fn non_colliding_shards_explode_at_the_end_of_their_flight() {
+    let frag = |exhaust: bool| {
+        let mut d = with_round(vec![group(0, 12, 0.0, 1.0)]);
+        if let Delivery::Projectile { on_contact, .. } = &mut atk(&mut d, FRAG).delivery {
+            if let Contact::Shards { damage, collide, on_exhaust, .. } = &mut on_contact[0] {
+                (*damage, *collide) = (1.0, false);
+                if exhaust {
+                    on_exhaust.push(Contact::Explosion {
+                        radius: 10.0,
+                        pierce: 10,
+                        damage: 1.0,
+                        cannot_damage: vec![],
+                        camo: false,
+                        extras: Default::default(),
+                    });
+                }
+            }
+        }
+        single_shot(d, FRAG, 0.0, 18.0)
+    };
+    assert_eq!(frag(false).pops, 0, "Splitter ohne Kollision treffen nichts");
+    assert!(frag(true).pops >= 1, "{:?}", frag(true));
+}
+
+#[test]
+fn crit_frequency_matters() {
+    // Pin ohne Grundschaden: nur kritische Schüsse platzen einen Red
+    let pin = |every: u32| {
+        let mut d = with_round(vec![group(0, 40, 0.0, 20.0)]);
+        let a = atk(&mut d, PIN);
+        a.damage = 0.0;
+        a.crit = Some(Crit { damage: 1.0, every });
+        run(d, place(PIN, 0.0, 15.0)).pops
+    };
+    let (two, four) = (pin(2), pin(4));
+    assert!(four > 0 && two >= 2 * four - 1 && two <= 2 * four + 1, "{two} vs {four}");
+}
+
+#[test]
+fn push_needs_damage() {
+    // Leads sind für den Pin immun: kein Schaden, also kein Zurückstoßen
+    let pin = |push: bool| {
+        let mut d = with_round(vec![group(2, 1, 0.0, 0.0)]);
+        atk(&mut d, PIN).extras.push = push.then(|| Push { amount: 5.0, factor_for: vec![] });
+        run(d, place(PIN, 0.0, 15.0))
+    };
+    assert_eq!(pin(true).seconds, pin(false).seconds);
+}
+
+#[test]
+fn zone_needs_camo_detection_for_camo_bloons() {
+    let pin = |camo: bool| {
+        let mut d = with_round(vec![btd_data::v1::SpawnGroup {
+            flags: btd_data::v1::Flags(btd_data::v1::Flags::CAMO),
+            ..group(2, 1, 0.0, 0.0)
+        }]);
+        d.towers[PIN as usize].variants[0].zones =
+            vec![Zone { radius: 30.0, speed_scale: 0.5, camo, filter: Default::default() }];
+        run(d, place(PIN, 0.0, 15.0))
+    };
+    let base = run(
+        with_round(vec![btd_data::v1::SpawnGroup {
+            flags: btd_data::v1::Flags(btd_data::v1::Flags::CAMO),
+            ..group(2, 1, 0.0, 0.0)
+        }]),
+        |_| {},
+    );
+    assert_eq!(pin(false).seconds, base.seconds);
+    assert!(pin(true).seconds > base.seconds + 0.5);
+}
+
+#[test]
+fn damage_over_time_ticks_after_one_interval() {
+    let glue = |seconds: f64| {
+        let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
+        atk(&mut d, GLUE).extras.dot = Some(Dot { interval: 1.0, seconds, ..corrosive(9) });
+        run(d, place(GLUE, -40.0, 15.0)).pops
+    };
+    assert_eq!(glue(0.9), 0, "erster Tick erst nach einem Intervall");
+    assert_eq!(glue(1.1), 1);
+}
+
+#[test]
+fn slow_duration_per_tag() {
+    let glue = |long_for_red: bool| {
+        let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
+        let mut s = slow(1, 0.5);
+        if long_for_red {
+            s.seconds_for = vec![TagFactor { tag: "Red".into(), factor: 100.0 }];
+        }
+        atk(&mut d, GLUE).extras.slow = Some(s);
+        run(d, place(GLUE, -40.0, 15.0))
+    };
+    assert!(glue(true).seconds > glue(false).seconds + 1.0);
+}
+
+#[test]
+fn validation_rejects_zero_pierce_projectiles_and_bad_crits() {
+    let mut d = data();
+    atk(&mut d, DART).pierce = 0;
+    assert!(d.validate().is_err());
+    let mut d = data();
+    atk(&mut d, PIN).crit = Some(Crit { damage: f64::NAN, every: 2 });
+    assert!(d.validate().is_err());
+    let mut d = data();
+    atk(&mut d, PIN).crit = Some(Crit { damage: 5.0, every: 0 });
     assert!(d.validate().is_err());
 }
