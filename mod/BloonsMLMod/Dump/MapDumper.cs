@@ -188,7 +188,7 @@ public static class MapDumper
             ["difficulty"] = lastDifficulty,
             ["reverseMode"] = lastReverse,
             ["note"] = "GameModel-Felder dieser Partie, wie das Spiel sie beim Erstellen der Partie setzt " +
-                       "(Modus, Schwierigkeit und alles, was das Profil dabei einrechnet)",
+                       "(Modus, Schwierigkeit und das Monkey Knowledge des Profils, siehe mods)",
             ["fields"] = fields,
             // nur, wenn die Mods zu genau diesem GameModel gehören (sonst stammen sie aus einer früheren Partie)
             ["mods"] = ReferenceEquals(lastModsGame, lastGame) || lastModsGame?.Pointer == lastGame?.Pointer ? lastMods : null,
