@@ -1,6 +1,7 @@
 using BloonsML;
 using BloonsML.Common;
 using BloonsML.Dump;
+using BloonsML.Player;
 using BloonsML.Recorder;
 using BTD_Mod_Helper;
 using System.Collections.Generic;
@@ -83,6 +84,14 @@ public class BloonsMLMod : BloonsTD6Mod
         description = "Schaltet 'Trace aufzeichnen' um."
     };
 
+    public static readonly ModSettingHotkey PlayerProbeHotkey = new(KeyCode.F10)
+    {
+        displayName = "Hotkey: Player-Test",
+        description = "Test für den Replay-Player (docs/design-replay-player.md, Schritt 1): in einer Wegwerf-Partie " +
+                      "vor dem ersten Rundenstart drücken. Setzt Türme, Geld, Leben und Runde (landet im Autosave dieser " +
+                      "Partie, also nicht weiterspielen) und schaltet den Trace bis zum Ende der Partie an."
+    };
+
     public static MelonLogger.Instance Log => Melon<BloonsMLMod>.Logger;
 
     public override void OnApplicationStart()
@@ -95,6 +104,7 @@ public class BloonsMLMod : BloonsTD6Mod
         if (DumpAllHotkey.JustPressed()) GameDataDumper.Start();
         if (DumpMapHotkey.JustPressed()) MapDumper.DumpLast(force: true, includeMatch: true);
         if (ToggleTraceHotkey.JustPressed()) RecordTrace.SetValueAndSave(!RecordTrace);
+        if (PlayerProbeHotkey.JustPressed()) PlayerProbe.Run();
     }
 
     // --- Recorder-Hooks (Test-Recorder, docs/design-recorder.md Schritt 1)
@@ -123,11 +133,23 @@ public class BloonsMLMod : BloonsTD6Mod
 
     public override void OnWeaponFire(Weapon weapon) => TraceRecorder.OnWeaponFire(weapon);
 
-    public override void OnMatchEnd() => TraceRecorder.Stop("Partie beendet");
+    public override void OnMatchEnd()
+    {
+        TraceRecorder.Stop("Partie beendet");
+        PlayerProbe.Reset();
+    }
 
-    public override void OnRestart() => TraceRecorder.Stop("Neustart");
+    public override void OnRestart()
+    {
+        TraceRecorder.Stop("Neustart");
+        PlayerProbe.Reset();
+    }
 
-    public override void OnMainMenu() => TraceRecorder.Stop("Hauptmenü");
+    public override void OnMainMenu()
+    {
+        TraceRecorder.Stop("Hauptmenü");
+        PlayerProbe.Reset();
+    }
 
     public override void OnApplicationQuit() => TraceRecorder.Stop("Spiel beendet");
 

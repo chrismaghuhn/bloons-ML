@@ -4,8 +4,8 @@
 
 Mit einer Datei: Zeitbasis (Sim-Schritte je Unity-Frame, Zählerverlauf, dt/timeScale), Pfade (spawnDist/leakDist),
 Spawn- und Leak-Distanz, Laufzeit je Bloon in Sim-Schritten und Sekunden (60 Schritte/s).
-Mit zwei Dateien (z.B. Runde 1 in 1× und vorgespult): vergleicht je Bloon (Schlüssel: Runde, Emission-Index,
-Abstammung) die Distanz zum selben Rundenzeitpunkt und meldet die größte Abweichung.
+Mit zwei Dateien (z.B. Runde 1 in 1× und vorgespult): vergleicht je Bloon (Schlüssel: Runde aus `round_start`,
+Rundenzeit beim Erzeugen, Nr., Abstammung) die Distanz zum selben Rundenzeitpunkt und meldet die größte Abweichung.
 Liest nur; die Traces liegen lokal unter data/raw/recordings/ (gitignored).
 """
 from __future__ import annotations
@@ -34,12 +34,19 @@ def load(path: Path) -> list[dict]:
 
 
 def bloon_keys(events: list[dict]) -> dict[int, tuple]:
-    """Spiel-ID -> Schlüssel (spawnRound, createdAtRoundTime, Nr., Kind-Nr. je Elternteil …), unabhängig von IDs.
+    """Spiel-ID -> Schlüssel (Runde, createdAtRoundTime, Nr., Kind-Nr. je Elternteil …), unabhängig von IDs.
+    Die Runde kommt aus dem letzten `round_start` (Bloon.spawnRound ist in 57.4 nicht die Rundennummer, meist 0).
+    Bloons vor dem ersten `round_start` (Trace beginnt mitten in der Runde, Sandkasten) bekommen Runde None; das ist
+    nur dann vergleichbar, wenn beide Traces an derselben Stelle beginnen.
     Bloons mit mehrdeutigem Schlüssel werden weggelassen (und gemeldet)."""
     keys: dict[int, tuple] = {}
     children: Counter = Counter()
     same_time: Counter = Counter()
+    round_no = None
     for e in events:
+        if e["ev"] == "round_start":
+            round_no = e.get("round")
+            continue
         if e["ev"] != "spawn":
             continue
         lineage = e.get("lineage") or []
@@ -50,7 +57,7 @@ def bloon_keys(events: list[dict]) -> dict[int, tuple]:
         else:
             # emissionIndex ist im Spiel (57.4) für alle Bloons einer Runde 0; die Rundenzeit beim Erzeugen
             # unterscheidet sie, gleichzeitig erzeugte zählen in Reihenfolge
-            base = (e.get("spawnRound"), e.get("createdAtRoundTime"))
+            base = (round_no, e.get("createdAtRoundTime"))
             same_time[base] += 1
             keys[e["id"]] = base + (same_time[base],)
     counts = Counter(keys.values())

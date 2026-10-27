@@ -35,6 +35,20 @@ public static class OutputPaths
         return path;
     }
 
+    /// <summary>
+    /// &lt;DumpRoot&gt;/../recordings (Aufnahmen und Player-Ergebnisse), mit eigener .gitignore: Ninja-Kiwi-Daten,
+    /// das Repo ist öffentlich.
+    /// </summary>
+    public static string RecordingsDir()
+    {
+        var dumpRoot = ToHostPath(BloonsMLMod.DumpRoot).TrimEnd('\\', '/');
+        var dir = Path.Combine(Path.GetDirectoryName(dumpRoot)!, "recordings");
+        Directory.CreateDirectory(dir);
+        var gitignore = Path.Combine(dir, ".gitignore");
+        if (!File.Exists(gitignore)) File.WriteAllText(gitignore, "*\n");
+        return dir;
+    }
+
     /// <summary>Dateinamen-taugliche Variante eines Spiel-Namens (Upgrades enthalten z.B. Leerzeichen, ':' oder '/').</summary>
     public static string Sanitize(string name)
     {

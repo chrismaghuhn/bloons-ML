@@ -121,7 +121,7 @@ public static class TraceRecorder
             var mapName = sim.model?.map?.mapName ?? game?.selectedMap ?? "unknown_map";
             var mode = game?.selectedMode ?? "unknownMode";
             var difficulty = game?.selectedDifficulty ?? "unknownDifficulty";
-            var dir = RecordingsDir();
+            var dir = OutputPaths.RecordingsDir();
             var file = $"{DateTime.Now:yyyyMMdd-HHmmss}_{mapName}_{mode}_{difficulty}.trace.jsonl.gz";
             writer = new TraceWriter(Path.Combine(dir, OutputPaths.Sanitize(file)));
             lastUnityFrame = -1;
@@ -187,16 +187,6 @@ public static class TraceRecorder
         }
     }
 
-    /// <summary>Neben dem Dump-Ordner: &lt;DumpRoot&gt;/../recordings, mit eigener .gitignore (Ninja-Kiwi-Daten, öffentliches Repo).</summary>
-    private static string RecordingsDir()
-    {
-        var dumpRoot = OutputPaths.ToHostPath(BloonsMLMod.DumpRoot).TrimEnd('\\', '/');
-        var dir = Path.Combine(Path.GetDirectoryName(dumpRoot)!, "recordings");
-        Directory.CreateDirectory(dir);
-        var gitignore = Path.Combine(dir, ".gitignore");
-        if (!File.Exists(gitignore)) File.WriteAllText(gitignore, "*\n");
-        return dir;
-    }
 
     // ------------------------------------------------------------------ Ereignisse aus Mod-Helper-Hooks
 
