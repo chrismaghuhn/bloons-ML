@@ -65,6 +65,14 @@ pub struct BloonStore {
     pub dist: Vec<Real>,
     pub seg: Vec<u16>,
     pub alive: Vec<bool>,
+    /// Status-Effekte: eingefroren (Sekunden), Schichten, die das Einfrieren überlebt.
+    pub frozen: Vec<Real>,
+    pub freeze_layers: Vec<u32>,
+    /// Verlangsamung: Faktor, Restdauer, Glue-Stufe, Schichten.
+    pub slow_mul: Vec<Real>,
+    pub slow_left: Vec<Real>,
+    pub glue: Vec<u8>,
+    pub glue_layers: Vec<u32>,
 }
 
 impl BloonStore {
@@ -84,6 +92,12 @@ impl BloonStore {
         self.dist.push(dist);
         self.seg.push(seg);
         self.alive.push(true);
+        self.frozen.push(0.0);
+        self.freeze_layers.push(0);
+        self.slow_mul.push(1.0);
+        self.slow_left.push(0.0);
+        self.glue.push(0);
+        self.glue_layers.push(0);
     }
 
     pub fn clear(&mut self) {
@@ -94,6 +108,12 @@ impl BloonStore {
         self.dist.clear();
         self.seg.clear();
         self.alive.clear();
+        self.frozen.clear();
+        self.freeze_layers.clear();
+        self.slow_mul.clear();
+        self.slow_left.clear();
+        self.glue.clear();
+        self.glue_layers.clear();
     }
 
     /// Entfernt alle `alive == false`, Reihenfolge bleibt erhalten. O(n).
@@ -108,6 +128,12 @@ impl BloonStore {
                 self.dist[w] = self.dist[r];
                 self.seg[w] = self.seg[r];
                 self.alive[w] = true;
+                self.frozen[w] = self.frozen[r];
+                self.freeze_layers[w] = self.freeze_layers[r];
+                self.slow_mul[w] = self.slow_mul[r];
+                self.slow_left[w] = self.slow_left[r];
+                self.glue[w] = self.glue[r];
+                self.glue_layers[w] = self.glue_layers[r];
                 w += 1;
             }
         }
@@ -118,6 +144,12 @@ impl BloonStore {
         self.dist.truncate(w);
         self.seg.truncate(w);
         self.alive.truncate(w);
+        self.frozen.truncate(w);
+        self.freeze_layers.truncate(w);
+        self.slow_mul.truncate(w);
+        self.slow_left.truncate(w);
+        self.glue.truncate(w);
+        self.glue_layers.truncate(w);
     }
 }
 
@@ -138,6 +170,7 @@ mod tests {
             camo: false,
             regrow: false,
             radius: 0.0,
+            tags: vec![],
         };
         vec![
             b("red", 1.0, vec![], 0),                    // 0

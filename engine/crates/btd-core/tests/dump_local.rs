@@ -1,5 +1,6 @@
 //! Plausibilitätstests gegen den echten Spiel-Dump (data/local/, nur lokal vorhanden).
-//! Ohne `data/local/game_v1_tutorial_medium.json` (tools/build_game_v1.py) werden sie übersprungen.
+//! Opt-in, weil die Daten nicht im Repo liegen: `cargo test -p btd-core --test dump_local -- --ignored`
+//! (vorher `tools/build_game_v1.py`).
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -18,6 +19,7 @@ fn local() -> Option<GameV1> {
 }
 
 #[test]
+#[ignore = "braucht den lokalen Spiel-Dump (data/local/)"]
 fn meadow_data_matches_known_game_facts() {
     let Some(d) = local() else { return };
     let bloon = |n: &str| d.bloons.iter().find(|b| b.name == n).unwrap();
@@ -53,6 +55,7 @@ fn best_cells(d: &GameV1, range: f64) -> Vec<(f64, f64)> {
 }
 
 #[test]
+#[ignore = "braucht den lokalen Spiel-Dump (data/local/)"]
 fn darts_alone_hold_until_the_lead_round() {
     let Some(d) = local() else { return };
     let cells = best_cells(&d, 32.0);

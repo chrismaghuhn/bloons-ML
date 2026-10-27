@@ -157,14 +157,46 @@ fn projectile_dart_pops_reds() {
     assert_eq!((r.pops, r.leaked), (5, 0), "{r:?}");
 }
 
+/// Nur ein einziger Schuss pro Runde (riesiger Cooldown), damit jede Wirkung einem Projektil zuzuordnen ist.
+fn single_shot(mut d: GameV1, kind: u8, x: f64, y: f64) -> btd_core::RoundReport {
+    for v in &mut d.towers[kind as usize].variants {
+        for a in &mut v.attacks {
+            a.cooldown = 1000.0;
+        }
+    }
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.apply(Action::Place { kind, x, y }).unwrap();
+    g.play_round()
+}
+
 #[test]
 fn projectile_does_not_hit_children_of_bloons_it_popped() {
-    // Ein Blue: Pierce 2 reicht nicht, um Blue und sein Kind mit demselben Dart zu platzen
-    let r = one_round(vec![group(1, 1, 0.0, 0.0)], |g| {
-        g.apply(Action::Place { kind: DART, x: 0.0, y: 15.0 }).unwrap();
-    });
-    assert_eq!(r.pops, 2, "zwei verschiedene Darts nötig: {r:?}");
-    assert!(r.seconds > 0.6, "zweiter Schuss erst nach dem Cooldown: {r:?}");
+    // Dart mit Pierce 2 gegen einen Blue: das Kind (Red) gilt als schon getroffen und kommt durch
+    let mut d = data();
+    d.rounds[0] = vec![group(1, 1, 0.0, 0.0)];
+    let r = single_shot(d, DART, 0.0, 15.0);
+    assert_eq!((r.pops, r.leaked), (1, 1), "{r:?}");
+}
+
+#[test]
+fn projectile_hits_each_bloon_at_most_once() {
+    // ein Dart (Pierce 2, 1 Schaden) bleibt an einer Ceramic (10 HP) nicht "kleben"
+    let mut d = data();
+    d.rounds[0] = vec![group(3, 1, 0.0, 0.0)];
+    let r = single_shot(d, DART, 0.0, 15.0);
+    assert_eq!((r.pops, r.leaked), (0, 15), "{r:?}");
+}
+
+#[test]
+fn explosion_and_direct_damage_do_not_pop_twice() {
+    // Bomb-Projektil mit eigenem Schaden UND Explosion gegen einen Blue (2 Schichten)
+    let mut d = data();
+    d.rounds[0] = vec![group(1, 1, 0.0, 0.0)];
+    d.towers[BOMBP as usize].variants[0].attacks[0].damage = 1.0;
+    let r = single_shot(d, BOMBP, 0.0, 18.0);
+    // die Explosion platzt den Blue; sein Kind entsteht danach und bleibt unberührt, der
+    // Direktschaden auf den schon geplatzten Blue entfällt (vor dem Fix: 5 Pops)
+    assert_eq!((r.pops, r.leaked), (1, 1), "{r:?}");
 }
 
 #[test]
@@ -236,4 +268,102 @@ fn shards_spawn_at_contact_and_pop_more_bloons() {
     let mut g = Game::new(Arc::new(d)).unwrap();
     g.apply(Action::Place { kind: FRAG, x: 0.0, y: 18.0 }).unwrap();
     assert_eq!(g.play_round().pops, 0, "ohne Splitter kein Schaden");
+}
+
+const ICE: u8 = 6;
+const GLUE: u8 = 7;
+const BOOM: u8 = 8;
+
+#[test]
+fn ice_freezes_and_stalls_bloons() {
+    // ein Blue: Ice platzt ihn (1 Schaden) zu einem Red, der 1,5 s eingefroren stehen bleibt
+    let mut d = data();
+    d.rounds[0] = vec![group(1, 1, 0.0, 0.0)];
+    let base = Game::new(Arc::new(d.clone())).unwrap().play_round();
+    let iced = single_shot(d, ICE, -40.0, 14.0);
+    assert_eq!((iced.pops, iced.leaked), (1, 1), "{iced:?}");
+    // der Red ist langsamer als der Blue und steht zusätzlich 1,5 s
+    assert!(iced.seconds > base.seconds + 1.5, "{iced:?} vs {base:?}");
+}
+
+#[test]
+fn ice_cannot_damage_lead_and_skips_it() {
+    let r = one_round(vec![group(2, 3, 0.0, 0.5)], |g| {
+        g.apply(Action::Place { kind: ICE, x: -40.0, y: 14.0 }).unwrap();
+    });
+    assert_eq!(r.pops, 0, "Lead ist für Ice immun und wird gar nicht erst eingefroren: {r:?}");
+}
+
+#[test]
+fn glue_slows_without_damage() {
+    let base = one_round(vec![group(0, 3, 0.0, 0.5)], |_| {});
+    let glued = one_round(vec![group(0, 3, 0.0, 0.5)], |g| {
+        g.apply(Action::Place { kind: GLUE, x: -40.0, y: 15.0 }).unwrap();
+    });
+    assert_eq!(glued.pops, 0, "Glue macht keinen Schaden");
+    assert_eq!(glued.leaked, base.leaked);
+    assert!(glued.seconds > base.seconds + 1.0, "verklebte Bloons sind langsamer: {glued:?} vs {base:?}");
+}
+
+#[test]
+fn glue_filter_excludes_tagged_bloons() {
+    let base = one_round(vec![group(3, 1, 0.0, 0.0)], |_| {});
+    let r = one_round(vec![group(3, 1, 0.0, 0.0)], |g| {
+        g.apply(Action::Place { kind: GLUE, x: -40.0, y: 15.0 }).unwrap();
+    });
+    assert_eq!(r.seconds, base.seconds, "Ceramic ist per Tag ausgeschlossen");
+}
+
+#[test]
+fn boomerang_follows_its_curve() {
+    let r = one_round(vec![group(0, 8, 0.0, 6.0)], |g| {
+        g.apply(Action::Place { kind: BOOM, x: 0.0, y: -20.0 }).unwrap();
+    });
+    assert!(r.pops > 0, "Kurve führt über den Track: {r:?}");
+    // ohne Kurve (Punkt-Bahn) trifft nichts
+    let mut d = data();
+    d.rounds[0] = vec![group(0, 8, 0.0, 6.0)];
+    if let btd_data::v1::Delivery::Projectile { path, .. } = &mut d.towers[8].variants[0].attacks[0].delivery
+    {
+        *path = Some(vec![[0.0, 0.0], [0.0, 1.0]]);
+    }
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.apply(Action::Place { kind: BOOM, x: 0.0, y: -20.0 }).unwrap();
+    assert_eq!(g.play_round().pops, 0);
+}
+
+#[test]
+fn bonus_damage_against_tags() {
+    // Ceramic (10 HP), Pin mit 1 Schaden: erst mit +9 gegen "Ceramic" reicht ein Treffer
+    let run = |bonus: f64| {
+        let mut d = data();
+        d.rounds[0] = vec![group(3, 1, 0.0, 0.0)];
+        d.towers[0].variants[0].attacks[0].extras.damage_vs =
+            vec![btd_data::v1::Bonus { tag: "Ceramic".into(), add: bonus }];
+        let mut g = Game::new(Arc::new(d)).unwrap();
+        g.apply(Action::Place { kind: PIN, x: 0.0, y: 15.0 }).unwrap();
+        g.play_round()
+    };
+    assert_eq!(run(0.0).pops, 0);
+    assert!(run(9.0).pops >= 1);
+}
+
+#[test]
+fn shards_can_inherit_the_hit_set() {
+    // ein Red: der Bomb-Hauptschuss macht keinen Schaden; erbt der Splitter das Treffer-Set,
+    // darf er den Kontakt-Bloon nicht treffen (Spiel: passOnCollidedWith)
+    let run = |inherit: bool| {
+        let mut d = data();
+        d.rounds[0] = vec![group(0, 1, 0.0, 0.0)];
+        if let btd_data::v1::Delivery::Projectile { on_contact, .. } =
+            &mut d.towers[FRAG as usize].variants[0].attacks[0].delivery
+        {
+            if let btd_data::v1::Contact::Shards { inherit_hit, .. } = &mut on_contact[0] {
+                *inherit_hit = inherit;
+            }
+        }
+        single_shot(d, FRAG, 0.0, 18.0)
+    };
+    assert_eq!(run(false).pops, 1);
+    assert_eq!(run(true).pops, 0);
 }

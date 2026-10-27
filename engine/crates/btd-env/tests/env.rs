@@ -332,8 +332,9 @@ fn three_upgrade_paths_on_mini_fixture() {
     .unwrap();
     let mut e = Env::new(spec, EnvConfig::default()).unwrap();
     let l = e.layout;
-    assert_eq!((l.cells, l.towers, l.paths, l.max_tier), (80, 6, 3, 2));
-    assert_eq!(l.n_actions, 1 + 6 * 80 + 3 * 80 + 80);
+    assert_eq!((l.cells, l.paths, l.max_tier), (80, 3, 2));
+    assert_eq!(l.towers, e.game.data().towers.len());
+    assert_eq!(l.n_actions, 1 + l.towers * 80 + 3 * 80 + 80);
     let mut obs = vec![0.0; l.obs_size];
     let mut mask = vec![false; l.n_actions];
     e.reset(&mut obs);

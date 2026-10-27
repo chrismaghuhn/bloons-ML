@@ -255,10 +255,11 @@ fn demo(args: &[String]) -> Result<(), String> {
                 let _ = g.apply(Action::Upgrade { tower: id, path });
             }
         }
+        let played = g.round + 1;
         let r = g.play_round();
         println!(
             "Runde {:>3}: Leben {:>4}  Cash {:>6}  Pops {:>5}  {:>5.1} s  Türme {}",
-            g.round,
+            played,
             g.lives,
             g.cash.dollars(),
             r.pops,
@@ -270,11 +271,11 @@ fn demo(args: &[String]) -> Result<(), String> {
                 .join(" ")
         );
     }
-    println!(
-        "{} nach Runde {} ({:.2} s Rechenzeit)",
-        if g.won() { "Gewonnen" } else { "Verloren" },
-        g.round,
-        start.elapsed().as_secs_f64()
-    );
+    let result = if g.won() {
+        format!("Gewonnen, alle {} Runden", g.round)
+    } else {
+        format!("Verloren in Runde {}", g.round + 1)
+    };
+    println!("{result} ({:.2} s Rechenzeit)", start.elapsed().as_secs_f64());
     Ok(())
 }

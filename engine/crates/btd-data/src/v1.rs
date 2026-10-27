@@ -197,6 +197,8 @@ pub struct BloonDefV1 {
     pub camo: bool,
     /// Kollisionsradius für Projektile (Spiel: Red 8). 0 = Punkt.
     pub radius: f64,
+    /// Tags des Spiels (z.B. "Ceramic", "Moabs", "Fortified") für Bonus-Schaden und Filter.
+    pub tags: Vec<String>,
     /// Typ wächst nach (Regrow). Stand M2b: geladen, noch ohne Wirkung (kommt in M2c).
     pub regrow: bool,
 }
@@ -216,13 +218,20 @@ pub enum Delivery {
     /// Sofort am vordersten Ziel explodieren; trifft bis zu `pierce` Bloons im `radius`
     /// um das Ziel, weiteste zuerst (sim_v0-Bomb).
     HitscanSplash { radius: f64 },
-    /// Fliegendes Projektil (gerade Bahn). Trifft jeden Bloon höchstens einmal, bis `pierce`
-    /// verbraucht ist oder `lifespan` abläuft. `radius` + Bloon-Radius = Kollisionsabstand.
+    /// Sofortiger Flächentreffer um den Turm (Ice): bis zu `pierce` Bloons in Reichweite,
+    /// weiteste zuerst. Feuert nur, wenn ein Ziel in Reichweite ist.
+    Area {},
+    /// Fliegendes Projektil. Trifft jeden Bloon höchstens einmal, bis `pierce` verbraucht ist
+    /// oder `lifespan` abläuft. `radius` + Bloon-Radius = Kollisionsabstand. Mit `path` fliegt es
+    /// eine Kurve (Boomerang): Punkte relativ zum Turm, lokale +y-Achse = Richtung zum Ziel;
+    /// am Ende der Kurve ist es weg.
     Projectile {
         speed: f64,
         lifespan: f64,
         radius: f64,
         emission: Emission,
+        #[serde(default)]
+        path: Option<Vec<[f64; 2]>>,
         /// Was bei jedem Kontakt mit einem Bloon zusätzlich passiert (Bomb: Explosion,
         /// Frag Bombs: Explosion + Splitter).
         #[serde(default)]
@@ -243,6 +252,8 @@ pub enum Contact {
         cannot_damage: Vec<String>,
         #[serde(default)]
         camo: bool,
+        #[serde(default)]
+        extras: HitExtras,
     },
     /// Neue Projektile ab der Kontaktstelle (Richtungen relativ zur Flugrichtung).
     Shards {
@@ -256,6 +267,12 @@ pub enum Contact {
         cannot_damage: Vec<String>,
         #[serde(default)]
         camo: bool,
+        #[serde(default)]
+        extras: HitExtras,
+        /// Splitter übernehmen das Treffer-Set des Projektils (Spiel: passOnCollidedWith),
+        /// treffen also z.B. den Kontakt-Bloon nicht noch einmal.
+        #[serde(default)]
+        inherit_hit: bool,
     },
 }
 
@@ -277,7 +294,25 @@ pub enum Emission {
     },
 }
 
+impl HitExtras {
+    fn valid(&self) -> bool {
+        let ok = |x: f64| x.is_finite() && x >= 0.0;
+        self.damage_vs.iter().all(|b| b.add.is_finite())
+            && self.freeze.as_ref().map_or(true, |f| ok(f.seconds) && f.scale.iter().all(|t| ok(t.factor)))
+            && self.slow.as_ref().map_or(true, |s| {
+                ok(s.seconds)
+                    && (0.0..=1.0).contains(&s.multiplier)
+                    && s.multiplier_for.iter().all(|t| (0.0..=1.0).contains(&t.factor))
+            })
+    }
+}
+
 impl Contact {
+    pub fn extras(&self) -> &HitExtras {
+        let (Contact::Explosion { extras, .. } | Contact::Shards { extras, .. }) = self;
+        extras
+    }
+
     /// `cannot_damage` als Bitmaske (beim Laden validiert).
     pub fn cannot_damage_props(&self) -> Props {
         let (Contact::Explosion { cannot_damage, .. } | Contact::Shards { cannot_damage, .. }) = self;
@@ -302,6 +337,71 @@ pub struct AttackV1 {
     /// Ein Splash-Angriff ohne Camo-Erkennung schießt deshalb nie auf eine reine Camo-Gruppe.
     pub camo: bool,
     pub delivery: Delivery,
+    pub extras: HitExtras,
+}
+
+/// Zusätzliche Treffer-Regeln (aus den Filter-, Bonus- und Status-Models des Spiels).
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct HitExtras {
+    pub filter: HitFilter,
+    /// Bonus-Schaden gegen Bloons mit einem Tag (Spiel: DamageModifierForTagModel).
+    pub damage_vs: Vec<Bonus>,
+    /// Einfrieren (Ice): Bloon bleibt stehen, ist so lange Frozen (spitze Angriffe wirkungslos).
+    pub freeze: Option<Freeze>,
+    /// Verlangsamen (Glue).
+    pub slow: Option<Slow>,
+}
+
+/// Welche Bloons ein Angriff gar nicht erst anvisiert oder trifft.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct HitFilter {
+    /// Bloons mit einem dieser Tags auslassen (z.B. "Moabs").
+    pub exclude_tags: Vec<String>,
+    /// Bloons auslassen, die der Angriff nicht beschädigen kann (Spiel: FilterBloonIfDamageType).
+    pub skip_immune: bool,
+    pub skip_frozen: bool,
+    /// Bloons auslassen, die schon mindestens diese Glue-Stufe haben (0 = kein Filter).
+    pub skip_glue_level: u8,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Bonus {
+    pub tag: String,
+    pub add: f64,
+}
+
+/// `layers`: über wie viele Schichten (Kinder beim Platzen) der Effekt erhalten bleibt.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Freeze {
+    pub seconds: f64,
+    pub layers: u32,
+    /// Dauer-Faktor für Bloons mit Tag (Spiel: Ceramics nur halb so lange).
+    #[serde(default)]
+    pub scale: Vec<TagFactor>,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TagFactor {
+    pub tag: String,
+    pub factor: f64,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Slow {
+    /// Geschwindigkeitsfaktor (0.5 = halbe Geschwindigkeit).
+    pub multiplier: f64,
+    pub seconds: f64,
+    pub level: u8,
+    pub layers: u32,
+    /// Abweichender Geschwindigkeitsfaktor für Bloons mit Tag (Spiel: MOABs 1.0 = nicht verlangsamt).
+    #[serde(default)]
+    pub multiplier_for: Vec<TagFactor>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -434,6 +534,8 @@ struct RawBloon {
     regrow: bool,
     #[serde(default)]
     radius: f64,
+    #[serde(default)]
+    tags: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -470,6 +572,8 @@ struct RawAttack {
     #[serde(default)]
     camo: bool,
     delivery: Delivery,
+    #[serde(default)]
+    extras: HitExtras,
 }
 
 fn first() -> Targeting {
@@ -547,6 +651,7 @@ impl GameV1 {
                     camo: b.camo,
                     regrow: b.regrow,
                     radius: b.radius,
+                    tags: b.tags.clone(),
                 })
             })
             .collect::<Result<Vec<_>, DataError>>()?;
@@ -684,6 +789,8 @@ impl GameV1 {
                 return Err(invalid(format!("Bloon {}: mehr als 1e5 Nachkommen", self.bloons[i].name)));
             }
         }
+        // Kollision Projektil/Bloon braucht einen Radius > 0 auf mindestens einer Seite
+        let min_bloon_radius = self.bloons.iter().map(|b| b.radius).fold(f64::INFINITY, f64::min);
 
         for t in &self.towers {
             if !(1..=crate::MAX_DOLLARS).contains(&t.cost)
@@ -711,10 +818,17 @@ impl GameV1 {
                         && non_neg(a.damage)
                         && a.range.map_or(true, pos)
                         && match &a.delivery {
-                            Delivery::Hitscan {} => true,
+                            Delivery::Hitscan {} | Delivery::Area {} => true,
                             Delivery::HitscanSplash { radius } => pos(*radius),
-                            Delivery::Projectile { speed, lifespan, radius, emission, on_contact } => {
-                                pos(*speed)
+                            Delivery::Projectile { speed, lifespan, radius, emission, on_contact, path } => {
+                                on_contact.len() <= 8
+                                    && (*radius > 0.0 || min_bloon_radius > 0.0)
+                                    && path.as_ref().map_or(true, |p| {
+                                        p.len() >= 2
+                                            && p.len() <= 10_000
+                                            && p.iter().flatten().all(|v| v.is_finite())
+                                    })
+                                    && pos(*speed)
                                     && pos(*lifespan)
                                     && non_neg(*radius)
                                     && match emission {
@@ -768,6 +882,20 @@ impl GameV1 {
                         };
                     if !ok {
                         return Err(invalid(format!("{what} Angriff {}: ungültige Werte", a.tag)));
+                    }
+                    let contact_extras = match &a.delivery {
+                        Delivery::Projectile { on_contact, .. } => on_contact
+                            .iter()
+                            .map(|c| match c {
+                                Contact::Explosion { extras, .. } | Contact::Shards { extras, .. } => extras,
+                            })
+                            .collect(),
+                        _ => vec![],
+                    };
+                    for e in std::iter::once(&a.extras).chain(contact_extras) {
+                        if !e.valid() {
+                            return Err(invalid(format!("{what} Angriff {}: ungültige extras", a.tag)));
+                        }
                     }
                 }
             }
@@ -875,6 +1003,7 @@ fn resolve_tower(t: &RawTower) -> Result<TowerDefV1, DataError> {
                         cannot_damage: Props::parse(&a.cannot_damage, &what)?,
                         camo: a.camo,
                         delivery: a.delivery.clone(),
+                        extras: a.extras.clone(),
                     })
                 })
                 .collect::<Result<_, DataError>>()?,
