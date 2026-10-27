@@ -533,3 +533,51 @@ Abweichungen vom Plan:
     locker). Rabatt-Raster und Cash-Prüfung je Zelle kommen in Teil 3.
   - `start::perturb` erstattet beim Zurückstufen den Listenpreis.
   - `locked_towers` wird noch nicht durchgesetzt.
+
+## Stand Teil 3 (Env, 2026-10-27)
+
+- **Feste Sperren:** `Game::check` lehnt das Platzieren gesperrter Türme ab (`ActionError::TowerLocked`).
+  - Die Env-Maske und `random_build` lassen sie aus.
+  - `draw_bans` würfelt nur unter den freien Türmen. `max_banned_towers` muss kleiner sein als deren Zahl.
+  - Startzustände mit gesperrten Türmen scheitern beim Aufbau mit dieser Meldung.
+- **Layout:**
+  - Mit Support-Türmen in den Daten (`Layout::support`, `has_support_towers`) gibt es 5 Buff-Kanäle:
+    Reichweite (`range_frac` × 5), Tempo ((1 − Faktor) × 4), Camo, MIB und Platzier-Rabatt (× 4), je
+    begrenzt auf 1.
+  - Die Sperr-Skalare stehen dann immer im Layout. Sie zeigen "verfügbar", also weder zufällig noch fest
+    gesperrt.
+  - Dazu kommt ein Einkommens-Skalar: ln(1 + Einkommen) / ln(1 + 20 000).
+  - Für t14 heißt das 24 Kanäle und 12 961 Aktionen. Ohne Support-Türme (primary, t12, sim_v0) bleibt
+    das Layout unverändert.
+  - Python `grid_spec` kennt dieselbe Regel. Es lehnt ein Layout ab, bei dem die Skalare mehr als einen
+    Kanal ausmachen würden; das wäre ein Zeichen, dass Python und Rust verschieden zählen.
+  - Bewusst nicht in den Kanälen: Auren mit Turmgruppen-Filter (Primary Training) und `range_add`
+    (gibt es in t14 nur gefiltert). Die Policy sieht Primary Training über die Tiers der Village.
+- **Rabatt-Raster:** Auren (ohne Turmgruppen-Filter, `Game::aura_at`) und Platzier-Rabatt je
+  Zellmittelpunkt (`Game::auras_at`: Quellen und Radien nur einmal je Raster). Der Cache rechnet neu,
+  sobald sich `Game::buff_epoch` ändert (bei jedem
+  `refresh_buffs` und `reset`, global eindeutig). Er liegt hinter einem Mutex, weil die VecEnv die Envs
+  parallel über `&Env` maskiert. Die Place-Maske prüft das Cash je Zelle gegen den rabattierten Preis.
+- **Startzustände:**
+  - `TowerState.spent` ist optional. `from_game` schreibt es, `build` setzt es nach dem Aufbau und prüft
+    den Wertebereich.
+  - "Upgrade zurück" wie in §2.2: `perturb` merkt sich die Upgrades (`Perturbed::downgrades`), der Zustand
+    behält die ursprünglichen Stufen und `spent`.
+  - `Perturbed::finish` ruft nach dem Aufbau `Game::downgrade` auf (Erstattung zum Preis am Ort, `spent`
+    sinkt um denselben Betrag, Auren neu) und verkauft dann.
+  - Zurückgestuft wird nur, wenn es die niedrigere Kombination gibt.
+- **Tests:**
+  - `btd-env/tests/support.rs`: Layout, feste Sperren, Rabatt-Maske, Buff-Kanäle mit Cache, `spent` im
+    Rundlauf, Zufallsspiel mit Villages.
+  - Der angepasste Erstattungstest in `tests/start.rs`.
+  - `test_policy.py` für `grid_spec`.
+- **End-to-End:** Die Python-Erweiterung ist aus diesem Stand gebaut. `RustBTDEnv` mit t14 stimmt mit
+  `grid_spec` überein, und ein kurzer CPU-Trainingslauf (Conv) auf t14 lief.
+- **Gemessen** (Review, Release, eine Env, Zufallsspiel): t12 189,5 µs je Schritt, t14 211,5 µs (Maske
+  16,2 bzw. 19,0 µs).
+- **Abweichungen vom Plan:**
+  - Replays mit gesperrtem Turm: strikt geladen scheitern sie (`TowerLocked`). Mit `strict = false`
+    landet die Aktion wie andere unmögliche Aktionen in den Fehlern des Abgleichs.
+  - Der Einkommens-Skalar ist da, bleibt aber 0, solange die Farm gesperrt ist.
+- **Offen:** Die Farm-Mechanik (Einkommen, Bananen-Quote, Verkaufswert, Banana Central) und der
+  Recorder-Abgleich (Teil 4/5).

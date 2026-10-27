@@ -35,6 +35,8 @@ pub enum ActionError {
     NoTower,
     UpgradeUnavailable,
     SellingDisabled,
+    /// Turmtyp ist in diesem Modus gesperrt (`rules.locked_towers`).
+    TowerLocked,
     GameOver,
 }
 
@@ -58,6 +60,8 @@ pub struct Game {
     pub lives: i32,
     /// Zuletzt geschaffte Runde (startet bei `start_round - 1`).
     pub round: u32,
+    /// Türme in Bau-Reihenfolge. Nur über `apply`/`reset`/`downgrade` ändern: Auren und die Caches
+    /// der Env (`buff_epoch`) hängen daran.
     pub towers: Vec<Tower>,
     next_id: TowerId,
     bloons: BloonStore,
@@ -65,6 +69,18 @@ pub struct Game {
     /// Zufall im Spiel (Crit-Abstände; später weitere Quellen). `None` = Mittelwerte, deterministisch
     /// ohne Seed (Standard, Parität zur Python-Referenz).
     rng: Option<u64>,
+    /// Gesperrte Turmtypen (`rules.locked_towers`), je Typ.
+    locked: Vec<bool>,
+    /// Ändert sich bei jeder Neuberechnung der Auren und beim Reset (global eindeutig), damit
+    /// Caches (Rabatt-/Buff-Raster der Env) wissen, wann sie neu rechnen müssen. Nicht im Hash.
+    buff_epoch: u64,
+}
+
+/// Quelle für `Game::buff_epoch` (eindeutig über alle Spiele, auch nach `clone`).
+static BUFF_EPOCH: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+
+fn next_epoch() -> u64 {
+    BUFF_EPOCH.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
 }
 
 /// SplitMix64-Schritt (wie in btd-env), Zustand = letzte Ausgabe.
@@ -488,6 +504,8 @@ impl Game {
             bloons: BloonStore::default(),
             projectiles: Vec::new(),
             rng: None,
+            locked: data.towers.iter().map(|t| data.rules.locked_towers.contains(&t.name)).collect(),
+            buff_epoch: 0,
             data,
         };
         g.reset();
@@ -500,6 +518,7 @@ impl Game {
         self.lives = r.start_lives;
         self.round = r.start_round - 1;
         self.towers.clear();
+        self.buff_epoch = next_epoch();
         self.next_id = 0;
         self.bloons.clear();
         self.projectiles.clear();
@@ -614,6 +633,7 @@ impl Game {
     /// je Durchgang; nach höchstens n + 1 Durchgängen ist Schluss. Ohne Support-Türme bleiben alle
     /// Werte bitgleich zur Variante.
     pub fn refresh_buffs(&mut self) {
+        self.buff_epoch = next_epoch();
         let n = self.towers.len();
         let sources: SmallVec<[usize; 4]> =
             (0..n).filter(|&i| !self.variant_of(&self.towers[i]).supports.is_empty()).collect();
@@ -651,16 +671,82 @@ impl Game {
         let target = &self.towers[ti];
         let set = self.data.towers[target.kind as usize].set;
         let (x, y) = target.pos();
+        self.collect_buffs(x, y, Some(set), Some(ti), sources, reach)
+    }
+
+    /// Auren, die an (x, y) auf einen Turm wirken würden, ohne Auren mit Turmgruppen-Filter (für
+    /// die Buff-Kanäle der Observation). Nutzt die Radien aus dem letzten `refresh_buffs`.
+    pub fn aura_at(&self, x: f64, y: f64) -> Buffs {
+        self.auras_at([(x, y)].into_iter())[0]
+    }
+
+    /// `aura_at` für viele Punkte (Quellen und Radien nur einmal bestimmt).
+    pub fn auras_at(&self, points: impl Iterator<Item = (f64, f64)>) -> Vec<Buffs> {
+        let sources: SmallVec<[usize; 4]> = (0..self.towers.len())
+            .filter(|&i| !self.variant_of(&self.towers[i]).supports.is_empty())
+            .collect();
+        if sources.is_empty() {
+            return points.map(|_| Buffs::NONE).collect();
+        }
+        let reach: Vec<f64> = self.towers.iter().map(|t| t.reach).collect();
+        points.map(|(x, y)| self.collect_buffs(x, y, None, None, &sources, &reach)).collect()
+    }
+
+    /// Nimmt das letzte Upgrade auf `path` zurück und erstattet dessen Preis am Ort des Turms
+    /// (mit Rabatt-Zonen); `spent` sinkt um denselben Betrag. Nur für Startzustände ("Klick
+    /// verfehlt", docs/design-towers-step2.md §2.2), keine Spielaktion. Gibt die Erstattung zurück.
+    pub fn downgrade(&mut self, tower: TowerId, path: u8) -> Result<Money, ActionError> {
+        let t = self.tower(tower).ok_or(ActionError::NoTower)?;
+        let p = path as usize;
+        let mut tiers = t.tiers;
+        if tiers.get(p).map_or(true, |&k| k == 0) {
+            return Err(ActionError::UpgradeUnavailable);
+        }
+        tiers[p] -= 1;
+        let data = Arc::clone(&self.data);
+        let v = data.towers[t.kind as usize].variant(tiers).ok_or(ActionError::UpgradeUnavailable)?;
+        let t = self.towers.iter_mut().find(|t| t.id == tower).unwrap();
+        t.set_variant(v, &self.tags);
+        self.refresh_buffs();
+        let refund = self.upgrade_price(tower, path).ok_or(ActionError::UpgradeUnavailable)?;
+        self.cash = Money(self.cash.0.saturating_add(refund.0));
+        let t = self.towers.iter_mut().find(|t| t.id == tower).unwrap();
+        t.spent = Money((t.spent.0 - refund.0).max(0));
+        Ok(refund)
+    }
+
+    /// Gesperrter Turmtyp (`rules.locked_towers`)?
+    pub fn is_locked(&self, kind: TowerKind) -> bool {
+        self.locked.get(kind as usize).copied().unwrap_or(false)
+    }
+
+    /// Siehe Feld `buff_epoch`.
+    pub fn buff_epoch(&self) -> u64 {
+        self.buff_epoch
+    }
+
+    /// Auren an (x, y) für einen Turm der Gruppe `set` (`None`: nur Auren ohne Gruppen-Filter);
+    /// `skip` ist der Turm selbst (bufft sich nicht).
+    fn collect_buffs(
+        &self,
+        x: f64,
+        y: f64,
+        set: Option<btd_data::v1::TowerSet>,
+        skip: Option<usize>,
+        sources: &[usize],
+        reach: &[f64],
+    ) -> Buffs {
         // stärkste Aura je (Gruppe, Art); Quellen in Bau-Reihenfolge, also gewinnt bei Gleichstand die älteste
         let mut best: SmallVec<[&Support; 8]> = SmallVec::new();
         for &si in sources {
             let src = &self.towers[si];
             let v = self.variant_of(src);
-            if si == ti || !src.reaches(x, y, reach[si]) {
+            if Some(si) == skip || !src.reaches(x, y, reach[si]) {
                 continue;
             }
             for s in &v.supports {
-                if !s.sets().is_empty() && !s.sets().contains(&set) {
+                let filtered = !s.sets().is_empty();
+                if filtered && !set.is_some_and(|set| s.sets().contains(&set)) {
                     continue;
                 }
                 let same = |o: &&Support| {
@@ -735,6 +821,9 @@ impl Game {
         match *a {
             Action::Place { kind, x, y } => {
                 let def = self.data.towers.get(kind as usize).ok_or(ActionError::UnknownTower)?;
+                if self.is_locked(kind) {
+                    return Err(ActionError::TowerLocked);
+                }
                 let r = def.variants[def.variant_id([0; PATHS]).unwrap() as usize].footprint;
                 if !placeable(&self.data.map, x, y, r) {
                     return Err(ActionError::NotPlaceable);
