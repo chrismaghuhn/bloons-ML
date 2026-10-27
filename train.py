@@ -64,6 +64,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--steps", type=int, default=1_000_000)
     ap.add_argument("--envs", type=int, default=8)
+    ap.add_argument("--n-steps", type=int, default=512, help="Schritte je Env und Rollout")
     ap.add_argument("--out", default="models/ppo_btd")
     ap.add_argument("--resume", default=None)
     ap.add_argument("--engine", choices=["rust", "python"], default="rust")
@@ -118,7 +119,8 @@ if __name__ == "__main__":
     else:
         env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
     if args.resume:
-        model = MaskablePPO.load(args.resume, env=env, device=args.device)
+        model = MaskablePPO.load(args.resume, env=env, device=args.device,
+                                 custom_objects={"n_steps": args.n_steps})
         model.ent_coef = args.ent_coef  # sonst gälte still der gespeicherte Wert
     else:
         if args.arch == "conv":
@@ -130,7 +132,7 @@ if __name__ == "__main__":
             policy, policy_kwargs = "MlpPolicy", dict(net_arch=[512, 256])
         model = MaskablePPO(
             policy, env,
-            n_steps=512, batch_size=1024, n_epochs=6,
+            n_steps=args.n_steps, batch_size=1024, n_epochs=6,
             gamma=0.995, gae_lambda=0.95, ent_coef=args.ent_coef, learning_rate=3e-4,
             policy_kwargs=policy_kwargs, seed=args.seed,
             tensorboard_log="runs", verbose=1, device=args.device,
