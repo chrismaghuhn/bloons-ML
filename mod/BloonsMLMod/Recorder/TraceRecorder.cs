@@ -236,7 +236,9 @@ public static class TraceRecorder
     /// <summary>Jeden Schritt (unabhängig von der Abtastung): neue Bloons einmal beschreiben.</summary>
     private static void DescribeNewBloons(Simulation sim)
     {
-        if (describedBloons.Count > 100_000) describedBloons.Clear(); // Freeplay: Speicher begrenzen, schlimmstenfalls doppelt
+        // Freeplay: Speicher begrenzen (schlimmstenfalls doppelte bloon_info). Nicht beim Leak entfernen: geleakte
+        // Bloons bleiben noch bis zu ~60 Schritte in bloonsList und würden sonst erneut beschrieben.
+        if (describedBloons.Count > 100_000) describedBloons.Clear();
         var paths = sim.map.pathManager.paths;
         for (var p = 0; p < paths.Count; p++)
         {
@@ -268,7 +270,6 @@ public static class TraceRecorder
     public static void OnBloonLeaked(Bloon bloon, bool after)
     {
         if (!Active) return;
-        if (after) describedBloons.Remove(bloon.Id.Raw);
         var sb = Event(after ? "leak_done" : "leak");
         AppendBloon(sb, bloon);
         sb.Append(",\"health\":").Append(bloon.health)
