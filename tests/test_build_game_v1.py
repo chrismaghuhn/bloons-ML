@@ -564,3 +564,19 @@ def test_match_rules_checks_sell_ratio(tmp_path):
     write_match(tmp_path, "Odd", [], {"towerSellEnabled": True, "sellMultiplier": 0.5})
     with pytest.raises(SystemExit, match="sellMultiplier"):
         b.match_rules(tmp_path, "Odd", "Tutorial")
+
+
+def test_placeholder_for_tower_without_mechanic():
+    # Heli-ähnlich: unbekannte Modelle (Flieger), Rechteck-Footprint -> Platzhalter ohne Wirkung mit echtem
+    # Footprint (Außenkreis) und echter Reichweite (docs/design-towers-step3.md §4)
+    rect = T("RectangleFootprintModel", xWidth=27.0, yWidth=27.0)
+    heli = T("TowerModel", cost=1500.0, range=22.0, towerSet=2, footprint=rect,
+             behaviors=[rect, T("AirUnitModel", behaviors=[T("HeliMovementModel", maxSpeed=40.0)])])
+    with pytest.raises(b.Unsupported, match="AirUnitModel"):
+        b.convert_variant(heli, [0, 0, 0])
+    v = b.placeholder(heli)
+    assert v == {"tiers": [0, 0, 0], "range": 22.0, "footprint": pytest.approx(27.0 * 2 ** 0.5 / 2),
+                 "attacks": [], "_rect": True}
+    assert b.placeholder(dart_like())["footprint"] == 6.0
+    # alle t21-Türme ohne Mechanik sind fest gesperrt, Engineer (Basis geht) nicht
+    assert set(b.T21) - set(b.T14) - b.MECHANIC_LOCKED == {"EngineerMonkey"}

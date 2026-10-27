@@ -1235,14 +1235,17 @@ impl GameV1 {
                         return Err(invalid(format!("{what}: ungültige Zone")));
                     }
                 }
+                // Platzhalter ohne Wirkung nur als Basisvariante gesperrter Türme, deren Mechanik noch fehlt
+                // (docs/design-towers-step3.md §4): die Turmliste und damit das Layout bleiben stabil
                 if v.attacks.is_empty()
                     && v.zones.is_empty()
                     && v.supports.is_empty()
                     && v.discount.is_empty()
                     && v.income.is_none()
+                    && !(v.tiers == [0; PATHS] && r.locked_towers.contains(&t.name))
                 {
                     return Err(invalid(format!(
-                        "{what}: weder Angriff, Zone, Support, Rabatt noch Einkommen"
+                        "{what}: weder Angriff, Zone, Support, Rabatt noch Einkommen (nur als Basis gesperrter Türme erlaubt)"
                     )));
                 }
                 if !v.supports.iter().all(Support::valid) {
@@ -1634,6 +1637,11 @@ mod tests {
         let f = farm.variant([0, 0, 0]).unwrap();
         assert_eq!((f.income, f.sell_bonus), (Some(Income { per_round: 80.0, lives: 0 }), 0.1));
         assert_eq!(g.rules.locked_towers, vec!["farm".to_string()]);
+        // Platzhalter ohne Wirkung: nur für gesperrte Türme
+        let mut v = with_support_towers();
+        let t = v["towers"].as_array().unwrap().len() - 1;
+        v["towers"][t]["variants"][0].as_object_mut().unwrap().remove("income");
+        assert!(GameV1::from_json(&v.to_string()).unwrap().towers[t].variants[0].attacks.is_empty());
         let mut v = with_support_towers();
         v["towers"][0]["variants"][0]["attacks"][0]["delivery"] =
             serde_json::json!({"kind": "area", "radius": 30.0, "radius_offset": 2.0});
@@ -1665,6 +1673,25 @@ mod tests {
             v["towers"][t]["variants"][0]["supports"][i] = val;
         };
         rejects(&|v| v["rules"]["locked_towers"] = json!(["castle"]), "unbekannter Turm");
+        rejects(
+            &|v| {
+                let t = v["towers"].as_array().unwrap().len() - 1;
+                v["towers"][t]["variants"][0].as_object_mut().unwrap().remove("income");
+                v["rules"]["locked_towers"] = json!([]);
+            },
+            "nur als Basis gesperrter Türme",
+        );
+        rejects(
+            &|v| {
+                let t = v["towers"].as_array().unwrap().len() - 1;
+                v["towers"][t]["upgrade_costs"] = json!([[], [], [100]]);
+                v["towers"][t]["variants"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(json!({"tiers": [0, 0, 1], "range": 40.0, "footprint": 21.0, "attacks": []}));
+            },
+            "nur als Basis gesperrter Türme",
+        );
         rejects(&|v| v["rules"]["locked_towers"] = json!(["farm", "farm"]), "doppelt");
         rejects(&|v| sup(v, 1, json!({"kind": "rate", "group": "R", "factor": 1.5})), "ungültiger Support");
         rejects(&|v| sup(v, 1, json!({"kind": "rate", "group": "R", "factor": 0.0})), "ungültiger Support");

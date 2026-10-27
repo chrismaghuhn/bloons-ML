@@ -25,19 +25,27 @@ OUT = ROOT / "data" / "local"
 # Die 6 klassischen Primary-Türme (docs/m2-plan.md)
 TOWERS = ["DartMonkey", "BoomerangMonkey", "BombShooter", "TackShooter", "IceMonkey", "GlueGunner"]
 # Turm-Sets (--towers): primary = die 6 klassischen Primary-Türme, t12 = dazu Schritt 1 aus
-# docs/design-towers-step1.md, t14 = dazu Village und Farm (docs/design-towers-step2.md)
+# docs/design-towers-step1.md, t14 = dazu Village und Farm (docs/design-towers-step2.md), t21 = dazu die
+# Landtürme aus docs/design-towers-step3.md
 T12 = TOWERS + ["SniperMonkey", "Desperado", "SuperMonkey", "Druid", "NinjaMonkey", "WizardMonkey"]
-TOWER_SETS = {"primary": TOWERS, "t12": T12, "t14": T12 + ["MonkeyVillage", "BananaFarm"]}
+T14 = T12 + ["MonkeyVillage", "BananaFarm"]
+T21 = T14 + ["Alchemist", "EngineerMonkey", "MortarMonkey", "DartlingGunner", "SpikeFactory", "HeliPilot",
+             "MonkeyAce"]
+TOWER_SETS = {"primary": TOWERS, "t12": T12, "t14": T14, "t21": T21}
 TOWER_NAMES = {"DartMonkey": "dart", "BoomerangMonkey": "boomerang", "BombShooter": "bomb",
                "TackShooter": "tack", "IceMonkey": "ice", "GlueGunner": "glue", "SniperMonkey": "sniper",
                "Desperado": "desperado", "SuperMonkey": "super", "Druid": "druid", "NinjaMonkey": "ninja",
-               "WizardMonkey": "wizard", "MonkeyVillage": "village", "BananaFarm": "farm"}
+               "WizardMonkey": "wizard", "MonkeyVillage": "village", "BananaFarm": "farm",
+               "Alchemist": "alchemist", "EngineerMonkey": "engineer", "MortarMonkey": "mortar",
+               "DartlingGunner": "dartling", "SpikeFactory": "spike", "HeliPilot": "heli", "MonkeyAce": "ace"}
 # towerSet des Spiels -> game_v1
 TOWER_SET_NAMES = {1: "primary", 2: "military", 4: "magic", 8: "support"}
 # Türme, deren Mechanik die Engine noch nicht kann: in allen Presets gesperrt (rules.locked_towers),
 # aber schon in Daten und Layout, damit sich der Aktionsraum später nicht ändert
-# (docs/design-towers-step2.md §2.4)
-MECHANIC_LOCKED = {"BananaFarm"}
+# (docs/design-towers-step2.md §2.4). Geht ihre Basisvariante noch nicht durch den Konverter, steht sie als
+# Platzhalter in den Daten (docs/design-towers-step3.md §4).
+MECHANIC_LOCKED = {"BananaFarm", "Alchemist", "MortarMonkey", "DartlingGunner", "SpikeFactory", "HeliPilot",
+                   "MonkeyAce"}
 
 # Flächentypen im Spiel (AreaType) -> game_v1
 AREA_KINDS = {2: "land", 0: "track", 1: "water", 3: "blocked"}
@@ -1144,7 +1152,18 @@ def prune_tags(node, known: set, dropped: set):
             prune_tags(v, known, dropped)
 
 
-def build_tower(dump: Path, base: str, coverage: list) -> dict:
+def placeholder(model) -> dict:
+    """Basisvariante ohne Wirkung für einen Turm, dessen Mechanik fehlt (immer gesperrt): echte Reichweite
+    und echter Footprint, damit sich Maske und Kollision nicht ändern, wenn die Mechanik kommt."""
+    _used.clear()
+    footprint, rect = convert_footprint(model)
+    v = {"tiers": [0, 0, 0], "range": model["range"], "footprint": footprint, "attacks": []}
+    if rect:
+        v["_rect"] = True
+    return v
+
+
+def build_tower(dump: Path, base: str, coverage: list, placeholders: list) -> dict:
     tdir = dump / "towers" / base
     base_model = load(tdir / f"{base}.json")
     variants, costs = [], [[], [], []]
@@ -1165,6 +1184,12 @@ def build_tower(dump: Path, base: str, coverage: list) -> dict:
             coverage.append((base, code, None))
         except Unsupported as e:
             coverage.append((base, code, str(e)))
+    if not any(v["tiers"] == [0, 0, 0] for v in variants) and base in MECHANIC_LOCKED:
+        try:
+            variants.append(placeholder(base_model))
+        except Unsupported as e:
+            sys.exit(f"{base}: Platzhalter: {e}")
+        placeholders.append(TOWER_NAMES[base])
     if not any(v["tiers"] == [0, 0, 0] for v in variants):
         sys.exit(f"{base}: Basisvariante wird nicht unterstützt: {next(c[2] for c in coverage if c[:2] == (base, '000'))}")
     variants.sort(key=lambda v: v["tiers"])
@@ -1189,8 +1214,8 @@ def main():
     dump = args.dump or latest_dump()
     preset = PRESETS[args.preset]
 
-    coverage = []
-    towers = [build_tower(dump, t, coverage) for t in TOWER_SETS[args.towers]]
+    coverage, placeholders = [], []
+    towers = [build_tower(dump, t, coverage, placeholders) for t in TOWER_SETS[args.towers]]
     # Baubar-Raster mit dem größten runden Footprint: mit dem Außenkreis der Farm würde es für alle
     # Türme viel kleiner (die Maske je Turm prüft ohnehin den eigenen Footprint)
     footprint = max(v["footprint"] for t in towers for v in t["variants"] if not v.get("_rect"))
@@ -1241,6 +1266,8 @@ def main():
              "- Regrow ohne Grow Blocker der Village; Bloons ab Runde 81 ohne die stärkere Skalierung des Spiels "
              "(docs/design-bloons-chimps.md).",
              f"- Gesperrte Türme (rules.locked_towers): {', '.join(locked) or '-'}.",
+             *([f"- Platzhalter ohne Wirkung (Mechanik fehlt, Basisvariante geht noch nicht): "
+                f"{', '.join(placeholders)}."] if placeholders else []),
              f"- Tags ohne Bloon in dieser Konfiguration entfernt: {', '.join(sorted(dropped)) or '-'}.", ""]
     for base in TOWER_SETS[args.towers]:
         rows = [c for c in coverage if c[0] == base]

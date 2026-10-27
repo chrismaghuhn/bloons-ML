@@ -514,3 +514,41 @@ Antworten auf §10:
 7. Brew-Ziel nach höchstem `spent` als Platzhalter; der Recorder soll die echte Regel früh zeigen, weil die Policy um
    die Heuristik herum lernt.
 8. Spike Factory nur mit anvisierbarem Bloon, Heli-Pursuit mit `pursuitDistance` 32, Ace immer die ungedrehte Acht: ok.
+
+## Stand Teil 0 (Daten und Layout, 2026-10-27)
+
+- **Konverter:** `--towers t21` (die 14 aus t14, dann `alchemist`, `engineer`, `mortar`, `dartling`, `spike`, `heli`,
+  `ace`): 354 von 1344 Kombinationen, also t14 (348) plus Engineer 6 (000, 001, 010, 011, 020, 021). Engineer ist frei.
+  - Alchemist, Mortar, Dartling, Spike, Heli und Ace stehen in `MECHANIC_LOCKED` und damit in allen Presets auf
+    `locked_towers`.
+  - Ihre Basisvariante geht noch nicht. Deshalb steht je ein Platzhalter in den Daten (`placeholder`): echte
+    Reichweite und echter Footprint (Heli und Ace als Außenkreis des Rechtecks), keine Wirkung. Der
+    Abdeckungs-Report nennt die Platzhalter.
+  - Das Baubar-Raster ist unverändert. Der größte runde Footprint bleibt 11, Rechtecke zählen nicht mit.
+  - Die t14-Ausgaben (medium60, chimps, Daten und Abdeckungs-Report) sind bytegleich zu den bisherigen Dateien.
+- **btd-data:** Eine Variante ganz ohne Wirkung ist nur als Basisvariante eines Turms in `rules.locked_towers`
+  erlaubt. Ein
+  Formatfeld kommt nicht dazu.
+- **Env:** Kein neuer Code nötig.
+  - Die Place-Maske überspringt nicht verfügbare Türme schon (`unavailable` → `continue`), ohne Kollisionsprüfung.
+  - `map_ok` wird einmal in `Env::new` für alle Türme berechnet.
+  - Neuer Test `placeholder_tower_is_in_the_layout_but_never_placeable`: Der Platzhalter steht im Layout, ist nie
+    in der Maske und wird nie als Zufallssperre gezogen. Bauen gibt `TowerLocked`. Die Maske der übrigen Türme ist
+    dieselbe wie ohne ihn.
+- **Zufallssperren:** `train.py` lehnt `--ban-towers` über ⌊25 % der freien Türme⌋ ab (`max_bans`). Die Env selbst
+  verlangt weiter nur weniger Sperren als freie Türme; so bleiben alte Tests und Modelle ladbar.
+  - t21 hat heute 14 freie Türme, also höchstens 3, wie t14.
+  - Mit sim_v0 ist höchstens 1 erlaubt. Ältere Befehle mit 2 Sperren auf sim_v0 lehnt `train.py` jetzt ab.
+- **Layout t21:** 31 Kanäle, 26 Skalare ohne Vorschau, 18 001 Aktionen. Python `grid_spec` stimmt damit überein.
+- **Gemessen** (`btd-tools bench`, Release, eine Env, Zufallspolicy; verrauscht, weil parallel ein Training lief):
+  - Masken/s: t14 69–71 k, t21 55–65 k.
+  - Env-Schritte/s: t14 5,9–6,0 k, t21 5,0–5,8 k.
+  - Die Mehrkosten kommen von den größeren Masken- und Observation-Puffern, nicht von den gesperrten Türmen.
+- **Offen:**
+  - Die installierte `btd_rs` in `.venv` lädt t21 nicht: Ihre Validierung lehnt die Platzhalter ab. Sie wird
+    nach dem laufenden t14-Training aus diesem Stand neu gebaut.
+  - Die Datendateien liegen bisher nur im Worktree unter `data/local/`.
+  - `random_build` (zufällige Startzustände, Quelle C) zieht den Turmtyp gleichverteilt über alle Türme; ein Wurf
+    auf einen gesperrten Typ verfällt. Bei t21 sind das 7 von 21 (bei t14 1 von 14), zufällige Startzustände
+    haben also weniger Türme. Bewusst nicht in Teil 0 geändert, weil eine Ziehung nur unter freien Typen den
+    Zufallsstrom für t14 verschiebt; vor dem t21-Lauf entscheiden.
