@@ -209,7 +209,8 @@ pub struct Env {
     preview: Option<RoundPreview>,
     /// Karten-Bebaubarkeit je (Turm, Zelle), einmal vorberechnet (Polygon-Tests sind teuer).
     map_ok: Arc<Vec<bool>>,
-    /// In dieser Episode gesperrte Turmtypen (`EnvConfig::max_banned_towers`).
+    /// In dieser Episode gesperrte Turmtypen (`EnvConfig::max_banned_towers`). Sperren verbieten nur
+    /// das Bauen; Replays speichern sie nicht, geladene Türme gesperrter Typen bleiben nutzbar.
     banned: Vec<bool>,
     rng: u64,
     recorder: Option<Recorder>,

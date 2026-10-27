@@ -56,8 +56,10 @@ bf16 und mit `torch.compile` (abschaltbar mit `--no-amp`/`--no-compile`; compile
 
 `--reward-tower -0.5` bestraft jeden neu gebauten Turm (Upgrades frei), damit die Policy wenige
 Türme hochlevelt statt viele kleine zu bauen. `--ban-towers 2` sperrt je Episode bis zu zwei
-zufällige Turmtypen (Seed aus `--seed`, je Env ein eigener); die Observation zeigt, welche Türme
-verfügbar sind. Auswerten je Sperre: `evaluate.py … --ban-towers 2 --per-ban`.
+zufällige Turmtypen (Seed aus `--seed`, ohne Angabe 0; je Env ein eigener); die Observation zeigt, welche Türme
+verfügbar sind. Auswerten je Sperre: `evaluate.py … --ban-towers 2 --per-ban`. Replays speichern die
+Sperren nicht (sie verbieten nur das Bauen). Builds aus einem Replay zeichnet
+`tools/draw_build.py` auf ein Kartenbild (lokal, z.B. ein Screenshot von Monkey Meadow).
 
 Der Konverter schreibt neben der Datei einen Abdeckungs-Report (`*_coverage.md`): welche der 384
 Upgrade-Kombinationen der 6 Primary-Türme die Engine simuliert und was den übrigen fehlt.

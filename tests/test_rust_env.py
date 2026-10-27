@@ -113,3 +113,17 @@ def test_load_replay_errors():
     env = RustBTDEnv()
     with pytest.raises(OSError):
         env.load_replay("/gibt/es/nicht.jsonl")
+
+
+def test_tower_bans_from_python():
+    env = RustBTDEnv(max_banned_towers=2, seed=5)
+    n_towers = len(env.env.banned)
+    assert env.observation_space.shape[0] == BTDEnv().observation_space.shape[0] + n_towers
+    obs, info = env.reset(options={"banned": [True] + [False] * (n_towers - 1)})
+    assert info["banned"][0] and not any(info["banned"][1:])
+    assert list(obs[-n_towers:]) == [0.0] + [1.0] * (n_towers - 1), "Werte 'verfügbar' am Ende"
+    cells = (env.env.n_actions - 1) // (n_towers + 2 + 1)  # sim_v0: 4 Türme, 2 Pfade, Verkaufen
+    assert cells == 300
+    assert not env.action_masks()[1:1 + cells].any(), "gesperrter Turm ist nicht baubar"
+    with pytest.raises(ValueError):
+        env.reset(options={"banned": [True]})
