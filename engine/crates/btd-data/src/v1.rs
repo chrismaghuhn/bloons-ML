@@ -230,8 +230,8 @@ pub enum Delivery {
         #[serde(default)]
         radius: Option<f64>,
         /// Im Spiel an die Reichweite gekoppelt (LinkProjectileRadiusToTowerRange): Radius =
-        /// Reichweite + Versatz. Wirkt erst mit Reichweiten-Buffs (docs/design-towers-step2.md §2.1);
-        /// ungebufft gilt `radius`.
+        /// Reichweite + Versatz. Mit Reichweiten-Auren wächst `radius` um denselben Betrag wie die
+        /// Reichweite (docs/design-towers-step2.md §2.1); ungebufft gilt `radius`.
         #[serde(default)]
         radius_offset: Option<f64>,
     },
@@ -569,7 +569,7 @@ pub enum TowerSet {
 
 /// Statische Aura eines Support-Turms auf andere Türme in seiner (ungebufften) Reichweite
 /// (docs/design-towers-step2.md §2.1). Je `group` (Spiel: mutatorId) wirkt nur die stärkste Aura;
-/// `sets` leer = alle Türme. Noch ohne Wirkung in der Engine.
+/// `sets` leer = alle Türme. Wirkung: `btd_core::Game::refresh_buffs`.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Support {
@@ -647,7 +647,10 @@ impl Support {
         !self.group().is_empty()
             && sets.iter().enumerate().all(|(i, s)| !sets[..i].contains(s))
             && match *self {
-                Support::Range { add_frac, add, .. } => fin(add_frac) && add_frac > -1.0 && fin(add),
+                // nicht negativ: sonst konvergiert der Reichweiten-Fixpunkt der Engine nicht sicher
+                Support::Range { add_frac, add, .. } => {
+                    fin(add_frac) && add_frac >= 0.0 && fin(add) && add >= 0.0
+                }
                 Support::Rate { factor, .. } => fin(factor) && factor > 0.0 && factor <= 1.0,
                 Support::ProjectileSpeed { add_frac, .. } => fin(add_frac) && add_frac > -1.0,
                 Support::Pierce { add, .. } => add <= MAX_PIERCE_ADD,
@@ -658,7 +661,7 @@ impl Support {
 
 /// Rabatt-Zone (Spiel: DiscountZoneModel) auf Käufe in der Reichweite des Turms: Platzieren und
 /// Upgrades auf Tier `tier_min..=tier_cap`. Je `stack` zählen höchstens `stack_limit` Zonen.
-/// Noch ohne Wirkung in der Engine (docs/design-towers-step2.md §2.2).
+/// Wirkung: `btd_core::Game::discount_at` (docs/design-towers-step2.md §2.2).
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Discount {
@@ -1354,8 +1357,14 @@ impl GameV1 {
 
     /// Kosten nach Regeln (Medium × Faktor, auf `cost_rounding` gerundet; mindestens `cost_rounding`).
     pub fn cost(&self, medium: i64) -> i64 {
+        self.cost_discounted(medium, 0.0)
+    }
+
+    /// Kosten mit Rabatt (Anteil, Village-Rabatt-Zonen): Medium × (1 − Rabatt) × Faktor, gerundet
+    /// wie `cost` [KAL: Reihenfolge Rabatt/Schwierigkeit/Rundung]. Ohne Rabatt bitgleich zu `cost`.
+    pub fn cost_discounted(&self, medium: i64, discount: f64) -> i64 {
         let r = &self.rules;
-        let scaled = medium as f64 * r.cost_multiplier / r.cost_rounding as f64;
+        let scaled = medium as f64 * (1.0 - discount) * r.cost_multiplier / r.cost_rounding as f64;
         // half-up auf das Vielfache (Rundungsart ist ein Kalibrierpunkt, docs/engine-design.md §9)
         ((scaled + 0.5).floor() as i64).max(1) * r.cost_rounding
     }
@@ -1650,7 +1659,7 @@ mod tests {
         rejects(&|v| sup(v, 1, json!({"kind": "rate", "group": "R", "factor": 0.0})), "ungültiger Support");
         rejects(&|v| sup(v, 0, json!({"kind": "range", "group": "", "add_frac": 0.1})), "ungültiger Support");
         rejects(
-            &|v| sup(v, 0, json!({"kind": "range", "group": "R", "add_frac": -1.0})),
+            &|v| sup(v, 0, json!({"kind": "range", "group": "R", "add_frac": -0.1})),
             "ungültiger Support",
         );
         rejects(&|v| sup(v, 0, json!({"kind": "range", "group": "R", "mul": 0.1})), "unknown field");

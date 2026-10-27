@@ -14,7 +14,7 @@ pub mod tower;
 
 pub use game::{Action, ActionError, Game, RoundReport};
 pub use money::Money;
-pub use tower::{Tower, TowerId};
+pub use tower::{Buffs, Tower, TowerId};
 
 #[cfg(feature = "f64")]
 pub type Real = f64;

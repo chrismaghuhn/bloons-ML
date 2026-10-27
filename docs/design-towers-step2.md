@@ -146,9 +146,12 @@ Engine (`btd-core`):
   Upgrade im Spiel den Cooldown zurück?]
 - Es baut die effektiven Werte neu: für jeden Turm alle Auren anderer Türme, deren Mittelpunkt-Abstand
   ≤ Radius ist [KAL: zählt der Footprint des Ziels mit?].
-- **Radius = unbuffte Reichweite der Variante.** Eine Village, die eine andere bufft, vergrößert deren
-  Aura nicht. Damit reicht ein Durchgang, ohne Fixpunkt und ohne Abhängigkeit von der Reihenfolge
-  [KAL: im Spiel evtl. anders].
+- **Radius = gebuffte Reichweite des Support-Turms** (Änderung 2026-10-27 nach Hinweis des Users:
+  "Range:Support" hat keinen Turmfilter, eine Village gibt also auch einer anderen mehr Reichweite und
+  damit eine größere Aura bzw. Rabatt-Zone). Gerechnet als Fixpunkt: erst mit der ungebufften
+  Reichweite, dann so lange neu, bis sich keine Reichweite mehr ändert. Reichweiten wachsen dabei nur,
+  höchstens so viele Durchgänge wie Türme. Das Ergebnis ist eindeutig und hängt nicht von der Reihenfolge
+  ab. [KAL über den Recorder]
 - Stapeln wie in §1.1: je Gruppe (`mutatorId`) wirkt nur die stärkste Aura, egal wie viele Villages in
   Reichweite sind. Bei Gleichstand gilt die des ältesten Turms, damit es deterministisch ist.
   [KAL: Modifier-Reihenfolge, engine-design §9]
@@ -344,7 +347,8 @@ Rust (btd-core):
 - Aura wirkt nur innerhalb des Radius.
 - Gleiche Gruppe stapelt nicht über zwei Villages, verschiedene Gruppen einer Village schon.
 - Verkauf der Village nimmt den Buff weg. Eine Village, die nach dem Turm gebaut wird, gibt ihn.
-- Village-auf-Village: Der Aura-Radius bleibt unbufft.
+- Village-auf-Village: Die gebuffte Reichweite vergrößert Aura und Rabatt-Zone; nach dem Verkauf der
+  zweiten Village wieder nicht.
 - Camo-Aura lässt Dart Camo treffen.
 - MIB lässt Bomb (Explosion) Black treffen, Glue bekommt aber keine MOAB-Treffer.
 - Ring of Fire und Ice wachsen mit dem Reichweiten-Buff.
@@ -487,3 +491,45 @@ Abweichungen vom Plan:
 - Banana Central (5xx, 5 Varianten) ist noch gesperrt. `income.global_mul` kommt mit der Farm-Mechanik.
 - `locked_towers` wird erst in Teil 3 (Env/Engine) durchgesetzt. Bis dahin ließe sich die Farm mit t14-Daten
   platzieren, bringt aber nichts (kein Angriff, Einkommen noch ohne Wirkung).
+
+## Stand Teil 2 (Auren und Rabatt in der Engine, 2026-10-27)
+
+- `Tower` hält die Basiswerte der Variante. `Tower::apply_buffs` schreibt nur die buff-abhängigen Felder:
+  Reichweite, Cooldown, Camo, Schadensarten, Pierce (nur fliegende Projektile), Flächenradius (nur
+  gekoppelte Flächen, er wächst um denselben Betrag wie die Reichweite) und Projektil-Def (Tempo; Camo und MIB auch an Explosionen und Splittern). Laufzeit-
+  Zustand bleibt erhalten. Mit `Buffs::NONE` sind die Werte bitgleich zur Variante.
+- `Game::refresh_buffs` läuft nach jeder Aktion. Je Gruppe wirkt die stärkste Aura, bei Gleichstand die
+  älteste. Summiert wird in fester Reihenfolge (Gruppenname), unabhängig von der Bau-Reihenfolge. Der
+  Radius ist die gebuffte Reichweite (Fixpunkt, siehe §2.1). `Tower::reach` hält den aktuellen Radius.
+  Reichweiten-Auren dürfen nicht negativ sein (Validierung), damit der Fixpunkt sicher erreicht wird.
+- Rabatt:
+  - `Game::discount_at(x, y, tier, buyer)` gibt den Rabatt an einer Stelle, `place_price`/`upgrade_price`
+    die Preise. Haben Zonen eines Stapels verschiedene Obergrenzen, gilt die kleinste.
+  - `GameV1::cost_discounted` rechnet Medium × (1 − Rabatt) × Schwierigkeit und rundet auf 5 $. Ohne
+    Rabatt ist das Ergebnis bitgleich zu `cost`.
+  - `check`/`apply` und `spent` nutzen den Preis am Ort.
+- Tests (`btd-core/tests/support.rs`, 17 Stück, f32 und f64):
+  - Reichweite und Verkauf
+  - keine Stapelung je Gruppe
+  - Turmgruppen-Filter
+  - Tempo, Camo und MIB bis in die Explosion
+  - gekoppelter Flächenradius
+  - Camo-Runde
+  - Rabatt-Stapel, Tier-Grenze und `spent`
+  - Village auf Village
+  - Laufzeit-Zustand
+  - Determinismus
+  - Unabhängigkeit von der Bau-Reihenfolge
+  - Upgrade eines gebufften Turms
+  - Sofort-Treffer behalten ihren Pierce, Tag-Ausschlüsse bleiben unter MIB
+  - Splitter erben Camo und MIB
+  - gekoppelter Flächenradius (Ring of Fire)
+  - `affect_self` und `tier_min`
+  - Verkaufswert mit Rabatt
+
+  Die sim_v0-Parität (f64) und alle übrigen Tests sind unverändert grün.
+- Noch offen für Teil 3 (Env):
+  - Die Place-Maske prüft weiter den Listenpreis je Turmart, ist mit Rabatt also zu streng (nie zu
+    locker). Rabatt-Raster und Cash-Prüfung je Zelle kommen in Teil 3.
+  - `start::perturb` erstattet beim Zurückstufen den Listenpreis.
+  - `locked_towers` wird noch nicht durchgesetzt.

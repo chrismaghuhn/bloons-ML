@@ -333,6 +333,40 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
     }
 }
 
+/// Projektil-Def mit Auren: Camo und "alle Schadensarten" auch für Kontakt- und Verbrauchs-Effekte
+/// (z.B. die Explosion der Bomb), das Tempo nur für das Projektil selbst (`top`).
+fn buffed_def(def: &ProjectileDef, b: Buffs, top: bool) -> ProjectileDef {
+    let contact = |c: &ContactRt| match c {
+        ContactRt::Explosion { radius, pierce, damage, cannot_damage, camo, extras } => {
+            ContactRt::Explosion {
+                radius: *radius,
+                pierce: *pierce,
+                damage: *damage,
+                cannot_damage: if b.damage_all { Props(0) } else { *cannot_damage },
+                camo: *camo || b.camo,
+                extras: Arc::clone(extras),
+            }
+        }
+        ContactRt::Shards { def, pierce, damage, cannot_damage, camo, extras, inherit_hit } => {
+            ContactRt::Shards {
+                def: Arc::new(buffed_def(def, b, false)),
+                pierce: *pierce,
+                damage: *damage,
+                cannot_damage: if b.damage_all { Props(0) } else { *cannot_damage },
+                camo: *camo || b.camo,
+                extras: Arc::clone(extras),
+                inherit_hit: *inherit_hit,
+            }
+        }
+    };
+    ProjectileDef {
+        speed: if top && b.speed_frac != 0.0 { def.speed * real(1.0 + b.speed_frac) } else { def.speed },
+        contacts: def.contacts.iter().map(contact).collect(),
+        on_exhaust: def.on_exhaust.iter().map(contact).collect(),
+        ..def.clone()
+    }
+}
+
 fn emission_rt(e: &Emission) -> EmissionRt {
     match e {
         Emission::Single {} => EmissionRt { count: 1, angle: 0.0, offset: 0.0, fixed: false, spread: 0.0 },
@@ -358,6 +392,58 @@ pub struct ZoneRt {
     pub filter: FilterRt,
 }
 
+/// Wirksame Auren anderer Türme auf einen Turm (docs/design-towers-step2.md §2.1), berechnet von
+/// `Game::refresh_buffs`. `Buffs::NONE` = keine Aura.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Buffs {
+    /// Reichweite × (1 + `range_frac`) + `range_add`.
+    pub range_frac: f64,
+    pub range_add: f64,
+    /// Cooldown × `rate`.
+    pub rate: f64,
+    pub camo: bool,
+    /// Zusätzlicher Pierce für fliegende Projektile.
+    pub pierce: u32,
+    /// Projektiltempo × (1 + `speed_frac`).
+    pub speed_frac: f64,
+    /// Trifft alle Bloon-Arten (MIB).
+    pub damage_all: bool,
+}
+
+impl Buffs {
+    pub const NONE: Buffs = Buffs {
+        range_frac: 0.0,
+        range_add: 0.0,
+        rate: 1.0,
+        camo: false,
+        pierce: 0,
+        speed_frac: 0.0,
+        damage_all: false,
+    };
+}
+
+impl Default for Buffs {
+    fn default() -> Self {
+        Buffs::NONE
+    }
+}
+
+/// Die Werte eines Angriffs ohne Auren: daraus baut `Tower::apply_buffs` die wirksamen Werte.
+#[derive(Clone, Debug, PartialEq)]
+struct BaseAttack {
+    /// Reichweite und Cooldown in f64 (für die Rechnung mit Auren).
+    range: f64,
+    cooldown: f64,
+    /// Radius eines Flächentreffers, der an die Reichweite gekoppelt ist (wächst mit ihr mit).
+    area_radius: Option<f64>,
+    range2: Real,
+    cooldown_rt: Real,
+    pierce: u32,
+    cannot_damage: Props,
+    camo: bool,
+    kind: AttackKind,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Tower {
     pub id: TowerId,
@@ -366,10 +452,17 @@ pub struct Tower {
     pub x: Real,
     pub y: Real,
     pub footprint: f64,
-    /// Insgesamt ausgegeben (Basis + Upgrades), Grundlage für den Verkaufswert.
+    /// Insgesamt ausgegeben (Basis + Upgrades, mit Rabatt), Grundlage für den Verkaufswert.
     pub spent: Money,
+    /// Wirksame Angriffswerte (mit Auren).
     pub attacks: SmallVec<[AttackRt; 2]>,
     pub zones: SmallVec<[ZoneRt; 1]>,
+    /// Auren, die gerade auf den Turm wirken. Nur lesen: `Game::refresh_buffs` hält sie zusammen mit
+    /// `attacks` und `reach` aktuell.
+    pub buffs: Buffs,
+    /// Reichweite mit Auren: Radius der eigenen Auren und Rabatt-Zonen (`Game::refresh_buffs`).
+    pub reach: f64,
+    base: SmallVec<[BaseAttack; 2]>,
 }
 
 impl Tower {
@@ -393,12 +486,16 @@ impl Tower {
             spent: cost,
             attacks: SmallVec::new(),
             zones: SmallVec::new(),
+            buffs: Buffs::NONE,
+            reach: v.range,
+            base: SmallVec::new(),
         };
         t.set_variant(v, tags);
         t
     }
 
     /// Übernimmt die Werte einer Variante. Cooldowns laufen weiter, soweit es die Angriffe noch gibt.
+    /// Die aktuellen Auren (`buffs`) bleiben wirksam.
     pub fn set_variant(&mut self, v: &VariantV1, tags: &TagTable) {
         self.tiers = v.tiers;
         self.footprint = v.footprint;
@@ -480,6 +577,64 @@ impl Tower {
                 filter: FilterRt::new(&z.filter, tags),
             })
             .collect();
+        self.base = v
+            .attacks
+            .iter()
+            .zip(&self.attacks)
+            .map(|(a, rt)| BaseAttack {
+                range: a.range.unwrap_or(v.range),
+                cooldown: a.cooldown,
+                area_radius: match a.delivery {
+                    Delivery::Area { radius: None, .. } => Some(a.range.unwrap_or(v.range)),
+                    Delivery::Area { radius: Some(r), radius_offset: Some(_) } => Some(r),
+                    _ => None,
+                },
+                range2: rt.range2,
+                cooldown_rt: rt.cooldown,
+                pierce: rt.pierce,
+                cannot_damage: rt.cannot_damage,
+                camo: rt.camo,
+                kind: rt.kind.clone(),
+            })
+            .collect();
+        self.reach = v.range * (1.0 + self.buffs.range_frac) + self.buffs.range_add;
+        if self.buffs != Buffs::NONE {
+            self.apply_buffs(self.buffs);
+        }
+    }
+
+    /// Für `Game::refresh_buffs`; ein direkter Aufruf wird beim nächsten Refresh nicht unbedingt
+    /// zurückgesetzt. Setzt die Auren und schreibt nur die davon abhängigen Angriffswerte (Reichweite, Cooldown,
+    /// Camo, Schadensarten, Pierce, Flächenradius, Projektil-Def). Laufzeit-Zustand (Cooldown,
+    /// Salve, Crit-Zähler) bleibt unverändert, auch mitten in der Runde. Mit `Buffs::NONE` sind die
+    /// Werte bitgleich zur Variante.
+    pub fn apply_buffs(&mut self, b: Buffs) {
+        self.buffs = b;
+        let ranged = b.range_frac != 0.0 || b.range_add != 0.0;
+        for (a, base) in self.attacks.iter_mut().zip(&self.base) {
+            let range = base.range * (1.0 + b.range_frac) + b.range_add;
+            a.range2 = if ranged { real(range) * real(range) } else { base.range2 };
+            a.cooldown = if b.rate != 1.0 { real(base.cooldown * b.rate) } else { base.cooldown_rt };
+            a.camo = base.camo || b.camo;
+            a.cannot_damage = if b.damage_all { Props(0) } else { base.cannot_damage };
+            // Pierce-Aura nur für fliegende Projektile (nicht Sofort-Treffer und Flächen) [KAL]
+            let flies = matches!(base.kind, AttackKind::Projectile(_));
+            a.pierce = if flies { base.pierce.saturating_add(b.pierce) } else { base.pierce };
+            a.kind = match (&base.kind, base.area_radius) {
+                // gekoppelter Radius wächst um denselben Betrag wie die Reichweite
+                (AttackKind::Area { .. }, Some(r)) if ranged => {
+                    AttackKind::Area { radius: real(r + (range - base.range)) }
+                }
+                (AttackKind::Projectile(def), _) => {
+                    if b.camo || b.damage_all || b.speed_frac != 0.0 {
+                        AttackKind::Projectile(Arc::new(buffed_def(def, b, true)))
+                    } else {
+                        AttackKind::Projectile(Arc::clone(def))
+                    }
+                }
+                (k, _) => k.clone(),
+            };
+        }
     }
 
     /// Nächste Upgrade-Kombination auf `path`, falls es dafür eine Variante gibt
@@ -488,6 +643,13 @@ impl Tower {
         let mut t = self.tiers;
         *t.get_mut(path)? += 1;
         Some(t)
+    }
+
+    /// Ob (x, y) höchstens `radius` vom Turmmittelpunkt entfernt ist (Auren, Rabatt-Zonen; in f64).
+    pub fn reaches(&self, x: f64, y: f64, radius: f64) -> bool {
+        let (tx, ty) = self.pos();
+        let (dx, dy) = (x - tx, y - ty);
+        dx * dx + dy * dy <= radius * radius
     }
 
     /// Position in f64 (unabhängig vom Float-Build der Sim).

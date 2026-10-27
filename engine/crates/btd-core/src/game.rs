@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use btd_data::v1::{BloonDefV1, Flags, GameV1, Props, SpawnGroup, PATHS};
+use btd_data::v1::{BloonDefV1, Flags, GameV1, Props, SpawnGroup, Support, VariantV1, PATHS};
 use btd_data::{DataError, TowerKind};
 use smallvec::SmallVec;
 use xxhash_rust::xxh3::Xxh3;
@@ -10,7 +10,7 @@ use xxhash_rust::xxh3::Xxh3;
 use crate::bloon::{hit, BloonStore, Chill, CHILL_SLOTS};
 use crate::map::{placeable, Track};
 use crate::tower::{
-    factor_for, AttackKind, ContactRt, EmissionRt, ExtrasRt, FilterRt, ProjectileDef, TagTable, Tower,
+    factor_for, AttackKind, Buffs, ContactRt, EmissionRt, ExtrasRt, FilterRt, ProjectileDef, TagTable, Tower,
     TowerId,
 };
 use crate::{real, Money, Real};
@@ -102,6 +102,25 @@ fn spawn_schedule(groups: &[SpawnGroup]) -> Vec<(f64, usize)> {
     }
     out.sort_by(|a, b| a.0.total_cmp(&b.0));
     out
+}
+
+/// Rabatt-Stapel beim Zusammenzählen: Name, Obergrenze, Anteile der Zonen.
+type DiscountStack<'a> = (&'a str, u32, SmallVec<[f64; 4]>);
+
+/// Ob Aura `a` stärker ist als `b` (gleiche Gruppe und Art). Reichweite: erst der Anteil, dann der
+/// feste Zuschlag (im Dump hat eine Gruppe nur eins von beiden).
+fn stronger(a: &Support, b: &Support) -> bool {
+    match (a, b) {
+        (Support::Range { add_frac: f1, add: a1, .. }, Support::Range { add_frac: f2, add: a2, .. }) => {
+            (f1, a1) > (f2, a2)
+        }
+        (Support::Rate { factor: f1, .. }, Support::Rate { factor: f2, .. }) => f1 < f2,
+        (Support::Pierce { add: a1, .. }, Support::Pierce { add: a2, .. }) => a1 > a2,
+        (Support::ProjectileSpeed { add_frac: f1, .. }, Support::ProjectileSpeed { add_frac: f2, .. }) => {
+            f1 > f2
+        }
+        _ => false,
+    }
 }
 
 /// Ein fliegendes Projektil.
@@ -525,9 +544,152 @@ impl Game {
         self.towers.iter().find(|t| t.covers(x, y))
     }
 
-    /// Preis eines Turms bzw. Upgrades nach den Regeln (Schwierigkeit).
+    /// Listenpreis eines Turms bzw. Upgrades nach den Regeln (Schwierigkeit), ohne Rabatt.
     pub fn price(&self, medium: i64) -> Money {
         Money::from_dollars(self.data.cost(medium))
+    }
+
+    /// Preis, einen Turm dieser Art bei (x, y) zu bauen (mit Rabatt-Zonen, Tier 0).
+    pub fn place_price(&self, kind: TowerKind, x: f64, y: f64) -> Option<Money> {
+        let def = self.data.towers.get(kind as usize)?;
+        Some(Money::from_dollars(self.data.cost_discounted(def.cost, self.discount_at(x, y, 0, None))))
+    }
+
+    /// Preis des nächsten Upgrades auf `path` (mit Rabatt-Zonen am Turm); `None`, wenn es keins gibt.
+    pub fn upgrade_price(&self, tower: TowerId, path: u8) -> Option<Money> {
+        let t = self.tower(tower)?;
+        let def = &self.data.towers[t.kind as usize];
+        def.variant(t.next_tiers(path as usize)?)?;
+        let tier = *t.tiers.get(path as usize)?;
+        let medium = *def.upgrade_costs[path as usize].get(tier as usize)?;
+        let (x, y) = t.pos();
+        let d = self.discount_at(x, y, tier + 1, Some(tower));
+        Some(Money::from_dollars(self.data.cost_discounted(medium, d)))
+    }
+
+    /// Rabatt (Anteil) für einen Kauf auf Tier `tier` bei (x, y) (docs/design-towers-step2.md §2.2):
+    /// alle Rabatt-Zonen, deren Turm (x, y) in seiner Reichweite hat; je Stapel höchstens
+    /// `stack_limit` Zonen (die größten). `buyer` ist der kaufende Turm (Upgrades): seine eigenen
+    /// Zonen zählen nur mit `affect_self`.
+    pub fn discount_at(&self, x: f64, y: f64, tier: u8, buyer: Option<TowerId>) -> f64 {
+        let mut stacks: SmallVec<[DiscountStack; 2]> = SmallVec::new();
+        for t in &self.towers {
+            let v = self.variant_of(t);
+            if v.discount.is_empty() || !t.reaches(x, y, t.reach) {
+                continue;
+            }
+            for d in &v.discount {
+                if (buyer == Some(t.id) && !d.affect_self) || tier < d.tier_min || tier > d.tier_cap {
+                    continue;
+                }
+                // mehrere Zonen eines Stapels mit verschiedener Obergrenze: die kleinste gilt
+                match stacks.iter_mut().find(|s| s.0 == d.stack) {
+                    Some(s) => {
+                        s.1 = s.1.min(d.stack_limit);
+                        s.2.push(d.fraction);
+                    }
+                    None => stacks.push((&d.stack, d.stack_limit, smallvec::smallvec![d.fraction])),
+                }
+            }
+        }
+        // feste Reihenfolge (Stapelname), damit die Summe nicht von der Bau-Reihenfolge abhängt
+        stacks.sort_by(|a, b| a.0.cmp(b.0));
+        let mut total = 0.0;
+        for (_, limit, fractions) in &mut stacks {
+            fractions.sort_by(|a, b| b.total_cmp(a));
+            total += fractions.iter().take(*limit as usize).sum::<f64>();
+        }
+        total.min(1.0)
+    }
+
+    fn variant_of(&self, t: &Tower) -> &VariantV1 {
+        self.data.towers[t.kind as usize].variant(t.tiers).expect("Variante des Turms existiert")
+    }
+
+    /// Berechnet die Auren aller Türme neu (docs/design-towers-step2.md §2.1). Läuft nach jeder
+    /// Aktion, nie im Tick-Loop. Je Gruppe wirkt nur die stärkste Aura (bei Gleichstand die des
+    /// ältesten Turms); ein Turm bufft sich nicht selbst. Radius ist die **gebuffte** Reichweite des
+    /// Support-Turms (eine Village kann einer anderen mehr Reichweite geben, [KAL]): gerechnet als
+    /// Fixpunkt. Reichweiten-Auren sind nicht negativ (Validierung), die Reichweiten wachsen also
+    /// je Durchgang; nach höchstens n + 1 Durchgängen ist Schluss. Ohne Support-Türme bleiben alle
+    /// Werte bitgleich zur Variante.
+    pub fn refresh_buffs(&mut self) {
+        let n = self.towers.len();
+        let sources: SmallVec<[usize; 4]> =
+            (0..n).filter(|&i| !self.variant_of(&self.towers[i]).supports.is_empty()).collect();
+        if sources.is_empty() {
+            for t in &mut self.towers {
+                t.reach = self.data.towers[t.kind as usize].variant(t.tiers).map_or(t.reach, |v| v.range);
+                if t.buffs != Buffs::NONE {
+                    t.apply_buffs(Buffs::NONE);
+                }
+            }
+            return;
+        }
+        let base: Vec<f64> = self.towers.iter().map(|t| self.variant_of(t).range).collect();
+        let mut reach = base.clone();
+        let mut buffs = vec![Buffs::NONE; n];
+        for _ in 0..=n {
+            buffs = (0..n).map(|ti| self.buffs_for(ti, &sources, &reach)).collect();
+            let next: Vec<f64> =
+                base.iter().zip(&buffs).map(|(r, b)| r * (1.0 + b.range_frac) + b.range_add).collect();
+            if next == reach {
+                break;
+            }
+            reach = next;
+        }
+        for (ti, (b, r)) in buffs.into_iter().zip(reach).enumerate() {
+            let t = &mut self.towers[ti];
+            t.reach = r;
+            if b != t.buffs {
+                t.apply_buffs(b);
+            }
+        }
+    }
+
+    fn buffs_for(&self, ti: usize, sources: &[usize], reach: &[f64]) -> Buffs {
+        let target = &self.towers[ti];
+        let set = self.data.towers[target.kind as usize].set;
+        let (x, y) = target.pos();
+        // stärkste Aura je (Gruppe, Art); Quellen in Bau-Reihenfolge, also gewinnt bei Gleichstand die älteste
+        let mut best: SmallVec<[&Support; 8]> = SmallVec::new();
+        for &si in sources {
+            let src = &self.towers[si];
+            let v = self.variant_of(src);
+            if si == ti || !src.reaches(x, y, reach[si]) {
+                continue;
+            }
+            for s in &v.supports {
+                if !s.sets().is_empty() && !s.sets().contains(&set) {
+                    continue;
+                }
+                let same = |o: &&Support| {
+                    o.group() == s.group() && std::mem::discriminant(*o) == std::mem::discriminant(s)
+                };
+                match best.iter_mut().find(|o| same(o)) {
+                    Some(o) if stronger(s, o) => *o = s,
+                    Some(_) => {}
+                    None => best.push(s),
+                }
+            }
+        }
+        // feste Reihenfolge (Gruppe), damit die Summe nicht von der Bau-Reihenfolge abhängt
+        best.sort_by(|a, b| a.group().cmp(b.group()));
+        let mut b = Buffs::NONE;
+        for s in best {
+            match *s {
+                Support::Range { add_frac, add, .. } => {
+                    b.range_frac += add_frac;
+                    b.range_add += add;
+                }
+                Support::Rate { factor, .. } => b.rate *= factor,
+                Support::Camo { .. } => b.camo = true,
+                Support::Pierce { add, .. } => b.pierce = b.pierce.saturating_add(add),
+                Support::ProjectileSpeed { add_frac, .. } => b.speed_frac += add_frac,
+                Support::DamageAll { .. } => b.damage_all = true,
+            }
+        }
+        b
     }
 
     /// Ob dort ein Turm dieser Art stehen könnte (Karte + andere Türme, ohne Cash).
@@ -580,7 +742,7 @@ impl Game {
                 if self.collides(x, y, r) {
                     return Err(ActionError::Occupied);
                 }
-                if self.cash < self.price(def.cost) {
+                if self.place_price(kind, x, y).map_or(true, |p| self.cash < p) {
                     return Err(ActionError::NotEnoughCash);
                 }
             }
@@ -589,8 +751,7 @@ impl Game {
                 let def = &self.data.towers[t.kind as usize];
                 let tiers = t.next_tiers(path as usize).ok_or(ActionError::UpgradeUnavailable)?;
                 def.variant(tiers).ok_or(ActionError::UpgradeUnavailable)?;
-                let cost = def.upgrade_costs[path as usize][t.tiers[path as usize] as usize];
-                if self.cash < self.price(cost) {
+                if self.upgrade_price(tower, path).map_or(true, |p| self.cash < p) {
                     return Err(ActionError::NotEnoughCash);
                 }
             }
@@ -608,21 +769,22 @@ impl Game {
     pub fn apply(&mut self, a: Action) -> Result<Option<TowerId>, ActionError> {
         self.check(&a)?;
         let data = Arc::clone(&self.data);
+        let mut placed = None;
         match a {
             Action::Place { kind, x, y } => {
                 let def = &data.towers[kind as usize];
-                let price = self.price(def.cost);
+                let price = self.place_price(kind, x, y).unwrap();
                 self.cash -= price;
                 let id = self.next_id;
                 self.next_id += 1;
                 self.towers.push(Tower::new(id, kind, def, &self.tags, x, y, price));
-                return Ok(Some(id));
+                placed = Some(id);
             }
             Action::Upgrade { tower, path } => {
                 let p = path as usize;
+                let price = self.upgrade_price(tower, path).unwrap();
                 let t = self.towers.iter_mut().find(|t| t.id == tower).unwrap();
                 let def = &data.towers[t.kind as usize];
-                let price = Money::from_dollars(data.cost(def.upgrade_costs[p][t.tiers[p] as usize]));
                 let v = def.variant(t.next_tiers(p).unwrap()).unwrap();
                 self.cash -= price;
                 t.spent += price;
@@ -634,7 +796,8 @@ impl Game {
                 self.cash += t.sell_value(data.rules.sell_ratio);
             }
         }
-        Ok(None)
+        self.refresh_buffs();
+        Ok(placed)
     }
 
     // ------------------------------------------------------------ Runde
