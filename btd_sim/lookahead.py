@@ -28,6 +28,7 @@ class LookaheadPolicy:
         self.model, self.env, self.k, self.horizon = model, env, k, horizon
         self.deterministic = deterministic
         self.switched = 0  # wie oft die Vorausschau den Rundenstart ersetzt hat
+        model.policy.set_training_mode(False)  # sonst macht das nur `predict`
 
     def choose(self, obs, mask, probs=None) -> int:
         probs = action_probs(self.model, obs, mask) if probs is None else probs

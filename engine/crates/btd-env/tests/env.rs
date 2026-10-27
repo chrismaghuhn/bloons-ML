@@ -356,7 +356,12 @@ fn three_upgrade_paths_on_mini_fixture() {
 
 /// Lädt die mini-Fixture mit geänderten Daten über eine temporäre Datei.
 fn spec_with(f: impl FnOnce(&mut serde_json::Value)) -> EnvSpec {
-    let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/fixtures/game_v1_mini.json");
+    spec_from("fixtures/game_v1_mini.json", f)
+}
+
+/// Spieldaten aus `data/` mit Änderung `f`.
+fn spec_from(file: &str, f: impl FnOnce(&mut serde_json::Value)) -> EnvSpec {
+    let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data").join(file);
     let mut v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(src).unwrap()).unwrap();
     f(&mut v);
     let path = std::env::temp_dir().join(format!(
@@ -594,34 +599,43 @@ fn randomness_gives_each_env_its_own_game_seed() {
 
 #[test]
 fn lookahead_predicts_without_changing_the_env() {
-    let mut e = env(true);
+    // mit Zufall (Crits mit zufälligem Abstand an allen Angriffen), damit auch der Zufallszustand des
+    // Spiels in der Kopie stimmen muss
+    let spec = spec_from("sim_v0.game_v1.json", |v| {
+        for t in v["towers"].as_array_mut().unwrap() {
+            for var in t["variants"].as_array_mut().unwrap() {
+                for a in var["attacks"].as_array_mut().unwrap() {
+                    a["crit"] = serde_json::json!({ "damage": 3.0, "every": 4, "every_range": [2, 6] });
+                }
+            }
+        }
+    });
+    let mut e = Env::new(spec, EnvConfig { randomness: true, ..Default::default() }).unwrap();
     let mut obs = vec![0.0; e.layout.obs_size];
     e.reset(&mut obs);
+    assert!(e.game.rng_state().is_some());
     let mut rng = Rng(5);
     let mut mask = vec![false; e.layout.n_actions];
-    // ein paar Runden mit zufälligen Bauaktionen, dann vorhersagen und nachprüfen
-    for _ in 0..40 {
+    let mut checked = 0;
+    // zufällige Aktion vorhersagen, dann dieselbe Folge (Aktion, Runden ohne Aktion) mit der Env selbst spielen
+    while !e.game.over() {
         e.action_mask(&mut mask);
         let a = rng.pick(&mask);
         let hash = (e.game.state_hash(), e.builds_left, e.game.lives);
         let pred = e.lookahead(Some(a), 2);
         assert_eq!((e.game.state_hash(), e.builds_left, e.game.lives), hash, "Env unverändert");
-        // dasselbe wirklich spielen
-        let mut real = e.clone();
-        let mut o2 = obs.clone();
-        let lives = real.game.lives;
-        let info = real.step(a, &mut o2);
-        let mut played = info.round_played.is_some() as u32;
-        while played < 2 && !real.game.over() {
-            real.step(0, &mut o2);
+        let lives = e.game.lives;
+        let mut played = e.step(a, &mut obs).round_played.is_some() as u32;
+        while played < 2 && !e.game.over() {
+            e.step(0, &mut obs);
             played += 1;
         }
-        assert_eq!(pred.lives_lost, lives - real.game.lives);
+        assert_eq!(pred.lives_lost, lives - e.game.lives);
         assert_eq!(pred.rounds_played, played);
-        assert_eq!(pred.cash, real.game.cash.as_f64());
-        if e.step(a, &mut obs).terminated {
-            break;
-        }
+        assert_eq!(pred.cash, e.game.cash.as_f64());
+        assert_eq!(pred.game_over, e.game.over() && !e.game.won());
+        checked += 1;
     }
+    assert!(checked > 5);
     assert_eq!(e.lookahead(None, 0).rounds_played, 0);
 }

@@ -1,4 +1,6 @@
 """Vorausschau: Auswahl der Aktion (mit Stub-Env, ohne Modell)."""
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -18,9 +20,13 @@ class StubEnv:
         return {"lives_lost": lost, "cash": cash, "invalid": False, "rounds_played": rounds, "game_over": False}
 
 
+# Probs kommen in den Tests direkt mit, das Modell wird nur in den Auswertungsmodus gesetzt
+STUB_MODEL = SimpleNamespace(policy=SimpleNamespace(set_training_mode=lambda mode: None))
+
+
 def choose(table, probs, mask=None, k=8):
     env = StubEnv(table)
-    p = LookaheadPolicy(model=None, env=env, k=k, horizon=2)
+    p = LookaheadPolicy(model=STUB_MODEL, env=env, k=k, horizon=2)
     mask = np.ones(len(probs), bool) if mask is None else np.asarray(mask)
     return p.choose(None, mask, probs=np.asarray(probs, float)), env, p
 

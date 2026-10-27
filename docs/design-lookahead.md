@@ -15,7 +15,8 @@ In jeder Bauphase:
    nächsten `H` Runden (ohne weitere Aktionen) und zählt die verlorenen Leben.
 3. Ohne Verlust: Runde starten. Mit Verlust: die `k` wahrscheinlichsten anderen erlaubten Aktionen der
    Policy (Maske beachtet) je einzeln ausprobieren — Aktion anwenden, dann `H` Runden simulieren — und
-   die mit den wenigsten verlorenen Leben nehmen (Gleichstand: höhere Policy-Wahrscheinlichkeit). Ist
+   die mit den wenigsten verlorenen Leben nehmen (Gleichstand: mehr übriges Geld, dann höhere
+   Policy-Wahrscheinlichkeit). Ist
    keine besser als "starten", wird gestartet.
 4. Nach einer gewählten Aktion zurück zu 1 (die Bauphase kann bis zum Bau-Limit weitergehen).
 
@@ -25,8 +26,10 @@ Runden à ~1 ms; ein Spiel bis Runde 60 dauert damit ~1-2 s statt ~0,1 s.
 ## 2. Umsetzung
 
 - Rust (`btd-env`): `Env::lookahead(action: Option<usize>, rounds: u32) -> Lookahead { lives_lost,
-  rounds_survived }` auf einer Kopie (`Env` ist `Clone`; Zufall: gleicher Seed wie das echte Spiel
-  der Env, damit die Vorhersage zur Episode passt); deterministisch, ändert die Env nicht.
+  rounds_played, cash, game_over, invalid }` auf einer Kopie (`Env` ist `Clone`; Zufall: gleicher
+  Zustand wie das echte Spiel der Env, damit die Vorhersage zur Episode passt); deterministisch, ändert
+  die Env nicht. Mit Zufall kennt die Vorausschau damit die künftigen Crits exakt; im echten Spiel
+  (Bridge) ist der Zufall unbekannt, dort mit mehreren Seeds vorausschauen.
 - Python: `btd_sim/lookahead.py` mit `LookaheadPolicy(model, env, k, horizon)`, die wie `model.predict`
   benutzt wird (Top-k aus den Logits der Policy inkl. Maske).
 - `evaluate.py` / `tools/analyze_policy.py`: Option `--lookahead K,H`.

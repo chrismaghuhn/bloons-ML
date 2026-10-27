@@ -31,14 +31,14 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from btd_sim.rust_env import RustBTDEnv  # noqa: E402
 
-PATHS = "abc"
+PATHS = "abc"  # Pfad 0/1/2 als a/b/c in den Schlüsseln
 
 
 def _plain(model, obs, mask, deterministic):
     return model.predict(obs, action_masks=mask, deterministic=deterministic)[0]
 
 
-PREDICT = _plain  # mit --lookahead ersetzt  # Pfad 0/1/2 als a/b/c in den Schlüsseln
+PREDICT = _plain  # mit --lookahead ersetzt
 
 
 def play(env, model, banned, deterministic):
