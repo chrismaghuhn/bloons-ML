@@ -112,6 +112,9 @@ def close(a, b, tol=1e-3) -> bool:
 
 def match_attack(wiki_attack: dict, entries: list[dict]) -> tuple[str, dict | None]:
     keys = [k for k in ("damage", "pierce", "cooldown") if isinstance(wiki_attack.get(k), (int, float))]
+    # damage 0 (Buffs, Kleber, Effekte) hat im Spiel kein DamageModel-Projektil als Gegenstück: wie ohne damage
+    if wiki_attack.get("damage") == 0:
+        keys.remove("damage")
     if not keys:
         return "skip", None
 
@@ -230,7 +233,7 @@ def compare(dump: Path, wiki_dir: Path) -> str:
         lines.append(f"| {k} | {ok} | {n} |")
     lines.append("")
     lines.append(f"Nicht in `attack` gezählt: Wiki-Attacken ohne damage ({weak} mit gleichem pierce/cooldown, "
-                 f"{weak_mismatch} abweichend, siehe Liste), "
+                 f"{weak_mismatch} abweichend, siehe Liste; damage 0 zählt als ohne damage), "
                  f"{no_dump} ohne Attacke im TowerModel (Sub-Tower, z.B. Beast-Handler-Tiere).")
     lines += ["", "## Abweichungen", ""] + (diffs or ["keine"])
     return "\n".join(lines) + "\n"
