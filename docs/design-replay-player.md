@@ -134,13 +134,12 @@ Runde). `result.cash` sind ganze Dollar, im Spiel ist Cash ein Bruch: verglichen
 **Später (`btd-replay/3`, `docs/design-recorder.md` §1): mit Frame.** Aktion `{"frame": n, …}` = Rundenzeit in
 Sim-Schritten. Der Player führt sie in einem Harmony-**Prefix** auf `Simulation.Simulate` aus, sobald
 `roundTime.elapsed` den Wert erreicht. Gemessen (§10): auch der Aufruf aus dem Prefix geht in die Warteschlange und
-wird **einen Schritt später** wirksam, noch im selben Frame (Aufruf im Prefix des 2. von 3 Schritten des Frames,
-Turm zwischen dem 2. und 3. Schritt). Die Warteschlange wird also vor jedem Sim-Schritt geleert, nicht erst einmal
-je Frame nach der Schritt-Schleife; dann ist der Versatz immer 1, und der Player ruft für Schritt N im Prefix bei
-N − 1 auf.
-Bestätigt an allen drei Positionen im Frame (§10, zweiter Lauf): Versatz immer 1, auch über die Frame-Grenze. Der Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt
-eine Abweichung sofort auf. Karte, Modus,
-Schwierigkeit und Spielversion braucht der `/3`-Header nicht: sie stehen in `meta` der Datendatei (Abschnitt 3).
+wird **einen Schritt später** wirksam, also vor dem nächsten Sim-Schritt, ob der im selben Frame liegt oder im
+nächsten. Die Warteschlange wird vor jedem Sim-Schritt geleert, nicht erst einmal je Frame nach der Schritt-Schleife;
+bestätigt an allen drei Positionen im Frame (§10, zweiter Lauf). Der Versatz ist also immer 1, und der Player ruft für
+Schritt N im Prefix bei N − 1 auf. Der Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt eine
+Abweichung sofort auf. Karte, Modus, Schwierigkeit und Spielversion braucht der `/3`-Header nicht: sie stehen in
+`meta` der Datendatei (Abschnitt 3).
 
 **Targeting:** heute immer "First" (wie die Sim); sobald das Replay Targeting kennt, `SetNextTowerTargetType` so oft,
 bis der gewünschte Typ eingestellt ist (Kontrolle über den Turm).
