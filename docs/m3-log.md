@@ -294,3 +294,21 @@ Erster vollständiger Test mit korrigierter Sim: Leben und Runden stimmen; beim 
 zu großzügig (Kandidaten: Einkommen je Pop, Rundung, Einkommensfaktor ab Runde 51 -> mit dem
 Recorder die Cash-Rohwerte vergleichen). Lehre fürs Training: frühe Upgrades vermeiden Leaks, die
 Policy hortet Geld -> Vorausschau (docs/design-lookahead.md).
+
+### t14_r60: 14 Türme (mit Village, Farm gesperrt)
+
+Wie t12_r60_v2, nur Daten `medium60_t14` (24 Kanäle, 12 961 Aktionen) und 128 Envs × 256 Schritte statt
+64 × 512 (gleich große Rollouts, ~1 900 statt ~1 400 Schritte/s; `--n-steps`). 5 Mio. Schritte, ~45 min.
+
+| | t12_r60_v2 | t14_r60 | t14_r60 + Vorausschau 8,2 |
+|---|---|---|---|
+| deterministisch ohne Sperre | gewonnen | Runde 46 | gewonnen |
+| deterministisch: Einzelsperren gewonnen | 7 von 12 | 8 von 13 | 12 von 13 |
+| ohne Dart (det.) | Runde 9 | Runde 3 | Runde 39 |
+| stochastisch ohne Sperre | 64/64 | 20/20 | 20/20 |
+| Erholung det. / stoch. (50) | 46 / 47 | 48 / 45 | 49 / 47 |
+| H(Schlüssel) ohne Sperre | 2,23 bit | 1,14 bit (3 Schlüssel) | 2,43 bit (7 Schlüssel) |
+
+Rezept unverändert: Dart zuerst, Bomb ohne Upgrade, Dart unten. **Die Village wird nie gebaut** (0 von
+20 Spielen, auch mit Vorausschau); sperrt man sie, ändert sich nichts. Ohne Sperre deterministisch
+schlechter als t12_r60_v2, mit Vorausschau gleich gut.
