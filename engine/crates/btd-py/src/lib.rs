@@ -33,6 +33,7 @@ fn load_spec(path: &str) -> PyResult<EnvSpec> {
     EnvSpec::load(path).map_err(data_err)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn config(
     max_builds_per_round: u32,
     reward_round: f64,
