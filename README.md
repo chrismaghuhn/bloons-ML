@@ -20,6 +20,7 @@ Screen-Capture-Bridge im echten Spiel spielen.
 ```bash
 # Python-Bindings bauen (schnell, f32); mit --features f64 bit-genau zur Python-Sim
 .venv/bin/maturin develop --release -m engine/crates/btd-py/Cargo.toml
+# nach Änderungen an engine/ (z.B. am Datenformat btd-data) neu bauen, sonst lehnt btd_rs neue Datendateien ab
 # Training auf der Rust-Engine (Standard) bzw. der Python-Referenz
 .venv/bin/python train.py --steps 400000 --envs 64
 .venv/bin/python train.py --engine python --envs 12

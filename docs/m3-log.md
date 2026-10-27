@@ -253,3 +253,8 @@ Offen: Runde 43 kostet im Spiel mehr; der Sniper (rechnerisch müsste er ~20 s s
 deutlich langsamer feuern) -> Schüsse mit der Recorder-Mod aufzeichnen. Alle bisher trainierten Modelle
 beruhen auf den alten Daten (Bloons ~1,5x zu langsam) und müssen neu trainiert werden; der feste
 Skript-Plan (Benchmark a) gewinnt Runde 40 weiterhin (132 Leben).
+
+Nachtrag 040c8a6 (game_v1 `meta`/`game_id`): neu erzeugte Datendateien brauchen eine neu gebaute
+Python-Erweiterung (`maturin develop`). Ihr Daten-Hash ändert sich, daher passen ältere Replays in
+`data/local/starts|eval|calib` beim strikten Nachspielen (`btd-tools replay`) nicht mehr; Startzustände
+und Eval-Sätze prüfen den Hash nicht.
