@@ -5,3 +5,6 @@ models/
 runs/
 target/
 *.so
+
+# BTD6-Spieldaten-Dump (Ninja-Kiwi-Material, nicht committen – Repo ist öffentlich)
+data/raw/game_dump/

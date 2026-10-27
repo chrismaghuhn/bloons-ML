@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="../build/btd6-paths.props"/>
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <RootNamespace>BloonsML</RootNamespace>
+        <AssemblyName>BloonsMLMod</AssemblyName>
+        <Version>0.1.0</Version>
+        <LangVersion>latest</LangVersion>
+        <Nullable>disable</Nullable>
+        <PlatformTarget>x64</PlatformTarget>
+        <DebugType>embedded</DebugType>
+        <Optimize>false</Optimize>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <!-- Standard-Dumpziel wird in die DLL eingebacken (AssemblyMetadata "DefaultDumpRoot") -->
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+            <_Parameter1>DefaultDumpRoot</_Parameter1>
+            <_Parameter2>$(DumpRoot)</_Parameter2>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <!-- Spiel-/Loader-Assemblies: nur referenzieren, nie kopieren, nie committen -->
+    <ItemGroup>
+        <Reference Include="$(MelonLoaderManaged)/MelonLoader.dll" Private="false"/>
+        <Reference Include="$(MelonLoaderManaged)/0Harmony.dll" Private="false"/>
+        <Reference Include="$(MelonLoaderManaged)/Il2CppInterop.Runtime.dll" Private="false"/>
+        <Reference Include="$(MelonLoaderManaged)/Il2CppInterop.Common.dll" Private="false" Condition="Exists('$(MelonLoaderManaged)/Il2CppInterop.Common.dll')"/>
+        <Reference Include="$(MelonLoaderManaged)/Newtonsoft.Json.dll" Private="false"/>
+        <Reference Include="$(ModHelperDll)" Private="false"/>
+        <Reference Include="$(Il2CppAssemblies)/*.dll" Private="false"/>
+    </ItemGroup>
+
+    <Target Name="CheckGameAssemblies" BeforeTargets="ResolveAssemblyReferences">
+        <Error Condition="!Exists('$(Il2CppAssemblies)/Assembly-CSharp.dll')"
+               Text="Il2Cpp-Assemblies nicht gefunden unter '$(Il2CppAssemblies)'. MelonLoader installieren und BTD6 einmal starten (erzeugt MelonLoader/Il2CppAssemblies), oder BloonsTD6 in mod/local.props setzen."/>
+        <Error Condition="!Exists('$(ModHelperDll)')"
+               Text="Btd6ModHelper.dll nicht gefunden unter '$(ModHelperDll)'. Mod Helper nach $(BloonsTD6)/Mods legen oder ModHelperDll setzen."/>
+    </Target>
+
+    <Target Name="CopyToModsFolder" AfterTargets="Build" Condition="'$(CopyToMods)' == 'true'">
+        <Copy SourceFiles="$(TargetDir)$(TargetName).dll" DestinationFolder="$(BloonsTD6)/Mods"/>
+        <Message Importance="high" Text="$(TargetName).dll -> $(BloonsTD6)/Mods"/>
+    </Target>
+</Project>

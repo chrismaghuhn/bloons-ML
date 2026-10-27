@@ -12,6 +12,7 @@ Screen-Capture-Bridge im echten Spiel spielen.
 - `data/base/towers/`: normalisierte Turm-Daten (erzeugt mit `tools/normalize.py`, Format: `data/schema/tower.schema.json`)
 - `tools/wiki/`: Skripte, mit denen die Turm-Daten erzeugt wurden
 - `docs/engine-design.md`: Design der geplanten Rust-Engine (`btd-core` + PyO3-Bindings)
+- `mod/`: MelonLoader-Mod für BTD6, dumpt die Spieldaten (Türme inkl. aller Crosspaths, Bloons, Runden, Karten) nach `data/raw/game_dump/` (nicht im Repo), siehe `mod/README.md`
 
 ## Setup
 
