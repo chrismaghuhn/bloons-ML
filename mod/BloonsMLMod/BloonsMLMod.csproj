@@ -42,6 +42,8 @@
     </Target>
 
     <Target Name="CopyToModsFolder" AfterTargets="Build" Condition="'$(CopyToMods)' == 'true'">
+        <!-- Erst löschen, dann kopieren: neue Datei statt Überschreiben einer evtl. vom laufenden Spiel gemappten DLL -->
+        <Delete Files="$(BloonsTD6)/Mods/$(TargetName).dll"/>
         <Copy SourceFiles="$(TargetDir)$(TargetName).dll" DestinationFolder="$(BloonsTD6)/Mods"/>
         <Message Importance="high" Text="$(TargetName).dll -> $(BloonsTD6)/Mods"/>
     </Target>

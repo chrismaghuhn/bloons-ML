@@ -15,6 +15,9 @@ public sealed class DumpRun
     public Dictionary<string, int> Written { get; } = new();
     public List<string> Errors { get; } = new();
 
+    // Wine vergleicht Dateinamen ohne Groß-/Kleinschreibung; Kollisionen sonst stilles Überschreiben
+    private readonly HashSet<string> writtenPaths = new(StringComparer.OrdinalIgnoreCase);
+
     private DumpRun(string gameVersion, string root)
     {
         GameVersion = gameVersion;
@@ -28,7 +31,19 @@ public sealed class DumpRun
         var baseDir = OutputPaths.ToHostPath(BloonsMLMod.DumpRoot);
         if (string.IsNullOrWhiteSpace(baseDir))
             throw new InvalidOperationException("Kein Dump-Ordner konfiguriert (Mod-Einstellung 'Dump-Ordner').");
+        ProtectFromGit(baseDir);
         return new DumpRun(version, Path.Combine(baseDir, OutputPaths.Sanitize(version)));
+    }
+
+    /// <summary>
+    /// Legt im Dump-Ordner eine .gitignore mit "*" an: Die Daten gehören Ninja Kiwi und dürfen nicht
+    /// ins (öffentliche) Repo, auch wenn der Ordner in einem Checkout ohne passende .gitignore liegt.
+    /// </summary>
+    private static void ProtectFromGit(string baseDir)
+    {
+        Directory.CreateDirectory(baseDir);
+        var gitignore = Path.Combine(baseDir, ".gitignore");
+        if (!File.Exists(gitignore)) File.WriteAllText(gitignore, "*\n");
     }
 
     public string PathFor(params string[] parts)
@@ -41,7 +56,10 @@ public sealed class DumpRun
 
     public void Write(string category, JToken token, params string[] parts)
     {
-        ModelJson.Write(PathFor(parts), token);
+        var path = PathFor(parts);
+        if (!writtenPaths.Add(path))
+            throw new IOException($"Dateiname kollidiert mit bereits geschriebener Datei: {path}");
+        ModelJson.Write(path, token);
         Written[category] = Written.TryGetValue(category, out var n) ? n + 1 : 1;
     }
 

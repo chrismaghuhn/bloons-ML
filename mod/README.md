@@ -22,8 +22,8 @@ Gemeinsamer Code (Pfade, JSON) liegt in `BloonsMLMod/Common/`, der Dump in `Bloo
 
 ## Einrichtung (Linux, Steam + Proton)
 
-Getestete Kombination: BTD6 **57.4** (Windows-Build über Proton), MelonLoader **0.7.2** (von Mod Helper empfohlen),
-BTD6 Mod Helper **3.6.10** (für BTD6 v57.2+).
+Getestet mit BTD6 **57.4** (Windows-Build über Proton, Unity 6000.3), MelonLoader **0.7.2** (von Mod Helper empfohlen)
+und BTD6 Mod Helper **3.6.10** (für BTD6 v57.2+): kompletter Dump in ca. 35 s, ohne Fehler.
 
 1. **.NET SDK** (zum Bauen der Mod; das Ziel ist `net6.0`, ein neueres SDK reicht):
    ```bash
@@ -63,8 +63,8 @@ dotnet build mod/BloonsMLMod -c Release
 Haupt-Checkout `…/bloons/data/raw/game_dump`, nicht ein Worktree). Beide lassen sich auch per
 `-p:BloonsTD6=…` übergeben. Ohne `local.props` gelten `~/.steam/steam/steamapps/common/BloonsTD6` und
 `data/raw/game_dump` relativ zu diesem Checkout. Der Build kopiert `BloonsMLMod.dll` nach `BloonsTD6/Mods/`
-(abschalten mit `-p:CopyToMods=false`). Das Spiel muss dafür nicht laufen, die neue DLL wird aber erst beim
-nächsten Start geladen.
+(abschalten mit `-p:CopyToMods=false`). Am besten bei geschlossenem Spiel bauen; die alte DLL wird vor dem
+Kopieren gelöscht, die neue erst beim nächsten Start geladen.
 
 Referenziert werden `MelonLoader/net6/*` (MelonLoader, Harmony, Il2CppInterop, Newtonsoft.Json),
 `MelonLoader/Il2CppAssemblies/*.dll` und `Mods/Btd6ModHelper.dll`, alles mit `Private=false`.
@@ -101,8 +101,9 @@ Für das Projekt reicht vorerst Monkey Meadow.
 | `gamemodel/<feld>.json` | Alle übrigen Felder von `GameModel` einzeln (z.B. Powers, Wissensbaum, Buff-Indikatoren, globale Konstanten) |
 
 **Rohformat:** Jede Datei ist eine möglichst unveränderte Serialisierung des Spiel-Models über den Serializer von
-Mod Helper (`Il2CppJsonConvert`). Jedes Objekt trägt `"$type"` mit dem Spiel-Typnamen, z.B.
-`Il2CppAssets.Scripts.Models.Towers.Projectiles.Behaviors.DamageModel`. Ein Turm enthält also seine komplette
+Mod Helper (`Il2CppJsonConvert`). Jedes Objekt trägt `"$type"` mit Typname und Assembly, z.B.
+`Il2CppAssets.Scripts.Models.Towers.Projectiles.Behaviors.DamageModel, Assembly-CSharp` (zum Vergleichen am Komma
+trennen). Ein Turm enthält also seine komplette
 Behavior-Hierarchie: `AttackModel` → `weapons[]` (`WeaponModel`, `Rate` = Cooldown in s) → `projectile`
 (`ProjectileModel`, `pierce`, `radius`) → `behaviors[]` (`DamageModel` mit `damage` und `immuneBloonProperties`,
 `TravelStraitModel` mit `Speed`/`Lifespan`, `CreateProjectileOnContactModel` für Explosionen,
@@ -128,4 +129,7 @@ Kosten je Schwierigkeit sind der Medium-Preis × {0.85, 1, 1.08, 1.2}, auf 5 ger
 wie im Spiel). Der Freeplay-/Late-Game-Lebenspunkte-Zuwachs für MOABs steht nicht als Tabelle in den Models,
 sondern ist Spiel-Code; falls er als Konstante im GameModel steckt, liegt er unter `gamemodel/`.
 
-Ein Fehler bei einem einzelnen Objekt bricht den Dump nicht ab; er steht in `manifest.json` → `errors` und im Log.
+Der Dump-Ordner bekommt eine eigene `.gitignore` mit `*`, damit die Daten auch in einem Checkout ohne passende
+Repo-`.gitignore` nicht versehentlich committet werden.
+
+Ein Fehler bei einem einzelnen Objekt (auch eine Dateinamen-Kollision) bricht den Dump nicht ab; er steht in `manifest.json` → `errors` und im Log.
