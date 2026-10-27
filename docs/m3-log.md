@@ -186,3 +186,21 @@ Dart 0-0-4 bei (−5, −1) + Bomb 0-0-0 bei (15, −31), ab Runde 16 keine Akti
 
 Erste Leak-Runde stimmt exakt; der Schaden ist im echten Spiel größer (≥ 26 Leben mehr bis Runde 44).
 Passt zum Verdacht, dass die Sim leicht großzügig ist (keine Sichtlinie, Crits exakt jeder 10. Schuss).
+
+## 2026-10-27: Entropie-Schedule (t12_r60_ent)
+
+Wie t12_r60, plus `--ent-coef 0.01 --ent-coef-end 0.001` (linear). Entropie der Policy fiel in den
+letzten 500k Schritten von ~2 auf 0,96 (ohne Schedule ~2); normale Starts am Ende Ø Runde 56,1 (53,3).
+
+| | t12_r60 | t12_r60_ent |
+|---|---|---|
+| Siege ohne Sperre (stoch., 64) | 55 | **64** |
+| Einzelsperren mit 10/10 Siegen (von 12) | 1 | 10 (ohne Sniper 9/10) |
+| ohne Dart (stoch., 10) | 2 | 0 |
+| deterministisch ohne Sperre | Runde 26 | Runde 46 |
+| Erholung det. / stoch. (50) | 27 / 43 | 33 / 41 |
+| H(Schlüssel) ohne Sperre | 5,46 bit (50) | 2,09 bit (13) |
+
+Stochastisch deutlich stärker und zuverlässiger; deterministisch besser, aber weiter schwach (in den
+meisten Sperren Runde 26-39). Vielfalt sinkt: immer zuerst Sniper (oben), dann Dart (unten).
+Offen: warum Argmax scheitert (einzelne Spiele ansehen).
