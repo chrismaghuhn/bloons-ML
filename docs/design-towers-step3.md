@@ -784,7 +784,14 @@ Antworten auf §10:
     das Kind etwa 1 s, Validierung (auch `decamo`).
   - Konverter-Test für Feuer-DoT, Flare und Pin.
   - sim_v0-Parität und alle übrigen Tests unverändert grün.
-- **Hinweis:** main hat inzwischen eine eigene Regrow-Mechanik bekommen (`grow_rate`, `GrowStack`, Commits
-  d36c187/db862b3). Beim Rebase auf main sind Konflikte in `bloon.rs` (neues `dot_cannot`), `game.rs`
-  (`apply_hit`, `tick_dots`) und `BloonDefV1` (`decamo`) zu erwarten. Die t14-Dateien im Haupt-Checkout
-  stammen schon von diesem main (`grow_rate`) und laden nur mit einer Erweiterung mit Regrow.
+- **Rebase auf main mit Regrow (2026-10-27):** Der Branch liegt jetzt auf main (831178a, mit Regrow aus
+  docs/design-bloons-chimps.md).
+  - Konflikte gab es nur dort, wo beide Seiten Felder ergänzen: `BloonStore` (`grow`/`grow_timer` neben
+    `dot_cannot`) und `BloonDefV1` (`grow_rate` neben `decamo`). Beide sind übernommen.
+  - Jeder Commit des Branches kompiliert (`cargo check --all-targets`). Alle Tests (f32/f64, sim_v0-Parität,
+    Python) und clippy sind grün.
+  - Die t14-Dateien des Konverters sind bytegleich zu denen im Haupt-Checkout (main mit `grow_rate`). t21
+    hat dieselbe Abdeckung (444/1344) und jetzt Regrow; die lokalen Tests gegen t21 laufen (Alchemist 4-0-1
+    neben einem Dart: 72 statt 136 durch, mit Regrow).
+  - Camo entfernen und Regrow: Ein entfernter Camo-Typ wächst über seinen Vorfahren-Stapel wieder zu einem
+    Camo-Vorfahren nach (z.B. `RedRegrow` zurück zu `BlueRegrowCamo`) [KAL: im Spiel wohl ohne Camo].
