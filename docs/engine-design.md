@@ -21,12 +21,12 @@ engine/
 │   ├── btd-core/           # Simulation, kein IO, kein Python
 │   ├── btd-env/            # RL-Schicht: Aktionsraum, Masken, Observation, Rewards
 │   ├── btd-py/             # PyO3-Bindings (maturin) -> `import btd`; enthält auch die Pytest-Paritätstests
-│   └── btd-tools/          # CLI (reines Rust): bench, replay, validate-data, convert-wiki
-data/
-├── towers/*.json           # aus dem Wiki (Schema: data/towers/SCHEMA.md)
-├── bloons.json             # Bloon-Typen, Kinder, HP, Speed, Immunitäten, Klassen
-├── rounds.json             # Runden 1..N, Gruppen mit Zeitfenster (bloonswiki)
-└── maps/monkey_meadow.json # Pfad-Polylinie, Sperrflächen, Wasser
+│   └── btd-tools/          # CLI (reines Rust): bench, replay, validate-data
+data/                       # Schichten-Modell, Details in §4
+├── raw/                    # generiert aus dem Wiki, nie von Hand editiert
+├── base/                   # normalisiert, das liest btd-data
+├── patches/                # Overrides in fester Reihenfolge (wie Civs <Update>)
+└── schema/                 # JSON Schema für base/ und patches/
 ```
 
 **Abhängigkeitsrichtung (strikt, keine Zyklen):**
@@ -94,6 +94,80 @@ Bewusst **nicht**:
 
 ## 4. `btd-data`
 
+### Datenformat und Schichten
+
+Format ist **JSON** überall dort, wo Daten generiert werden (Wiki → Python → JSON → `serde`).
+Nicht XML: `serde` + JSON bildet die Enums des Datenmodells direkt ab, die Wiki-API und die
+Python-Skripte liefern JSON, und XML wäre bei 26 Türmen × 15 Upgrades sehr aufgebläht.
+Was wir von Civ übernehmen, ist das Prinzip: Daten getrennt vom Code, ein Eintrag pro
+Einheit, Overrides als eigene Schicht, Schema-Validierung.
+
+```
+data/
+├── raw/                          # Schicht 0: Wiki-Rohdaten, generiert, nie von Hand editiert
+│   ├── towers/*.json             #   (aktuell noch unter data/towers/, wird beim Normalisieren verschoben)
+│   ├── rounds.json
+│   └── bloons.json
+├── base/                         # Schicht 1: normalisiert, strikt, das liest btd-data
+│   ├── towers/<name>.json        #   ein Turm pro Datei, Angriffe mit `tag`, Modifier mit Selector
+│   ├── bloons.json
+│   ├── rounds.json               #   Gruppen mit kind, flags, count, start, end
+│   └── maps/<name>.json          #   Pfad-Polylinie, Sperrflächen, Wasser
+├── patches/                      # Schicht 2: Overrides, in Dateinamen-Reihenfolge angewendet
+│   ├── 010_wiki_fixes.json       #   bekannte Wiki-Fehler/Widersprüche (z.B. Mortar-Camo 0-0-1)
+│   ├── 020_missing_values.json   #   Werte, die im Wiki fehlen (null in raw/)
+│   └── 100_calibration.json      #   Ergebnisse aus dem Abgleich mit dem echten Spiel (§9)
+└── schema/
+    ├── tower.schema.json
+    ├── round.schema.json
+    └── patch.schema.json
+```
+
+**Fluss:**
+
+```
+Wiki-API ──tools/wiki/*.py──▶ raw/ ──tools/normalize.py──▶ base/ ──┐
+                                                                   ├─▶ btd-data: laden, Patches anwenden, validate()
+                                             patches/*.json ───────┘
+```
+
+- `raw/` wird bei einem Wiki-Update komplett neu erzeugt. Weil Korrekturen nie in `raw/` oder
+  `base/` stehen, gehen sie dabei nicht verloren.
+- `tools/normalize.py` (Python) übersetzt die vier unterschiedlichen Agent-Formate in `raw/`
+  (Absolutwerte vs. Deltas, Angriffsnamen wie `"Attack/Projectile"`) in das strikte
+  `base/`-Format. Quelle der Wahrheit für Stats sind die Wiki-Module
+  `Module:BTD6 stats/<Tower>/new`. Was nicht übersetzt werden kann, landet in einem Report
+  und wird über `patches/020_missing_values.json` nachgetragen.
+- In `base/` stehen pro Tier **Absolutwerte**, keine Deltas. Die `Modifier` aus §5 erzeugt
+  `btd-data` beim Laden aus der Differenz zum vorherigen Tier.
+
+**Patch-Format** (angelehnt an Civs `<Update>`/`<Delete>`):
+
+```json
+{
+  "patches": [
+    { "op": "set",    "path": "towers/mortar_monkey/upgrades/bottom/0/changes/camo", "value": false,
+      "why": "Game-Data-Modul zeigt Camo erst ab 0-0-3, Text sagt 0-0-1" },
+    { "op": "set",    "path": "towers/heli_pilot/footprint", "value": { "rect": [14, 14] } },
+    { "op": "delete", "path": "towers/super_monkey/attacks/3" }
+  ]
+}
+```
+
+- `op`: `set`, `merge` (Objekt zusammenführen), `delete`.
+- `path`: JSON-Pointer-ähnlich, relativ zu `base/`.
+- `why` ist Pflicht. Jede Korrektur ist damit nachvollziehbar, und `btd-tools validate-data`
+  listet alle Patches mit Begründung.
+- Ein Patch, dessen `path` ins Leere zeigt, ist ein **Fehler** (fängt ab, dass ein Wiki-Update
+  die Struktur verschoben hat).
+- Wenn wir in handgepflegten Dateien Kommentare brauchen, dürfen `patches/` auch als
+  **RON** vorliegen (gleiche Struktur). `base/` und `raw/` bleiben JSON.
+
+**Versionierung:** `base/` trägt pro Datei `game_version`. `btd-data` warnt, wenn Türme aus
+verschiedenen Spielversionen gemischt werden.
+
+### Typen
+
 ```rust
 pub struct GameData {
     pub bloons: Vec<BloonDef>,          // Index = BloonKind
@@ -125,9 +199,7 @@ pub struct GameData {
 - `validate()` beim Laden: Kinder existieren, Kosten > 0, jeder Modifier-Selektor trifft
   mindestens einen Angriff, keine `null`-Werte in Feldern, die der Core braucht.
   Fehlende Wiki-Werte ⇒ klarer Fehler mit Turm/Tier, keine stillen Defaults.
-- Das Wiki-JSON (`data/towers/*.json`, Freitext-`changes`) wird von `btd-tools convert-wiki`
-  in das strikte Format übersetzt. Was er nicht versteht, landet in einer Liste
-  „manuell nachtragen“.
+- `raw/` → `base/` übernimmt `tools/normalize.py` (s. oben). `btd-data` liest nur `base/` + `patches/`.
 
 ## 5. `btd-core`
 
@@ -395,7 +467,7 @@ der Sim verglichen. Ergebnisse kommen als Testfälle nach `tests/calibration/`.
    Python-Engine (4 Türme, Hitscan, prozedurale Runden), Paritätstests grün.
    `btd-env`/`btd-py` minimal, damit PPO einmal **durchläuft**. Kein ernsthaftes Training.
 2. **M2 – Echte Physik & Daten:** Projektile mit Flugzeit, Wiki-Runden 1–40 inkl.
-   Camo/Regrow/Fortified, Ceramic, MOAB; Turm-Konverter; 6–8 Landtürme für Monkey Meadow;
+   Camo/Regrow/Fortified, Ceramic, MOAB; `tools/normalize.py` + Patches; 6–8 Landtürme für Monkey Meadow;
    Modifier mit Selektoren und `DamageVs`.
 3. **M3 – Ernsthaftes Training:** VecEnv mit rayon, Benchmarks, MaskablePPO auf Rust-Env
    mit Domain Randomization.
