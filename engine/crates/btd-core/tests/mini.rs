@@ -339,7 +339,7 @@ fn bonus_damage_against_tags() {
         let mut d = data();
         d.rounds[0] = vec![group(3, 1, 0.0, 0.0)];
         d.towers[0].variants[0].attacks[0].extras.damage_vs =
-            vec![btd_data::v1::Bonus { tag: "Ceramic".into(), add: bonus }];
+            vec![btd_data::v1::Bonus { tag: "Ceramic".into(), add: bonus, all: vec![] }];
         let mut g = Game::new(Arc::new(d)).unwrap();
         g.apply(Action::Place { kind: PIN, x: 0.0, y: 15.0 }).unwrap();
         g.play_round()
@@ -398,7 +398,17 @@ fn place(kind: u8, x: f64, y: f64) -> impl Fn(&mut Game) {
 }
 
 fn corrosive(layers: u32) -> Dot {
-    Dot { damage: 1.0, interval: 0.5, seconds: 10.0, layers, level: 1, factor_for: vec![] }
+    Dot {
+        damage: 1.0,
+        interval: 0.5,
+        seconds: 10.0,
+        layers,
+        level: 1,
+        factor_for: vec![],
+        cannot_damage: vec![],
+        only_if_damaged: false,
+        exclude_tags: vec![],
+    }
 }
 
 #[test]

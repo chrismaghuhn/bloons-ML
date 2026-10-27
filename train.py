@@ -9,6 +9,7 @@
 Die Rust-Engine braucht die Bindings: maturin develop --release -m engine/crates/btd-py/Cargo.toml
 """
 import argparse
+import json
 from collections import deque
 from pathlib import Path
 
@@ -19,6 +20,14 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import SubprocVecEnv
 
 from btd_sim import BTDEnv
+
+
+def max_bans(data_path: str) -> int:
+    """Höchstzahl Zufallssperren: 25 % der freien Türme, abgerundet (docs/design-towers-step3.md §7).
+    Fest gesperrte Türme (`rules.locked_towers`, z.B. Farm und Türme ohne Mechanik) zählen nicht mit."""
+    data = json.loads(Path(data_path).read_text())
+    locked = set(data["rules"].get("locked_towers", []))
+    return sum(t["name"] not in locked for t in data["towers"]) // 4
 
 
 class EntropySchedule(BaseCallback):
@@ -106,6 +115,11 @@ if __name__ == "__main__":
                                    or args.ban_towers or args.start_states or args.randomness):
         ap.error("--data/--preview/--arch conv/--reward-tower/--ban-towers/--start-states "
                  "gibt es nur mit --engine rust")
+    if args.engine == "rust" and args.ban_towers:
+        from btd_sim.rust_env import DEFAULT_DATA
+        limit = max_bans(args.data or DEFAULT_DATA)
+        if args.ban_towers > limit:
+            ap.error(f"--ban-towers {args.ban_towers}: höchstens 25 % der freien Türme, hier {limit}")
     if args.start_states and not args.start_replays:
         ap.error("--start-states braucht --start-replays (Quelle B und Budgetkurve)")
     if args.ent_coef < 0 or (args.ent_coef_end is not None and args.ent_coef_end < 0):

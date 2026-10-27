@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use btd_data::v1::{
-    Contact, Delivery, Emission, HitExtras, HitFilter, Props, TagFactor, TowerDefV1, VariantV1, PATHS,
+    Bonus, Contact, Delivery, Emission, Ground, HitExtras, HitFilter, Props, Slow, TagFactor, Targeting,
+    TimedEffect, TowerDefV1, VariantV1, PATHS,
 };
 use btd_data::TowerKind;
 use smallvec::SmallVec;
@@ -19,6 +20,9 @@ pub type TowerId = u32;
 pub struct TagTable {
     pub tags: HashMap<String, u32>,
     pub slows: HashMap<String, u8>,
+    /// Turmname -> Typ und Gruppe eines Zeit-Effekts -> Nummer (Alchemist-Tränke).
+    pub towers: HashMap<String, TowerKind>,
+    pub groups: HashMap<String, u16>,
 }
 
 pub fn tag_mask(table: &TagTable, names: &[String]) -> u32 {
@@ -27,6 +31,16 @@ pub fn tag_mask(table: &TagTable, names: &[String]) -> u32 {
 
 /// (Tag-Maske, Faktor)-Paare.
 pub type TagFactors = SmallVec<[(u32, Real); 2]>;
+
+/// Bonus-Schaden: (einer dieser Tags, zusätzlich alle diese Tags, Zuschlag).
+pub type Bonuses = SmallVec<[(u32, u32, Real); 2]>;
+
+fn bonuses(tags: &TagTable, list: &[Bonus]) -> Bonuses {
+    list.iter()
+        .map(|b| (tag_mask(tags, std::slice::from_ref(&b.tag)), tag_mask(tags, &b.all), real(b.add)))
+        .filter(|&(m, _, _)| m != 0)
+        .collect()
+}
 
 fn tag_factors(tags: &TagTable, list: &[TagFactor]) -> TagFactors {
     list.iter().map(|t| (tag_mask(tags, std::slice::from_ref(&t.tag)), real(t.factor))).collect()
@@ -61,11 +75,21 @@ impl FilterRt {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ExtrasRt {
     pub filter: FilterRt,
-    pub damage_vs: TagFactors,
+    pub damage_vs: Bonuses,
     pub freeze: Option<FreezeRt>,
     pub slow: Option<SlowRt>,
     pub dot: Option<DotRt>,
     pub push: Option<PushRt>,
+    pub cleanse: Option<CleanseRt>,
+    pub pop_slow: Option<SlowRt>,
+}
+
+/// Camo entfernen (Typwechsel und Instanz-Flag), wahlweise nur bei Schaden, nicht bei Bloons mit diesen Tags.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CleanseRt {
+    pub camo: bool,
+    pub only_damaged: bool,
+    pub exclude: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -99,6 +123,10 @@ pub struct DotRt {
     pub level: u8,
     /// Schadens-Faktor je Tag
     pub factor_for: TagFactors,
+    /// Eigenschaften, die der Schaden über Zeit nicht trifft; nur bei Schaden setzen; Tags ohne Wirkung.
+    pub cannot_damage: Props,
+    pub only_damaged: bool,
+    pub exclude: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -107,30 +135,29 @@ pub struct PushRt {
     pub factor_for: TagFactors,
 }
 
+fn slow_rt(s: &Slow, tags: &TagTable) -> SlowRt {
+    SlowRt {
+        multiplier: real(s.multiplier),
+        seconds: real(s.seconds),
+        level: s.level,
+        layers: s.layers,
+        slot: tags.slows.get(&s.id).copied().unwrap_or(0),
+        multiplier_for: tag_factors(tags, &s.multiplier_for),
+        seconds_for: tag_factors(tags, &s.seconds_for),
+    }
+}
+
 impl ExtrasRt {
     pub fn new(e: &HitExtras, tags: &TagTable) -> Self {
         ExtrasRt {
             filter: FilterRt::new(&e.filter, tags),
-            damage_vs: e
-                .damage_vs
-                .iter()
-                .map(|b| (tag_mask(tags, std::slice::from_ref(&b.tag)), real(b.add)))
-                .filter(|&(m, _)| m != 0)
-                .collect(),
+            damage_vs: bonuses(tags, &e.damage_vs),
             freeze: e.freeze.as_ref().map(|f| FreezeRt {
                 seconds: real(f.seconds),
                 layers: f.layers,
                 scale: tag_factors(tags, &f.scale),
             }),
-            slow: e.slow.as_ref().map(|s| SlowRt {
-                multiplier: real(s.multiplier),
-                seconds: real(s.seconds),
-                level: s.level,
-                layers: s.layers,
-                slot: tags.slows.get(&s.id).copied().unwrap_or(0),
-                multiplier_for: tag_factors(tags, &s.multiplier_for),
-                seconds_for: tag_factors(tags, &s.seconds_for),
-            }),
+            slow: e.slow.as_ref().map(|s| slow_rt(s, tags)),
             dot: e.dot.as_ref().map(|d| DotRt {
                 damage: real(d.damage),
                 interval: real(d.interval),
@@ -138,11 +165,20 @@ impl ExtrasRt {
                 layers: d.layers,
                 level: d.level,
                 factor_for: tag_factors(tags, &d.factor_for),
+                cannot_damage: Props::parse(&d.cannot_damage, "DoT").unwrap_or_default(),
+                only_damaged: d.only_if_damaged,
+                exclude: tag_mask(tags, &d.exclude_tags),
             }),
             push: e
                 .push
                 .as_ref()
                 .map(|p| PushRt { amount: real(p.amount), factor_for: tag_factors(tags, &p.factor_for) }),
+            cleanse: e.cleanse.as_ref().map(|c| CleanseRt {
+                camo: c.camo,
+                only_damaged: c.only_if_damaged,
+                exclude: tag_mask(tags, &c.exclude_tags),
+            }),
+            pop_slow: e.pop_slow.as_ref().map(|s| slow_rt(s, tags)),
         }
     }
 
@@ -157,6 +193,8 @@ impl ExtrasRt {
 pub struct AttackRt {
     /// Reichweite zum Quadrat (wie `range ** 2` in der Referenz).
     pub range2: Real,
+    /// Wirksame Reichweite in f64 (für Vorab-Rechnungen wie `Targeting::TrackSpread`).
+    pub range: f64,
     pub cooldown: Real,
     pub damage: Real,
     pub pierce: u32,
@@ -176,6 +214,11 @@ pub struct AttackRt {
     pub burst: Option<(u32, Real)>,
     pub burst_left: u32,
     pub burst_cd: Real,
+    /// `Targeting::TrackBest`: Explosionsradius, zu dem `Game` den festen Zielpunkt kennt.
+    pub track_best: Option<f64>,
+    /// `Targeting::TrackSpread` und die Zahl der Würfe in dieser Runde (für den Anteil frac(k·φ)).
+    pub track_spread: bool,
+    pub spread_k: u32,
 }
 
 /// Wie der Angriff trifft (Sim-Typ, aus `Delivery`).
@@ -189,6 +232,98 @@ pub enum AttackKind {
     Area { radius: Real },
     /// Fliegende Projektile.
     Projectile(Arc<ProjectileDef>),
+    /// Trank auf einen befreundeten Turm (Zeit-Effekt, `Targeting::Friendly`).
+    Potion(Arc<EffectRt>),
+}
+
+/// Zeit-Effekt im Sim-Typ (aus `TimedEffect`, docs/design-towers-step3.md §2.4).
+#[derive(Clone, Debug, PartialEq)]
+pub struct EffectRt {
+    pub group: u16,
+    pub rank: u32,
+    pub seconds: Option<Real>,
+    pub shots: Option<u32>,
+    pub block: Real,
+    pub damage: Real,
+    pub pierce: u32,
+    pub rate_frac: f64,
+    pub range_frac: f64,
+    pub damage_vs: Bonuses,
+    pub exclude: SmallVec<[TowerKind; 4]>,
+}
+
+impl EffectRt {
+    fn new(e: &TimedEffect, tags: &TagTable) -> Self {
+        EffectRt {
+            group: tags.groups.get(&e.group).copied().unwrap_or(0),
+            rank: e.rank,
+            seconds: e.seconds.map(real),
+            shots: e.shots,
+            block: real(e.block),
+            damage: real(e.damage),
+            pierce: e.pierce,
+            rate_frac: e.rate_frac,
+            range_frac: e.range_frac,
+            damage_vs: bonuses(tags, &e.damage_vs),
+            exclude: e.exclude.iter().filter_map(|n| tags.towers.get(n).copied()).collect(),
+        }
+    }
+}
+
+/// Laufender Zeit-Effekt auf einem Turm: verbleibende Ticks (ohne = bis Rundenende) und Schüsse.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TimedRt {
+    pub def: Arc<EffectRt>,
+    pub ticks_left: Option<u32>,
+    pub shots_left: Option<u32>,
+}
+
+/// Summe der laufenden Zeit-Effekte eines Turms (verschiedene Gruppen addieren sich).
+#[derive(Clone, Debug, Default, PartialEq)]
+struct TimedMods {
+    damage: Real,
+    pierce: u32,
+    rate_frac: f64,
+    range_frac: f64,
+    damage_vs: Bonuses,
+}
+
+impl TimedMods {
+    fn of(timed: &[TimedRt]) -> Self {
+        let mut m = TimedMods::default();
+        for t in timed {
+            let d = &t.def;
+            m.damage += d.damage;
+            m.pierce = m.pierce.saturating_add(d.pierce);
+            m.rate_frac += d.rate_frac;
+            m.range_frac += d.range_frac;
+            m.damage_vs.extend(d.damage_vs.iter().copied());
+        }
+        m
+    }
+
+    fn active(&self) -> bool {
+        self.damage != 0.0 || !self.damage_vs.is_empty()
+    }
+
+    /// Schaden mit Zuschlag (nur für Treffer, die schon Schaden machen).
+    fn damage_of(&self, d: Real) -> Real {
+        if self.damage != 0.0 && d > 0.0 {
+            d + self.damage
+        } else {
+            d
+        }
+    }
+
+    /// Extras mit Bonus-Schaden (nur für Treffer mit Schaden > 0, sonst bekäme z.B. Glue Schaden).
+    fn extras_of(&self, e: &Arc<ExtrasRt>, damage: Real) -> Arc<ExtrasRt> {
+        if self.damage_vs.is_empty() || damage <= 0.0 {
+            return Arc::clone(e);
+        }
+        let mut x = (**e).clone();
+        x.damage_vs.extend(self.damage_vs.iter().copied());
+        Arc::new(x)
+    }
 }
 
 /// Unveränderliche Daten eines Projektil-Angriffs (geteilt von allen Projektilen eines Schusses).
@@ -205,6 +340,33 @@ pub struct ProjectileDef {
     /// Kollidiert mit Bloons (nur Splitter können es abschalten)
     pub collide: bool,
     pub homing: Option<HomingRt>,
+    /// Wurf: fliegt zum Zielpunkt und löst dort `on_exhaust` aus (`collide` ist dann aus).
+    pub lob: Option<LobRt>,
+}
+
+/// Wurf im Sim-Typ (aus `Delivery::Lob`): feste Flugzeit oder Tempo, Streuung um den Zielpunkt.
+#[derive(Clone, Debug, PartialEq)]
+pub struct LobRt {
+    pub time: Option<Real>,
+    pub speed: Option<Real>,
+    pub spread: Real,
+    /// Bleibt nach der Landung liegen (Spike-Stapel).
+    pub ground: Option<Arc<GroundRt>>,
+}
+
+/// Bodenobjekt im Sim-Typ (aus `Ground`): Lebensdauer ab der Landung, Kollision alle `every` Sekunden.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GroundRt {
+    pub lifespan: Real,
+    pub radius: Real,
+    pub pierce: u32,
+    pub damage: Real,
+    pub cannot_damage: Props,
+    pub camo: bool,
+    pub extras: Arc<ExtrasRt>,
+    pub every: Option<Real>,
+    /// Treffer-Reset und Effekte beim Verbrauch/Ablauf (als Projektil-Def des liegenden Objekts).
+    pub def: Arc<ProjectileDef>,
 }
 
 /// Zielsuche im Sim-Typ: Drehung pro Sekunde (Radiant), Suchradius², cos des halben Kegels.
@@ -322,6 +484,7 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
                 clear_hits: None,
                 collide: *collide,
                 homing: None,
+                lob: None,
             }),
             pierce: *pierce,
             damage: real(*damage),
@@ -334,36 +497,93 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
 }
 
 /// Projektil-Def mit Auren: Camo und "alle Schadensarten" auch für Kontakt- und Verbrauchs-Effekte
-/// (z.B. die Explosion der Bomb), das Tempo nur für das Projektil selbst (`top`).
-fn buffed_def(def: &ProjectileDef, b: Buffs, top: bool) -> ProjectileDef {
+/// (z.B. die Explosion der Bomb), das Tempo nur für das Projektil selbst (`top`). Zeit-Effekte geben
+/// Schaden und Bonus-Schaden auch an Kontakte weiter.
+fn buffed_def(def: &ProjectileDef, b: Buffs, t: &TimedMods, top: bool) -> ProjectileDef {
+    let mib = |e: Arc<ExtrasRt>| if b.damage_all { without_dot_exclude(&e) } else { e };
     let contact = |c: &ContactRt| match c {
         ContactRt::Explosion { radius, pierce, damage, cannot_damage, camo, extras } => {
             ContactRt::Explosion {
                 radius: *radius,
                 pierce: *pierce,
-                damage: *damage,
+                damage: t.damage_of(*damage),
                 cannot_damage: if b.damage_all { Props(0) } else { *cannot_damage },
                 camo: *camo || b.camo,
-                extras: Arc::clone(extras),
+                extras: mib(t.extras_of(extras, *damage)),
             }
         }
         ContactRt::Shards { def, pierce, damage, cannot_damage, camo, extras, inherit_hit } => {
             ContactRt::Shards {
-                def: Arc::new(buffed_def(def, b, false)),
+                def: Arc::new(buffed_def(def, b, t, false)),
                 pierce: *pierce,
-                damage: *damage,
+                damage: t.damage_of(*damage),
                 cannot_damage: if b.damage_all { Props(0) } else { *cannot_damage },
                 camo: *camo || b.camo,
-                extras: Arc::clone(extras),
+                extras: mib(t.extras_of(extras, *damage)),
                 inherit_hit: *inherit_hit,
             }
         }
     };
+    // Bodenobjekt (Spike-Stapel): Camo, MIB, Schaden, Bonus-Schaden und Pierce der Auren/Zeit-Effekte
+    let lob = def.lob.as_ref().map(|l| LobRt {
+        ground: l.ground.as_ref().map(|g| {
+            Arc::new(GroundRt {
+                pierce: g.pierce.saturating_add(b.pierce).saturating_add(t.pierce),
+                damage: t.damage_of(g.damage),
+                cannot_damage: if b.damage_all { Props(0) } else { g.cannot_damage },
+                camo: g.camo || b.camo,
+                extras: mib(t.extras_of(&g.extras, g.damage)),
+                def: Arc::new(buffed_def(&g.def, b, t, false)),
+                ..(**g).clone()
+            })
+        }),
+        ..l.clone()
+    });
     ProjectileDef {
         speed: if top && b.speed_frac != 0.0 { def.speed * real(1.0 + b.speed_frac) } else { def.speed },
         contacts: def.contacts.iter().map(contact).collect(),
         on_exhaust: def.on_exhaust.iter().map(contact).collect(),
+        lob,
         ..def.clone()
+    }
+}
+
+/// MIB (Village): Tag-Ausschlüsse des Schadens über Zeit gelten nicht (Burny Stuff brennt dann auch DDT,
+/// Black, Zebra).
+fn without_dot_exclude(e: &Arc<ExtrasRt>) -> Arc<ExtrasRt> {
+    match &e.dot {
+        Some(d) if d.exclude != 0 => {
+            let mut x = (**e).clone();
+            x.dot.as_mut().unwrap().exclude = 0;
+            Arc::new(x)
+        }
+        _ => Arc::clone(e),
+    }
+}
+
+fn ground_rt(g: &Ground, tags: &TagTable) -> GroundRt {
+    GroundRt {
+        lifespan: real(g.lifespan),
+        radius: real(g.radius),
+        pierce: g.pierce,
+        damage: real(g.damage),
+        cannot_damage: g.cannot_damage_props(),
+        camo: g.camo,
+        extras: Arc::new(ExtrasRt::new(&g.extras, tags)),
+        every: (g.collide_every > 0.0).then(|| real(g.collide_every)),
+        def: Arc::new(ProjectileDef {
+            speed: 0.0,
+            lifespan: real(g.lifespan),
+            radius: real(g.radius),
+            emission: emission_rt(&Emission::Single {}),
+            contacts: Vec::new(),
+            on_exhaust: g.on_exhaust.iter().map(|c| contact_rt(c, tags)).collect(),
+            path: None,
+            clear_hits: g.clear_hits.map(real),
+            collide: true,
+            homing: None,
+            lob: None,
+        }),
     }
 }
 
@@ -428,7 +648,7 @@ impl Default for Buffs {
     }
 }
 
-/// Die Werte eines Angriffs ohne Auren: daraus baut `Tower::apply_buffs` die wirksamen Werte.
+/// Die Werte eines Angriffs ohne Auren und Zeit-Effekte: daraus baut `Tower::rebuild` die wirksamen Werte.
 #[derive(Clone, Debug, PartialEq)]
 struct BaseAttack {
     /// Reichweite und Cooldown in f64 (für die Rechnung mit Auren).
@@ -438,6 +658,9 @@ struct BaseAttack {
     area_radius: Option<f64>,
     range2: Real,
     cooldown_rt: Real,
+    damage: Real,
+    crit: Option<(Real, u32)>,
+    extras: Arc<ExtrasRt>,
     pierce: u32,
     cannot_damage: Props,
     camo: bool,
@@ -463,6 +686,12 @@ pub struct Tower {
     /// Reichweite mit Auren: Radius der eigenen Auren und Rabatt-Zonen (`Game::refresh_buffs`).
     pub reach: f64,
     base: SmallVec<[BaseAttack; 2]>,
+    /// Laufende Zeit-Effekte (je Gruppe höchstens einer) und gesperrte Gruppen mit verbleibenden Ticks;
+    /// nur innerhalb einer Runde (`Game::play_round` löscht sie am Anfang und Ende).
+    pub timed: SmallVec<[TimedRt; 1]>,
+    pub blocked: SmallVec<[(u16, u32); 1]>,
+    /// Zeit-Effekt auf sich selbst zu Rundenbeginn (aus der Variante).
+    pub round_start: Option<Arc<EffectRt>>,
 }
 
 impl Tower {
@@ -489,6 +718,9 @@ impl Tower {
             buffs: Buffs::NONE,
             reach: v.range,
             base: SmallVec::new(),
+            timed: SmallVec::new(),
+            blocked: SmallVec::new(),
+            round_start: None,
         };
         t.set_variant(v, tags);
         t
@@ -499,6 +731,7 @@ impl Tower {
     pub fn set_variant(&mut self, v: &VariantV1, tags: &TagTable) {
         self.tiers = v.tiers;
         self.footprint = v.footprint;
+        self.round_start = v.round_start.as_ref().map(|e| Arc::new(EffectRt::new(e, tags)));
         let old: SmallVec<[(Real, u32); 2]> = self.attacks.iter().map(|a| (a.cd_left, a.shots)).collect();
         self.attacks = v
             .attacks
@@ -509,6 +742,7 @@ impl Tower {
                 let (cd_left, shots) = old.get(i).copied().unwrap_or((0.0, 0));
                 AttackRt {
                     range2: range * range,
+                    range: a.range.unwrap_or(v.range),
                     cooldown: real(a.cooldown),
                     damage: real(a.damage),
                     pierce: a.pierce,
@@ -550,7 +784,31 @@ impl Tower {
                                 cos_half: real(libm::cos((h.max_angle / 2.0).to_radians())),
                                 retarget: h.retarget,
                             }),
+                            lob: None,
                         })),
+                        Delivery::Lob { time, speed, spread, on_arrive, ground } => {
+                            AttackKind::Projectile(Arc::new(ProjectileDef {
+                                speed: 0.0,
+                                lifespan: 0.0,
+                                radius: 0.0,
+                                emission: emission_rt(&Emission::Single {}),
+                                contacts: Vec::new(),
+                                on_exhaust: on_arrive.iter().map(|c| contact_rt(c, tags)).collect(),
+                                path: None,
+                                clear_hits: None,
+                                collide: false,
+                                homing: None,
+                                lob: Some(LobRt {
+                                    time: time.map(real),
+                                    speed: speed.map(real),
+                                    spread: real(*spread),
+                                    ground: ground.as_ref().map(|g| Arc::new(ground_rt(g, tags))),
+                                }),
+                            }))
+                        }
+                        Delivery::Potion { effect } => {
+                            AttackKind::Potion(Arc::new(EffectRt::new(effect, tags)))
+                        }
                     },
                     extras: Arc::new(ExtrasRt::new(&a.extras, tags)),
                     crit: a.crit.map(|c| (real(c.damage), c.every.max(1))),
@@ -564,6 +822,11 @@ impl Tower {
                     burst: a.burst.map(|b| (b.count, real(b.interval))),
                     burst_left: 0,
                     burst_cd: 0.0,
+                    track_best: (a.targeting == Targeting::TrackBest)
+                        .then(|| a.delivery.track_best_radius())
+                        .flatten(),
+                    track_spread: a.targeting == Targeting::TrackSpread,
+                    spread_k: 0,
                 }
             })
             .collect();
@@ -591,6 +854,9 @@ impl Tower {
                 },
                 range2: rt.range2,
                 cooldown_rt: rt.cooldown,
+                damage: rt.damage,
+                crit: rt.crit,
+                extras: Arc::clone(&rt.extras),
                 pierce: rt.pierce,
                 cannot_damage: rt.cannot_damage,
                 camo: rt.camo,
@@ -598,42 +864,132 @@ impl Tower {
             })
             .collect();
         self.reach = v.range * (1.0 + self.buffs.range_frac) + self.buffs.range_add;
-        if self.buffs != Buffs::NONE {
-            self.apply_buffs(self.buffs);
+        if self.buffs != Buffs::NONE || !self.timed.is_empty() {
+            self.rebuild();
         }
     }
 
     /// Für `Game::refresh_buffs`; ein direkter Aufruf wird beim nächsten Refresh nicht unbedingt
-    /// zurückgesetzt. Setzt die Auren und schreibt nur die davon abhängigen Angriffswerte (Reichweite, Cooldown,
-    /// Camo, Schadensarten, Pierce, Flächenradius, Projektil-Def). Laufzeit-Zustand (Cooldown,
-    /// Salve, Crit-Zähler) bleibt unverändert, auch mitten in der Runde. Mit `Buffs::NONE` sind die
-    /// Werte bitgleich zur Variante.
+    /// zurückgesetzt. Setzt die Auren und schreibt die wirksamen Angriffswerte neu (`rebuild`: Reichweite,
+    /// Cooldown, Camo, Schadensarten, Pierce, Schaden, Crit, Extras, Flächenradius, Projektil-Def).
+    /// Laufzeit-Zustand (Cooldown, Salve, Crit-Zähler) bleibt unverändert, auch mitten in der Runde. Mit
+    /// `Buffs::NONE` und ohne Zeit-Effekte sind die Werte bitgleich zur Variante.
     pub fn apply_buffs(&mut self, b: Buffs) {
         self.buffs = b;
-        let ranged = b.range_frac != 0.0 || b.range_add != 0.0;
+        self.rebuild();
+    }
+
+    /// Wirksame Angriffswerte aus Basis, Auren (`buffs`) und Zeit-Effekten (`timed`): Reichweiten-
+    /// Anteile und Pierce addieren sich, das Tempo der Zeit-Effekte teilt den Cooldown [KAL]. Ohne
+    /// Auren und Zeit-Effekte bitgleich zur Variante.
+    fn rebuild(&mut self) {
+        let b = self.buffs;
+        let t = TimedMods::of(&self.timed);
+        let ranged = b.range_frac != 0.0 || b.range_add != 0.0 || t.range_frac != 0.0;
         for (a, base) in self.attacks.iter_mut().zip(&self.base) {
-            let range = base.range * (1.0 + b.range_frac) + b.range_add;
+            let range = base.range * (1.0 + b.range_frac + t.range_frac) + b.range_add;
             a.range2 = if ranged { real(range) * real(range) } else { base.range2 };
-            a.cooldown = if b.rate != 1.0 { real(base.cooldown * b.rate) } else { base.cooldown_rt };
+            a.range = if ranged { range } else { base.range };
+            a.cooldown = if b.rate != 1.0 || t.rate_frac != 0.0 {
+                real(base.cooldown * b.rate / (1.0 + t.rate_frac))
+            } else {
+                base.cooldown_rt
+            };
             a.camo = base.camo || b.camo;
             a.cannot_damage = if b.damage_all { Props(0) } else { base.cannot_damage };
             // Pierce-Aura nur für fliegende Projektile (nicht Sofort-Treffer und Flächen) [KAL]
             let flies = matches!(base.kind, AttackKind::Projectile(_));
-            a.pierce = if flies { base.pierce.saturating_add(b.pierce) } else { base.pierce };
+            let pierce = b.pierce.saturating_add(t.pierce);
+            a.pierce = if flies { base.pierce.saturating_add(pierce) } else { base.pierce };
+            a.damage = t.damage_of(base.damage);
+            a.crit = base.crit.map(|(d, n)| (t.damage_of(d), n));
+            a.extras = t.extras_of(&base.extras, base.damage);
+            if b.damage_all {
+                a.extras = without_dot_exclude(&a.extras);
+            }
             a.kind = match (&base.kind, base.area_radius) {
                 // gekoppelter Radius wächst um denselben Betrag wie die Reichweite
                 (AttackKind::Area { .. }, Some(r)) if ranged => {
                     AttackKind::Area { radius: real(r + (range - base.range)) }
                 }
                 (AttackKind::Projectile(def), _) => {
-                    if b.camo || b.damage_all || b.speed_frac != 0.0 {
-                        AttackKind::Projectile(Arc::new(buffed_def(def, b, true)))
+                    let grounded = def.lob.as_ref().is_some_and(|l| l.ground.is_some());
+                    if b.camo || b.damage_all || b.speed_frac != 0.0 || t.active() || grounded && pierce > 0 {
+                        AttackKind::Projectile(Arc::new(buffed_def(def, b, &t, true)))
                     } else {
                         AttackKind::Projectile(Arc::clone(def))
                     }
                 }
                 (k, _) => k.clone(),
             };
+        }
+    }
+
+    /// Ob der Turm den Zeit-Effekt bekommen darf: hat einen Angriff, ist nicht ausgeschlossen, die
+    /// Gruppe ist nicht gesperrt und es läuft kein gleich starker oder stärkerer Effekt der Gruppe.
+    pub fn can_receive(&self, e: &EffectRt) -> bool {
+        !self.attacks.is_empty()
+            && !e.exclude.contains(&self.kind)
+            && !self.blocked.iter().any(|&(g, _)| g == e.group)
+            && !self.timed.iter().any(|t| t.def.group == e.group && t.def.rank >= e.rank)
+    }
+
+    /// Setzt einen Zeit-Effekt (ersetzt einen schwächeren derselben Gruppe).
+    pub fn give(&mut self, e: &Arc<EffectRt>, ticks_of: impl Fn(Real) -> u32) {
+        self.timed.retain(|t| t.def.group != e.group);
+        self.timed.push(TimedRt {
+            def: Arc::clone(e),
+            ticks_left: e.seconds.map(&ticks_of),
+            shots_left: e.shots,
+        });
+        self.rebuild();
+    }
+
+    /// Ein Tick vergeht: Sperren laufen ab, Zeit-Effekte ohne Restzeit enden (dann gesperrt).
+    pub fn tick_timed(&mut self, ticks_of: impl Fn(Real) -> u32) {
+        self.blocked.retain(|b| {
+            b.1 -= 1;
+            b.1 > 0
+        });
+        for t in &mut self.timed {
+            if let Some(n) = &mut t.ticks_left {
+                *n = n.saturating_sub(1);
+            }
+        }
+        self.expire(ticks_of);
+    }
+
+    /// Ein Schuss irgendeines Angriffs: zählt die Rest-Schüsse aller Zeit-Effekte herunter [KAL].
+    pub fn on_shot(&mut self, ticks_of: impl Fn(Real) -> u32) {
+        for t in &mut self.timed {
+            if let Some(n) = &mut t.shots_left {
+                *n = n.saturating_sub(1);
+            }
+        }
+        self.expire(ticks_of);
+    }
+
+    fn expire(&mut self, ticks_of: impl Fn(Real) -> u32) {
+        let before = self.timed.len();
+        let blocked = &mut self.blocked;
+        self.timed.retain(|t| {
+            let alive = t.shots_left != Some(0) && t.ticks_left != Some(0);
+            if !alive && t.def.block > 0.0 {
+                blocked.push((t.def.group, ticks_of(t.def.block)));
+            }
+            alive
+        });
+        if self.timed.len() != before {
+            self.rebuild();
+        }
+    }
+
+    /// Löscht Zeit-Effekte und Sperren (Rundenbeginn und -ende).
+    pub fn clear_timed(&mut self) {
+        self.blocked.clear();
+        if !self.timed.is_empty() {
+            self.timed.clear();
+            self.rebuild();
         }
     }
 

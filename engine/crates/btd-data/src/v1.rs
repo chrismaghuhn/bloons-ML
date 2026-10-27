@@ -208,12 +208,28 @@ pub struct BloonDefV1 {
     /// (docs/design-bloons-chimps.md). `grow_rate` 0 = wächst nicht (ältere Daten ohne das Feld).
     pub regrow: bool,
     pub grow_rate: f64,
+    /// Derselbe Bloon ohne Camo (im Spiel ein eigener Typ, z.B. `RedCamo` -> `Red`); Ziel von
+    /// `HitExtras.cleanse` (Signal Flare). Nur bei Camo-Typen.
+    pub decamo: Option<BloonKind>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Targeting {
     First,
+    /// Fester Punkt je Karte: der Streckenpunkt mit der meisten Streckenlänge im Explosionsradius
+    /// (Mortar, docs/design-towers-step3.md §3). Nur mit `Delivery::Lob` mit Explosion; gefeuert wird,
+    /// sobald ein anvisierbarer Bloon in Reichweite ist.
+    TrackBest,
+    /// Befreundeter Turm in Reichweite (Alchemist-Tränke, docs/design-towers-step3.md §2.4): mit Angriff,
+    /// nicht ausgeschlossen, ohne gleich starken Effekt derselben Gruppe und nicht gesperrt; der mit dem
+    /// höchsten `spent`, bei Gleichstand die kleinste Turm-ID. Nur mit `Delivery::Potion`.
+    Friendly,
+    /// Punkt auf der Strecke in Reichweite, über die Streckenlänge in Reichweite verteilt (Spike Factory,
+    /// docs/design-towers-step3.md §2.2): ohne Zufall der Anteil frac(k·φ) für den k-ten Wurf der Runde,
+    /// mit Zufall gleichverteilt. Nur mit `Delivery::Lob`; gefeuert wird, solange ein anvisierbarer Bloon
+    /// auf der Karte ist.
+    TrackSpread,
 }
 
 /// Wie ein Angriff seine Ziele trifft.
@@ -263,6 +279,96 @@ pub enum Delivery {
         #[serde(default)]
         homing: Option<Homing>,
     },
+    /// Wurf (docs/design-towers-step3.md §2.1): fliegt geradlinig zum Zielpunkt (Position des Ziels beim
+    /// Abwurf bzw. Punkt aus `targeting`), trifft unterwegs nichts und löst bei Ankunft `on_arrive` aus.
+    /// Flugzeit fest (`time`, Mortar) oder Abstand / `speed` (Alchemist); genau eins von beiden.
+    Lob {
+        #[serde(default)]
+        time: Option<f64>,
+        #[serde(default)]
+        speed: Option<f64>,
+        /// Streuung um den Zielpunkt (Radius, Spiel: RandomTargetSpreadModel); ohne Zufall der Punkt selbst.
+        #[serde(default)]
+        spread: f64,
+        #[serde(default)]
+        on_arrive: Vec<Contact>,
+        /// Bleibt nach der Ankunft liegen (Spike-Stapel, docs/design-towers-step3.md §2.3).
+        #[serde(default)]
+        ground: Option<Box<Ground>>,
+    },
+    /// Trank auf einen befreundeten Turm (`Targeting::Friendly`): setzt dort einen Zeit-Effekt. Die
+    /// Flugzeit (unter 0,2 s) wird ignoriert [KAL].
+    Potion { effect: TimedEffect },
+}
+
+/// Bodenobjekt nach einem Wurf: liegt `lifespan` Sekunden (ab der Landung) am Zielpunkt, trifft Bloons wie ein
+/// Projektil (je Bloon einmal, mit `clear_hits` erneut), aber nur alle `collide_every` Sekunden, bis `pierce`
+/// verbraucht ist; dann bzw. beim Ablauf `on_exhaust` (nur Explosionen). Hält die Runde nicht offen und
+/// verschwindet am Rundenende.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Ground {
+    pub lifespan: f64,
+    pub radius: f64,
+    pub pierce: u32,
+    pub damage: f64,
+    #[serde(default)]
+    pub cannot_damage: Vec<String>,
+    #[serde(default)]
+    pub camo: bool,
+    #[serde(default)]
+    pub extras: HitExtras,
+    #[serde(default)]
+    pub clear_hits: Option<f64>,
+    #[serde(default)]
+    pub collide_every: f64,
+    #[serde(default)]
+    pub on_exhaust: Vec<Contact>,
+}
+
+impl Ground {
+    /// `cannot_damage` als Bitmaske (beim Laden validiert).
+    pub fn cannot_damage_props(&self) -> Props {
+        Props::parse(&self.cannot_damage, "Boden").unwrap_or_default()
+    }
+}
+
+/// Zeit-Effekt auf einem Turm (docs/design-towers-step3.md §2.4): wirkt `seconds` lang (ohne Angabe
+/// unbegrenzt in der Runde) oder für `shots` Schüsse, je nachdem was zuerst endet; danach `block`
+/// Sekunden keine neue Gabe derselben Gruppe. Je `group` wirkt höchstens ein Effekt; ein höherer `rank`
+/// ersetzt einen niedrigeren, ein gleicher oder niedrigerer wird nicht vergeben. Zu Rundenbeginn und
+/// -ende gelöscht.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TimedEffect {
+    pub group: String,
+    #[serde(default)]
+    pub rank: u32,
+    #[serde(default)]
+    pub seconds: Option<f64>,
+    /// Ohne Angabe unbegrenzt.
+    #[serde(default)]
+    pub shots: Option<u32>,
+    #[serde(default)]
+    pub block: f64,
+    /// Zuschlag auf den Schaden aller Angriffe und Kontakte mit Schaden > 0.
+    #[serde(default)]
+    pub damage: f64,
+    /// Zuschlag auf den Pierce fliegender Projektile (wie die Pierce-Aura).
+    #[serde(default)]
+    pub pierce: u32,
+    /// Tempo: Cooldown / (1 + `rate_frac`) [KAL].
+    #[serde(default)]
+    pub rate_frac: f64,
+    /// Reichweite × (1 + Auren-Anteil + `range_frac`).
+    #[serde(default)]
+    pub range_frac: f64,
+    /// Bonus-Schaden für alle Angriffe und Kontakte mit Schaden > 0 (Acidic Mixture Dip).
+    #[serde(default)]
+    pub damage_vs: Vec<Bonus>,
+    /// Türme (Namen), die diesen Effekt nicht bekommen.
+    #[serde(default)]
+    pub exclude: Vec<String>,
 }
 
 /// Zielsuchendes Projektil (Spiel: TrackTargetModel / TrackTargetWithinTimeModel). Startziel ist
@@ -372,10 +478,28 @@ impl HitExtras {
         let ok = |x: f64| x.is_finite() && x >= 0.0;
         let known = |list: &[TagFactor]| list.iter().all(|t| tags.contains(t.tag.as_str()));
         self.filter.valid(tags)
-            && self.damage_vs.iter().all(|b| tags.contains(b.tag.as_str()))
+            && self
+                .damage_vs
+                .iter()
+                .all(|b| tags.contains(b.tag.as_str()) && b.all.iter().all(|t| tags.contains(t.as_str())))
             && self.freeze.as_ref().map_or(true, |f| known(&f.scale))
             && self.slow.as_ref().map_or(true, |s| known(&s.multiplier_for) && known(&s.seconds_for))
-            && self.dot.as_ref().map_or(true, |d| known(&d.factor_for))
+            && self.dot.as_ref().map_or(true, |d| {
+                known(&d.factor_for)
+                    && d.exclude_tags.iter().all(|t| tags.contains(t.as_str()))
+                    && Props::parse(&d.cannot_damage, "").is_ok()
+            })
+            && self
+                .cleanse
+                .as_ref()
+                .map_or(true, |c| c.exclude_tags.iter().all(|t| tags.contains(t.as_str())))
+            && self.pop_slow.as_ref().map_or(true, |s| {
+                known(&s.multiplier_for)
+                    && known(&s.seconds_for)
+                    && s.level == 0
+                    && ok(s.seconds)
+                    && (0.0..=1.0).contains(&s.multiplier)
+            })
             && self.push.as_ref().map_or(true, |p| known(&p.factor_for))
             && self.damage_vs.iter().all(|b| b.add.is_finite())
             && self.freeze.as_ref().map_or(true, |f| ok(f.seconds) && f.scale.iter().all(|t| ok(t.factor)))
@@ -418,8 +542,55 @@ impl GameV1 {
                 contacts(on_contact, &mut out);
                 contacts(on_exhaust, &mut out);
             }
+            if let Delivery::Lob { on_arrive, ground, .. } = &a.delivery {
+                contacts(on_arrive, &mut out);
+                if let Some(g) = ground {
+                    out.push(&g.extras);
+                    contacts(&g.on_exhaust, &mut out);
+                }
+            }
         }
         out
+    }
+}
+
+impl GameV1 {
+    /// Wertebereiche eines Zeit-Effekts, bekannte Tags und Turmnamen.
+    fn effect_valid(&self, e: &TimedEffect, tags: &HashSet<&str>) -> bool {
+        let non_neg = |x: f64| x.is_finite() && x >= 0.0;
+        !e.group.is_empty()
+            && e.shots != Some(0)
+            && e.seconds.map_or(true, |s| s.is_finite() && s > 0.0)
+            && non_neg(e.block)
+            && non_neg(e.damage)
+            && non_neg(e.rate_frac)
+            && non_neg(e.range_frac)
+            && e.damage_vs.iter().all(|b| {
+                b.add.is_finite()
+                    && tags.contains(b.tag.as_str())
+                    && b.all.iter().all(|t| tags.contains(t.as_str()))
+            })
+            && e.exclude.iter().all(|n| self.towers.iter().any(|t| &t.name == n))
+    }
+}
+
+impl Delivery {
+    /// Radius für `Targeting::TrackBest`: die größte Explosion eines Wurfs, die Schaden macht (sonst die
+    /// größte überhaupt; Signal Flare hat eine große Explosion ohne Schaden neben der eigentlichen).
+    pub fn track_best_radius(&self) -> Option<f64> {
+        let Delivery::Lob { on_arrive, .. } = self else { return None };
+        let radius = |with_damage: bool| {
+            on_arrive
+                .iter()
+                .filter_map(|c| match c {
+                    Contact::Explosion { radius, damage, .. } if !with_damage || *damage > 0.0 => {
+                        Some(*radius)
+                    }
+                    _ => None,
+                })
+                .reduce(f64::max)
+        };
+        radius(true).or_else(|| radius(false))
     }
 }
 
@@ -498,6 +669,20 @@ pub struct HitExtras {
     pub dot: Option<Dot>,
     /// Zurückstoßen entlang des Pfads (Bomb).
     pub push: Option<Push>,
+    /// Entfernt Eigenschaften des getroffenen Bloons (Spiel: RemoveBloonModifiersModel, z.B. Signal Flare).
+    pub cleanse: Option<Cleanse>,
+    /// Verlangsamt die Kinder, wenn der Treffer einen Bloon platzt (Spiel: SlowOnPopModel, Engineer Pin).
+    pub pop_slow: Option<Slow>,
+}
+
+/// Camo entfernen: der Bloon wechselt auf seinen Typ ohne Camo (`BloonDefV1::decamo`), wahlweise nur bei
+/// Schaden, nicht bei Bloons mit Tag. Regrow, Lead und Fortified gibt es noch nicht.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Cleanse {
+    pub camo: bool,
+    pub only_if_damaged: bool,
+    pub exclude_tags: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -514,6 +699,15 @@ pub struct Dot {
     /// Schadens-Faktor für Bloons mit Tag (Spiel: MOABs 0.375).
     #[serde(default)]
     pub factor_for: Vec<TagFactor>,
+    /// Eigenschaften, die der Schaden über Zeit nicht trifft (Feuer: Purple).
+    #[serde(default)]
+    pub cannot_damage: Vec<String>,
+    /// Nur setzen, wenn der Treffer Schaden gemacht hat (Burny Stuff).
+    #[serde(default)]
+    pub only_if_damaged: bool,
+    /// Nicht auf Bloons mit diesen Tags (Burny Stuff: DDT, Black, Zebra); unter MIB (Village) aufgehoben.
+    #[serde(default)]
+    pub exclude_tags: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -707,6 +901,10 @@ pub struct HitFilter {
 pub struct Bonus {
     pub tag: String,
     pub add: f64,
+    /// Weitere Tags, die der Bloon zusätzlich alle haben muss (Spiel: mustIncludeAllTags, z.B.
+    /// "Lead,Fortified" beim Acidic Mixture Dip).
+    #[serde(default)]
+    pub all: Vec<String>,
 }
 
 /// `layers`: über wie viele Schichten (Kinder beim Platzen) der Effekt erhalten bleibt.
@@ -760,6 +958,8 @@ pub struct VariantV1 {
     pub income: Option<Income>,
     /// Zuschlag auf `rules.sell_ratio` beim Verkaufen (Farm).
     pub sell_bonus: f64,
+    /// Zeit-Effekt auf dem eigenen Turm zu Beginn jeder Runde (Spiel: StartOfRoundRateBuffModel).
+    pub round_start: Option<TimedEffect>,
 }
 
 #[derive(Clone, Debug)]
@@ -906,6 +1106,8 @@ struct RawBloon {
     #[serde(default)]
     radius: f64,
     #[serde(default)]
+    decamo: Option<String>,
+    #[serde(default)]
     tags: Vec<String>,
 }
 
@@ -941,6 +1143,8 @@ struct RawVariant {
     income: Option<Income>,
     #[serde(default)]
     sell_bonus: f64,
+    #[serde(default)]
+    round_start: Option<TimedEffect>,
 }
 
 #[derive(Deserialize)]
@@ -1050,6 +1254,7 @@ impl GameV1 {
                     grow_rate: b.grow_rate,
                     radius: b.radius,
                     tags: b.tags.clone(),
+                    decamo: b.decamo.as_deref().map(bloon_id).transpose()?,
                 })
             })
             .collect::<Result<Vec<_>, DataError>>()?;
@@ -1185,6 +1390,19 @@ impl GameV1 {
         }
 
         for b in &self.bloons {
+            // Camo entfernen behält die Lebenspunkte: beide Typen dürfen sich nur in der Camo unterscheiden
+            if let Some(d) = b.decamo.map(|k| &self.bloons[k as usize]) {
+                if !b.camo
+                    || d.camo
+                    || (d.hp, d.speed, d.leak, d.props, d.regrow, d.grow_rate, d.children.len())
+                        != (b.hp, b.speed, b.leak, b.props, b.regrow, b.grow_rate, b.children.len())
+                {
+                    return Err(invalid(format!(
+                        "Bloon {}: decamo nur auf denselben Typ ohne Camo (gleiche Werte)",
+                        b.name
+                    )));
+                }
+            }
             if !non_neg(b.radius) {
                 return Err(invalid(format!("Bloon {}: radius >= 0 erwartet", b.name)));
             }
@@ -1235,14 +1453,17 @@ impl GameV1 {
                         return Err(invalid(format!("{what}: ungültige Zone")));
                     }
                 }
+                // Platzhalter ohne Wirkung nur als Basisvariante gesperrter Türme, deren Mechanik noch fehlt
+                // (docs/design-towers-step3.md §4): die Turmliste und damit das Layout bleiben stabil
                 if v.attacks.is_empty()
                     && v.zones.is_empty()
                     && v.supports.is_empty()
                     && v.discount.is_empty()
                     && v.income.is_none()
+                    && !(v.tiers == [0; PATHS] && r.locked_towers.contains(&t.name))
                 {
                     return Err(invalid(format!(
-                        "{what}: weder Angriff, Zone, Support, Rabatt noch Einkommen"
+                        "{what}: weder Angriff, Zone, Support, Rabatt noch Einkommen (nur als Basis gesperrter Türme erlaubt)"
                     )));
                 }
                 if !v.supports.iter().all(Support::valid) {
@@ -1264,6 +1485,9 @@ impl GameV1 {
                 }) {
                     return Err(invalid(format!("{what}: ungültiges Einkommen")));
                 }
+                if v.round_start.as_ref().is_some_and(|e| !self.effect_valid(e, &tags)) {
+                    return Err(invalid(format!("{what}: ungültiger Effekt zu Rundenbeginn")));
+                }
                 if !v.sell_bonus.is_finite() || !(0.0..=1.0).contains(&(r.sell_ratio + v.sell_bonus)) {
                     return Err(invalid(format!("{what}: sell_ratio + sell_bonus in [0, 1] erwartet")));
                 }
@@ -1284,6 +1508,30 @@ impl GameV1 {
                                 radius.map_or(true, pos) && radius_offset.map_or(true, |o| pos(range + o))
                             }
                             Delivery::HitscanSplash { radius } => pos(*radius),
+                            Delivery::Potion { effect: e } => {
+                                a.targeting == Targeting::Friendly && self.effect_valid(e, &tags)
+                            }
+                            Delivery::Lob { time, speed, spread, on_arrive, ground } => {
+                                time.is_some() != speed.is_some()
+                                    && time.map_or(true, pos)
+                                    && speed.map_or(true, pos)
+                                    && non_neg(*spread)
+                                    && (!on_arrive.is_empty() || ground.is_some())
+                                    && on_arrive.len() <= 8
+                                    && on_arrive.iter().all(|c| c.valid(false, &tags))
+                                    && ground.as_ref().map_or(true, |g| {
+                                        pos(g.lifespan)
+                                            && pos(g.radius)
+                                            && g.pierce >= 1
+                                            && non_neg(g.damage)
+                                            && non_neg(g.collide_every)
+                                            && g.clear_hits.map_or(true, pos)
+                                            && Props::parse(&g.cannot_damage, "").is_ok()
+                                            && g.extras.valid(&tags)
+                                            && g.on_exhaust.len() <= 8
+                                            && g.on_exhaust.iter().all(|c| c.valid(false, &tags))
+                                    })
+                            }
                             Delivery::Projectile {
                                 speed,
                                 lifespan,
@@ -1323,6 +1571,29 @@ impl GameV1 {
                         };
                     if !ok {
                         return Err(invalid(format!("{what} Angriff {}: ungültige Werte", a.tag)));
+                    }
+                    // Schaden und Crit stecken beim Wurf in den Explosionen, nicht im Angriff; ein Trank hat keinen
+                    let potion = matches!(a.delivery, Delivery::Potion { .. });
+                    if matches!(a.delivery, Delivery::Lob { .. } | Delivery::Potion { .. })
+                        && (a.damage != 0.0 || a.crit.is_some())
+                        || potion && (a.burst.is_some() || a.camo || a.extras != HitExtras::default())
+                    {
+                        return Err(invalid(format!(
+                            "{what} Angriff {}: Wurf/Trank ohne damage/crit (Trank auch ohne burst/camo/extras)",
+                            a.tag
+                        )));
+                    }
+                    if a.targeting == Targeting::TrackSpread && !matches!(a.delivery, Delivery::Lob { .. }) {
+                        return Err(invalid(format!("{what} Angriff {}: track_spread nur mit Wurf", a.tag)));
+                    }
+                    if a.targeting == Targeting::Friendly && !matches!(a.delivery, Delivery::Potion { .. }) {
+                        return Err(invalid(format!("{what} Angriff {}: friendly nur mit Trank", a.tag)));
+                    }
+                    if a.targeting == Targeting::TrackBest && a.delivery.track_best_radius().is_none() {
+                        return Err(invalid(format!(
+                            "{what} Angriff {}: track_best nur mit Wurf und Explosion",
+                            a.tag
+                        )));
                     }
                     if !a.extras.valid(&tags) {
                         return Err(invalid(format!("{what} Angriff {}: ungültige extras", a.tag)));
@@ -1433,6 +1704,7 @@ fn resolve_tower(t: &RawTower) -> Result<TowerDefV1, DataError> {
             discount: v.discount.clone(),
             income: v.income,
             sell_bonus: v.sell_bonus,
+            round_start: v.round_start.clone(),
             attacks: v
                 .attacks
                 .iter()
@@ -1634,6 +1906,11 @@ mod tests {
         let f = farm.variant([0, 0, 0]).unwrap();
         assert_eq!((f.income, f.sell_bonus), (Some(Income { per_round: 80.0, lives: 0 }), 0.1));
         assert_eq!(g.rules.locked_towers, vec!["farm".to_string()]);
+        // Platzhalter ohne Wirkung: nur für gesperrte Türme
+        let mut v = with_support_towers();
+        let t = v["towers"].as_array().unwrap().len() - 1;
+        v["towers"][t]["variants"][0].as_object_mut().unwrap().remove("income");
+        assert!(GameV1::from_json(&v.to_string()).unwrap().towers[t].variants[0].attacks.is_empty());
         let mut v = with_support_towers();
         v["towers"][0]["variants"][0]["attacks"][0]["delivery"] =
             serde_json::json!({"kind": "area", "radius": 30.0, "radius_offset": 2.0});
@@ -1665,6 +1942,25 @@ mod tests {
             v["towers"][t]["variants"][0]["supports"][i] = val;
         };
         rejects(&|v| v["rules"]["locked_towers"] = json!(["castle"]), "unbekannter Turm");
+        rejects(
+            &|v| {
+                let t = v["towers"].as_array().unwrap().len() - 1;
+                v["towers"][t]["variants"][0].as_object_mut().unwrap().remove("income");
+                v["rules"]["locked_towers"] = json!([]);
+            },
+            "nur als Basis gesperrter Türme",
+        );
+        rejects(
+            &|v| {
+                let t = v["towers"].as_array().unwrap().len() - 1;
+                v["towers"][t]["upgrade_costs"] = json!([[], [], [100]]);
+                v["towers"][t]["variants"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(json!({"tiers": [0, 0, 1], "range": 40.0, "footprint": 21.0, "attacks": []}));
+            },
+            "nur als Basis gesperrter Türme",
+        );
         rejects(&|v| v["rules"]["locked_towers"] = json!(["farm", "farm"]), "doppelt");
         rejects(&|v| sup(v, 1, json!({"kind": "rate", "group": "R", "factor": 1.5})), "ungültiger Support");
         rejects(&|v| sup(v, 1, json!({"kind": "rate", "group": "R", "factor": 0.0})), "ungültiger Support");

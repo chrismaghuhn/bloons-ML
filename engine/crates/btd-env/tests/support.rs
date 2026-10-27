@@ -20,6 +20,10 @@ fn mini() -> serde_json::Value {
 
 /// Mini-Fixture plus Village (oben: Tempo/Camo/MIB, unten: Rabatt) und Farm (gesperrt, wenn `lock`).
 fn data(lock: bool) -> GameV1 {
+    GameV1::from_json(&data_json(lock).to_string()).unwrap()
+}
+
+fn data_json(lock: bool) -> serde_json::Value {
     let mut v = mini();
     for t in v["towers"].as_array_mut().unwrap() {
         t["set"] = json!("primary");
@@ -51,7 +55,7 @@ fn data(lock: bool) -> GameV1 {
     if lock {
         v["rules"]["locked_towers"] = json!(["farm"]);
     }
-    GameV1::from_json(&v.to_string()).unwrap()
+    v
 }
 
 fn spec_of(d: GameV1) -> EnvSpec {
@@ -112,6 +116,54 @@ fn locked_farm_is_never_placeable_nor_drawn_as_ban() {
     assert_eq!(e.game.apply(Action::Place { kind: FARM, x: 25.0, y: 25.0 }), Err(ActionError::TowerLocked));
     // alle nicht gesperrten Türme zufällig sperren wäre zu viel
     assert!(Env::new(spec_of(data(true)), EnvConfig { max_banned_towers: 10, ..Default::default() }).is_err());
+}
+
+/// Turm ohne Mechanik als Platzhalter (docs/design-towers-step3.md §4): im Layout, aber nie baubar,
+/// nie als Zufallssperre gezogen und ohne Wirkung auf die Maske der übrigen Türme.
+#[test]
+fn placeholder_tower_is_in_the_layout_but_never_placeable() {
+    let mut v = data_json(true);
+    v["towers"].as_array_mut().unwrap().push(json!({
+        "name": "mortar", "set": "military", "cost": 600, "upgrade_costs": [[300], [], []],
+        "variants": [{"tiers": [0, 0, 0], "range": 30.0, "footprint": 11.0, "attacks": []}]
+    }));
+    v["rules"]["locked_towers"] = json!(["farm", "mortar"]);
+    let mortar = FARM as usize + 1;
+    let base = env();
+    let mut e = Env::new(
+        spec_of(GameV1::from_json(&v.to_string()).unwrap()),
+        EnvConfig { max_banned_towers: 9, seed: 5, ..Default::default() },
+    )
+    .unwrap();
+    assert_eq!(e.layout.towers, base.layout.towers + 1);
+    assert_eq!(e.layout.n_channels, base.layout.n_channels + 1);
+    // Zufallssperren: weniger als die freien Türme (9 aus mini, dazu die Village); der Platzhalter zählt nicht
+    let too_many = EnvConfig { max_banned_towers: 10, ..Default::default() };
+    assert!(Env::new(spec_of(GameV1::from_json(&v.to_string()).unwrap()), too_many).is_err());
+    let (mut obs, mut mask) = (vec![0.0; e.layout.obs_size], vec![false; e.layout.n_actions]);
+    for _ in 0..30 {
+        e.reset(&mut obs);
+        e.game.cash = Money::from_dollars(100_000);
+        e.action_mask(&mut mask);
+        let a = e.layout.a_place + mortar * e.layout.cells;
+        assert!(!mask[a..a + e.layout.cells].iter().any(|&m| m), "Platzhalter nie in der Maske");
+        assert!(!e.banned()[mortar], "feste Sperre zählt nicht als Zufallssperre");
+    }
+    assert_eq!(
+        e.game.apply(Action::Place { kind: mortar as u8, x: 25.0, y: 25.0 }),
+        Err(ActionError::TowerLocked)
+    );
+    // ohne Zufallssperren: die Maske der übrigen Türme ist dieselbe wie ohne den Platzhalter
+    let mut e = Env::new(spec_of(GameV1::from_json(&v.to_string()).unwrap()), EnvConfig::default()).unwrap();
+    let mut b = env();
+    let (mut ob, mut mb) = buffers(&b);
+    e.reset(&mut obs);
+    b.reset(&mut ob);
+    e.action_mask(&mut mask);
+    b.action_mask(&mut mb);
+    let (le, lb) = (e.layout, b.layout);
+    assert_eq!(mask[..lb.a_upgrade], mb[..lb.a_upgrade], "Bauen: gleiche Zellen für die übrigen Türme");
+    assert_eq!(mask[le.a_upgrade..], mb[lb.a_upgrade..], "Upgrade/Verkauf unverändert");
 }
 
 #[test]

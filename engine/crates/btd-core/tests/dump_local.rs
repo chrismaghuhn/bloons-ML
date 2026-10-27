@@ -84,3 +84,103 @@ fn darts_alone_hold_until_the_lead_round() {
     // Runde 28: 6 Leads, Darts (spitz) können sie nicht platzen -> 6 x 23 RBE
     assert!(g.lives <= 150 - 6 * 23, "Leads müssen durchkommen, Leben {}", g.lives);
 }
+
+/// Mortar (docs/design-towers-step3.md, Teil 1a) auf den t21-Daten: fester Zielpunkt auf der Strecke, ein
+/// Mortar irgendwo auf der Karte platzt Bloons dort.
+#[test]
+#[ignore = "braucht den lokalen Spiel-Dump (data/local/)"]
+fn mortar_hits_its_fixed_track_point() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../data/local/game_v1_tutorial_medium60_t21.json");
+    if !path.exists() {
+        eprintln!("übersprungen: {} fehlt (tools/build_game_v1.py --towers t21)", path.display());
+        return;
+    }
+    let d = GameV1::load(path).expect("lokaler Datensatz gültig");
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    let points = g.track_best_points().to_vec();
+    assert!(!points.is_empty());
+    for (r, (x, y)) in &points {
+        eprintln!("Zielpunkt Radius {r}: ({x:.1}, {y:.1})");
+        assert!((-150.0..=150.0).contains(x) && (-116.0..=116.0).contains(y));
+    }
+    let mortar = g.data().towers.iter().position(|t| t.name == "mortar").unwrap() as u8;
+    let spot = best_cells(g.data(), 1.0).into_iter().rev().find(|&(x, y)| g.can_place_at(mortar, x, y));
+    let (x, y) = spot.expect("ein Bauplatz");
+    g.cash = btd_core::Money::from_dollars(10_000);
+    g.apply(Action::Place { kind: mortar, x, y }).unwrap();
+    let r = g.play_round();
+    eprintln!("Runde 1 mit Mortar bei ({x:.0}, {y:.0}): {} Pops, {} durch", r.pops, r.leaked);
+    assert!(r.pops > 0, "Mortar trifft am Zielpunkt");
+}
+
+/// Alchemist 4-0-1 (Teil 1b) neben einem Dart auf den t21-Daten: Tränke und Säure laufen ohne Fehler, und mit
+/// Dip und Brew lässt der Dart weniger durch als ohne (gleiche Aufstellung, Alchemist 1-0-1 mit denselben
+/// Spritzern, aber ohne Tränke).
+#[test]
+#[ignore = "braucht den lokalen Spiel-Dump (data/local/)"]
+fn alchemist_brew_helps_darts() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../data/local/game_v1_tutorial_medium60_t21.json");
+    if !path.exists() {
+        eprintln!("übersprungen: {} fehlt (tools/build_game_v1.py --towers t21)", path.display());
+        return;
+    }
+    let d = Arc::new(GameV1::load(path).expect("lokaler Datensatz gültig"));
+    let cells = best_cells(&d, 32.0);
+    let run = |top: u8| {
+        let mut g = Game::new(Arc::clone(&d)).unwrap();
+        g.cash = btd_core::Money::from_dollars(100_000);
+        let kind = |n: &str| g.data().towers.iter().position(|t| t.name == n).unwrap() as u8;
+        let (dart, alch) = (kind("dart"), kind("alchemist"));
+        let (dx, dy) =
+            *cells.iter().find(|&&(x, y)| g.apply(Action::Place { kind: dart, x, y }).is_ok()).unwrap();
+        // Alchemist so nah wie möglich am Dart (Trank-Reichweite 45)
+        let mut near = cells.clone();
+        near.sort_by(|p, q| (p.0 - dx).hypot(p.1 - dy).total_cmp(&(q.0 - dx).hypot(q.1 - dy)));
+        let a = near
+            .iter()
+            .find_map(|&(x, y)| g.apply(Action::Place { kind: alch, x, y }).ok())
+            .unwrap()
+            .unwrap();
+        let (ax, ay) = g.tower(a).unwrap().pos();
+        assert!((ax - dx).hypot(ay - dy) < 45.0, "Dart in Trank-Reichweite");
+        for _ in 0..top {
+            g.apply(Action::Upgrade { tower: a, path: 0 }).unwrap();
+        }
+        g.apply(Action::Upgrade { tower: a, path: 2 }).unwrap();
+        (0..20).map(|_| g.play_round().leaked).sum::<i32>()
+    };
+    let (without, with) = (run(1), run(4));
+    eprintln!("Durchgelassen in 20 Runden: Alchemist 1-0-1 {without}, 4-0-1 {with}");
+    assert!(with < without);
+}
+
+/// Spike Factory (Teil 2a) allein auf den t21-Daten: Stapel landen auf der Strecke in Reichweite, und es
+/// kommt nur ein Bruchteil dessen durch, was ohne Turm durchkäme. (Dass liegende Spikes die Runde nicht offen
+/// halten, prüft `ground.rs`; geplatzte Bloons können hier die Runde verlängern.)
+#[test]
+#[ignore = "braucht den lokalen Spiel-Dump (data/local/)"]
+fn spike_factory_holds_the_first_rounds() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../data/local/game_v1_tutorial_medium60_t21.json");
+    if !path.exists() {
+        eprintln!("übersprungen: {} fehlt (tools/build_game_v1.py --towers t21)", path.display());
+        return;
+    }
+    let d = Arc::new(GameV1::load(path).expect("lokaler Datensatz gültig"));
+    let run = |with_spike: bool| {
+        let mut g = Game::new(Arc::clone(&d)).unwrap();
+        g.cash = btd_core::Money::from_dollars(10_000);
+        g.lives = 100_000; // ohne Turm soll die Partie nicht enden
+        if with_spike {
+            let spike = g.data().towers.iter().position(|t| t.name == "spike").unwrap() as u8;
+            let cells = best_cells(&d, 34.0);
+            assert!(cells.into_iter().any(|(x, y)| g.apply(Action::Place { kind: spike, x, y }).is_ok()));
+        }
+        (0..10).map(|_| g.play_round().leaked).sum::<i32>()
+    };
+    let (base, spike) = (run(false), run(true));
+    eprintln!("Runden 1-10 durchgelassen: ohne Turm {base}, mit Spike Factory {spike}");
+    assert!(spike * 5 < base);
+}

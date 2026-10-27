@@ -1,4 +1,5 @@
-"""train.py: Entropie-Schedule."""
+"""train.py: Entropie-Schedule, Grenze für Zufallssperren."""
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -25,3 +26,15 @@ def test_entropy_schedule_is_linear_from_the_first_rollout():
         s.on_rollout_start()
         seen.append(round(model.ent_coef, 6))
     assert seen == [0.01, 0.0055, 0.001, 0.001]
+
+
+def test_max_bans_counts_only_free_towers(tmp_path):
+    from train import max_bans
+    towers = [{"name": f"t{i}"} for i in range(21)]
+    data = {"rules": {"locked_towers": ["t0", "t1", "t2", "t3"]}, "towers": towers}
+    path = tmp_path / "d.json"
+    path.write_text(json.dumps(data))
+    assert max_bans(str(path)) == 4  # 17 frei
+    data["rules"] = {}
+    path.write_text(json.dumps(data))
+    assert max_bans(str(path)) == 5
