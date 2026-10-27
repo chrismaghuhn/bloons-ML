@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["crates/btd-data", "crates/btd-core"]
+members = ["crates/btd-data", "crates/btd-core", "crates/btd-env", "crates/btd-tools", "crates/btd-py"]
+# btd-py ist eine Python-Extension (pyo3) und wird mit maturin gebaut, nicht mit plain cargo
+# (auf macOS lässt sie sich ohne maturin nicht linken). `cargo test`/`clippy` im Root lassen sie weg.
+default-members = ["crates/btd-data", "crates/btd-core", "crates/btd-env", "crates/btd-tools"]
 
 [workspace.package]
 edition = "2021"
@@ -10,11 +13,13 @@ publish = false
 [workspace.dependencies]
 btd-data = { path = "crates/btd-data" }
 btd-core = { path = "crates/btd-core" }
+btd-env = { path = "crates/btd-env" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] } # bit-genaue Floats wie Python
 thiserror = "2"
 smallvec = "1"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
+rayon = "1"
 
 [profile.release]
 debug = 1

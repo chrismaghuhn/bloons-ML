@@ -13,8 +13,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Abhängigkeiten (ohne Torch, für die Tests nicht nötig)
-        run: pip install numpy==2.5.4 gymnasium jsonschema pytest  # numpy fix: Runden-Generator hängt am RNG-Stream
+      - uses: dtolnay/rust-toolchain@1.99.1 # wie engine/rust-toolchain.toml
+        with:
+          components: clippy
+      - name: Abhängigkeiten
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy==2.5.4 gymnasium stable-baselines3 sb3-contrib jsonschema pytest maturin  # numpy fix: Runden-Generator hängt am RNG-Stream
+      - name: Rust-Bindings (f64, bit-genau zur Python-Sim) bauen und installieren
+        working-directory: engine
+        run: |
+          cargo clippy -p btd-py --features f64 -- -D warnings
+          maturin build --release -m crates/btd-py/Cargo.toml --features f64 -o ../dist
+          pip install ../dist/*.whl
       - name: Basisdaten und Sim-Export aktuell
         run: |
           python tools/normalize.py

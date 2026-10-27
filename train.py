@@ -1,7 +1,10 @@
 """MaskablePPO auf der BTD-Simulation trainieren.
 
-    python train.py --steps 2_000_000 --envs 12
+    python train.py --steps 2_000_000 --envs 64                 # Rust-Engine (Standard)
+    python train.py --steps 200_000 --envs 12 --engine python   # Python-Referenz
     tensorboard --logdir runs
+
+Die Rust-Engine braucht die Bindings: maturin develop --release -m engine/crates/btd-py/Cargo.toml
 """
 import argparse
 
@@ -18,9 +21,14 @@ if __name__ == "__main__":
     ap.add_argument("--envs", type=int, default=8)
     ap.add_argument("--out", default="models/ppo_btd")
     ap.add_argument("--resume", default=None)
+    ap.add_argument("--engine", choices=["rust", "python"], default="rust")
     args = ap.parse_args()
 
-    env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
+    if args.engine == "rust":
+        from btd_sim.rust_env import RustVecEnv
+        env = RustVecEnv(args.envs)
+    else:
+        env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
     if args.resume:
         model = MaskablePPO.load(args.resume, env=env)
     else:

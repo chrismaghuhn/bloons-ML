@@ -1,0 +1,19 @@
+[package]
+name = "btd-py"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+name = "btd_rs"
+crate-type = ["cdylib"]
+
+[features]
+f64 = ["btd-env/f64"]
+
+[dependencies]
+btd-core.workspace = true
+btd-env.workspace = true
+numpy = "0.27.1"
+pyo3 = { version = "0.27.2", features = ["extension-module", "abi3-py310"] }

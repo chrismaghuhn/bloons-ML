@@ -1,0 +1,15 @@
+[package]
+name = "btd-tools"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+f64 = ["btd-env/f64"]
+
+[dependencies]
+btd-core.workspace = true
+btd-data.workspace = true
+btd-env.workspace = true
+rayon.workspace = true
