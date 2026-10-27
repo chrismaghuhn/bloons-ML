@@ -149,7 +149,8 @@ auswerten; dann entscheiden, ob neu trainiert wird.
 - **Unverändert:**
   - Ohne Regrow-Bloons bleibt alles gleich (sim_v0-Hash, f64-Parität).
   - Determinismus mit Regrow (gleicher Seed, gleicher Hash).
-- **Konverter:** `grow_to`/`grow_rate` für alle Regrow-Typen gesetzt, Ketten ohne Zyklen.
+- **Konverter:** `grow_rate` für alle Regrow-Typen gesetzt; jeder Schritt Elternteil→Kind passt zu `growToId`
+  bzw. `overrideChildWithColor`.
 
 ## 6. Offene Fragen an den User
 
