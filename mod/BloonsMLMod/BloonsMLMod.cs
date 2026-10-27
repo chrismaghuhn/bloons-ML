@@ -31,19 +31,20 @@ public class BloonsMLMod : BloonsTD6Mod
     public static readonly ModSettingHotkey DumpAllHotkey = new(KeyCode.F6)
     {
         displayName = "Hotkey: kompletter Dump",
-        description = "Schreibt Türme (alle Upgrade-Kombinationen), Upgrades, Bloons, Runden-Sets, Karten-Index und GameModel."
+        description = "Schreibt Türme (alle Upgrade-Kombinationen), Upgrades, Bloons, Runden-Sets, Karten-Index, GameData und GameModel."
     };
 
     public static readonly ModSettingHotkey DumpMapHotkey = new(KeyCode.F7)
     {
         displayName = "Hotkey: aktuelle Karte dumpen",
-        description = "Schreibt die zuletzt geladene Karte (Pfade, Platzierungsflächen) erneut."
+        description = "Schreibt die zuletzt geladene Karte (Pfade, Platzierungsflächen) und ihre Partie-Regeln erneut."
     };
 
     public static readonly ModSettingBool AutoDumpMaps = new(true)
     {
         displayName = "Karten automatisch dumpen",
-        description = "Jede gestartete Karte wird beim Laden nach maps/<Karte>.json geschrieben."
+        description = "Beim Start jeder Partie: Karte nach maps/<Karte>.json (nur wenn noch nicht vorhanden) und " +
+                      "Partie-Regeln nach matches/<Modus>_<Schwierigkeit>_<Karte>.json."
     };
 
     public static readonly ModSettingButton DumpAllButton = new()
@@ -63,12 +64,12 @@ public class BloonsMLMod : BloonsTD6Mod
     public override void OnUpdate()
     {
         if (DumpAllHotkey.JustPressed()) GameDataDumper.Start();
-        if (DumpMapHotkey.JustPressed()) MapDumper.DumpLast();
+        if (DumpMapHotkey.JustPressed()) MapDumper.DumpLast(force: true);
     }
 
     public override void OnNewGameModel(GameModel result, MapModel map)
     {
         MapDumper.Remember(result, map);
-        if (AutoDumpMaps) MapDumper.DumpLast();
+        if (AutoDumpMaps) MapDumper.DumpLast(force: false);
     }
 }

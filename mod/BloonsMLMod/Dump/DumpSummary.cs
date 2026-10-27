@@ -26,7 +26,7 @@ public sealed class DumpSummary
     {
         "name", "baseId", "maxHealth", "speed", "leakDamage", "danger", "layerNumber",
         "isCamo", "isGrow", "isFortified", "isMoab", "isBoss", "bloonProperties", "tags",
-        "distributeDamageToChildren", "childBloonModels"
+        "distributeDamageToChildren"
     };
 
     private readonly string gameVersion;
@@ -85,8 +85,9 @@ public sealed class DumpSummary
     public JObject ToJson() => new()
     {
         ["gameVersion"] = gameVersion,
-        ["costRounding"] = "Kosten je Schwierigkeit: CostHelper.CostForDifficulty (Mod Helper): " +
-                           "Medium-Basispreis x {0.85, 1, 1.08, 1.2}, auf 5 gerundet",
+        ["costRounding"] = "costByDifficulty berechnet mit CostHelper.CostForDifficulty aus Mod Helper " +
+                           "(Medium-Preis x {0.85, 1, 1.08, 1.2}, auf 5 gerundet), nicht aus dem Spiel gelesen",
+        ["upgradeTierPath"] = "upgrades[].tier und .path zählen ab 0 (tier 0 = erstes Upgrade, path 0 = oberer Pfad)",
         ["towers"] = towers,
         ["upgrades"] = upgrades,
         ["bloons"] = bloons,

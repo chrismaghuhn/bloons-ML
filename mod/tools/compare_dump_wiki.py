@@ -6,9 +6,9 @@ Vergleicht pro Turm:
   - jede Wiki-Attacke (damage/pierce/cooldown, ggf. blast_radius) gegen alle schadensverursachenden
     Projektile im Dump; "Treffer" = es gibt ein Dump-Projektil mit genau diesen Werten.
 
-Liest nur; schreibt den Bericht nach <dump>/compare_wiki.md (liegt im gitignored Dump-Ordner).
+Ändert weder Dump noch Wiki-Daten; schreibt nur den Bericht nach <dump>/compare_wiki.md (im gitignored Dump-Ordner).
 
-    python mod/tools/compare_dump_wiki.py [--dump data/raw/game_dump/57.4] [--wiki data/base/towers]
+    .venv/bin/python mod/tools/compare_dump_wiki.py [--dump data/raw/game_dump/57.4] [--wiki data/base/towers]
 """
 from __future__ import annotations
 
@@ -29,8 +29,9 @@ def short_type(obj) -> str:
 def latest_dump(root: Path) -> Path:
     if not root.is_dir():
         raise SystemExit(f"kein Dump-Ordner {root} (in einem Worktree --dump angeben)")
+    # .tmp-*/.old-* sind Reste eines laufenden oder abgebrochenen Dumps der Mod
     versions = sorted(
-        (p for p in root.iterdir() if p.is_dir()),
+        (p for p in root.iterdir() if p.is_dir() and ".tmp-" not in p.name and ".old-" not in p.name),
         key=lambda p: [(int(x), "") if x.isdigit() else (-1, x) for x in p.name.split(".")],
     )
     if not versions:

@@ -5,7 +5,8 @@ Mod für Bloons TD 6, die die Spieldaten direkt aus den Models des Spiels liest.
 - **Stufe 1 (jetzt): Daten-Dump.** Türme mit *allen* gültigen Upgrade-Kombinationen (inkl. Crosspaths wie 2-0-3,
   Helden-Level, Paragons, Sub-Towers), Upgrades, Bloons, Runden-Sets mit Spawn-Timing, Karten-Geometrie und
   Spielversion, als JSON nach `data/raw/game_dump/<version>/`. Das ist eine weitere Rohdatenquelle neben
-  `data/raw/towers/` (Wiki), siehe Schichtenmodell in `docs/engine-design.md` §4.
+  `data/raw/towers/` (Wiki), siehe Schichtenmodell in `docs/engine-design.md` §4. Welche Rolle sie dort bekommt und
+  ob daraus abgeleitete Basisdaten ins (öffentliche) Repo dürfen, ist noch nicht entschieden.
 - Stufe 2 (später): Recorder, der echte Partien aufzeichnet (Platzierungen mit exakten Koordinaten, Upgrades,
   Leben/Geld pro Runde) und Replays für die Kalibrierung schreibt → `Recorder/`.
 - Stufe 3 (später): Live-Bridge, über die der Python-Agent per lokalem Socket das echte Spiel steuert → `Bridge/`.
@@ -66,6 +67,10 @@ Haupt-Checkout `…/bloons/data/raw/game_dump`, nicht ein Worktree). Beide lasse
 (abschalten mit `-p:CopyToMods=false`). Am besten bei geschlossenem Spiel bauen; die alte DLL wird vor dem
 Kopieren gelöscht, die neue erst beim nächsten Start geladen.
 
+`DumpRoot` wird beim Build als Standardwert in die DLL eingebacken. Hat man den Dump-Ordner im Spiel einmal in den
+Mod-Einstellungen geändert, speichert Mod Helper diesen Wert und er gilt weiter; eine spätere Änderung von `DumpRoot`
+in `local.props` wirkt dann nicht mehr (Einstellung im Spiel zurücksetzen).
+
 Referenziert werden `MelonLoader/net6/*` (MelonLoader, Harmony, Il2CppInterop, Newtonsoft.Json),
 `MelonLoader/Il2CppAssemblies/*.dll` und `Mods/Btd6ModHelper.dll`, alles mit `Private=false`.
 
@@ -74,14 +79,19 @@ Referenziert werden `MelonLoader/net6/*` (MelonLoader, Harmony, Il2CppInterop, N
 | Aktion | Wie |
 |---|---|
 | Kompletter Dump | **F6** (am besten im Hauptmenü) oder Mods → BloonsML → „Dump“ |
-| Karte dumpen | automatisch beim Start jeder Partie; **F7** schreibt die zuletzt geladene Karte erneut |
+| Karte + Partie-Regeln | automatisch beim Start jeder Partie (Karte nur, wenn sie noch fehlt); **F7** schreibt beides erneut |
 | Einstellungen | Mods → BloonsML: Dump-Ordner, Hotkeys, Auto-Karten-Dump |
 
 Fortschritt und Fehler stehen im MelonLoader-Log (`BloonsTD6/MelonLoader/Latest.log`, Präfix `[BloonsML]`).
 Der Dump dauert etwa 35 s (57.4), das Spiel bleibt dabei bedienbar, ruckelt aber.
 
-Für **alle Karten** muss man jede Karte einmal starten (Geometrie wird erst beim Laden einer Partie erzeugt).
-Für das Projekt reicht vorerst Monkey Meadow.
+Für **alle Karten** muss man jede Karte einmal starten (Geometrie wird erst beim Laden einer Partie erzeugt), für die
+Regeln eines Modus (z.B. CHIMPS) eine Partie in diesem Modus. Für das Projekt reicht vorerst Monkey Meadow, intern
+`Tutorial`.
+
+Ein kompletter Dump schreibt erst in `<Spielversion>.tmp-<runId>/` und ersetzt `<Spielversion>/` am Ende in einem
+Schritt; `maps/` und `matches/` aus dem alten Stand werden übernommen. Bricht der Dump ab (Fehler, Absturz), bleibt der
+alte Stand unverändert; der Rest wird beim nächsten Dump aufgeräumt. `manifest.json` trägt die `runId`.
 
 ## Ausgabeformat
 
@@ -89,30 +99,51 @@ Für das Projekt reicht vorerst Monkey Meadow.
 
 | Pfad | Inhalt |
 |---|---|
-| `manifest.json` | Spiel-/Unity-/Mod-Version, Zeitpunkt, Dauer, Anzahl Dateien je Kategorie, Fehlerliste |
+| `manifest.json` | `runId`, Spiel-/Unity-/Mod-Version, Zeitpunkt, Dauer, Anzahl Dateien je Kategorie, Fehlerliste |
 | `summary.json` | Kleine Übersicht (siehe unten) |
 | `towers/<baseId>/<name>.json` | Ein `TowerModel` je gültiger Kombination, z.B. `towers/DartMonkey/DartMonkey-203.json`; Helden als `Quincy 1…20`, Paragons, Sub-Towers |
-| `upgrades/<name>.json` | `UpgradeModel` (Kosten, Pfad, Tier, XP) |
+| `upgrades/<name>.json` | `UpgradeModel` (Kosten, `path` und `tier` ab 0 gezählt, XP); Namen sind die internen des Spiels (z.B. `Buccaneer-Faster Shooting`, `Large Calibre`) |
 | `bloons/<baseId>/<name>.json` | `BloonModel` je Variante (z.B. `Red`, `RedCamo`, `CeramicRegrowFortified`, `Moab`, …) |
-| `rounds/<RoundSet>/_set.json` | `RoundSetModel` ohne Runden, plus `roundCount` |
+| `rounds/<RoundSet>/_set.json` | `name`, `linkedIncomeSet` (→ `gamedata/incomeSets.json`), `roundCount` |
 | `rounds/<RoundSet>/NNN.json` | `RoundModel` der Runde NNN (1-basiert): `groups[]` mit `bloon`, `start`, `end`, `count`, ggf. `emissions` |
 | `maps/_index.json` | Metadaten aller Karten (`id`, `difficulty`, …) aus `GameData.mapSet` |
-| `maps/<mapName>.json` | `{gameVersion, mapName, difficultyAtDump, map: MapModel}`: Pfade (`paths[].points[].point`), Flächen (`areas[]` mit `polygon` und `type`), Blocker, Spawner |
-| `gamemodel/<feld>.json` | Alle übrigen Felder von `GameModel` einzeln (z.B. Powers, Wissensbaum, Buff-Indikatoren, globale Konstanten) |
+| `maps/<mapName>.json` | `{gameVersion, mapName, dumpedInMode, dumpedInDifficulty, reverseMode, map: MapModel}`: Pfade (`paths[].points[].point`), Flächen (`areas[]` mit `polygon` und `type`), Blocker, Spawner |
+| `matches/<Modus>_<Schwierigkeit>_<Karte>.json` | Partie-Felder des GameModels einer echten Partie: `cash`, `startingHealth`, `maxHealth`, `startRound`/`endRound`, `roundSet`, `incomeSet`, `sellMultiplier`, `AllMods`, `gameMode`, `difficultyId`, … (CHIMPS hat die Modus-ID `Clicks`) |
+| `gamedata/<feld>.json` | Alle übrigen Felder von `GameData` einzeln, u.a. `incomeSets` (Rundengeld), `mods` (Schwierigkeits- und Modus-Presets wie CHIMPS), `modesData`, Bosse, Artefakte; auch reine Asset-/UI-Felder |
+| `gamemodel/<feld>.json` | Statische Felder von `GameModel` einzeln (z.B. `freeplayGroups`, Powers, Wissensbaum, Buff-Indikatoren, Helden-/Turm-Sets, globale Skalierungen). Ohne Duplikate (`upgradesByName`, `bloonsByName`, Backing-Fields) und ohne Partie-Felder, die im Menü nur Standardwerte haben (stehen in `matches/`) |
 
 **Rohformat:** Jede Datei ist eine möglichst unveränderte Serialisierung des Spiel-Models über den Serializer von
 Mod Helper (`Il2CppJsonConvert`). Jedes Objekt trägt `"$type"` mit Typname und Assembly, z.B.
 `Il2CppAssets.Scripts.Models.Towers.Projectiles.Behaviors.DamageModel, Assembly-CSharp` (zum Vergleichen am Komma
 trennen). Ein Turm enthält also seine komplette
-Behavior-Hierarchie: `AttackModel` → `weapons[]` (`WeaponModel`, `Rate` = Cooldown in s) → `projectile`
-(`ProjectileModel`, `pierce`, `radius`) → `behaviors[]` (`DamageModel` mit `damage` und `immuneBloonProperties`,
-`TravelStraitModel` mit `Speed`/`Lifespan`, `CreateProjectileOnContactModel` für Explosionen,
+Behavior-Hierarchie: `AttackModel` → `weapons[]` (`WeaponModel`, `rate` = Cooldown in s, `emission` z.B.
+`ParallelEmissionModel` mit `count`) → `projectile` (`ProjectileModel`, `pierce`, `radius`) → `behaviors[]`
+(`DamageModel` mit `damage` und `immuneBloonProperties`, `TravelStraitModel` mit `speed`/`lifespan`,
+`CreateProjectileOnContactModel` für Explosionen,
 `DamageModifierForTagModel` für Bonusschaden gegen MOAB/Keramik/…, Filter für Camo usw.). Reichweite: `range`
 am Turm und an den Attacks; Camo-Erkennung über `FilterInvisibleModel`/Detection-Behaviors.
 Feldnamen entsprechen den Feldern im Spiel und können sich mit Updates ändern.
 
-Einheiten: Distanzen in Spiel-Einheiten (dieselben wie im Wiki), Cooldowns/Lebensdauern in Sekunden.  Ausnahme:
+Der Serializer gibt viele Werte doppelt aus, als Feld und als Getter (`rate`/`Rate`, `speed`/`Speed`,
+`pierce`/`CappedPierce`, …). **Kanonisch ist das kleingeschriebene Feld**; die Getter können abgeleitet oder gedeckelt
+sein. `immuneBloonProperties` ist ein Bitfeld (`BloonProperties`: 1 = Lead, 2 = Black, 4 = White, 8 = Purple,
+16 = Frozen, 32 = Immune, 64 = Glass; z.B. 17 = Lead + Frozen für spitze Projektile).
+
+Einheiten: Distanzen in Spiel-Einheiten (dieselben wie im Wiki), Cooldowns/Lebensdauern in Sekunden. Ausnahme:
 `start`/`end` in `RoundModel.groups` zählen in Frames bei 60 fps (Runde 1: 20 Red, `start` 0, `end` 1050.75 ≈ 17,5 s).
+
+### Koordinaten
+
+Karten, Pfade und (später) Turm-Positionen nutzen das Simulations-Koordinatensystem des Spiels:
+
+- Ursprung in der Mitte des Spielfelds, `x` nach rechts, `y` nach unten (Bildschirm), Einheiten wie Reichweiten.
+- Spielfeld: die erste Fläche jeder Karte (`areas[0]`, `AreaModel_BaseArea`) ist das Rechteck x −150…150,
+  y −116…116.
+- Pfade beginnen und enden außerhalb davon. Monkey Meadow (`Tutorial`): Start bei x −333.6, y −18.9 (links
+  außerhalb), Ende bei x −17.9, y 315.1 (unten außerhalb), 682 Punkte.
+- Die Python-Sim (`btd_sim/`) und ihre Replays rechnen in einem 20×15-Raster (100 px je Zelle auf einem
+  2000×1500-Screenshot). Die Umrechnung Raster ↔ Spielkoordinaten ist noch nicht kalibriert; das kommt mit dem
+  Recorder (Stufe 2).
 
 **`summary.json`** (Übersicht, aus den Rohdaten abgeleitet):
 
@@ -124,9 +155,10 @@ Einheiten: Distanzen in Spiel-Einheiten (dieselben wie im Wiki), Cooldowns/Leben
 - `roundSets`: Anzahl Runden und Gruppen je Runde
 - `maps[]`: `id`, `difficulty`
 
-Kosten je Schwierigkeit sind der Medium-Preis × {0.85, 1, 1.08, 1.2}, auf 5 gerundet (`CostHelper` von Mod Helper,
-wie im Spiel). Der Freeplay-/Late-Game-Lebenspunkte-Zuwachs für MOABs steht nicht als Tabelle in den Models,
-sondern ist Spiel-Code; falls er als Konstante im GameModel steckt, liegt er unter `gamemodel/`.
+`costByDifficulty` ist nicht aus dem Spiel gelesen, sondern mit `CostHelper` aus Mod Helper berechnet: Medium-Preis
+× {0.85, 1, 1.08, 1.2}, auf 5 gerundet. Für Modi mit eigenem Kostenfaktor gelten die Mods in `gamedata/mods.json`
+bzw. `matches/`. Upgrade-`tier` und `path` zählen ab 0. Der Freeplay-/Late-Game-Lebenspunkte-Zuwachs für MOABs steht nicht als Tabelle in den Models,
+sondern ist Spiel-Code; die Freeplay-Runden selbst stehen in `gamemodel/freeplayGroups.json`.
 
 Der Dump-Ordner bekommt eine eigene `.gitignore` mit `*`, damit die Daten auch in einem Checkout ohne passende
 Repo-`.gitignore` nicht versehentlich committet werden.
@@ -134,14 +166,16 @@ Repo-`.gitignore` nicht versehentlich committet werden.
 ## Plausibilitätsprüfung gegen das Wiki
 
 ```bash
-python mod/tools/compare_dump_wiki.py --dump data/raw/game_dump/57.4
+.venv/bin/python mod/tools/compare_dump_wiki.py --dump data/raw/game_dump/57.4
 ```
 
 Vergleicht Basis und reine Pfad-Tiers jedes Turms mit `data/base/towers/` (Kosten, Reichweite, Camo der
 ersten schadensverursachenden Attacke, damage/pierce/cooldown jeder Wiki-Attacke) und schreibt `compare_wiki.md` in
 den (gitignored) Dump-Ordner. Stand 57.4: Kosten 416/416 und Reichweite 416/416 gleich, Camo 351/355
 (Beast Handler und Village ohne Ballista nicht prüfbar), Attacken 445/500 exakt. Nicht gezählt, aber im Bericht
-aufgeführt: Wiki-Attacken ohne `damage` oder mit `damage` 0 (Buffs, Kleber, Effekte) und Attacken von Sub-Towern (Beast-Handler-Tiere liegen als eigene Türme
-unter `towers/`).
+aufgeführt: Wiki-Attacken ohne `damage` oder mit `damage` 0 (Buffs, Kleber, Effekte) und Attacken von
+Sub-Towern (Beast-Handler-Tiere liegen als eigene Türme unter `towers/`). Tests mit synthetischen Daten:
+`tests/test_compare_dump_wiki.py`.
 
-Ein Fehler bei einem einzelnen Objekt (auch eine Dateinamen-Kollision) bricht den Dump nicht ab; er steht in `manifest.json` → `errors` und im Log.
+Ein Fehler bei einem einzelnen Objekt (auch einer einzelnen Runde oder einer Dateinamen-Kollision) bricht den Dump
+nicht ab; er steht in `manifest.json` → `errors` und im Log.

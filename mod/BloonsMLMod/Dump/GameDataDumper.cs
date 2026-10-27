@@ -11,12 +11,11 @@ using Il2CppAssets.Scripts.Unity;
 using MelonLoader;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
-using Il2CppObject = Il2CppSystem.Object;
 
 namespace BloonsML.Dump;
 
 /// <summary>
-/// Kompletter Dump der statischen Spieldaten aus Game.instance.model und GameData.Instance.
+/// Kompletter Dump der statischen Spieldaten aus Game.instance.model und GameData.Instance (F6).
 /// Läuft als Coroutine, damit das Spiel zwischendurch weiterrendert.
 /// </summary>
 public static class GameDataDumper
@@ -24,11 +23,18 @@ public static class GameDataDumper
     /// <summary>Nach so vielen geschriebenen Objekten einen Frame abgeben.</summary>
     private const int ItemsPerFrame = 25;
 
-    /// <summary>GameModel-Felder, die eigene Ordner bekommen oder nur Laufzeit-Caches sind.</summary>
-    private static readonly HashSet<string> GameModelSkip = new(StringComparer.OrdinalIgnoreCase)
+    /// <summary>GameData-Felder mit eigenem Ordner (rounds/, maps/_index.json).</summary>
+    private static readonly HashSet<string> GameDataSkip = new(StringComparer.OrdinalIgnoreCase)
     {
-        "towers", "upgrades", "bloons", "searchCache", "childDependants"
+        "roundSets", "mapSet"
     };
+
+    /// <summary>
+    /// Große, verschachtelte GameData-Felder, die Mod Helper beim eigenen Export teilweise ausblendet.
+    /// Kommen zuletzt, damit ein Problem (im schlimmsten Fall ein Absturz) den Rest nicht verhindert;
+    /// dank des temporären Ordners bleibt der alte Dump dann erhalten, und das Log nennt das Feld.
+    /// </summary>
+    private static readonly string[] GameDataLast = { "assetLibrary", "questData", "rogueData", "frontierData", "legendsData" };
 
     public static bool Running { get; private set; }
 
@@ -75,7 +81,7 @@ public static class GameDataDumper
         DumpRun run;
         try
         {
-            run = DumpRun.ForCurrentGame();
+            run = DumpRun.Staged();
         }
         catch (Exception e)
         {
@@ -83,7 +89,7 @@ public static class GameDataDumper
             yield break;
         }
 
-        BloonsMLMod.Log.Msg($"Dump startet: Spielversion {run.GameVersion} -> {run.Root}");
+        BloonsMLMod.Log.Msg($"Dump {run.RunId} startet: Spielversion {run.GameVersion} -> {run.Root}");
         var model = Game.instance.model;
         var gameData = GameData.Instance;
         var summary = new DumpSummary(run.GameVersion);
@@ -128,10 +134,34 @@ public static class GameDataDumper
         }
         BloonsMLMod.Log.Msg($"Bloons: {Count(run, "bloons")}");
 
-        // --- Runden-Sets: eine Datei pro Runde (mit Gruppen-Timing und, falls vorhanden, vorberechneten Emissions)
+        // --- Runden-Sets: eine Datei pro Runde (mit Gruppen-Timing und, falls vorhanden, vorberechneten Emissions);
+        //     jede Runde einzeln, damit eine fehlerhafte Runde nicht das ganze Set kostet
         foreach (var roundSet in gameData.roundSets)
         {
-            TryDump(run, () => DumpRoundSet(run, summary, roundSet), $"roundSet {roundSet?.name}");
+            var setName = roundSet?.name ?? "unnamed";
+            var rounds = new JArray();
+            var i = 0;
+            foreach (var round in roundSet.rounds)
+            {
+                var number = ++i;
+                TryDump(run, () =>
+                {
+                    var jo = ModelJson.ToJToken(round);
+                    run.Write("rounds", jo, "rounds", setName, $"{number:D3}.json");
+                    rounds.Add(jo);
+                }, $"round {setName}/{number}");
+            }
+            TryDump(run, () =>
+            {
+                var set = new JObject
+                {
+                    ["name"] = setName,
+                    ["linkedIncomeSet"] = roundSet.linkedIncomeSet,
+                    ["roundCount"] = i
+                };
+                run.Write("roundSets", set, "rounds", setName, "_set.json");
+                summary.AddRoundSet(setName, rounds);
+            }, $"roundSet {setName}");
             yield return null;
         }
         BloonsMLMod.Log.Msg($"Runden: {Count(run, "rounds")} in {Count(run, "roundSets")} Sets");
@@ -146,8 +176,20 @@ public static class GameDataDumper
         }, "map index");
         yield return null;
 
-        // --- Restliches GameModel: jedes Feld einzeln, damit ein kaputtes Feld nicht alles blockiert
-        foreach (var prop in GameModelProperties())
+        // --- Restliches GameData (Income-Sets, Modus-/Schwierigkeits-Mods, Modi, …): ein File pro Feld
+        foreach (var prop in GameDataProperties())
+        {
+            BloonsMLMod.Log.Msg($"gamedata.{prop.Name}");
+            TryDump(run, () =>
+            {
+                var value = prop.GetValue(gameData);
+                run.Write("gameData", ModelJson.ToJTokenAny(value), "gamedata", prop.Name + ".json");
+            }, $"gameData.{prop.Name}");
+            yield return null;
+        }
+
+        // --- Restliches GameModel (nur statische Daten; Partie-Felder schreibt MapDumper nach matches/)
+        foreach (var prop in GameModelFields.Static())
         {
             TryDump(run, () =>
             {
@@ -157,10 +199,11 @@ public static class GameDataDumper
             yield return null;
         }
 
-        // --- Zusammenfassung + Manifest
+        // --- Zusammenfassung + Manifest, danach temporären Ordner an die endgültige Stelle setzen
         TryDump(run, () => run.Write("summary", summary.ToJson(), "summary.json"), "summary");
         var manifest = new JObject
         {
+            ["runId"] = run.RunId,
             ["gameVersion"] = run.GameVersion,
             ["unityVersion"] = Application.unityVersion,
             ["modVersion"] = typeof(BloonsMLMod).Assembly.GetName().Version?.ToString(),
@@ -171,28 +214,24 @@ public static class GameDataDumper
         };
         TryDump(run, () => run.Write("manifest", manifest, "manifest.json"), "manifest");
 
-        BloonsMLMod.Log.Msg($"Dump fertig in {sw.Elapsed.TotalSeconds:F1}s, {run.Errors.Count} Fehler -> {run.Root}");
-    }
-
-    private static void DumpRoundSet(DumpRun run, DumpSummary summary, Il2CppObject roundSet)
-    {
-        var jo = (JObject)ModelJson.ToJToken(roundSet);
-        var name = jo.Value<string>("name") ?? "unnamed";
-        var rounds = jo["rounds"] as JArray ?? new JArray();
-        jo.Remove("rounds");
-        jo["roundCount"] = rounds.Count;
-        run.Write("roundSets", jo, "rounds", name, "_set.json");
-        for (var i = 0; i < rounds.Count; i++)
+        try
         {
-            run.Write("rounds", rounds[i], "rounds", name, $"{i + 1:D3}.json");
+            run.Commit();
         }
-        summary.AddRoundSet(name, rounds);
+        catch (Exception e)
+        {
+            BloonsMLMod.Log.Error($"Dump liegt in {run.Root}, konnte nicht nach {run.FinalRoot} verschoben werden: {e}");
+            yield break;
+        }
+        BloonsMLMod.Log.Msg($"Dump fertig in {sw.Elapsed.TotalSeconds:F1}s, {run.Errors.Count} Fehler -> {run.FinalRoot}");
     }
 
-    private static IEnumerable<PropertyInfo> GameModelProperties() =>
-        typeof(GameModel).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.DeclaringType == typeof(GameModel) && p.CanRead && p.GetIndexParameters().Length == 0)
-            .Where(p => !GameModelSkip.Contains(p.Name));
+    /// <summary>GameData-Felder; die großen aus <see cref="GameDataLast"/> am Ende.</summary>
+    private static IEnumerable<PropertyInfo> GameDataProperties() =>
+        typeof(GameData).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.DeclaringType == typeof(GameData) && p.CanRead && p.GetIndexParameters().Length == 0)
+            .Where(p => !GameDataSkip.Contains(p.Name))
+            .OrderBy(p => Array.IndexOf(GameDataLast, p.Name));
 
     private static void TryDump(DumpRun run, Action action, string what)
     {
