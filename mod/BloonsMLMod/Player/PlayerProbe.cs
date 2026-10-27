@@ -64,6 +64,7 @@ public static class PlayerProbe
             return;
         }
         running = true;
+        cancelled = false;
         MelonCoroutines.Start(Guarded(RunPart1(bridge)));
     }
 
@@ -72,6 +73,16 @@ public static class PlayerProbe
     {
         midRoundArmed = false;
         probedSim = null;
+        cancelled = true;
+    }
+
+    private static bool cancelled;
+
+    /// <summary>Läuft der Test noch in der Partie, in der er gestartet wurde?</summary>
+    private static bool Alive()
+    {
+        var sim = InGame.instance?.bridge?.Simulation;
+        return !cancelled && probedSim != null && sim != null && sim.Pointer == probedSim.Pointer;
     }
 
     private static IEnumerator Guarded(IEnumerator inner)
@@ -117,6 +128,7 @@ public static class PlayerProbe
             BloonsMLMod.Log.Msg("Player-Test: Trace eingeschaltet (bleibt an, bis F9 oder Einstellung)");
         }
         for (var i = 0; i < MaxWaitFrames && !Recorder.TraceRecorder.Active; i++) yield return null;
+        if (!Alive()) yield break;
 
         var dart = FindTower(bridge, "DartMonkey");
         Check("state_before", State(bridge));
@@ -125,24 +137,31 @@ public static class PlayerProbe
         // --- A: Platzieren an exakter und krummer Koordinate (Plätze aus Sim-Replays auf Monkey Meadow)
         var a1 = new PlaceResult();
         yield return Place(bridge, dart, -35.0f, 39.0f, "place_exact", a1);
+        if (!Alive()) yield break;
         var a2 = new PlaceResult();
         yield return Place(bridge, dart, -35.37f, 59.81f, "place_fractional", a2);
+        if (!Alive()) yield break;
 
         // --- B: Fehlerfälle (belegt nur, wenn der Platz wirklich belegt ist)
         if (a1.Tower != null) yield return Place(bridge, dart, -35.0f, 39.0f, "place_occupied", new PlaceResult());
         else Check("place_occupied", new JObject { ["skipped"] = "place_exact hat keinen Turm erzeugt" });
+        if (!Alive()) yield break;
         yield return Place(bridge, dart, -100.0f, -18.9f, "place_on_track", new PlaceResult());
+        if (!Alive()) yield break;
         bridge.SetCash(10, bridge.GetInputId());
         yield return Place(bridge, dart, 60.0f, 60.0f, "place_no_cash", new PlaceResult());
+        if (!Alive()) yield break;
         bridge.SetCash(5000, bridge.GetInputId());
 
         // --- C: Upgrade (mit Geld, dann ohne)
         if (a1.Tower != null) yield return Upgrade(bridge, a1.Tower, 0, "upgrade_with_cash");
+        if (!Alive()) yield break;
         if (a2.Tower != null)
         {
             bridge.SetCash(1, bridge.GetInputId());
             yield return Upgrade(bridge, a2.Tower, 1, "upgrade_no_cash");
         }
+        if (!Alive()) yield break;
 
         // --- D: Geld und Leben setzen (Bruchteil, CHIMPS max. 1 Leben)
         bridge.SetCash(1234.5, bridge.GetInputId());
@@ -155,6 +174,7 @@ public static class PlayerProbe
             ["before"] = healthBefore, ["set"] = 5, ["read"] = sim.health.Value, ["max"] = sim.maxHealth.Value
         });
         yield return null;
+        if (!Alive()) yield break;
         Check("health_next_frame", new JObject { ["read"] = sim.health.Value, ["max"] = sim.maxHealth.Value });
 
         // --- E: bridge.SetRound vor dem ersten Rundenstart (welche Runde startet danach? -> Trace round_start/spawn)
@@ -227,6 +247,7 @@ public static class PlayerProbe
         entry["callFrame"] = Time.frameCount;
         entry["callSimTime"] = sim.time.elapsed;
         var fired = false;
+        var waitedOut = false;
         bridge.CreateTowerAt(inputId, pos, model, ObjectId.Invalid, false,
             (Il2CppSystem.Action<bool>)(Action<bool>)(ok =>
             {
@@ -235,6 +256,7 @@ public static class PlayerProbe
                 entry["callbackFrame"] = Time.frameCount;
                 entry["callbackSimTime"] = bridge.Simulation?.time.elapsed;
                 entry["callbackRoundTime"] = bridge.Simulation?.roundTime.elapsed;
+                if (waitedOut) Save(); // kam nach Ablauf der Wartezeit: sonst ginge er verloren
             }),
             false, false, false, -1, true, -1);
         entry["callbackFiredDuringCall"] = fired;
@@ -243,13 +265,14 @@ public static class PlayerProbe
 
         // warten, bis Callback da und Warteschlange leer (oder Zeit um)
         var waited = 0;
-        while ((!fired || bridge.actions.Count > 0) && waited < MaxWaitFrames)
+        while ((!fired || bridge.actions.Count > 0) && waited < MaxWaitFrames && Alive())
         {
             waited++;
             yield return null;
         }
         entry["waitedFrames"] = waited;
         entry["callbackFired"] = fired;
+        waitedOut = true;
 
         result.Tower = InGame.instance.GetTowers().FirstOrDefault(t => !before.Contains(t.Id.Raw));
         entry["created"] = result.Tower != null;
@@ -278,6 +301,7 @@ public static class PlayerProbe
         };
         Check(name, entry);
         var fired = false;
+        var waitedOut = false;
         bridge.UpgradeTower(inputId, tower.Id, path, 0,
             (Il2CppSystem.Action<bool>)(Action<bool>)(ok =>
             {
@@ -285,17 +309,19 @@ public static class PlayerProbe
                 entry["callback"] = ok;
                 entry["callbackFrame"] = Time.frameCount;
                 entry["callbackSimTime"] = bridge.Simulation?.time.elapsed;
+                if (waitedOut) Save();
             }));
         entry["callbackFiredDuringCall"] = fired;
         entry["queuedActionsAfterCall"] = bridge.actions.Count;
         var waited = 0;
-        while ((!fired || bridge.actions.Count > 0) && waited < MaxWaitFrames)
+        while ((!fired || bridge.actions.Count > 0) && waited < MaxWaitFrames && Alive())
         {
             waited++;
             yield return null;
         }
         entry["waitedFrames"] = waited;
         entry["callbackFired"] = fired;
+        waitedOut = true;
         var current = bridge.GetTowerFromId(tower.Id);
         entry["tiersAfter"] = current == null ? null : string.Join("", current.towerModel.tiers);
         entry["cashAfter"] = bridge.GetCash(inputId);
