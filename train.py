@@ -55,6 +55,10 @@ if __name__ == "__main__":
                     help="conv: btd_sim.policy.GridPolicy (Standard mit --engine rust), mlp: flaches MLP")
     ap.add_argument("--conv-width", type=int, default=32, help="Kanäle der Faltungs-Policy")
     ap.add_argument("--conv-blocks", type=int, default=4, help="Residual-Blöcke der Faltungs-Policy")
+    ap.add_argument("--amp", action=argparse.BooleanOptionalAction, default=True,
+                    help="Faltungs-Policy in bf16 rechnen (nur CUDA, ~2x schneller)")
+    ap.add_argument("--compile", action=argparse.BooleanOptionalAction, default=True,
+                    help="Faltungs-Policy mit torch.compile übersetzen (nur CUDA)")
     ap.add_argument("--seed", type=int, default=None)
     args = ap.parse_args()
     if args.arch is None:
@@ -77,7 +81,7 @@ if __name__ == "__main__":
             from btd_sim.policy import GridPolicy, grid_spec
             policy = GridPolicy
             grid = grid_spec(args.data or DEFAULT_DATA, env.observation_space.shape[0], env.action_space.n)
-            policy_kwargs = dict(grid=grid, width_ch=args.conv_width, blocks=args.conv_blocks)
+            policy_kwargs = dict(grid=grid, width_ch=args.conv_width, blocks=args.conv_blocks, amp=args.amp)
         else:
             policy, policy_kwargs = "MlpPolicy", dict(net_arch=[512, 256])
         model = MaskablePPO(
@@ -87,6 +91,9 @@ if __name__ == "__main__":
             policy_kwargs=policy_kwargs, seed=args.seed,
             tensorboard_log="runs", verbose=1, device=args.device,
         )
+    if args.compile and args.engine == "rust" and hasattr(model.policy.mlp_extractor, "compile") \
+            and model.device.type == "cuda":
+        model.policy.mlp_extractor.compile(model.device)
     model.learn(total_timesteps=args.steps,
                 callback=[CheckpointCallback(100_000 // args.envs, "models/checkpoints", name_prefix=Path(args.out).name), RoundLogger()],
                 reset_num_timesteps=not args.resume, tb_log_name=Path(args.out).name)

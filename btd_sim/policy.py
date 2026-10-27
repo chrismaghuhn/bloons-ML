@@ -12,6 +12,7 @@ Aktions-Layout wie `Layout` in engine/crates/btd-env/src/lib.rs:
 from __future__ import annotations
 
 import json
+import warnings
 
 import torch
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
@@ -48,9 +49,11 @@ class ResBlock(nn.Module):
 class GridNet(nn.Module):
     """Gemeinsamer Rumpf für Policy und Wert (sb3: `mlp_extractor`)."""
 
-    def __init__(self, channels, height, width, scalars, heads, width_ch=32, blocks=4, scalar_dim=32):
+    def __init__(self, channels, height, width, scalars, heads, width_ch=32, blocks=4, scalar_dim=32, amp=False):
         super().__init__()
         self.c, self.h, self.w, self.s = channels, height, width, scalars
+        # Faltungen in bf16 rechnen (nur auf CUDA); Köpfe, Logits und Wert bleiben in f32
+        self.amp = amp
         self.scalar_net = nn.Sequential(nn.Linear(max(scalars, 1), scalar_dim), nn.ReLU())
         self.stem = nn.Sequential(nn.Conv2d(channels + scalar_dim + 2, width_ch, 3, padding=1), nn.ReLU())
         dilations = [1, 2, 4] * (blocks // 3) + [1] * (blocks % 3)
@@ -77,9 +80,28 @@ class GridNet(nn.Module):
         s = self.scalar_net(sc)
         planes = s.view(n, -1, 1, 1).expand(-1, -1, self.h, self.w)
         x = torch.cat([grid, planes, self.coords.expand(n, -1, -1, -1)], 1)
-        x = self.trunk(self.stem(x))
+        if self.amp:
+            x = x.contiguous(memory_format=torch.channels_last)  # mit bf16 ~30 % schneller (cuDNN)
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=self.amp and x.is_cuda):
+            x = self.trunk(self.stem(x))
+        x = x.float()
         pooled = torch.cat([x.mean((2, 3)), x.amax((2, 3)), s], 1)
         return x, pooled
+
+    def compile(self, device) -> bool:
+        """Rumpf mit torch.compile übersetzen (~1,5x schneller auf CUDA, braucht python3-dev).
+        Nur die Methode wird ersetzt, Parameter und state_dict bleiben unverändert. Klappt das
+        Übersetzen nicht, bleibt alles wie es war und es gibt `False`."""
+        eager = self._features
+        self._features = torch.compile(eager)
+        try:
+            with torch.no_grad():
+                self._features(torch.zeros(2, self.c * self.h * self.w + self.s, device=device))
+        except Exception as e:  # z.B. fehlende Python-Header für Triton
+            self._features = eager
+            warnings.warn(f"torch.compile nicht verfügbar, rechne ohne: {type(e).__name__}")
+            return False
+        return True
 
     def forward(self, obs):
         x, pooled = self._features(obs)  # Rumpf nur einmal für beide Köpfe
@@ -100,14 +122,14 @@ class GridNet(nn.Module):
 class GridPolicy(MaskableActorCriticPolicy):
     """MaskablePPO-Policy mit `GridNet`; die Logits kommen direkt aus dem Netz (kein action_net)."""
 
-    def __init__(self, *args, grid: dict, width_ch: int = 32, blocks: int = 4, **kwargs):
+    def __init__(self, *args, grid: dict, width_ch: int = 32, blocks: int = 4, amp: bool = False, **kwargs):
         self.grid = grid
-        self.width_ch, self.blocks = width_ch, blocks
+        self.width_ch, self.blocks, self.amp = width_ch, blocks, amp
         kwargs.setdefault("share_features_extractor", True)
         super().__init__(*args, **kwargs)
 
     def _build_mlp_extractor(self) -> None:
-        self.mlp_extractor = GridNet(**self.grid, width_ch=self.width_ch, blocks=self.blocks)
+        self.mlp_extractor = GridNet(**self.grid, width_ch=self.width_ch, blocks=self.blocks, amp=self.amp)
 
     def _build(self, lr_schedule) -> None:
         super()._build(lr_schedule)
@@ -121,5 +143,5 @@ class GridPolicy(MaskableActorCriticPolicy):
 
     def _get_constructor_parameters(self) -> dict:
         data = super()._get_constructor_parameters()
-        data.update(grid=self.grid, width_ch=self.width_ch, blocks=self.blocks)
+        data.update(grid=self.grid, width_ch=self.width_ch, blocks=self.blocks, amp=self.amp)
         return data

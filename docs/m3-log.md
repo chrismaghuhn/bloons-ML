@@ -46,3 +46,39 @@ Durchsatz inkl. Training (beide Läufe parallel auf einer GPU): MLP ~1 700, Conv
 Folgerung: Conv ist der neue Standard mit der Rust-Engine (Python-Engine: MLP). Conv ist bisher
 nur mit einem Seed gelaufen. Offen: weitere Seeds für Conv, nächste
 Benchmark-Stufe (Runde 60), deterministisches vs. stochastisches Spielen für die Bridge.
+
+## 2026-10-27: Weniger Türme (`--reward-tower -0.5`) und erster Abgleich mit dem echten Spiel
+
+Conv, 3M Schritte, Seed 1, −0,5 Reward je gebautem Turm (Upgrades frei). Lernt schneller als
+ohne Strafe (Ø Runde 40 schon bei ~1M Schritten statt 2,6M) und spielt mit Ø 2 Türmen:
+stochastisch 19/19 gewonnen, 150 Leben. Deterministischer Build:
+
+| Wann | Aktion |
+|---|---|
+| vor Runde 1 | Bomb Shooter bei (15, −31), Dart Monkey bei (−5, −1) |
+| vor Runde 6 | Dart 0-0-1, 0-0-2 |
+| vor Runde 7 | Dart 0-0-3 |
+| vor Runde 16 | Dart 0-0-4 (Sharp Shooter), danach nichts mehr (Ende: 14 016 $ übrig) |
+
+Im echten Spiel nachgespielt (BTD6, Monkey Meadow, Medium, Targeting First): **Runde 40 geschafft.**
+Bei Runde 15 noch 150 Leben, Upgrade-Zeitpunkte passten zum Geld; Leben am Ende nicht notiert.
+Erster Hinweis, dass die Sim für diesen Build nicht zu großzügig ist. Nächster Abgleich: Leben nach
+Runde 40 und Freeplay bis zum Verlust (Daten für Runde 41–60 fehlen der Sim noch).
+
+## 2026-10-27: Training schneller (bf16, channels_last, torch.compile)
+
+Die Zeit pro PPO-Iteration (32k Schritte, 64 Envs) steckt zu ~85 % im Update (6 Epochen Backprop
+durch das Conv-Netz), nicht in der Engine. Gemessen mit Conv 32×4, Batch 1024, alles andere gleich:
+
+| Variante | Rollout | Update | Schritte/s |
+|---|---|---|---|
+| f32 | 3,9 s | 27,2 s | ~1 050 |
+| bf16 + channels_last (`--amp`, Standard) | 4,4 s | 13,8 s | 1 800 |
+| + torch.compile (`--compile`, Standard) | 3,7 s | 11,2 s | **2 200** |
+| + 256 statt 64 Envs | 2,3 s | 11,7 s | 2 330 (ändert die Rollout-Länge, nicht übernommen) |
+
+bf16 lernt gleich gut: Lauf mit Seed 1 erreicht Ø Runde 40 ab 1,57M Schritten (f32: 2,6M, Streuung
+zwischen Läufen), 19/19 Siege, 3M Schritte in 28 statt 57 min. torch.compile braucht die
+Python-Header (`sudo apt install python3.12-dev`); ohne sie rechnet `train.py` mit einer Warnung
+unkompiliert weiter. Schneller ginge es nur noch mit weniger Epochen oder kleinerem Netz, was das
+Lernen verändert.

@@ -49,7 +49,9 @@ Standard-Policy ist die Faltungs-Policy aus `btd_sim/policy.py`: Raster und Skal
 Residual-Faltungen, die Logits für Bauen/Upgrade/Verkaufen kommen pro Zelle direkt aus dem Netz.
 Nach 3M Schritten (~1 h) gewann sie Monkey Meadow Medium bis Runde 40 in allen Testspielen (bisher
 ein Seed), das flache MLP (`--arch mlp`) knapp die Hälfte bzw. 80 % (zwei Seeds) (Details in `docs/m3-log.md`). Die erreichte Runde steht
-in Tensorboard unter `btd/`.
+in Tensorboard unter `btd/`. Auf CUDA rechnet sie in bf16 und mit `torch.compile` (abschaltbar mit
+`--no-amp`/`--no-compile`; compile braucht `python3.12-dev`), damit dauern 3M Schritte auf einer
+RTX 4060 Ti ~25 min.
 
 Der Konverter schreibt neben der Datei einen Abdeckungs-Report (`*_coverage.md`): welche der 384
 Upgrade-Kombinationen der 6 Primary-Türme die Engine simuliert und was den übrigen fehlt.
