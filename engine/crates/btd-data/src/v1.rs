@@ -218,6 +218,10 @@ pub enum Targeting {
     /// (Mortar, docs/design-towers-step3.md §3). Nur mit `Delivery::Lob` mit Explosion; gefeuert wird,
     /// sobald ein anvisierbarer Bloon in Reichweite ist.
     TrackBest,
+    /// Befreundeter Turm in Reichweite (Alchemist-Tränke, docs/design-towers-step3.md §2.4): mit Angriff,
+    /// nicht ausgeschlossen, ohne gleich starken Effekt derselben Gruppe und nicht gesperrt; der mit dem
+    /// höchsten `spent`, bei Gleichstand die kleinste Turm-ID. Nur mit `Delivery::Potion`.
+    Friendly,
 }
 
 /// Wie ein Angriff seine Ziele trifft.
@@ -280,6 +284,45 @@ pub enum Delivery {
         spread: f64,
         on_arrive: Vec<Contact>,
     },
+    /// Trank auf einen befreundeten Turm (`Targeting::Friendly`): setzt dort einen Zeit-Effekt. Die
+    /// Flugzeit (unter 0,2 s) wird ignoriert [KAL].
+    Potion { effect: TimedEffect },
+}
+
+/// Zeit-Effekt auf einem Turm (docs/design-towers-step3.md §2.4): wirkt `seconds` lang (ohne Angabe
+/// unbegrenzt in der Runde) oder für `shots` Schüsse, je nachdem was zuerst endet; danach `block`
+/// Sekunden keine neue Gabe derselben Gruppe. Je `group` wirkt höchstens ein Effekt; ein höherer `rank`
+/// ersetzt einen niedrigeren, ein gleicher oder niedrigerer wird nicht vergeben. Zu Rundenbeginn und
+/// -ende gelöscht.
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TimedEffect {
+    pub group: String,
+    #[serde(default)]
+    pub rank: u32,
+    #[serde(default)]
+    pub seconds: Option<f64>,
+    pub shots: u32,
+    #[serde(default)]
+    pub block: f64,
+    /// Zuschlag auf den Schaden aller Angriffe und Kontakte mit Schaden > 0.
+    #[serde(default)]
+    pub damage: f64,
+    /// Zuschlag auf den Pierce fliegender Projektile (wie die Pierce-Aura).
+    #[serde(default)]
+    pub pierce: u32,
+    /// Tempo: Cooldown / (1 + `rate_frac`) [KAL].
+    #[serde(default)]
+    pub rate_frac: f64,
+    /// Reichweite × (1 + Auren-Anteil + `range_frac`).
+    #[serde(default)]
+    pub range_frac: f64,
+    /// Bonus-Schaden für alle Angriffe und Kontakte mit Schaden > 0 (Acidic Mixture Dip).
+    #[serde(default)]
+    pub damage_vs: Vec<Bonus>,
+    /// Türme (Namen), die diesen Effekt nicht bekommen.
+    #[serde(default)]
+    pub exclude: Vec<String>,
 }
 
 /// Zielsuchendes Projektil (Spiel: TrackTargetModel / TrackTargetWithinTimeModel). Startziel ist
@@ -389,7 +432,10 @@ impl HitExtras {
         let ok = |x: f64| x.is_finite() && x >= 0.0;
         let known = |list: &[TagFactor]| list.iter().all(|t| tags.contains(t.tag.as_str()));
         self.filter.valid(tags)
-            && self.damage_vs.iter().all(|b| tags.contains(b.tag.as_str()))
+            && self
+                .damage_vs
+                .iter()
+                .all(|b| tags.contains(b.tag.as_str()) && b.all.iter().all(|t| tags.contains(t.as_str())))
             && self.freeze.as_ref().map_or(true, |f| known(&f.scale))
             && self.slow.as_ref().map_or(true, |s| known(&s.multiplier_for) && known(&s.seconds_for))
             && self.dot.as_ref().map_or(true, |d| known(&d.factor_for))
@@ -741,6 +787,10 @@ pub struct HitFilter {
 pub struct Bonus {
     pub tag: String,
     pub add: f64,
+    /// Weitere Tags, die der Bloon zusätzlich alle haben muss (Spiel: mustIncludeAllTags, z.B.
+    /// "Lead,Fortified" beim Acidic Mixture Dip).
+    #[serde(default)]
+    pub all: Vec<String>,
 }
 
 /// `layers`: über wie viele Schichten (Kinder beim Platzen) der Effekt erhalten bleibt.
@@ -1321,6 +1371,22 @@ impl GameV1 {
                                 radius.map_or(true, pos) && radius_offset.map_or(true, |o| pos(range + o))
                             }
                             Delivery::HitscanSplash { radius } => pos(*radius),
+                            Delivery::Potion { effect: e } => {
+                                a.targeting == Targeting::Friendly
+                                    && !e.group.is_empty()
+                                    && e.shots >= 1
+                                    && e.seconds.map_or(true, pos)
+                                    && non_neg(e.block)
+                                    && non_neg(e.damage)
+                                    && non_neg(e.rate_frac)
+                                    && non_neg(e.range_frac)
+                                    && e.damage_vs.iter().all(|b| {
+                                        b.add.is_finite()
+                                            && tags.contains(b.tag.as_str())
+                                            && b.all.iter().all(|t| tags.contains(t.as_str()))
+                                    })
+                                    && e.exclude.iter().all(|n| self.towers.iter().any(|t| &t.name == n))
+                            }
                             Delivery::Lob { time, speed, spread, on_arrive } => {
                                 time.is_some() != speed.is_some()
                                     && time.map_or(true, pos)
@@ -1370,9 +1436,19 @@ impl GameV1 {
                     if !ok {
                         return Err(invalid(format!("{what} Angriff {}: ungültige Werte", a.tag)));
                     }
-                    // Schaden und Crit stecken beim Wurf in den Explosionen, nicht im Angriff
-                    if matches!(a.delivery, Delivery::Lob { .. }) && (a.damage != 0.0 || a.crit.is_some()) {
-                        return Err(invalid(format!("{what} Angriff {}: Wurf ohne damage/crit", a.tag)));
+                    // Schaden und Crit stecken beim Wurf in den Explosionen, nicht im Angriff; ein Trank hat keinen
+                    let potion = matches!(a.delivery, Delivery::Potion { .. });
+                    if matches!(a.delivery, Delivery::Lob { .. } | Delivery::Potion { .. })
+                        && (a.damage != 0.0 || a.crit.is_some())
+                        || potion && (a.burst.is_some() || a.camo || a.extras != HitExtras::default())
+                    {
+                        return Err(invalid(format!(
+                            "{what} Angriff {}: Wurf/Trank ohne damage/crit (Trank auch ohne burst/camo/extras)",
+                            a.tag
+                        )));
+                    }
+                    if a.targeting == Targeting::Friendly && !matches!(a.delivery, Delivery::Potion { .. }) {
+                        return Err(invalid(format!("{what} Angriff {}: friendly nur mit Trank", a.tag)));
                     }
                     if a.targeting == Targeting::TrackBest && a.delivery.track_best_radius().is_none() {
                         return Err(invalid(format!(

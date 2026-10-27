@@ -237,8 +237,9 @@ impl World<'_> {
         let kind = b.kind[i];
         let immune = cannot.intersects(self.props(b, i));
         let mut dmg = damage;
-        for &(mask, add) in &ex.damage_vs {
-            if self.tags[kind as usize] & mask != 0 {
+        for &(mask, all, add) in &ex.damage_vs {
+            let tags = self.tags[kind as usize];
+            if tags & mask != 0 && tags & all == all {
                 dmg += add;
             }
         }
@@ -421,6 +422,23 @@ fn apply_effects(b: &mut BloonStore, i: usize, ex: &ExtrasRt, tags: u32) {
     }
 }
 
+/// Gruppen der Zeit-Effekte (Tränke) -> Nummer, sortiert nach Name.
+fn effect_groups(data: &GameV1) -> std::collections::HashMap<String, u16> {
+    let mut names: Vec<&String> = data
+        .towers
+        .iter()
+        .flat_map(|t| &t.variants)
+        .flat_map(|v| &v.attacks)
+        .filter_map(|a| match &a.delivery {
+            btd_data::v1::Delivery::Potion { effect } => Some(&effect.group),
+            _ => None,
+        })
+        .collect();
+    names.sort();
+    names.dedup();
+    names.into_iter().enumerate().map(|(i, n)| (n.clone(), i as u16)).collect()
+}
+
 /// Zielpunkte aller `Targeting::TrackBest`-Angriffe der Daten, je verschiedenem Explosionsradius einmal.
 fn track_best_points(data: &GameV1) -> Vec<(f64, (Real, Real))> {
     let mut radii: Vec<f64> = data
@@ -519,6 +537,8 @@ impl Game {
         let tags = TagTable {
             tags: names.iter().enumerate().map(|(i, n)| ((*n).clone(), 1u32 << i)).collect(),
             slows: slow_ids.iter().enumerate().map(|(i, n)| ((*n).clone(), i as u8)).collect(),
+            towers: data.towers.iter().enumerate().map(|(k, t)| (t.name.clone(), k as TowerKind)).collect(),
+            groups: effect_groups(&data),
         };
         let bloon_tags = data.bloons.iter().map(|b| crate::tower::tag_mask(&tags, &b.tags)).collect();
         let mut g = Game {
@@ -952,6 +972,7 @@ impl Game {
         self.projectiles.clear();
         let mut next_id: u32 = 0;
         for tw in &mut self.towers {
+            tw.clear_timed();
             for a in &mut tw.attacks {
                 (a.cd_left, a.shots, a.burst_left) = (0.0, 0, 0);
                 if let Some((_, every)) = a.crit {
@@ -1050,6 +1071,9 @@ impl Game {
 
             // Türme schießen. Cooldowns laufen jeden Tick, der Überschuss wird übertragen.
             for tw in &mut self.towers {
+                if !tw.timed.is_empty() || !tw.blocked.is_empty() {
+                    tw.tick_timed(|s| ticks_of(s, dt));
+                }
                 for a in &mut tw.attacks {
                     a.cd_left -= dt;
                     if a.burst_left > 0 {
@@ -1077,6 +1101,34 @@ impl Game {
                             continue;
                         }
                         let (cx, cy) = (tw.x, tw.y);
+                        if let AttackKind::Potion(e) = &atk.kind {
+                            // Trank: befreundeter Turm in Reichweite mit dem höchsten `spent`, bei
+                            // Gleichstand die kleinste ID [KAL: Zielwahl im Spiel]. Geworfen wird nur, solange
+                            // Bloons auf der Karte sind [KAL: im Spiel wohl auch in Spawn-Lücken]
+                            let (e, range2, cooldown) = (Arc::clone(e), atk.range2, atk.cooldown);
+                            let target = (0..self.towers.len())
+                                .filter(|&j| j != ti)
+                                .filter(|&j| {
+                                    let o = &self.towers[j];
+                                    (o.x - cx) * (o.x - cx) + (o.y - cy) * (o.y - cy) <= range2
+                                        && o.can_receive(&e)
+                                })
+                                .max_by(|&i, &j| {
+                                    let (a, c) = (&self.towers[i], &self.towers[j]);
+                                    a.spent.cmp(&c.spent).then(c.id.cmp(&a.id))
+                                });
+                            let a = &mut self.towers[ti].attacks[ai];
+                            match target {
+                                Some(j) => {
+                                    a.cd_left = a.cd_left.max(-dt) + cooldown;
+                                    self.towers[j].give(&e, |s| ticks_of(s, dt));
+                                }
+                                // bereit, aber kein Ziel (wie bei den übrigen Angriffen)
+                                None if a.cd_left <= eps => a.cd_left = 0.0,
+                                None => {}
+                            }
+                            continue;
+                        }
                         let b = &self.bloons;
                         in_range.clear();
                         let mut first = usize::MAX;
@@ -1213,6 +1265,7 @@ impl Game {
                                 }
                             }
                             AttackKind::Hitscan => hit_list.extend_from_slice(&in_range),
+                            AttackKind::Potion(_) => unreachable!("Tränke werden oben behandelt"),
                         }
                         // stabil absteigend nach Distanz (wie argsort(-dist, kind="stable"))
                         hit_list.sort_by(|&a, &c| b.dist[c].total_cmp(&b.dist[a]));
@@ -1232,6 +1285,9 @@ impl Game {
                         if crit_hit {
                             let every = a.crit.map_or(1, |c| c.1);
                             a.crit_next = roll_crit(&mut self.rng, every, a.crit_range);
+                        }
+                        if !self.towers[ti].timed.is_empty() {
+                            self.towers[ti].on_shot(|s| ticks_of(s, dt));
                         }
 
                         for &i in &hit_list {
@@ -1263,6 +1319,10 @@ impl Game {
             }
         }
 
+        // Zeit-Effekte gelten nur innerhalb der Runde (docs/design-towers-step3.md §6)
+        for tw in &mut self.towers {
+            tw.clear_timed();
+        }
         self.cash += Money::from_f64(pops_total as f64 * income.cash_per_pop);
         if self.lives > 0 {
             self.round += 1;

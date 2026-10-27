@@ -578,8 +578,8 @@ def test_placeholder_for_tower_without_mechanic():
     assert v == {"tiers": [0, 0, 0], "range": 22.0, "footprint": pytest.approx(27.0 * 2 ** 0.5 / 2),
                  "attacks": [], "_rect": True}
     assert b.placeholder(dart_like())["footprint"] == 6.0
-    # alle t21-Türme ohne Mechanik sind fest gesperrt, Engineer und Mortar (Teil 1a) nicht
-    assert set(b.T21) - set(b.T14) - b.MECHANIC_LOCKED == {"EngineerMonkey", "MortarMonkey"}
+    # alle t21-Türme ohne Mechanik sind fest gesperrt, Engineer, Mortar (Teil 1a) und Alchemist (1b) nicht
+    assert set(b.T21) - set(b.T14) - b.MECHANIC_LOCKED == {"EngineerMonkey", "MortarMonkey", "Alchemist"}
 
 
 def mortar_like(spread=18.0, point_extra=None):
@@ -642,3 +642,74 @@ def test_point_lob_refuses_unknown_variants(change, why):
     change(m)
     with pytest.raises(b.Unsupported, match=why):
         b.convert_variant(m, [0, 0, 0])
+
+
+def alchemist_like(potion=None):
+    splash = T("ProjectileModel", id="AcidSplash", pierce=15.0, radius=14.0,
+               filters=[T("FilterInvisibleModel", isActive=True)],
+               behaviors=[T("DamageModel", damage=1.0, immuneBloonProperties=64), T("AgeModel", lifespan=7.0),
+                          T("AcidPoolModel", lifespan=0.05, radiusIfMisses=7.0)])
+    arrive = T("ArriveAtTargetModel", filterCollisionWhileMoving=True, expireOnArrival=True, altSpeed=250.0)
+    shell = T("ProjectileModel", id="Projectile", pierce=1.0, radius=1.0, dontUseCollisionChecker=True,
+              behaviors=[T("CreateProjectileOnExhaustFractionModel", fraction=1.0, durationfraction=-1.0,
+                           projectile=splash, emission=T("SingleEmissionModel")),
+                         T("ScaleProjectileModel"), arrive, T("AgeModel", lifespan=5.0)])
+    main = T("AttackModel", range=45.0, weapons=[T("WeaponModel", rate=2.0, emission=T("SingleEmissionModel"),
+                                                     projectile=shell)],
+             behaviors=[T("AttackFilterModel", filters=[T("FilterInvisibleModel", isActive=True)])])
+    attacks = [main] + ([potion] if potion else [])
+    return T("TowerModel", cost=550.0, range=45.0, towerSet=4, footprint=T("CircleFootprintModel", radius=6.0),
+             behaviors=[T("CanBuffIndicatorModel", buffLocsName="AcidicMixtureBuff"), *attacks])
+
+
+def brew_attack(**effect):
+    fields = dict(cap=25, ignoreList="BananaFarm,MonkeyAcademy,Alchemist", mutationId="BeserkerBrew", lifespan=5.0,
+                  damageUp=1.0, pierceUp=2.0, rateUp=0.1, rangeUp=0.1, rebuffBlockTime=5.0,
+                  weapBehaviors=[T("BerserkerBrewModel")],
+                  ignoreMutationsByOrder=["BeserkerBrew", "BerserkerBrewBetter"])
+    fields.update(effect)
+    order = fields["ignoreMutationsByOrder"]
+    rank = order.index(fields["mutationId"]) if fields["mutationId"] in order else 0
+    fields["towerBehaviors"] = [T("BerserkerBrewCheckModel", maxCount=fields["cap"], mutationId=fields["mutationId"])]
+    fields.setdefault("mutatorsToRemoveList", order[:rank])
+    add = T("AddBerserkerBrewToProjectileModel", **fields)
+    proj = T("ProjectileModel", pierce=1.0, radius=1.0, dontUseCollisionChecker=True,
+             filters=[T("FilterAllExceptTargetModel")],
+             behaviors=[T("ScaleProjectileModel"),
+                        T("ArriveAtTargetModel", filterCollisionWhileMoving=True, expireOnArrival=True,
+                          altSpeed=250.0), add, T("DestroyIfTargetLostModel")])
+    target = T("BrewTargettingModel", towerIgnoreList=["BananaFarm", "MonkeyVillage"])
+    return T("AttackModel", range=45.0, name="AttackModel_BeserkerBrewAttack_", targetProvider=target,
+             weapons=[T("WeaponModel", rate=8.0, emission=T("SingleEmmisionTowardsTargetModel"), projectile=proj,
+                        behaviors=[T("BerserkerBrewModel")])],
+             behaviors=[target])
+
+
+def test_alchemist_throws_onto_the_target_and_brews():
+    a = b.convert_variant(alchemist_like(), [0, 0, 0])["attacks"][0]
+    assert a["delivery"]["kind"] == "lob" and a["delivery"]["speed"] == 250.0 and "time" not in a["delivery"]
+    assert a["delivery"]["on_arrive"][0]["radius"] == 14.0 and a.get("targeting", "first") == "first"
+    brew = b.convert_variant(alchemist_like(brew_attack()), [3, 0, 0])["attacks"][1]
+    assert brew["targeting"] == "friendly" and brew["cooldown"] == 8.0
+    assert brew["delivery"] == {"kind": "potion", "effect": {
+        "group": "BeserkerBrew", "rank": 0, "seconds": 5.0, "shots": 25, "block": 5.0, "damage": 1.0, "pierce": 2,
+        "rate_frac": 0.1, "range_frac": 0.1, "exclude": ["alchemist", "farm", "village"]}}
+    better = b.convert_variant(alchemist_like(brew_attack(mutationId="BerserkerBrewBetter")), [4, 0, 0])
+    assert better["attacks"][1]["delivery"]["effect"]["rank"] == 1
+    # unbekannte Brew-Stufe (nicht in der Reihenfolge) und Permanent Brew (Dauer -1) werden abgelehnt
+    with pytest.raises(b.Unsupported, match="Reihenfolge"):
+        b.convert_variant(alchemist_like(brew_attack(mutationId="BerserkerBrewPerma")), [5, 0, 0])
+    with pytest.raises(b.Unsupported, match="Dauer"):
+        b.convert_variant(alchemist_like(brew_attack(lifespan=-1.0)), [5, 0, 0])
+    # ersetzt der stärkere Brew den schwächeren nicht, stimmt die Rang-Annahme nicht
+    with pytest.raises(b.Unsupported, match="Stufen"):
+        b.convert_variant(alchemist_like(brew_attack(mutationId="BerserkerBrewBetter", mutatorsToRemoveList=[])),
+                          [4, 0, 0])
+
+
+def test_bonus_with_all_tags():
+    m = T("DamageModifierForTagModel", tag="Lead,Fortified", tags=["Lead", "Fortified"], damageMultiplier=1.0,
+          damageAddative=1.0, mustIncludeAllTags=True)
+    assert b.bonus_of(m) == {"tag": "Lead", "add": 1.0, "all": ["Fortified"]}
+    with pytest.raises(b.Unsupported):
+        b.bonus_of(dict(m, mustIncludeAllTags=False))

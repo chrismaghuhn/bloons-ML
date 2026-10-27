@@ -609,3 +609,66 @@ Antworten auf §10:
   - sim_v0-Parität (f64) und alle übrigen Tests unverändert grün.
 - **Gemessen** (Release, eine Env, Zufallspolicy, verrauscht): t14 etwa 6,0 k Schritte/s, t21 mit Mortar und
   Engineer etwa 5,7 k Schritte/s.
+
+## Stand Teil 1b (Alchemist, Zeit-Effekte, 2026-10-27)
+
+- **btd-data:**
+  - `Targeting::Friendly` und `Delivery::Potion {effect}` mit `TimedEffect`. Felder: Gruppe, Rang, Sekunden,
+    Schüsse, Sperre, Schaden, Pierce, Tempo- und Reichweiten-Anteil, Bonus-Schaden, ausgeschlossene Türme.
+  - `Bonus.all`: Tags, die der Bloon zusätzlich alle haben muss ("Lead,Fortified").
+  - Validierung: `friendly` nur mit Trank, Wurf und Trank ohne eigenen Schaden oder Crit, Wertebereiche,
+    bekannte Tags und Turmnamen.
+- **Engine:**
+  - `Tower::timed` und `Tower::blocked` (je Gruppe höchstens ein Effekt). `Tower::rebuild` rechnet die
+    wirksamen Werte aus Basis, Auren und Zeit-Effekten; ohne Zeit-Effekte bitgleich wie bisher.
+  - Reichweiten-Anteile addieren sich, das Tempo teilt den Cooldown [KAL]. Pierce gilt nur für fliegende
+    Projektile. Schaden und Bonus-Schaden gehen nur an Angriffe und Kontakte, deren Schaden > 0 ist; Glue
+    z.B. bleibt ohne Schaden (Test).
+  - Ein Trank wählt unter den Türmen in Reichweite den mit dem höchsten `spent` (Gleichstand: kleinste ID).
+    Der Turm muss einen Angriff haben, darf nicht ausgeschlossen oder für die Gruppe gesperrt sein und
+    keinen gleich starken oder stärkeren Effekt der Gruppe tragen.
+  - Ein höherer Rang ersetzt den schwächeren Effekt. Tränke fliegen nicht: Der Effekt wirkt sofort, die
+    Flugzeit liegt unter 0,2 s [KAL].
+  - Ablauf je Tick (Restzeit) und je Schuss irgendeines Angriffs (Rest-Schüsse); danach `block` Sekunden
+    gesperrt.
+  - Tränke werden nur geworfen, solange Bloons auf der Karte sind; die Restzeit läuft auch in Spawn-Lücken
+    ab [KAL: im Spiel wirft der Alchemist wohl auch dann]. Die Sim ist dadurch eher zu schwach.
+  - Ein Trank-Angriff hat weder Schaden noch Crit, Salve, Camo oder Extras (Validierung).
+  - `play_round` löscht Zeit-Effekte und Sperren am Anfang und am Ende der Runde. Zwischen den Runden ist der
+    Zustand also wie bisher (`state_hash`, Observation, Startzustände unverändert).
+  - Bonus-Schaden prüft jetzt zusätzlich die `all`-Maske; bei leerer Maske wie bisher.
+- **Konverter:**
+  - Der Alchemist-Wurf (`ArriveAtTargetModel` mit `altSpeed`) wird zu `lob` mit Tempo und dem Säure-Spritzer
+    als Explosion (Säure-DoT wie beim Glue).
+  - Dip (`AddAcidicMixtureToProjectileModel`) und Brew (`AddBerserkerBrewToProjectileModel`) werden zu
+    `potion`.
+    - Gruppe beim Brew ist der erste Eintrag von `ignoreMutationsByOrder`, der Rang die Position der eigenen
+      `mutationId` darin (3xx 0, 4xx 1).
+    - Dip: `cap` (30) als Schüsse [KAL: `maxCount` 10], Bonus +1 gegen Ceramic, MOABs, Lead + Fortified.
+    - Ausgeschlossen sind die Türme aus den Ignorier-Listen von Trank und Zielwahl, gekürzt auf das Turm-Set
+      (in t21: alchemist, farm, village).
+    - Annahmen werden geprüft: Der Brew ersetzt genau die schwächeren Stufen (`mutatorsToRemoveList`), Zähler
+      und Mutationen passen zueinander, Dauer und Sperre sind endlich (Permanent Brew wird abgelehnt), und die
+      Zielwahl ist nicht wählbar.
+  - `AcidPoolModel` (Pfütze nur beim Fehlwurf, 0,05 s) ist ignoriert [KAL].
+  - `CanBuffIndicatorModel` ist nur als Anzeige der Tränke ausgewertet. Super Monkey 3xx nutzt dasselbe
+    Modell für den Tempel und bleibt gesperrt; als Anzeige würde es ihn freigeben und t14 ändern.
+- **Abdeckung t21:** 390 von 1344.
+  - Alchemist **16**, frei: Pfade oben 0–4, Mitte 0–1, unten 0–1.
+  - Es fehlen Perishing Potions (x2x, Bonus mit Multiplikator/Fortified entfernen), Acid Pool und Gold
+    (xx2+), Unstable Concoction, Abilities und Permanent Brew.
+  - t14-Daten bleiben bytegleich. Im t14-Report ändern sich nur Begründungstexte: Super Monkey 3xx nennt
+    jetzt `CanBuffIndicatorModel (an dieser Stelle)`.
+- **Tests:**
+  - `btd-core/tests/potion.rs`: Brew-Schaden platzt einen Ceramic, Schuss-Grenze, keine Stapelung je Gruppe,
+    höherer Rang ersetzt, Ausschluss, Sperre, Zielwahl nach `spent`, Ende mit der Runde, Validierung.
+  - Konverter-Tests für Wurf, Brew-Rang und Bonus mit allen Tags.
+  - Lokal gegen die t21-Daten (`dump_local`): Ein Dart mit Alchemist 4-0-1 direkt daneben lässt in 20 Runden
+    68 statt 136 Leben durch. Der Vergleich ist Alchemist 1-0-1: gleiche Spritzer, keine Tränke.
+  - sim_v0-Parität und alle übrigen Tests unverändert grün.
+- **Gemessen** (Release, eine Env, Zufallspolicy, verrauscht durch das parallele Training): t14 6,0–6,1 k
+  Schritte/s, t21 mit Alchemist, Mortar und Engineer 5,4–5,7 k.
+- **Offen bzw. für später:**
+  - Der Village-Tempo-Buff wirkt nicht auf das Tempo des Alchemist-Wurfs. Alchemist ist "magic" und bekommt
+    Primary Training ohnehin nicht.
+  - Brew gilt nicht für Sub-Türme (kommen erst in Teil 3).

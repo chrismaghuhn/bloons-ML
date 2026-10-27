@@ -44,7 +44,7 @@ TOWER_SET_NAMES = {1: "primary", 2: "military", 4: "magic", 8: "support"}
 # aber schon in Daten und Layout, damit sich der Aktionsraum später nicht ändert
 # (docs/design-towers-step2.md §2.4). Geht ihre Basisvariante noch nicht durch den Konverter, steht sie als
 # Platzhalter in den Daten (docs/design-towers-step3.md §4).
-MECHANIC_LOCKED = {"BananaFarm", "Alchemist", "DartlingGunner", "SpikeFactory", "HeliPilot", "MonkeyAce"}
+MECHANIC_LOCKED = {"BananaFarm", "DartlingGunner", "SpikeFactory", "HeliPilot", "MonkeyAce"}
 
 # Flächentypen im Spiel (AreaType) -> game_v1
 AREA_KINDS = {2: "land", 0: "track", 1: "water", 3: "blocked"}
@@ -96,7 +96,9 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
            # Emission selbst wertet convert_emission aus), Kartenobjekt einer anderen Karte (Mortar-Explosion),
            # Pin (Engineer xx2: SlowOnPop = 1 s Stopp der Kinder beim Pop; Status-Effekte beim Pop kann die Engine
            # noch nicht, deshalb ohne Wirkung [KAL: auch `chance` 0 – immer oder nie?])
-           "EmissionWithOffsetsModel", "ThrowMarkerOffsetModel", "ChipMapBasedObjectModel", "SlowOnPopModel"}
+           "EmissionWithOffsetsModel", "ThrowMarkerOffsetModel", "ChipMapBasedObjectModel", "SlowOnPopModel",
+           # Alchemist: Pfütze nur, wenn der Spritzer nichts trifft (Lebensdauer 0,05 s) [KAL]
+           "AcidPoolModel"}
 
 # Nur dort erlaubt, wo der Konverter sie wirklich auswertet (`use`); jedes andere Vorkommen (z.B. in
 # einem Kontakt-Projektil eines späteren Upgrades) macht die Variante "nicht unterstützt".
@@ -104,7 +106,15 @@ STRICT = {"InstantModel", "InstantDamageEmissionModel", "FilterAllExceptTargetMo
           "RandomArcEmissionModel", "RandomEmissionModel", "OffsetModel", "RemoveBloonModifiersModel",
           "TrackTargetModel", "TrackTargetWithinTimeModel",
           # Türme Schritt 3: Wurf auf einen festen Punkt (convert_point_lob)
-          "TargetSelectedPointModel", "RotateToPointerModel", "RandomTargetSpreadModel", "FilterAllModel"}
+          "TargetSelectedPointModel", "RotateToPointerModel", "RandomTargetSpreadModel", "FilterAllModel",
+          # Alchemist-Tränke (convert_potion)
+          "TargetFriendlyModel", "BrewTargettingModel", "AddAcidicMixtureToProjectileModel", "AcidicMixtureModel",
+          "AcidicMixtureCheckModel", "AddBerserkerBrewToProjectileModel", "BerserkerBrewModel",
+          "BerserkerBrewCheckModel", "DestroyIfTargetLostModel",
+          # Buff-Anzeige; nur die der Alchemist-Tränke ist ausgewertet (Super Monkey 3xx nutzt sie für den Tempel)
+          "CanBuffIndicatorModel"}
+# Buff-Anzeigen (CanBuffIndicatorModel.buffLocsName) ohne Wirkung: die der Alchemist-Tränke
+POTION_INDICATORS = {"AcidicMixtureBuff", "BeserkerBrewBuff"}
 # Türme Schritt 2 (docs/design-towers-step2.md): Auren und Rabatt (convert_supports), Einkommen
 # (convert_income) und Footprint (convert_footprint); alle nur dort erlaubt, wo sie ausgewertet werden
 SUPPORT_MODELS = {"RangeSupportModel", "RateSupportModel", "VisibilitySupportModel", "PierceSupportModel",
@@ -923,10 +933,168 @@ def convert_point_lob(tower, attack, weapon, idx) -> dict:
     return out
 
 
+def arrive_flight(proj):
+    """ArriveAtTargetModel (Flug zum Zielpunkt ohne Treffer) -> (time, speed) für `lob`, sonst None."""
+    arrive = behaviors(proj, "ArriveAtTargetModel")
+    if not arrive:
+        return None
+    a = arrive[0]
+    if len(arrive) > 1 or not a.get("filterCollisionWhileMoving") or a.get("keepUpdatingTargetPos") \
+            or a.get("rotateToTarget") or a.get("maxTurnAngle", 0.0):
+        raise Unsupported("ArriveAtTargetModel(Treffer im Flug/folgt dem Ziel)")
+    for n in arrive + behaviors(proj, "ScaleProjectileModel") + behaviors(proj, "HeightOffsetProjectileModel"):
+        use(n)  # Kurve, Größe und Höhe sind Darstellung
+    if a.get("altSpeed", 0.0) > 0.0:
+        return None, a["altSpeed"]
+    if a.get("timeToTake", 0.0) > 0.0:
+        return a["timeToTake"], None
+    raise Unsupported("ArriveAtTargetModel ohne Tempo/Zeit")
+
+
+def convert_arrive_lob(tower, attack, weapon, idx, flight) -> dict:
+    """Wurf auf die Position des Ziels beim Abwurf (Alchemist): Trank ohne Treffer im Flug, platzt bei Ankunft
+    (docs/design-towers-step3.md §2.1)."""
+    proj, a = weapon["projectile"], behaviors(weapon["projectile"], "ArriveAtTargetModel")[0]
+    if not a.get("expireOnArrival") or a.get("stopOnTargetReached"):
+        raise Unsupported("ArriveAtTargetModel(bleibt liegen)")
+    if short(weapon["emission"]["$type"]) != "SingleEmissionModel":
+        raise Unsupported("Wurf mit Mehrfach-Emission")
+    if not proj.get("dontUseCollisionChecker") or behaviors(proj, "DamageModel") \
+            or behaviors(proj, "CreateProjectileOnContactModel") or straight_travel(proj):
+        raise Unsupported("Wurf mit Treffern/Schaden/Kontakt/Flugbahn")
+    on_arrive = convert_exhaust(proj, nested=False)
+    if not on_arrive or any(c["kind"] != "explosion" for c in on_arrive):
+        raise Unsupported("Wurf ohne Explosion")
+    for n in behaviors(proj, "AgeModel"):
+        use(n)  # Höchstdauer; der Flug endet bei Ankunft (Reichweite / Tempo ist viel kürzer)
+    camo, extras = convert_extras({"behaviors": []}, all_filters(attack))
+    time, speed = flight
+    delivery = {"kind": "lob", "on_arrive": on_arrive}
+    delivery.update({"time": time} if time is not None else {"speed": speed})
+    out = {
+        "tag": f"{attack.get('name', 'attack')}-{idx}".replace(" ", "_"),
+        "range": attack["range"] if attack["range"] != tower["range"] else None,
+        "cooldown": weapon["rate"],
+        "damage": 0.0,
+        "pierce": 1,
+        "cannot_damage": [],
+        "camo": camo,
+        "delivery": delivery,
+        "extras": extras,
+    }
+    convert_weapon_behaviors(weapon, out)
+    return out
+
+
+def bonus_of(m) -> dict:
+    """DamageModifierForTagModel -> game_v1-Bonus (mustIncludeAllTags: erster Tag + `all`)."""
+    if m.get("damageMultiplier", 1.0) != 1.0 or m.get("ignoreTag") or m.get("applyOverMaxDamage"):
+        raise Unsupported("DamageModifierForTagModel(Multiplikator/Tag-Logik)")
+    tags = m.get("tags") or [m["tag"]]
+    if len(tags) > 1 and not m.get("mustIncludeAllTags"):
+        raise Unsupported("DamageModifierForTagModel(mehrere Tags, einer genügt)")
+    out = {"tag": tags[0], "add": m["damageAddative"]}
+    if len(tags) > 1:
+        out["all"] = tags[1:]
+    return out
+
+
+def tower_names(ids) -> list:
+    """Spiel-IDs -> game_v1-Namen (unbekannte Türme fallen weg; main() kürzt auf das Turm-Set)."""
+    return sorted({TOWER_NAMES[i] for i in ids if i in TOWER_NAMES})
+
+
+def convert_potion(tower, attack, weapon, idx) -> dict:
+    """Trank auf einen befreundeten Turm (Acidic Mixture Dip, Berserker Brew) -> Zeit-Effekt
+    (docs/design-towers-step3.md §2.4)."""
+    proj = weapon["projectile"]
+    friendly, brew = behaviors(attack, "TargetFriendlyModel"), behaviors(attack, "BrewTargettingModel")
+    provider = attack.get("targetProvider") or {}
+    if len(friendly) + len(brew) != 1 or short(provider.get("$type", "")) not in ("TargetFriendlyModel",
+                                                                                 "BrewTargettingModel"):
+        raise Unsupported("Trank ohne eindeutige Zielwahl")
+    target = (friendly + brew)[0]
+    if short(provider["$type"]) != short(target["$type"]) or target.get("isSelectable"):
+        raise Unsupported("Trank mit wählbarer/abweichender Zielwahl")
+    if target.get("isOnSubTower") or (friendly and not target.get("mustHaveWeapon")):
+        raise Unsupported("Trank auf Sub-Türme/Türme ohne Waffe")
+    if short(weapon["emission"]["$type"]) != "SingleEmmisionTowardsTargetModel":
+        raise Unsupported("Trank mit anderer Emission")
+    only_target = [f for f in all_filters(proj) if short(f.get("$type", "")) == "FilterAllExceptTargetModel"]
+    if len(only_target) != len(all_filters(proj)) or not only_target:
+        raise Unsupported("Trank mit Treffern auf Bloons")
+    arrive_flight(proj)  # Flugzeit unter 0,2 s wird ignoriert [KAL]
+    dip, add = behaviors(proj, "AddAcidicMixtureToProjectileModel"), behaviors(proj, "AddBerserkerBrewToProjectileModel")
+    if len(dip) + len(add) != 1 or behaviors(proj, "DamageModel") or behaviors(proj, "CreateProjectileOnExhaustFractionModel"):
+        raise Unsupported("Trank ohne genau einen Effekt")
+    if dip:
+        d = dip[0]
+        checks = d.get("towerBehaviors") or []
+        if any(short(c["$type"]) != "AcidicMixtureCheckModel" or c.get("mutationId") != d["mutationId"]
+               for c in checks) or target.get("mutationId", d["mutationId"]) != d["mutationId"] \
+                or any(short(c["$type"]) != "AcidicMixtureModel" for c in d.get("weapBehaviors") or []):
+            raise Unsupported("AddAcidicMixtureToProjectileModel mit anderen Turm-/Waffen-Effekten")
+        bonus = []
+        for m in d.get("projBehaviors") or []:
+            if short(m["$type"]) != "DamageModifierForTagModel":
+                raise Unsupported(f"AddAcidicMixtureToProjectileModel mit {short(m['$type'])}")
+            bonus.append(bonus_of(m))
+        # `cap` (30) als Zahl der Schüsse; `maxCount` (10) der Prüfung ist unklar [KAL]
+        # Ausschlüsse stehen je nach Variante am Trank oder an der Zielwahl: beide zählen
+        ignore = (d.get("ignoreList") or "").split(",") + (target.get("ignoreList") or "").split(",")
+        effect = {"group": d["mutationId"], "shots": int(d["cap"]), "damage_vs": bonus,
+                  "exclude": tower_names(ignore)}
+        used = [d] + checks + (d.get("weapBehaviors") or []) + (d.get("projBehaviors") or [])
+    else:
+        d = add[0]
+        order = d.get("ignoreMutationsByOrder") or [d["mutationId"]]
+        checks = d.get("towerBehaviors") or []
+        if d["mutationId"] not in order or any(short(c["$type"]) != "BerserkerBrewCheckModel" for c in checks) \
+                or any(short(c["$type"]) != "BerserkerBrewModel" for c in d.get("weapBehaviors") or []):
+            raise Unsupported("AddBerserkerBrewToProjectileModel(Reihenfolge/andere Effekte)")
+        rank = order.index(d["mutationId"])
+        # Annahmen prüfen: ersetzt die schwächeren Stufen, Zielwahl und Zähler passen zum Trank, Werte endlich
+        # (Permanent Brew hat lifespan -1 und cap 9 999 999)
+        if (d.get("mutatorsToRemoveList") or []) != order[:rank] \
+                or (target.get("ignoreMutationsByOrder") or order) != order \
+                or any(c.get("maxCount") != d["cap"] or c.get("mutationId") != d["mutationId"] for c in checks) \
+                or d["lifespan"] <= 0 or d.get("rebuffBlockTime", 0.0) < 0 or d.get("lifespanFrames") \
+                or d.get("rebuffBlockTimeFrames") or d["pierceUp"] != int(d["pierceUp"]):
+            raise Unsupported("AddBerserkerBrewToProjectileModel(Stufen/Zähler/Dauer)")
+        effect = {"group": order[0], "rank": rank, "seconds": d["lifespan"],
+                  "shots": int(d["cap"]), "block": d.get("rebuffBlockTime", 0.0), "damage": d["damageUp"],
+                  "pierce": int(d["pierceUp"]), "rate_frac": d["rateUp"], "range_frac": d["rangeUp"],
+                  "exclude": tower_names((d.get("ignoreList") or "").split(",")
+                                         + (target.get("towerIgnoreList") or []))}
+        used = [d] + (d.get("towerBehaviors") or []) + (d.get("weapBehaviors") or [])
+    weapon_fx = [b for b in weapon.get("behaviors") or [] if short(b.get("$type", "")) in
+                 ("AcidicMixtureModel", "BerserkerBrewModel")]
+    for n in used + only_target + [target, provider, weapon["emission"]] + weapon_fx \
+            + behaviors(proj, "DestroyIfTargetLostModel") + behaviors(proj, "AgeModel"):
+        use(n)
+    return {
+        "tag": f"{attack.get('name', 'attack')}-{idx}".replace(" ", "_"),
+        "range": attack["range"] if attack["range"] != tower["range"] else None,
+        "targeting": "friendly",
+        "cooldown": weapon["rate"],
+        "damage": 0.0,
+        "pierce": 1,
+        "cannot_damage": [],
+        "camo": False,
+        "delivery": {"kind": "potion", "effect": effect},
+        "extras": {},
+    }
+
+
 def convert_attack(tower, attack, weapon, idx) -> dict:
     proj = weapon["projectile"]
     if behaviors(attack, "TargetSelectedPointModel"):
         return convert_point_lob(tower, attack, weapon, idx)
+    if behaviors(attack, "TargetFriendlyModel") or behaviors(attack, "BrewTargettingModel"):
+        return convert_potion(tower, attack, weapon, idx)
+    flight = arrive_flight(proj)
+    if flight:
+        return convert_arrive_lob(tower, attack, weapon, idx, flight)
     check_remove_modifiers(proj)
     if proj.get("dontUseCollisionChecker") or not proj.get("canCollideWithBloons", True):
         raise Unsupported("Projektil ohne Kollision")
@@ -1155,6 +1323,9 @@ def convert_variant(model, tiers) -> dict:
                 income = {"per_round": convert_income(a, w)}
             else:
                 attacks.append(convert_attack(model, a, w, len(attacks)))
+    for b in behaviors(model, "CanBuffIndicatorModel"):
+        if b.get("buffLocsName") in POTION_INDICATORS:
+            use(b)
     supports, discount = convert_supports(model)
     footprint, rect = convert_footprint(model)
     bonus = behaviors(model, "PerRoundCashBonusTowerModel") + behaviors(model, "BonusLivesPerRoundModel")
@@ -1212,10 +1383,12 @@ def prune_tags(node, known: set, dropped: set):
                 dropped.update(t for t in v if t not in known)
                 v[:] = [t for t in v if t in known]
             elif k in TAG_LISTS and isinstance(v, list):
-                dropped.update(e["tag"] for e in v if e["tag"] not in known)
+                def ok(e):
+                    return e["tag"] in known and all(t in known for t in e.get("all", []))
+                dropped.update(t for e in v for t in [e["tag"], *e.get("all", [])] if t not in known)
                 # die Engine nimmt den ersten passenden Eintrag: die Klasse "Moabs" zuletzt, damit
                 # z.B. "Bad" (BAD hat auch den Tag "Moabs") Vorrang hat
-                v[:] = sorted((e for e in v if e["tag"] in known), key=lambda e: e["tag"] == "Moabs")
+                v[:] = sorted((e for e in v if ok(e)), key=lambda e: e["tag"] == "Moabs")
             else:
                 prune_tags(v, known, dropped)
     elif isinstance(node, list):
@@ -1302,6 +1475,11 @@ def main():
     bloons = build_bloons(dump, needed, speed)
     dropped: set = set()
     prune_tags(towers, {t for b in bloons for t in b["tags"]}, dropped)
+    # Trank-Ausschlüsse nur auf Türme des Sets (game_v1 lehnt unbekannte Namen ab)
+    names = {t["name"] for t in towers}
+    for a in (a for t in towers for v in t["variants"] for a in v["attacks"]):
+        if a["delivery"]["kind"] == "potion":
+            a["delivery"]["effect"]["exclude"] = [n for n in a["delivery"]["effect"]["exclude"] if n in names]
     data = {
         "format": "game_v1",
         "name": f"{args.map}-{args.preset}-{dump.name}",
