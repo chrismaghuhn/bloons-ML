@@ -89,7 +89,7 @@ public class BloonsMLMod : BloonsTD6Mod
         displayName = "Hotkey: Player-Test",
         description = "Test für den Replay-Player (docs/design-replay-player.md, Schritt 1): in einer Wegwerf-Partie " +
                       "vor dem ersten Rundenstart drücken. Setzt Türme, Geld, Leben und Runde (landet im Autosave dieser " +
-                      "Partie, also nicht weiterspielen) und schaltet den Trace dauerhaft an."
+                      "Partie, also nicht weiterspielen) und schaltet den Trace für diese Sitzung an."
     };
 
     public static MelonLogger.Instance Log => Melon<BloonsMLMod>.Logger;

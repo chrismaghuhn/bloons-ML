@@ -36,6 +36,8 @@ def load(path: Path) -> list[dict]:
 def bloon_keys(events: list[dict]) -> dict[int, tuple]:
     """Spiel-ID -> Schlüssel (Runde, createdAtRoundTime, Nr., Kind-Nr. je Elternteil …), unabhängig von IDs.
     Die Runde kommt aus dem letzten `round_start` (Bloon.spawnRound ist in 57.4 nicht die Rundennummer, meist 0).
+    Bloons vor dem ersten `round_start` (Trace beginnt mitten in der Runde, Sandkasten) bekommen Runde None; das ist
+    nur dann vergleichbar, wenn beide Traces an derselben Stelle beginnen.
     Bloons mit mehrdeutigem Schlüssel werden weggelassen (und gemeldet)."""
     keys: dict[int, tuple] = {}
     children: Counter = Counter()

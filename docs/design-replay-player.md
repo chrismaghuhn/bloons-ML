@@ -7,8 +7,8 @@ abspielen und Tick für Tick vergleichen, statt aus Screenshots oder Endständen
 
 Baut auf der vorhandenen Mod auf (`mod/BloonsMLMod`): neuer Ordner `Player/`, gemeinsame Teile mit dem Recorder in
 `Common/`. Stand der Prüfung: BTD6 57.4, Mod Helper 3.6.10. Signaturen unten stammen aus den generierten
-Il2Cpp-Assemblies; was nur aus Signaturen gefolgert ist, ist als **[prüfen]** markiert und kommt in die Test-Mod
-(Abschnitt 8, Schritt 1).
+Il2Cpp-Assemblies. Was zunächst nur aus Signaturen gefolgert war, hat Schritt 1 (Test-Mod) im Spiel geprüft; die
+Abschnitte 1–4 geben den gemessenen Stand wieder, Einzelheiten in §10.
 
 ## 1. Spiel-APIs
 
@@ -30,13 +30,14 @@ Alles läuft über die Bridge `InGame.instance.bridge` (`UnityToSimulation`). `i
 | Targeting | `SetNextTowerTargetType(inputId, id, prev)` (schaltet eine Option weiter) |
 | Türme lesen | `GetAllTowers()` → `TowerToSimulation`, `GetTowerFromId(id)` |
 
-**Ausführungszeitpunkt:** Im Normalfall laufen `CreateTowerAt` und `UpgradeTower` **sofort** (Mod Helpers Tests lesen
-`GetAllTowers()` bzw. das Callback-Ergebnis direkt nach dem Aufruf); nur in manchen Zuständen landen sie in der
-Warteschlange `bridge.actions` (Mod Helper warnt dann "could not be immediately performed"). `SetCash`, `SetRound`
-und `ResetRound` haben keine `_Impl`-Variante, laufen also nie über die Warteschlange. Der Player wartet deshalb nach
-jeder Aktion, bis ihr Callback gefeuert hat **und** `bridge.actions` leer ist, bevor er weitermacht. **[prüfen]**:
-wann genau Aktionen in die Warteschlange gehen und welche Methode sie leert (`UnityToSimulation.Simulate` einmal je
-Unity-Frame oder je Sim-Schritt?), wichtig für Aktionen mit Frame-Angabe (Abschnitt 4).
+**Ausführungszeitpunkt (gemessen, §10):** `CreateTowerAt` und `UpgradeTower` gehen **immer in die Warteschlange**
+`bridge.actions`, sowohl aus `OnUpdate` als auch aus dem `Simulate`-Prefix: kein Callback während des Aufrufs,
+danach 1 Eintrag in der Warteschlange. Ausgeführt werden sie vor dem nächsten Sim-Schritt (zwischen den Runden: im
+nächsten Frame mit derselben Sim-Zeit; in der Runde: ein Schritt später, siehe Abschnitt 4). `SetCash`, `SetRound` und
+`ResetRound` haben keine `_Impl`-Variante und wirken sofort. Der Player wartet deshalb nach jeder Aktion, bis ihr
+Callback gefeuert hat **und** `bridge.actions` leer ist, bevor er weitermacht. (Mod Helpers Tests lesen das Ergebnis
+direkt nach dem Aufruf und warnen "could not be immediately performed", wenn etwas in der Warteschlange liegt; im
+normalen Spiel ist das der Regelfall.)
 
 **Wie Mod Helper es selbst macht:** `Api/Testing/ModTest.CreateTowerAt` ruft `CreateTowerAt` mit
 `ignoreInventoryChecks`/`ignorePlacementChecks` auf und nimmt den neuen Turm als Differenz von `GetAllTowers()` vorher
@@ -69,9 +70,8 @@ nicht.
 
 **Koordinaten:** Replays und `StartState` stehen schon in Spielkoordinaten (Ursprung Mitte, x rechts, y unten,
 Spielfeld ±150 × ±116; z.B. `dart` bei (−35, 39) in `data/local/starts/`). Der Player übergibt sie unverändert als
-`UnityEngine.Vector2` (so die Signatur von `CreateTowerAt`/`QueryPlacementPosition`). **[prüfen]**: ob die Werte
-dort Sim-Koordinaten sind (Mod Helpers eigener Test setzt bei (0, 0), also Spielfeldmitte, was dafür spricht) und ob
-das Spiel die Position einrastet; der Test in Schritt 1 setzt Türme an krumme Koordinaten und vergleicht.
+`UnityEngine.Vector2` (so die Signatur von `CreateTowerAt`/`QueryPlacementPosition`). Gemessen (§10): Die Werte sind
+Sim-Koordinaten und werden exakt übernommen, auch krumme (−35,37, 59,81); nichts rastet ein.
 
 **Upgrade/Verkauf** adressieren einen Turm über eine Position (Footprint enthält den Punkt). Der Player führt eine
 Tabelle Replay-Platzierung → `ObjectId` (aus Schritt 3 oben) und löst Upgrades darüber auf, mit denselben
@@ -90,17 +90,16 @@ Monkey Meadow, Hard, CHIMPS); vor dem ersten `StartRound`:
    `bridge.actions` leer ist (sonst würde ein verspätet abgezogener Preis das gesetzte Geld verfälschen),
 2. danach `SetCash(state.cash)`, Leben über `health`/`maxHealth` (CHIMPS: max 1; ein Zustand mit mehr Leben wird
    für CHIMPS vorher abgelehnt),
-3. Runde setzen, dann `StartRound()`. Zählungen: `StartState.round` = Anzahl **geschaffter** Runden (`start.rs`),
-   Replay-Runden zählen ab 1 (CHIMPS ab 6), das Spiel zählt intern ab 0 (der Recorder zeigt `GetCurrentRound()` 0
-   für Runde 1). Die nächste zu spielende Runde ist also `state.round + 1`, intern `state.round`.
+3. `bridge.SetRound(state.round, false)`, dann `StartRound()`. Zählungen: `StartState.round` = Anzahl **geschaffter**
+   Runden (`start.rs`), Replay-Runden zählen ab 1 (CHIMPS ab 6), das Spiel zählt intern ab 0 (intern = angezeigte
+   Runde − 1). Die nächste zu spielende Runde ist also `state.round + 1`, intern `state.round` (gemessen:
+   `SetRound(9, false)` vor dem ersten Start → Runde 10).
 
 Vorteil: gleiche Regeln wie im Ziel-Modus (Rundenset, Income, Tempo-Faktor, Kostenfaktor). Den Rundenbonus legt das
 Spiel je Runde fest (in `game_v1` für CHIMPS z.B. `end_bonus` 101, 102, … je Runde), er hängt also nicht an der
-Partie-Historie. **[prüfen]**:
-- ob `bridge.SetRound(round, false)` oder Mod Helpers `spawner.SetRound(round)` vor der ersten Runde greift und mit
-  welcher Zählung (siehe oben);
-- ob CHIMPS Geld- und Leben-Setzen zulässt (CHIMPS sperrt u.a. Verkaufen, Continue, Knowledge, Extra-Leben und
-  Kräfte; `SetCash` ist laut Signatur ein Bridge-Aufruf ohne Modus-Prüfung).
+Partie-Historie. Gemessen in CHIMPS (§10): `SetCash` übernimmt auch Bruchteile; `health.Value` lässt sich setzen,
+`maxHealth` (1) wird dabei **nicht** erzwungen, der Player hält CHIMPS-Leben deshalb selbst auf 1. Preise beim
+Aufbau sind die echten Hard-Preise (Dart 215).
 
 **B. Sandkasten.** Geld, Leben und Runde sind frei setzbar (Spiel-UI dafür), aber andere Regeln (Kosten, Income
 gibt es nicht wie im Spiel, Rundenstart anders). Gut für Tempo-/Schuss-Messungen, **nicht** für Partievergleiche.
@@ -108,12 +107,13 @@ gibt es nicht wie im Spiel, Rundenstart anders). Gut für Tempo-/Schuss-Messunge
 **C. Spielstand-Datei schreiben.** BTD6 speichert laufende Partien; einen Stand von außen zu erzeugen wäre genau,
 aber das Format ist intern und versionsabhängig. Nicht empfohlen.
 
-**D. Headless (später):** Das Spiel hat eine eingebaute Simulation ohne UI (`SimulationTestUtilities.
-LoadEnvironmentForTest(SimulationTest, …)` (weitere Parameter, Mod Helper nutzt nur den ersten) → `SimulationTestEnvironment` mit `simulation` (Bridge), `isRealTime`,
-`simulationSpeed`), die Mod Helper für automatische Tests nutzt (`ModTest.SetupSimEnvironment`). Damit könnten
-Replays schneller als Echtzeit und ohne Grafik im echten Spiel-Code laufen: viele Vergleiche hintereinander.
-**[prüfen]**: wie man sie Schritt für Schritt vorantreibt, ob Recorder-Hooks dort feuern, ob Modus/Schwierigkeit
-gleich gesetzt werden. Lohnt sich, sobald Weg A steht.
+**D. Headless (später):** Das Spiel hat eine eingebaute Simulation ohne UI:
+`SimulationTestUtilities.LoadEnvironmentForTest(SimulationTest, …)` (weitere Parameter; Mod Helper nutzt nur den
+ersten) liefert ein `SimulationTestEnvironment` mit `simulation` (Bridge), `isRealTime` und `simulationSpeed`. Mod
+Helper nutzt es für automatische Tests (`ModTest.SetupSimEnvironment`). Damit könnten Replays schneller als Echtzeit
+und ohne Grafik im echten Spiel-Code laufen: viele Vergleiche hintereinander. **[prüfen]** (noch offen, eigener
+Test vor Schritt 5): wie man sie Schritt für Schritt vorantreibt, ob Recorder-Hooks dort feuern, ob Modus und
+Schwierigkeit gleich gesetzt werden. Lohnt sich, sobald Weg A steht.
 
 Partie starten kann der Player selbst: Mod Helpers Tests setzen `InGameData.Editable.selectedMap/Mode/Difficulty`
 und rufen `UI.instance.LoadGameEnumerator()`. Karte, Modus und Schwierigkeit kommen aus `game_v1.meta`
@@ -133,11 +133,13 @@ Runde). `result.cash` sind ganze Dollar, im Spiel ist Cash ein Bruch: verglichen
 
 **Später (`btd-replay/3`, `docs/design-recorder.md` §1): mit Frame.** Aktion `{"frame": n, …}` = Rundenzeit in
 Sim-Schritten. Der Player führt sie in einem Harmony-**Prefix** auf `Simulation.Simulate` aus, sobald
-`roundTime.elapsed` den Wert erreicht. Ziel ist, dass sie sofort im selben Schritt läuft und nicht in der
-Warteschlange landet: die wird womöglich nur einmal je Unity-Frame geleert, und vorgespult laufen 3 Sim-Schritte je
-Frame (Aktion könnte bis zu 2 Schritte zu spät kommen). **[prüfen]**: ob ein Aufruf aus dem `Simulate`-Prefix sofort
-läuft oder gerade dann in die Warteschlange geht; sonst die Simulation direkt statt über die Bridge ansprechen. Der
-Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt eine Abweichung sofort auf. Karte, Modus,
+`roundTime.elapsed` den Wert erreicht. Gemessen (§10): auch der Aufruf aus dem Prefix geht in die Warteschlange und
+wird **einen Schritt später** ausgeführt, und zwar im nächsten Schritt desselben Frames (Aufruf beim 1. von 3
+Schritten des Frames, Turm beim 2.). Das spricht dafür, dass die Warteschlange vor jedem Sim-Schritt geleert wird,
+nicht einmal je Frame; dann ist der Versatz immer 1, und der Player ruft für Schritt N im Prefix bei N − 1 auf.
+Bestätigung steht noch aus: vorgespult an drei aufeinanderfolgenden Rundenschritten messen, also an jeder Position
+im Frame einmal (Player-Test, Teil 2). Der Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt
+eine Abweichung sofort auf. Karte, Modus,
 Schwierigkeit und Spielversion braucht der `/3`-Header nicht: sie stehen in `meta` der Datendatei (Abschnitt 3).
 
 **Targeting:** heute immer "First" (wie die Sim); sobald das Replay Targeting kennt, `SetNextTowerTargetType` so oft,
@@ -145,9 +147,9 @@ bis der gewünschte Typ eingestellt ist (Kontrolle über den Turm).
 
 ## 5. Ein- und Ausgabe, Bedienung, Sicherheit
 
-- **Laden:** Einstellung "Replay-Datei" (Pfad, Unix-Pfade wie beim Dump-Ordner) plus Hotkey (Vorschlag **F10**:
-  laden und starten; **F11**: Abbruch). Alternativ legt die Python-Seite die Datei in
-  `data/local/replay_inbox/` (gitignored wie `data/local/`) und der Player bietet die neueste an. Unterstützt: `btd-replay/2` (`.jsonl`) und
+- **Laden:** Einstellung "Replay-Datei" (Pfad, Unix-Pfade wie beim Dump-Ordner) plus Hotkey **F10** (laden und
+  starten) und **F11** (Abbruch). Alternativ legt die Python-Seite die Datei in `data/local/replay_inbox/`
+  (gitignored wie `data/local/`) und der Player bietet die neueste an. Unterstützt: `btd-replay/2` (`.jsonl`) und
   `StartState` (`.json`, ein Objekt); ein Replay kann mit einem Startzustand beginnen.
 - **Datendatei:** das Replay nennt sie im Header (`data`, z.B. `game_v1_tutorial_chimps.json`); der Player sucht sie
   im Datenordner (Einstellung, Standard `data/local/`) und prüft `data_hash`, falls gesetzt: xxh3_64 mit Seed
@@ -194,38 +196,41 @@ Damit ist die Bridge im Kern "Replay, das Zeile für Zeile über den Socket komm
 
 ## 8. Reihenfolge
 
-1. **Test-Mod (wie beim Recorder):** im Spiel prüfen, was oben **[prüfen]** ist: `CreateTowerAt` mit Sim-Koordinaten
-   (Einrasten? Koordinatensystem des `UnityEngine.Vector2`?), Ausführungsschritt von Bridge-Aktionen (auch aus einem `Simulate`-Prefix heraus), `SetRound`-Zählung vor der ersten Runde,
-   `SetCash`/Leben in CHIMPS, Callback-Verhalten bei Fehlern (zu wenig Geld, belegter Platz).
+1. **Test-Mod (wie beim Recorder), erledigt (§10):** `CreateTowerAt` mit Sim-Koordinaten, Ausführungsschritt von
+   Bridge-Aktionen (auch aus einem `Simulate`-Prefix), `SetRound`-Zählung, `SetCash`/Leben in CHIMPS,
+   Callback-Verhalten bei Fehlern. Offen: Prefix-Versatz an allen drei Positionen im Frame (Player-Test Teil 2).
 2. **Player für `btd-replay/2` zwischen den Runden** (Weg A, Abschnitt 4), mit Ergebnisdatei; Test: ein Sim-Replay
    aus `data/local/starts/` im Spiel abspielen, `btd-tools replay --compare` auf die Ergebnisse.
 3. **Startzustände** (`StartState`) und Export eines `StartState` aus einer echten Partie.
-4. **Frames** (`btd-replay/3`), zusammen mit Recorder-Schritt 2 und dem Engine-Umbau für Aktionen mitten in der Runde;
-   dabei den Ein-Schritt-Versatz aus dem `Simulate`-Prefix (§10) bei 1× nachmessen.
+4. **Frames** (`btd-replay/3`), zusammen mit Recorder-Schritt 2 und dem Engine-Umbau für Aktionen mitten in der Runde.
 5. **Headless** (Weg D) für viele Vergleiche hintereinander, falls Schritt 1 dafür grünes Licht gibt.
 6. **Live-Bridge** (Socket als Quelle).
 
-## 9. Zu entscheiden
+## 9. Entschieden (2026-10-27)
 
-1. Weg A (echter Modus, Zustand aufbauen) als Standard, Sandkasten nur für Messungen?
-2. Bei einem Fehler anhalten (Standard) oder überspringen?
-3. Laden per Einstellung + Hotkey (F10/F11) oder über einen Eingangsordner?
-4. ~~Konverter-Änderung: `game_v1` bekommt `game_id` je Turm sowie Karte, Modus, Schwierigkeit und Spielversion als
-   eigene Felder?~~ Erledigt: `meta` und `game_id` (Commit 040c8a6, Trainings-Session).
+1. Weg A (echter Modus, Zustand aufbauen) ist Standard; der Sandkasten nur für Messungen.
+2. Bei einem Fehler hält der Player an (Partie pausiert), statt die Aktion zu überspringen.
+3. Laden per Einstellung "Replay-Datei" plus Hotkey F10 (laden und starten) und F11 (Abbruch); der Eingangsordner
+   `data/local/replay_inbox/` kommt als Option dazu. (F10 belegt bis dahin der Player-Test aus Schritt 1.)
+4. `game_v1` hat `meta` (Karte, Modus, Schwierigkeit, Spielversion) und `game_id` je Turm (Commit 040c8a6,
+   Trainings-Session); der Player liest beides von dort.
 
 ## 10. Ergebnis Schritt 1: Player-Test (2026-10-27, BTD6 57.4, Monkey Meadow, CHIMPS)
 
 Test-Mod `mod/BloonsMLMod/Player/PlayerProbe.cs` (F10), Ergebnis und Trace lokal unter `data/raw/recordings/`.
-Damit sind die **[prüfen]**-Punkte aus den Abschnitten 1–4 beantwortet:
+Damit sind die offenen Punkte aus den Abschnitten 1, 2, 3 (Weg A) und 4 beantwortet; offen bleibt Weg D (headless):
 
 - **Ausführung über die Warteschlange, aber vor dem nächsten Sim-Schritt.** `CreateTowerAt` und `UpgradeTower` aus
   `OnUpdate` heraus: Callback nicht während des Aufrufs, `bridge.actions` hat danach 1 Eintrag; der Callback kommt
   im nächsten Frame mit **derselben** Sim-Zeit (z.B. Aufruf bei `t` 592, Callback und `tower_placed` bei `t` 592).
   Zwischen den Runden heißt das: Aktion → einen Frame warten → bestätigt, bevor die Simulation weiterläuft.
-- **Aus dem `Simulate`-Prefix: genau ein Schritt Versatz.** Aufruf im Prefix bei Rundenzeit 300 (`t` 5017):
-  Callback im selben Frame, Turm bei Rundenzeit **301** (`t` 5018), laut Recorder ebenfalls 301. Eine Messung,
-  vorgespult (3 Schritte je Frame); für eine Aktion bei Rundenschritt N ruft der Player im Prefix bei N − 1 auf
-  (gilt für `btd-replay/3`), den Versatz prüft Schritt 4 noch einmal bei 1×.
+- **Aus dem `Simulate`-Prefix: ein Schritt Versatz.** Aufruf im Prefix bei Rundenzeit 300 (`t` 5017): auch hier
+  Warteschlange (`queuedActionsAfterCall` 1, `callbackFiredDuringCall` false); Callback im selben Frame, Turm bei
+  Rundenzeit **301** (`t` 5018), laut Recorder ebenfalls 301. Vorgespult, 3 Schritte je Frame; der Aufruf lag beim
+  **1.** Schritt von Frame 6090, der Turm kam beim **2.** Schritt desselben Frames. Würde die Warteschlange nur einmal
+  je Frame nach der Schritt-Schleife geleert, wäre der Turm frühestens nach dem 3. Schritt gekommen; die Messung
+  spricht also für Leeren vor jedem Schritt (fester Versatz 1). Eine Messung; die Bestätigung an allen drei
+  Positionen im Frame macht der erweiterte Player-Test (Teil 2 setzt Türme bei Rundenzeit 300, 301 und 302).
 - **Koordinaten:** `CreateTowerAt` nimmt Sim-Koordinaten (im `UnityEngine.Vector2`); (−35, 39) und (−35,37, 59,81)
   landen exakt (Abweichung 0), nichts rastet ein. `QueryPlacementPosition` gibt die Position unverändert zurück.
 - **Fehlerfälle:** belegter Platz und Strecke: `positionValid`/`CanPlaceTowerAt` schon vorher `false`; zu wenig Geld

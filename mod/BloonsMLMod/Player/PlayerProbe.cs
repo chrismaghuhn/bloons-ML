@@ -28,8 +28,14 @@ namespace BloonsML.Player;
 /// </summary>
 public static class PlayerProbe
 {
-    /// <summary>Rundenzeit (Sim-Schritte), zu der aus dem Simulate-Prefix ein Turm gesetzt wird.</summary>
-    private const int MidRoundStep = 300;
+    /// <summary>
+    /// Rundenzeiten (Sim-Schritte), zu denen aus dem Simulate-Prefix je ein Turm gesetzt wird: drei aufeinanderfolgende,
+    /// damit vorgespult (3 Schritte je Frame) jede Position im Frame einmal vorkommt.
+    /// </summary>
+    private static readonly int[] MidRoundSteps = { 300, 301, 302 };
+
+    /// <summary>Freie Plätze für Teil 2 (Monkey Meadow, Land); genommen wird jeweils der erste, der gerade frei ist.</summary>
+    private static readonly (float x, float y)[] MidRoundSpots = { (105f, -41f), (60f, 60f), (105f, -61f), (85f, -41f), (60f, 80f) };
 
     /// <summary>Ziel-Runde für SetRound (interne Zählung; CHIMPS beginnt intern bei 5 = Runde 6).</summary>
     private const int TargetRoundInternal = 9;
@@ -43,7 +49,12 @@ public static class PlayerProbe
 
     /// <summary>Simulation, für die Teil 1 gelaufen ist; Teil 2 feuert nur dort (nie in einer späteren Partie).</summary>
     private static Simulation probedSim;
-    private static bool midRoundArmed;
+    private static readonly System.Collections.Generic.HashSet<int> pendingMidRound = new();
+    private static bool midRoundArmed => pendingMidRound.Count > 0;
+
+    // Position des aktuellen Sim-Schritts im Unity-Frame (1 = erster Schritt des Frames)
+    private static int prefixFrame = -1;
+    private static int prefixStepInFrame;
 
     public static void Run()
     {
@@ -71,9 +82,10 @@ public static class PlayerProbe
     /// <summary>Partie beendet/neu gestartet/Hauptmenü: Teil 2 entschärfen.</summary>
     public static void Reset()
     {
-        midRoundArmed = false;
+        pendingMidRound.Clear();
         probedSim = null;
         cancelled = true;
+        running = false; // falls eine verschachtelte Coroutine abgebrochen ist und Guarded nie zu Ende lief
     }
 
     private static bool cancelled;
@@ -124,8 +136,8 @@ public static class PlayerProbe
         // Trace an und warten, bis er wirklich schreibt (startet mit dem nächsten Sim-Schritt)
         if (!BloonsMLMod.RecordTrace)
         {
-            BloonsMLMod.RecordTrace.SetValueAndSave(true);
-            BloonsMLMod.Log.Msg("Player-Test: Trace eingeschaltet (bleibt an, bis F9 oder Einstellung)");
+            BloonsMLMod.RecordTrace.SetValue(true); // nur für diese Sitzung, nicht gespeichert
+            BloonsMLMod.Log.Msg("Player-Test: Trace für diese Sitzung eingeschaltet (F9 schaltet ihn aus)");
         }
         for (var i = 0; i < MaxWaitFrames && !Recorder.TraceRecorder.Active; i++) yield return null;
         if (!Alive()) yield break;
@@ -188,25 +200,45 @@ public static class PlayerProbe
         });
 
         Check("state_after", State(bridge));
-        midRoundArmed = true;
+        foreach (var step in MidRoundSteps) pendingMidRound.Add(step);
         Save();
-        BloonsMLMod.Log.Msg($"Player-Test Teil 1 fertig. Jetzt die Runde starten; bei Rundenschritt {MidRoundStep} " +
-                            "setzt der Test einen weiteren Turm (Teil 2) und ergänzt die Datei.");
+        BloonsMLMod.Log.Msg($"Player-Test Teil 1 fertig. Jetzt die Runde starten und vorspulen; bei den Rundenschritten " +
+                            $"{string.Join(", ", MidRoundSteps)} setzt der Test je einen Turm (Teil 2) und ergänzt die Datei.");
     }
 
     /// <summary>Teil F: aus dem Simulate-Prefix heraus platzieren, wenn die Rundenzeit erreicht ist.</summary>
     internal static void OnSimulatePrefix(Simulation sim)
     {
+        if (Time.frameCount != prefixFrame)
+        {
+            prefixFrame = Time.frameCount;
+            prefixStepInFrame = 0;
+        }
+        prefixStepInFrame++;
         if (!midRoundArmed || probedSim == null || probedSim.Pointer != sim.Pointer) return;
-        if (sim.roundTime.elapsed != MidRoundStep) return;
-        midRoundArmed = false;
+        var roundTime = sim.roundTime.elapsed;
+        if (!pendingMidRound.Remove(roundTime)) return;
         var bridge = InGame.instance?.bridge;
         if (bridge == null) return;
-        var entry = new JObject { ["roundTimeAtCall"] = sim.roundTime.elapsed, ["simTimeAtCall"] = sim.time.elapsed };
-        Check("mid_round_prefix_place", entry);
+        var dart = FindTower(bridge, "DartMonkey");
+        var spot = MidRoundSpots.FirstOrDefault(p =>
+            bridge.CanPlaceTowerAt(new Vector2(p.x, p.y), dart, bridge.GetInputId(), ObjectId.Invalid));
+        var entry = new JObject
+        {
+            ["roundTimeAtCall"] = roundTime,
+            ["simTimeAtCall"] = sim.time.elapsed,
+            ["frameAtCall"] = Time.frameCount,
+            ["stepInFrameAtCall"] = prefixStepInFrame,
+            ["fastForward"] = TimeManager.FastForwardActive
+        };
+        Check($"mid_round_prefix_place_{roundTime}", entry);
+        if (spot == default)
+        {
+            entry["skipped"] = "kein freier Platz";
+            return;
+        }
         // Aufruf und Sofort-Ergebnis laufen hier im Prefix; Warten auf Callback/Turm danach per Coroutine
-        MelonCoroutines.Start(Guarded(PlaceInto(bridge, FindTower(bridge, "DartMonkey"), 105.0f, -41.0f, entry,
-            new PlaceResult())));
+        MelonCoroutines.Start(Guarded(PlaceInto(bridge, dart, spot.x, spot.y, entry, new PlaceResult())));
     }
 
     // ------------------------------------------------------------------ Prüfungen
@@ -280,7 +312,13 @@ public static class PlayerProbe
             yield break;
         }
 
-        result.Tower = InGame.instance.GetTowers().FirstOrDefault(t => !before.Contains(t.Id.Raw));
+        // neuer Turm an der angefragten Stelle (mehrere Platzierungen können gleichzeitig laufen)
+        // neuer Turm an der angefragten Stelle (mehrere Platzierungen können gleichzeitig laufen); rastet das Spiel
+        // doch einmal ein, der nächstgelegene neue Turm (positionDelta zeigt es dann)
+        var fresh = InGame.instance.GetTowers().Where(t => !before.Contains(t.Id.Raw)).ToList();
+        result.Tower = fresh.FirstOrDefault(t => Math.Abs(t.Position.X - x) < 1e-3 && Math.Abs(t.Position.Y - y) < 1e-3)
+                       ?? fresh.OrderBy(t => (t.Position.X - x) * (t.Position.X - x) + (t.Position.Y - y) * (t.Position.Y - y))
+                           .FirstOrDefault();
         entry["created"] = result.Tower != null;
         entry["cashAfter"] = bridge.GetCash(inputId);
         if (result.Tower != null)

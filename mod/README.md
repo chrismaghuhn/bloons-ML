@@ -112,7 +112,7 @@ Format `bloonsml-trace/0`, eine JSON-Zeile je Ereignis, `t` = interner Sim-Zähl
 |---|---|
 | `header` | Karte, Modus, Schwierigkeit, Spiel-/Mod-Version, `paths[]` mit `spawnDist`, `leakDist`, `maximumDistanceUntilSpawn/Leak`, `mapWideBloonSpeed` |
 | `step` | je Sim-Schritt: `t`, `rt`, Unity-Frame `uf`, Schritt-Nr. im Frame `sif`, `timeScale` `ts`, `deltaTime` `dt`, Vorspulen `ff`; alle N Schritte `b` = `[[id, Pfad, Distanz, x, y], …]` |
-| `spawn` | beim Erzeugen (`Bloon.Initialise`): `id`, `type`, `spawnRound`, `emissionIndex` (57.4: immer 0), `createdAtRoundTime`, `lineage`; `dist`/`x`/`y`/`health` sind hier noch 0 |
+| `spawn` | beim Erzeugen (`Bloon.Initialise`): `id`, `type`, `spawnRound` (57.4: **nicht** die Rundennummer, meist 0; die Runde steht im letzten `round_start`), `emissionIndex` (57.4: immer 0), `createdAtRoundTime`, `lineage`; `dist`/`x`/`y`/`health` sind hier noch 0 |
 | `bloon_info` | beim ersten Schritt eines Bloons (beim Erzeugen sind Distanz/Position/Leben noch 0): Distanz, Position, `health`, `trackSpeedMultiplier`, `totalSpeedFrames`, `modelSpeed`, `modelSpeedFrames`, `radius` |
 | `leak` / `leak_done` | vor/nach dem Leak: Bloon, `health`, `leakDamage`, `lives` |
 | `round_start` / `round_end`, `fastforward` | Runde bzw. an/aus |
@@ -127,8 +127,9 @@ Auswertung: `.venv/bin/python mod/tools/analyze_trace.py TRACE [TRACE2]` (mit zw
 Test für `docs/design-replay-player.md`: in einer **Wegwerf-Partie** (Monkey Meadow, CHIMPS) vor dem ersten
 Rundenstart **F10** drücken. Der Test setzt Dart Monkeys an exakte und krumme Koordinaten, probiert Fehlerfälle
 (belegt, auf der Strecke, zu wenig Geld), ein Upgrade, setzt Geld, Leben und Runde und schreibt die Ergebnisse nach
-`data/raw/recordings/<Zeit>_probe.json` (Trace wird automatisch eingeschaltet). Danach die Runde starten: bei
-Rundenschritt 300 setzt er aus dem `Simulate`-Prefix einen weiteren Turm (Teil 2, ergänzt dieselbe Datei).
+`data/raw/recordings/<Zeit>_probe.json` (Trace wird für die Sitzung eingeschaltet). Danach die Runde starten und
+**vorspulen**: bei den Rundenschritten 300, 301 und 302 setzt er aus dem `Simulate`-Prefix je einen weiteren Turm
+(Teil 2, ergänzt dieselbe Datei, mit der Position des Schritts im Frame).
 
 ## Ausgabeformat
 
