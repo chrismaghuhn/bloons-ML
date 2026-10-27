@@ -129,8 +129,27 @@ r60_base/r60_bans (nicht die Trainings-Replays der Quelle B), Seed 2026.
 | Modell | deterministisch | stochastisch |
 |---|---|---|
 | r60_base | 34/50 Siege, Ø 21,2 Runden weiter | 37/50, Ø 22,0 |
-| r60_bans | (39/50, ungültig: zufällige Sperren mitgewürfelt, Neumessung folgt) | (40/50) |
+| r60_bans | (39/50, ungültig: zufällige Sperren mitgewürfelt) → neu: 40/50, Ø 26,3 | 43/50, Ø 26,8 |
 
 Bekannte Grenze der Gewichtung: Bei ~7 000 Pool-Zuständen wird jeder Zustand nur selten gezogen,
 A-Zustände fallen nach 2 000 neuen wieder raus. Die 3-Runden-Gewichtung greift daher kaum; der Anteil
 "sofort verloren" wird vor allem von den Störungen bestimmt (geloggt unter `starts/`).
+
+### Ergebnis r60_starts (wie r60_bans, plus `--start-states 0.3`)
+
+5M Schritte, Seed 1, Quelle B: 100 Replays von r60_base/r60_bans (5 641 Zustände).
+Training: 30 % der Episoden, aber nur ~18 % der Schritte aus Startzuständen (15 % Pool, 3 % zufällig);
+"sofort verloren" sank von 37 % auf 10 %, keine Fehlstarts. Normale Starts (Ø Runde, `starts/normal_round`)
+am Ende gleichauf mit r60_bans (55,6 vs. 54,1 bei 4,7M).
+
+| | r60_base | r60_bans | r60_starts |
+|---|---|---|---|
+| Erholung det. / stoch. (von 50) | 34 / 37 | 40 / 43 | **48 / 48** |
+| H(Schlüssel) ohne Sperre | 0,35 bit | 0,53 bit | 0,82 bit |
+| Sperr-Kombinationen gewonnen, stoch. / det. (von 22) | 11 / 11 | 15 / 13 | 15 / 15 |
+
+- **Erholung:** klarer Gewinn, aus gestörten Zuständen fast immer gewonnen.
+- **Vielfalt:** +0,47 bit gegenüber der Baseline, **Kriterium (+0,5) knapp verfehlt**; 55/64 Spiele
+  spielen weiter ein Rezept (Bomb unten + Dart unten). Ein Seed, 64 Spiele: der Abstand zur Schwelle
+  liegt im Rauschen, das Kriterium bleibt trotzdem so stehen.
+- **Ohne Dart** gewinnt weiterhin kein Modell (r60_starts: Ø Runde 36).
