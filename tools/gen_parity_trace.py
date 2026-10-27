@@ -74,7 +74,7 @@ def main():
             report = g.play_round()
             rounds.append({"actions": actions, "after": snapshot(g, report)})
         episodes.append({"start_cash": start_cash, "rounds": rounds})
-    text = json.dumps({"format": "parity_trace/1", "data": "data/sim_v0.json", "episodes": episodes},
+    text = json.dumps({"format": "parity_trace/1", "data": "data/sim_v0.game_v1.json", "episodes": episodes},
                       separators=(",", ":")) + "\n"
     if "--check" in sys.argv:
         if not OUT.exists() or OUT.read_text() != text:

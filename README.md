@@ -38,12 +38,14 @@ cargo run --release -p btd-tools -- replay spiel.jsonl            # strikt nachs
 cargo run --release -p btd-tools -- replay spiel.jsonl --compare  # Abweichungen auflisten
 ```
 
-Ein echtes Spiel kann man von Hand aufschreiben, `result` darf dabei unvollständig sein:
+Ein echtes Spiel kann man von Hand aufschreiben, `result` darf dabei unvollständig sein.
+Positionen sind Weltkoordinaten der Karte (im sim_v0-Datensatz ist eine Rasterzelle 1×1, der
+Mittelpunkt von Zelle (7, 4) ist also 7.5/4.5); Upgrade und Verkauf meinen den Turm an der Position:
 
 ```json
-{"type":"header","format":"btd-replay/1","data":"sim_v0.json"}
-{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7,"y":4}}],"result":{"lives":150}}
-{"type":"round","round":2,"actions":[{"upgrade":{"x":7,"y":4,"path":0}}],"result":{"lives":150,"cash":512}}
+{"type":"header","format":"btd-replay/2","data":"sim_v0.game_v1.json"}
+{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7.5,"y":4.5}}],"result":{"lives":150}}
+{"type":"round","round":2,"actions":[{"upgrade":{"x":7.5,"y":4.5,"path":0}}],"result":{"lives":150,"cash":512}}
 ```
 
 ## Setup

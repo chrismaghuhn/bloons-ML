@@ -8,3 +8,5 @@ target/
 
 # BTD6-Spieldaten-Dump (Ninja-Kiwi-Material, nicht committen – Repo ist öffentlich)
 data/raw/game_dump/
+# Aus dem Dump abgeleitete Daten (game_v1 für die echte Karte) bleiben ebenfalls lokal
+data/local/

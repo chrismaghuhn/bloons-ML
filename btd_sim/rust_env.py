@@ -19,7 +19,7 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
 import btd_rs
 
-DEFAULT_DATA = str(Path(__file__).resolve().parent.parent / "data" / "sim_v0.json")
+DEFAULT_DATA = str(Path(__file__).resolve().parent.parent / "data" / "sim_v0.game_v1.json")
 
 
 class RustBTDEnv(gym.Env):

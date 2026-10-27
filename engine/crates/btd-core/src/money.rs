@@ -20,6 +20,11 @@ impl Money {
     pub fn as_f64(self) -> f64 {
         self.0 as f64 / 1000.0
     }
+
+    /// Aus einem Dollar-Betrag mit Nachkommastellen (z.B. Einkommen × Faktor), auf 1/1000 $ gerundet.
+    pub fn from_f64(d: f64) -> Self {
+        Money((d * 1000.0).round() as i64)
+    }
 }
 
 impl Add for Money {

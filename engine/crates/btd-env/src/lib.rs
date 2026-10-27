@@ -1,8 +1,9 @@
 //! RL-Schicht über `btd-core`: Aktionsraum, Masken, Observation, Rewards, Vektor-Env und
 //! Spielprotokolle (Replays).
 //!
-//! M1: Aktionsraum, Observation und Rewards sind identisch zu `btd_sim/env.py`, damit die
-//! Python- und die Rust-Env austauschbar sind (Paritätstest in `tests/test_rust_env.py`).
+//! Mit dem sim_v0-Datensatz sind Aktionsraum, Observation und Rewards identisch zu
+//! `btd_sim/env.py`, damit Python- und Rust-Env austauschbar sind (Paritätstest in
+//! `tests/test_rust_env.py`).
 
 pub mod replay;
 
@@ -10,7 +11,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use btd_core::{Action, Game, RoundReport};
-use btd_data::{DataError, GameData};
+use btd_data::v1::GameV1;
+use btd_data::DataError;
 use rayon::prelude::*;
 use xxhash_rust::xxh3::xxh3_64_with_seed;
 
@@ -23,7 +25,7 @@ const DATA_HASH_SEED: u64 = 0xDA7A;
 /// anderen Daten abgespielt werden).
 #[derive(Clone, Debug)]
 pub struct EnvSpec {
-    pub data: Arc<GameData>,
+    pub data: Arc<GameV1>,
     pub data_hash: u64,
     pub data_name: String,
 }
@@ -34,7 +36,7 @@ impl EnvSpec {
         let text = std::fs::read_to_string(path)
             .map_err(|source| DataError::Io { path: path.display().to_string(), source })?;
         Ok(EnvSpec {
-            data: Arc::new(GameData::from_json(&text)?),
+            data: Arc::new(GameV1::from_json(&text)?),
             // Zeilenenden normalisieren, damit der Hash auf Windows (autocrlf) gleich ist
             data_hash: xxh3_64_with_seed(text.replace("\r\n", "\n").as_bytes(), DATA_HASH_SEED),
             data_name: path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
@@ -67,15 +69,23 @@ impl Default for EnvConfig {
     }
 }
 
-/// Aktionsraum (Discrete), N = Anzahl Zellen, T = Anzahl Turmtypen:
-/// `0` Runde starten, `1 + k*N + c` Turm k auf Zelle c bauen,
-/// `1 + T*N + p*N + c` Upgrade-Pfad p auf Zelle c, `1 + T*N + 2*N + c` Verkaufen.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// Aktionsraum (Discrete), N = Rasterzellen der Karte, T = Turmtypen, P = Upgrade-Pfade:
+/// `0` Runde starten, `1 + k*N + c` Turm k in Zelle c bauen,
+/// `1 + T*N + p*N + c` Pfad p des Turms in Zelle c upgraden, `1 + T*N + P*N + c` Verkaufen.
+/// Eine Zelle steht für ihren Mittelpunkt in Weltkoordinaten.
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Layout {
     pub grid_w: usize,
     pub grid_h: usize,
     pub cells: usize,
     pub towers: usize,
+    /// Anzahl Upgrade-Pfade, die mindestens ein Turm hat (sim_v0: 2, Spiel: 3).
+    pub paths: usize,
+    /// Höchste Upgrade-Stufe (für die Normierung in der Observation).
+    pub max_tier: usize,
+    pub x0: f64,
+    pub y0: f64,
+    pub cell: f64,
     pub a_place: usize,
     pub a_upgrade: usize,
     pub a_sell: usize,
@@ -85,21 +95,42 @@ pub struct Layout {
     pub obs_size: usize,
 }
 
+/// Aktion im Raster, bevor sie auf Weltkoordinaten bzw. Turm-IDs abgebildet wird.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CellAction {
+    Place { kind: u8, cell: usize },
+    Upgrade { cell: usize, path: u8 },
+    Sell { cell: usize },
+}
+
 impl Layout {
-    pub fn new(data: &GameData) -> Self {
-        let (grid_w, grid_h) = (data.map.grid_w, data.map.grid_h);
-        let cells = grid_w * grid_h;
+    pub fn new(data: &GameV1) -> Self {
+        let g = &data.map.grid;
+        let cells = g.w * g.h;
         let towers = data.towers.len();
+        let paths = data
+            .towers
+            .iter()
+            .map(|t| t.upgrade_costs.iter().rposition(|c| !c.is_empty()).map_or(0, |p| p + 1))
+            .max()
+            .unwrap_or(0);
+        let max_tier =
+            data.towers.iter().flat_map(|t| t.upgrade_costs.iter().map(Vec::len)).max().unwrap_or(0);
         let a_place = 1;
         let a_upgrade = a_place + towers * cells;
-        let a_sell = a_upgrade + 2 * cells;
-        let n_channels = 2 + towers + 2; // Pfad, baubar, Turmtyp one-hot, Tier Pfad 1/2
+        let a_sell = a_upgrade + paths * cells;
+        let n_channels = 2 + towers + paths; // Pfad, baubar, Turmtyp one-hot, Tier je Pfad
         let n_scalars = 4;
         Layout {
-            grid_w,
-            grid_h,
+            grid_w: g.w,
+            grid_h: g.h,
             cells,
             towers,
+            paths,
+            max_tier: max_tier.max(1),
+            x0: g.x0,
+            y0: g.y0,
+            cell: g.cell,
             a_place,
             a_upgrade,
             a_sell,
@@ -110,24 +141,33 @@ impl Layout {
         }
     }
 
-    /// Aktionsindex -> Spielaktion (`None` für "Runde starten").
-    pub fn decode(&self, a: usize) -> Option<Action> {
-        let xy = |c: usize| ((c % self.grid_w) as u16, (c / self.grid_w) as u16);
+    /// Aktionsindex -> Rasteraktion (`None` für "Runde starten" und ungültige Indizes).
+    pub fn decode(&self, a: usize) -> Option<CellAction> {
         if a == 0 || a >= self.n_actions {
             return None;
         }
         Some(if a < self.a_upgrade {
-            let (k, c) = ((a - self.a_place) / self.cells, (a - self.a_place) % self.cells);
-            let (x, y) = xy(c);
-            Action::Place { kind: k as u8, x, y }
+            let i = a - self.a_place;
+            CellAction::Place { kind: (i / self.cells) as u8, cell: i % self.cells }
         } else if a < self.a_sell {
-            let (p, c) = ((a - self.a_upgrade) / self.cells, (a - self.a_upgrade) % self.cells);
-            let (x, y) = xy(c);
-            Action::Upgrade { x, y, path: p as u8 }
+            let i = a - self.a_upgrade;
+            CellAction::Upgrade { cell: i % self.cells, path: (i / self.cells) as u8 }
         } else {
-            let (x, y) = xy(a - self.a_sell);
-            Action::Sell { x, y }
+            CellAction::Sell { cell: a - self.a_sell }
         })
+    }
+
+    /// Mittelpunkt einer Zelle in Weltkoordinaten.
+    pub fn center(&self, c: usize) -> (f64, f64) {
+        let (cx, cy) = ((c % self.grid_w) as f64, (c / self.grid_w) as f64);
+        (self.x0 + (cx + 0.5) * self.cell, self.y0 + (cy + 0.5) * self.cell)
+    }
+
+    /// Zelle unter einer Weltposition.
+    pub fn cell_of(&self, x: f64, y: f64) -> Option<usize> {
+        let (cx, cy) = (((x - self.x0) / self.cell).floor(), ((y - self.y0) / self.cell).floor());
+        (cx >= 0.0 && cy >= 0.0 && cx < self.grid_w as f64 && cy < self.grid_h as f64)
+            .then(|| cy as usize * self.grid_w + cx as usize)
     }
 }
 
@@ -193,6 +233,7 @@ impl Env {
             return info;
         }
         if action == 0 || self.builds_left == 0 {
+            let round = self.game.round + 1;
             let report = self.game.play_round();
             info.reward += self.cfg.reward_life * report.leaked as f64;
             if self.game.lives > 0 {
@@ -201,16 +242,22 @@ impl Env {
             self.builds_left = self.cfg.max_builds_per_round;
             info.round_played = Some(report);
             if let Some(r) = &mut self.recorder {
-                r.round_played(&self.game, &report);
+                r.round_played(round, &self.game, &report);
             }
         } else {
-            match self.layout.decode(action).map(|a| (a, self.game.apply(a))) {
-                Some((a, Ok(()))) => {
-                    if let Some(r) = &mut self.recorder {
-                        r.action(&self.spec.data, a);
+            match self.layout.decode(action).and_then(|ca| self.to_action(ca)) {
+                Some(a) => {
+                    let described = replay::describe(&self.game, a);
+                    match self.game.apply(a) {
+                        Ok(_) => {
+                            if let Some(r) = &mut self.recorder {
+                                r.action(described);
+                            }
+                        }
+                        Err(_) => info.invalid = true,
                     }
                 }
-                _ => info.invalid = true,
+                None => info.invalid = true,
             }
             self.builds_left -= 1;
         }
@@ -225,6 +272,43 @@ impl Env {
         info
     }
 
+    /// Der Turm, der für eine Zelle steht: der erste (in Bau-Reihenfolge), dessen Mittelpunkt in
+    /// der Zelle liegt. Maske, Observation und Aktionen nutzen alle diese eine Zuordnung, damit
+    /// eine erlaubte Aktion auch ausführbar ist (auch für Türme abseits der Zellmitte aus Replays).
+    pub fn tower_in_cell(&self, c: usize) -> Option<&btd_core::Tower> {
+        let l = &self.layout;
+        self.game.towers.iter().find(|t| l.cell_of(t.pos().0, t.pos().1) == Some(c))
+    }
+
+    /// Dieselbe Zuordnung für alle Zellen auf einmal: (Zelle, Turm), je Zelle höchstens einer.
+    fn cell_towers(&self) -> Vec<(usize, &btd_core::Tower)> {
+        let l = &self.layout;
+        let mut seen = vec![false; l.cells];
+        let mut out = Vec::with_capacity(self.game.towers.len());
+        for t in &self.game.towers {
+            if let Some(c) = l.cell_of(t.pos().0, t.pos().1) {
+                if !std::mem::replace(&mut seen[c], true) {
+                    out.push((c, t));
+                }
+            }
+        }
+        out
+    }
+
+    /// Rasteraktion -> Spielaktion (Weltposition bzw. Turm in der Zelle).
+    pub fn to_action(&self, ca: CellAction) -> Option<Action> {
+        let l = &self.layout;
+        let tower_in = |c: usize| self.tower_in_cell(c).map(|t| t.id);
+        Some(match ca {
+            CellAction::Place { kind, cell } => {
+                let (x, y) = l.center(cell);
+                Action::Place { kind, x, y }
+            }
+            CellAction::Upgrade { cell, path } => Action::Upgrade { tower: tower_in(cell)?, path },
+            CellAction::Sell { cell } => Action::Sell { tower: tower_in(cell)? },
+        })
+    }
+
     /// Maske wie `BTDEnv.action_masks` in Python: `true` = erlaubt.
     pub fn action_mask(&self, mask: &mut [bool]) {
         let l = &self.layout;
@@ -236,22 +320,21 @@ impl Env {
         let g = &self.game;
         let data = g.data();
         for (k, t) in data.towers.iter().enumerate() {
-            if g.cash < btd_core::Money::from_dollars(t.cost) {
+            if g.cash < g.price(t.cost) {
                 continue;
             }
             let base = l.a_place + k * l.cells;
             for c in 0..l.cells {
-                mask[base + c] =
-                    data.map.buildable[c] && !g.is_occupied((c % l.grid_w) as u16, (c / l.grid_w) as u16);
+                let (x, y) = l.center(c);
+                mask[base + c] = g.can_place_at(k as u8, x, y);
             }
         }
-        for t in &g.towers {
-            let c = t.y as usize * l.grid_w + t.x as usize;
-            for p in 0..2 {
+        for (c, t) in self.cell_towers() {
+            for p in 0..l.paths {
                 mask[l.a_upgrade + p * l.cells + c] =
-                    g.can_apply(&Action::Upgrade { x: t.x, y: t.y, path: p as u8 });
+                    g.can_apply(&Action::Upgrade { tower: t.id, path: p as u8 });
             }
-            mask[l.a_sell + c] = true;
+            mask[l.a_sell + c] = data.rules.selling;
         }
     }
 
@@ -260,17 +343,18 @@ impl Env {
         let l = &self.layout;
         let g = &self.game;
         let data = g.data();
-        let max_tier = data.rules.max_tier as f32;
+        let grid = &data.map.grid;
+        let max_tier = l.max_tier as f32;
         obs.fill(0.0);
         for c in 0..l.cells {
-            obs[c] = data.map.path_mask[c] as u8 as f32;
-            obs[l.cells + c] = data.map.buildable[c] as u8 as f32;
+            obs[c] = grid.path[c] as u8 as f32;
+            obs[l.cells + c] = grid.buildable[c] as u8 as f32;
         }
-        for t in &g.towers {
-            let c = t.y as usize * l.grid_w + t.x as usize;
+        for (c, t) in self.cell_towers() {
             obs[(2 + t.kind as usize) * l.cells + c] = 1.0;
-            obs[(2 + l.towers) * l.cells + c] = t.tiers[0] as f32 / max_tier;
-            obs[(3 + l.towers) * l.cells + c] = t.tiers[1] as f32 / max_tier;
+            for p in 0..l.paths {
+                obs[(2 + l.towers + p) * l.cells + c] = t.tiers[p] as f32 / max_tier;
+            }
         }
         let s = l.n_channels * l.cells;
         obs[s] = (g.cash.dollars() as f64 / 5000.0).min(1.0) as f32;

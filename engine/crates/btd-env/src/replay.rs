@@ -1,10 +1,11 @@
 //! Spielprotokolle (`.jsonl`): aufzeichnen, speichern, nachspielen, ab einer Runde weiterspielen.
 //!
-//! Format `btd-replay/1`, eine JSON-Zeile pro Eintrag:
+//! Format `btd-replay/2`, eine JSON-Zeile pro Eintrag (Rundennummern sind die echten Spielrunden,
+//! ein CHIMPS-Protokoll beginnt also bei Runde 6):
 //!
 //! ```text
-//! {"type":"header","format":"btd-replay/1","data":"sim_v0.json","data_hash":"…","float":"f32","max_builds_per_round":6}
-//! {"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7,"y":4}}],"result":{"lives":150,"cash":671,"round":1,"leaked":0,"pops":20,"hash":"…"}}
+//! {"type":"header","format":"btd-replay/2","data":"sim_v0.game_v1.json","data_hash":"…","float":"f32","max_builds_per_round":6}
+//! {"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7.5,"y":4.5}}],"result":{"lives":150,"cash":671,"round":1,"leaked":0,"pops":20,"hash":"…"}}
 //! ```
 //!
 //! `result` ist optional bzw. teilweise ausfüllbar: Ein von Hand aufgeschriebenes echtes Spiel
@@ -14,13 +15,13 @@
 use std::path::Path;
 
 use btd_core::{Action, Game, RoundReport};
-use btd_data::GameData;
+use btd_data::v1::GameV1;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{EnvConfig, EnvSpec};
 
-pub const FORMAT: &str = "btd-replay/1";
+pub const FORMAT: &str = "btd-replay/2";
 
 /// Float-Build der Engine ("f32"/"f64"), kommt aus btd-core (dessen Feature entscheidet).
 pub use btd_core::FLOAT;
@@ -63,12 +64,25 @@ fn default_builds() -> u32 {
     EnvConfig::default().max_builds_per_round
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReplayAction {
-    Place { tower: String, x: u16, y: u16 },
-    Upgrade { x: u16, y: u16, path: u8 },
-    Sell { x: u16, y: u16 },
+    /// Turm nach Name an eine Weltposition setzen.
+    Place {
+        tower: String,
+        x: f64,
+        y: f64,
+    },
+    /// Turm, dessen Footprint die Position enthält.
+    Upgrade {
+        x: f64,
+        y: f64,
+        path: u8,
+    },
+    Sell {
+        x: f64,
+        y: f64,
+    },
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -194,8 +208,8 @@ impl Replay {
         if rounds.windows(2).any(|w| w[1].round != w[0].round + 1) {
             return Err(ReplayError::Parse { line: 0, msg: "Rundennummern nicht fortlaufend".into() });
         }
-        if rounds.first().is_some_and(|r| r.round != 1) {
-            return Err(ReplayError::Parse { line: 2, msg: "erste Runde muss 1 sein".into() });
+        if rounds.first().is_some_and(|r| r.round == 0) {
+            return Err(ReplayError::Parse { line: 2, msg: "Runden zählen ab 1".into() });
         }
         Ok(Replay { header, rounds })
     }
@@ -256,6 +270,13 @@ impl Replay {
         }
         let compare_hash = self.header.float.as_deref() == Some(FLOAT);
         let mut game = Game::new(spec.data.clone()).map_err(|e| ReplayError::DataMismatch(e.to_string()))?;
+        let first = spec.data.rules.start_round;
+        if let Some(e) = self.rounds.first().filter(|e| e.round != first) {
+            return Err(ReplayError::DataMismatch(format!(
+                "Protokoll beginnt bei Runde {}, die Daten bei Runde {first}",
+                e.round
+            )));
+        }
         let mut checks = Vec::new();
         for entry in &self.rounds {
             if until.is_some_and(|u| entry.round > u) {
@@ -264,7 +285,7 @@ impl Replay {
             let mut action_errors = Vec::new();
             let mut applied = Vec::new();
             for a in &entry.actions {
-                let Some(action) = to_action(&spec.data, a) else {
+                let Some(action) = to_action(&game, &spec.data, a) else {
                     let msg = format!("Runde {}: unbekannter Turm in {a:?}", entry.round);
                     if strict {
                         return Err(ReplayError::DataMismatch(msg));
@@ -273,7 +294,7 @@ impl Replay {
                     continue;
                 };
                 match game.apply(action) {
-                    Ok(()) => applied.push(a.clone()),
+                    Ok(_) => applied.push(a.clone()),
                     Err(err) if strict => {
                         return Err(ReplayError::Action { round: entry.round, action: a.clone(), err })
                     }
@@ -310,24 +331,36 @@ impl Replay {
     }
 }
 
-fn to_action(data: &GameData, a: &ReplayAction) -> Option<Action> {
+/// Protokollaktion -> Spielaktion. `None` nur bei unbekanntem Turmnamen; steht an der Position
+/// kein Turm, entsteht eine Aktion mit ungültiger ID, die die Engine mit `NoTower` ablehnt.
+fn to_action(game: &Game, data: &GameV1, a: &ReplayAction) -> Option<Action> {
+    let id_at = |x: f64, y: f64| game.tower_at(x, y).map_or(u32::MAX, |t| t.id);
     Some(match a {
         ReplayAction::Place { tower, x, y } => {
             let kind = data.towers.iter().position(|t| &t.name == tower)? as u8;
             Action::Place { kind, x: *x, y: *y }
         }
-        ReplayAction::Upgrade { x, y, path } => Action::Upgrade { x: *x, y: *y, path: *path },
-        ReplayAction::Sell { x, y } => Action::Sell { x: *x, y: *y },
+        ReplayAction::Upgrade { x, y, path } => Action::Upgrade { tower: id_at(*x, *y), path: *path },
+        ReplayAction::Sell { x, y } => Action::Sell { tower: id_at(*x, *y) },
     })
 }
 
-fn from_action(data: &GameData, a: Action) -> ReplayAction {
+/// Spielaktion -> Protokollaktion; vor dem Ausführen aufrufen (beim Verkaufen ist der Turm
+/// danach weg). Türme werden über ihre Position beschrieben, nicht über die interne ID.
+pub fn describe(game: &Game, a: Action) -> ReplayAction {
+    let pos = |id| game.tower(id).map_or((f64::NAN, f64::NAN), |t| t.pos());
     match a {
         Action::Place { kind, x, y } => {
-            ReplayAction::Place { tower: data.towers[kind as usize].name.clone(), x, y }
+            ReplayAction::Place { tower: game.data().towers[kind as usize].name.clone(), x, y }
         }
-        Action::Upgrade { x, y, path } => ReplayAction::Upgrade { x, y, path },
-        Action::Sell { x, y } => ReplayAction::Sell { x, y },
+        Action::Upgrade { tower, path } => {
+            let (x, y) = pos(tower);
+            ReplayAction::Upgrade { x, y, path }
+        }
+        Action::Sell { tower } => {
+            let (x, y) = pos(tower);
+            ReplayAction::Sell { x, y }
+        }
     }
 }
 
@@ -368,12 +401,12 @@ impl Recorder {
         r
     }
 
-    pub fn action(&mut self, data: &GameData, a: Action) {
-        self.pending.push(from_action(data, a));
+    pub fn action(&mut self, a: ReplayAction) {
+        self.pending.push(a);
     }
 
-    pub fn round_played(&mut self, g: &Game, report: &RoundReport) {
-        let round = self.replay.rounds.last().map_or(1, |r| r.round + 1);
+    /// `round` = Nummer der gerade gespielten Runde (vor dem Spielen `game.round + 1`).
+    pub fn round_played(&mut self, round: u32, g: &Game, report: &RoundReport) {
         self.replay.rounds.push(RoundEntry {
             round,
             actions: std::mem::take(&mut self.pending),

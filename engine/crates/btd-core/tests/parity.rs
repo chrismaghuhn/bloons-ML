@@ -1,8 +1,9 @@
 //! Parität zur Python-Referenz-Sim (`btd_sim`), bit-genau im f64-Build.
 //!
 //! Spielt den Golden-Trace aus `tests/data/parity_trace.json` nach (erzeugt mit
-//! `tools/gen_parity_trace.py`): gleiche Aktionen, dann nach jeder Runde Vergleich von
-//! akzeptierten Aktionen, Cash, Leben, Runde, Leaks, Pops, Rundendauer und allen Turmwerten.
+//! `tools/gen_parity_trace.py`), diesmal über das Format `game_v1` (`data/sim_v0.game_v1.json`):
+//! gleiche Aktionen, dann nach jeder Runde Vergleich von akzeptierten Aktionen, Cash, Leben,
+//! Runde, Leaks, Pops, Rundendauer und allen Turmwerten.
 //!
 //!     cargo test -p btd-core --features f64 --test parity
 #![cfg(feature = "f64")]
@@ -11,7 +12,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use btd_core::{Action, Game, Money};
-use btd_data::{DamageType, GameData};
+use btd_data::v1::{Delivery, GameV1, Props};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -56,27 +57,36 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-fn parse_action(v: &serde_json::Value) -> Action {
+/// Zellmittelpunkt im sim_v0-Raster (1 Zelle = 1 Einheit).
+fn center(c: u64) -> f64 {
+    c as f64 + 0.5
+}
+
+/// Aktion aus dem Trace; Upgrade/Verkauf wählen den Turm über die Zelle. Ohne Turm dort
+/// wird eine ungültige Turm-ID genommen, damit die Engine die Aktion ablehnt (wie Python).
+fn parse_action(g: &Game, v: &serde_json::Value) -> Action {
     let a = v.as_array().unwrap();
-    let n = |i: usize| a[i].as_u64().unwrap() as u16;
+    let n = |i: usize| a[i].as_u64().unwrap();
+    let id_at = |x, y| g.tower_at(center(x), center(y)).map_or(u32::MAX, |t| t.id);
     match a[0].as_str().unwrap() {
-        "place" => Action::Place { kind: n(1) as u8, x: n(2), y: n(3) },
-        "upgrade" => Action::Upgrade { x: n(1), y: n(2), path: n(3) as u8 },
-        "sell" => Action::Sell { x: n(1), y: n(2) },
+        "place" => Action::Place { kind: n(1) as u8, x: center(n(2)), y: center(n(3)) },
+        "upgrade" => Action::Upgrade { tower: id_at(n(1), n(2)), path: n(3) as u8 },
+        "sell" => Action::Sell { tower: id_at(n(1), n(2)) },
         other => panic!("unbekannte Aktion {other}"),
     }
 }
 
-fn dmg_name(t: DamageType) -> &'static str {
-    match t {
-        DamageType::Sharp => "sharp",
-        DamageType::Explosive => "explosive",
-        DamageType::Normal => "normal",
+fn dmg_name(cannot: Props) -> &'static str {
+    match cannot.0 {
+        Props::LEAD => "sharp",
+        Props::BLACK => "explosive",
+        0 => "normal",
+        _ => "?",
     }
 }
 
-fn state(g: &Game, r: &btd_core::RoundReport) -> State {
-    assert_eq!(g.cash.0 % 1000, 0, "M1 kennt nur ganze Dollar");
+fn state(g: &Game, data: &GameV1, r: &btd_core::RoundReport) -> State {
+    assert_eq!(g.cash.0 % 1000, 0, "sim_v0 kennt nur ganze Dollar");
     State {
         cash: g.cash.dollars(),
         lives: g.lives,
@@ -88,19 +98,25 @@ fn state(g: &Game, r: &btd_core::RoundReport) -> State {
             .towers
             .iter()
             .map(|t| {
+                let v = data.towers[t.kind as usize].variant(t.tiers).unwrap();
+                let a = &t.attacks[0];
+                let blast = match v.attacks[0].delivery {
+                    Delivery::Hitscan {} => 0.0,
+                    Delivery::HitscanSplash { radius } => radius,
+                };
                 (
                     t.kind,
-                    t.x,
-                    t.y,
+                    (t.x - 0.5) as u16,
+                    (t.y - 0.5) as u16,
                     t.tiers[0],
                     t.tiers[1],
                     t.spent.dollars(),
-                    t.range.to_bits(),
-                    t.cooldown.to_bits(),
-                    t.damage,
-                    t.pierce,
-                    dmg_name(t.dmg_type).to_string(),
-                    t.blast.to_bits(),
+                    v.range.to_bits(),
+                    a.cooldown.to_bits(),
+                    a.damage as i32,
+                    a.pierce,
+                    dmg_name(a.cannot_damage).to_string(),
+                    blast.to_bits(),
                 )
             })
             .collect(),
@@ -109,7 +125,7 @@ fn state(g: &Game, r: &btd_core::RoundReport) -> State {
 
 #[test]
 fn matches_python_reference_bit_for_bit() {
-    let data = Arc::new(GameData::load(root().join("../../../data/sim_v0.json")).unwrap());
+    let data = Arc::new(GameV1::load(root().join("../../../data/sim_v0.game_v1.json")).unwrap());
     let text = std::fs::read_to_string(root().join("tests/data/parity_trace.json")).unwrap();
     let trace: Trace = serde_json::from_str(&text).unwrap();
     assert_eq!(trace.format, "parity_trace/1");
@@ -120,12 +136,12 @@ fn matches_python_reference_bit_for_bit() {
         g.cash = Money::from_dollars(ep.start_cash);
         for (r, round) in ep.rounds.iter().enumerate() {
             for (i, a) in round.actions.iter().enumerate() {
-                let action = parse_action(&a.action);
+                let action = parse_action(&g, &a.action);
                 let ok = g.apply(action).is_ok();
                 assert_eq!(ok, a.ok, "Episode {e}, Runde {}, Aktion {i} {action:?}", r + 1);
             }
             let report = g.play_round();
-            assert_eq!(state(&g, &report), round.after, "Episode {e}, Runde {}", r + 1);
+            assert_eq!(state(&g, &data, &report), round.after, "Episode {e}, Runde {}", r + 1);
             rounds += 1;
         }
         assert!(g.over(), "Episode {e}: Spiel sollte vorbei sein wie in Python");

@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use btd_core::Action;
 use btd_env::replay::{ReplayAction, RoundResult};
-use btd_env::{Env, EnvConfig, EnvSpec, Replay, ReplayError, VecEnv, VecStepBuffers};
+use btd_env::{CellAction, Env, EnvConfig, EnvSpec, Replay, ReplayError, VecEnv, VecStepBuffers};
 
 fn spec() -> EnvSpec {
-    EnvSpec::load(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/sim_v0.json")).unwrap()
+    EnvSpec::load(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/sim_v0.game_v1.json"))
+        .unwrap()
 }
 
 fn env(record: bool) -> Env {
@@ -51,9 +51,13 @@ fn layout_matches_python_env() {
     assert_eq!(l.n_actions, 1 + 4 * 300 + 2 * 300 + 300);
     assert_eq!(l.obs_size, 8 * 300 + 4);
     assert_eq!(l.decode(0), None);
-    assert_eq!(l.decode(1 + 3 * 300 + 4 * 20 + 7), Some(Action::Place { kind: 3, x: 7, y: 4 }));
-    assert_eq!(l.decode(l.a_upgrade + 300 + 5), Some(Action::Upgrade { x: 5, y: 0, path: 1 }));
-    assert_eq!(l.decode(l.a_sell + 21), Some(Action::Sell { x: 1, y: 1 }));
+    assert_eq!(l.paths, 2, "sim_v0 hat zwei Upgrade-Pfade");
+    assert_eq!(l.decode(1 + 3 * 300 + 4 * 20 + 7), Some(CellAction::Place { kind: 3, cell: 87 }));
+    assert_eq!(l.decode(l.a_upgrade + 300 + 5), Some(CellAction::Upgrade { cell: 5, path: 1 }));
+    assert_eq!(l.decode(l.a_sell + 21), Some(CellAction::Sell { cell: 21 }));
+    assert_eq!(l.center(87), (7.5, 4.5));
+    assert_eq!(l.cell_of(7.5, 4.5), Some(87));
+    assert_eq!(l.cell_of(-0.1, 4.5), None);
     assert_eq!(l.decode(l.n_actions), None);
 }
 
@@ -136,12 +140,12 @@ fn action_index(e: &Env, a: &ReplayAction) -> usize {
     match a {
         ReplayAction::Place { tower, x, y } => {
             let k = e.game.data().towers.iter().position(|t| &t.name == tower).unwrap();
-            l.a_place + k * l.cells + *y as usize * l.grid_w + *x as usize
+            l.a_place + k * l.cells + l.cell_of(*x, *y).unwrap()
         }
         ReplayAction::Upgrade { x, y, path } => {
-            l.a_upgrade + *path as usize * l.cells + *y as usize * l.grid_w + *x as usize
+            l.a_upgrade + *path as usize * l.cells + l.cell_of(*x, *y).unwrap()
         }
-        ReplayAction::Sell { x, y } => l.a_sell + *y as usize * l.grid_w + *x as usize,
+        ReplayAction::Sell { x, y } => l.a_sell + l.cell_of(*x, *y).unwrap(),
     }
 }
 
@@ -158,8 +162,8 @@ fn rejects_replay_for_other_data() {
 fn hand_written_partial_replay_is_compared_not_rejected() {
     // so könnte ein echtes Spiel aufgeschrieben werden: nur Leben und Cash
     let text = r#"
-{"type":"header","format":"btd-replay/1","data":"sim_v0.json"}
-{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7,"y":4}}],"result":{"lives":150}}
+{"type":"header","format":"btd-replay/2","data":"sim_v0.game_v1.json"}
+{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7.5,"y":4.5}}],"result":{"lives":150}}
 {"type":"round","round":2,"result":{"lives":150,"cash":12345}}
 "#;
     let replay = Replay::from_jsonl(text).unwrap();
@@ -176,19 +180,19 @@ fn malformed_replays_are_rejected() {
         ("", "leere Datei"),
         (r#"{"type":"round","round":1}"#, "Header fehlt"),
         (r#"{"type":"header","format":"x","data":"d"}"#, "Format"),
-        ("{\"type\":\"header\",\"format\":\"btd-replay/1\",\"data\":\"d\"}\n{\"type\":\"round\",\"round\":2}", "erste Runde"),
+        ("{\"type\":\"header\",\"format\":\"btd-replay/2\",\"data\":\"d\"}\n{\"type\":\"round\",\"round\":0}", "ab 1"),
     ] {
         let err = Replay::from_jsonl(text).unwrap_err().to_string();
         assert!(err.contains(needle), "{err} enthält nicht {needle}");
     }
-    let bad_action = "{\"type\":\"header\",\"format\":\"btd-replay/1\",\"data\":\"d\"}\n\
+    let bad_action = "{\"type\":\"header\",\"format\":\"btd-replay/2\",\"data\":\"d\"}\n\
         {\"type\":\"round\",\"round\":1,\"actions\":[{\"place\":{\"tower\":\"dart\",\"x\":0,\"y\":5}}]}";
     let r = Replay::from_jsonl(bad_action).unwrap();
     // strikt: Abbruch; nicht-strikt: Aktion übersprungen und vermerkt
     assert!(matches!(r.play(&spec(), None, |_| {}), Err(ReplayError::Action { round: 1, .. })));
     let checks = r.compare(&spec()).unwrap();
     assert_eq!(checks.len(), 1);
-    assert!(!checks[0].matches && checks[0].action_errors[0].contains("NotBuildable"));
+    assert!(!checks[0].matches && checks[0].action_errors[0].contains("NotPlaceable"));
     let _ = RoundResult::default();
 }
 
@@ -238,9 +242,9 @@ fn vec_env_auto_resets_and_matches_single_env() {
 fn compare_continues_after_impossible_actions() {
     // echtes Spiel mit mehr Cash als in der Sim: Bomb in Runde 1 ist nicht bezahlbar (Dart schon gekauft)
     let text = r#"
-{"type":"header","format":"btd-replay/1","data":"sim_v0.json"}
-{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7,"y":4}},{"place":{"tower":"bomb","x":8,"y":4}}]}
-{"type":"round","round":2,"actions":[{"place":{"tower":"dart","x":5,"y":6}}],"result":{"lives":150,"round":2}}
+{"type":"header","format":"btd-replay/2","data":"sim_v0.game_v1.json"}
+{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7.5,"y":4.5}},{"place":{"tower":"bomb","x":8.5,"y":4.5}}]}
+{"type":"round","round":2,"actions":[{"place":{"tower":"dart","x":5.5,"y":6.5}}],"result":{"lives":150,"round":2}}
 "#;
     let checks = Replay::from_jsonl(text).unwrap().compare(&spec()).unwrap();
     assert_eq!(checks.len(), 2, "Vergleich läuft trotz unmöglicher Aktion weiter");
@@ -286,8 +290,8 @@ fn rejects_zero_build_limit() {
 #[test]
 fn resume_after_non_strict_load_records_only_what_happened() {
     let text = r#"
-{"type":"header","format":"btd-replay/1","data":"sim_v0.json"}
-{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7,"y":4}},{"place":{"tower":"bomb","x":8,"y":4}}],"result":{"cash":9999}}
+{"type":"header","format":"btd-replay/2","data":"sim_v0.game_v1.json"}
+{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7.5,"y":4.5}},{"place":{"tower":"bomb","x":8.5,"y":4.5}}],"result":{"cash":9999}}
 {"type":"round","round":2,"result":{"lives":150}}
 "#;
     let real_game = Replay::from_jsonl(text).unwrap();
@@ -318,4 +322,87 @@ fn strict_play_rejects_rounds_after_game_end() {
     lost.rounds.push(extra);
     assert!(matches!(lost.play(a.spec(), None, |_| {}), Err(ReplayError::TrailingRounds { .. })));
     assert_eq!(lost.compare(a.spec()).unwrap().len(), lost.rounds.len() - 1);
+}
+
+#[test]
+fn three_upgrade_paths_on_mini_fixture() {
+    let spec = EnvSpec::load(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/fixtures/game_v1_mini.json"),
+    )
+    .unwrap();
+    let mut e = Env::new(spec, EnvConfig::default()).unwrap();
+    let l = e.layout;
+    assert_eq!((l.cells, l.towers, l.paths, l.max_tier), (80, 2, 3, 2));
+    assert_eq!(l.n_actions, 1 + 2 * 80 + 3 * 80 + 80);
+    let mut obs = vec![0.0; l.obs_size];
+    let mut mask = vec![false; l.n_actions];
+    e.reset(&mut obs);
+    e.action_mask(&mut mask);
+    let cell = l.cell_of(5.0, 25.0).unwrap();
+    assert!(mask[l.a_place + cell], "Land neben dem Track");
+    assert!(!mask[l.a_place + l.cell_of(5.0, 5.0).unwrap()], "Track");
+    e.step(l.a_place + cell, &mut obs);
+    e.action_mask(&mut mask);
+    for p in 0..3 {
+        assert!(mask[l.a_upgrade + p * l.cells + cell], "Pfad {p}");
+    }
+    e.step(l.a_upgrade + 2 * l.cells + cell, &mut obs); // Pfad 3
+    let tower_obs = obs[(2 + l.towers + 2) * l.cells + cell];
+    assert_eq!(tower_obs, 0.5, "Tier 1 von max. 2");
+}
+
+/// Lädt die mini-Fixture mit geänderten Daten über eine temporäre Datei.
+fn spec_with(f: impl FnOnce(&mut serde_json::Value)) -> EnvSpec {
+    let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/fixtures/game_v1_mini.json");
+    let mut v: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(src).unwrap()).unwrap();
+    f(&mut v);
+    let path = std::env::temp_dir().join(format!(
+        "btd-env-test-{}-{:?}.json",
+        std::process::id(),
+        std::thread::current().id()
+    ));
+    std::fs::write(&path, v.to_string()).unwrap();
+    let spec = EnvSpec::load(&path).unwrap();
+    std::fs::remove_file(path).ok();
+    spec
+}
+
+#[test]
+fn replays_use_real_round_numbers_when_starting_later() {
+    let spec = spec_with(|v| v["rules"]["start_round"] = serde_json::json!(2));
+    let mut e = Env::new(spec.clone(), EnvConfig { record: true, ..Default::default() }).unwrap();
+    let mut obs = vec![0.0; e.layout.obs_size];
+    e.reset(&mut obs);
+    assert_eq!(e.game.round, 1);
+    while !e.step(0, &mut obs).terminated {}
+    let replay = e.last_replay().unwrap().clone();
+    assert_eq!(replay.rounds.first().unwrap().round, 2, "erste Runde ist die Startrunde");
+    assert_eq!(replay.rounds.first().unwrap().result.round, Some(2));
+    // strikt nachspielbar und ab einer echten Rundennummer fortsetzbar
+    replay.play(&spec, None, |_| {}).unwrap();
+    let mut b = Env::new(spec.clone(), EnvConfig { record: true, ..Default::default() }).unwrap();
+    b.load_replay(&replay, Some(2), true).unwrap();
+    assert_eq!(b.game.round, 2);
+    // ein Protokoll, das bei Runde 1 beginnt, passt nicht zu Daten mit Startrunde 2
+    let text =
+        "{\"type\":\"header\",\"format\":\"btd-replay/2\",\"data\":\"d\"}\n{\"type\":\"round\",\"round\":1}";
+    assert!(matches!(Replay::from_jsonl(text).unwrap().compare(&spec), Err(ReplayError::DataMismatch(_))));
+}
+
+#[test]
+fn off_center_tower_from_replay_is_usable_through_its_cell() {
+    let text = "{\"type\":\"header\",\"format\":\"btd-replay/2\",\"data\":\"d\"}\n\
+        {\"type\":\"round\",\"round\":1,\"actions\":[{\"place\":{\"tower\":\"dart\",\"x\":7.1,\"y\":4.1}}]}";
+    let replay = Replay::from_jsonl(text).unwrap();
+    let mut e = env(false);
+    e.load_replay(&replay, None, false).unwrap();
+    let l = e.layout;
+    let cell = l.cell_of(7.1, 4.1).unwrap();
+    let mut mask = vec![false; l.n_actions];
+    e.action_mask(&mut mask);
+    assert!(mask[l.a_sell + cell] && mask[l.a_upgrade + cell], "Turm zählt zu seiner Zelle");
+    let mut obs = vec![0.0; l.obs_size];
+    let info = e.step(l.a_upgrade + cell, &mut obs);
+    assert!(!info.invalid, "maskierte Aktion ist auch ausführbar");
+    assert_eq!(e.game.towers[0].tiers[0], 1);
 }

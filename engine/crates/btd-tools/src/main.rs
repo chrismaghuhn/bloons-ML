@@ -4,7 +4,7 @@
 //!     btd-tools replay DATEI.jsonl [--data DATEN] [--compare]
 //!     btd-tools bench [--data DATEN] [--envs N]
 //!
-//! DATEN ist standardmäßig `data/sim_v0.json` (relativ zum Repo-Root).
+//! DATEN ist standardmäßig `data/sim_v0.game_v1.json` (relativ zum Repo-Root).
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -36,7 +36,7 @@ fn main() -> ExitCode {
 }
 
 fn default_data() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/sim_v0.json")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/sim_v0.game_v1.json")
 }
 
 /// Wert hinter `--name`, falls vorhanden.

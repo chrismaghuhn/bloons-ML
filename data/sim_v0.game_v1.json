@@ -1,0 +1,7772 @@
+{
+ "format": "game_v1",
+ "name": "sim_v0",
+ "rules": {
+  "tick_rate": 20.0,
+  "cd_eps": 1e-09,
+  "max_round_seconds": 300,
+  "child_spacing": 0.15,
+  "start_cash": 650,
+  "start_lives": 150,
+  "start_round": 1,
+  "end_round": 40,
+  "selling": true,
+  "sell_ratio": 0.7,
+  "cost_multiplier": 1.0,
+  "cost_rounding": 1
+ },
+ "map": {
+  "name": "monkey_meadow_grid",
+  "bounds": [
+   0.0,
+   0.0,
+   20.0,
+   15.0
+  ],
+  "points": [
+   [
+    -0.5,
+    5.5
+   ],
+   [
+    10.5,
+    5.5
+   ],
+   [
+    10.5,
+    2.5
+   ],
+   [
+    6.5,
+    2.5
+   ],
+   [
+    6.5,
+    10.5
+   ],
+   [
+    3.5,
+    10.5
+   ],
+   [
+    3.5,
+    7.5
+   ],
+   [
+    12.5,
+    7.5
+   ],
+   [
+    12.5,
+    4.5
+   ],
+   [
+    15.5,
+    4.5
+   ],
+   [
+    15.5,
+    9.5
+   ],
+   [
+    9.5,
+    9.5
+   ],
+   [
+    9.5,
+    15.5
+   ]
+  ],
+  "cum": [
+   0.0,
+   11.0,
+   14.0,
+   18.0,
+   26.0,
+   29.0,
+   32.0,
+   41.0,
+   44.0,
+   47.0,
+   52.0,
+   58.0,
+   64.0
+  ],
+  "grid": {
+   "x0": 0.0,
+   "y0": 0.0,
+   "cell": 1.0,
+   "w": 20,
+   "h": 15,
+   "path": [
+    "....................",
+    "....................",
+    "......#####.........",
+    "......#...#.........",
+    "......#...#.####....",
+    "###########.#..#....",
+    "......#.....#..#....",
+    "...##########..#....",
+    "...#..#........#....",
+    "...#..#..#######....",
+    "...####..#..........",
+    ".........#..........",
+    ".........#..........",
+    ".........#..........",
+    ".........#.........."
+   ],
+   "buildable": [
+    "####################",
+    "####################",
+    "######.....#########",
+    "######.###.#########",
+    "######.###.#....####",
+    "...........#.##.####",
+    "######.#####.##.####",
+    "###..........##.####",
+    "###.##.########.####",
+    "###.##.##.......####",
+    "###....##.##########",
+    "#########.##########",
+    "#########.##########",
+    "....................",
+    "...................."
+   ]
+  },
+  "placement": "grid"
+ },
+ "bloons": [
+  {
+   "name": "red",
+   "hp": 1.0,
+   "speed": 2.5,
+   "leak": 1,
+   "children": [],
+   "props": []
+  },
+  {
+   "name": "blue",
+   "hp": 1.0,
+   "speed": 3.5,
+   "leak": 2,
+   "children": [
+    [
+     "red",
+     1
+    ]
+   ],
+   "props": []
+  },
+  {
+   "name": "green",
+   "hp": 1.0,
+   "speed": 4.5,
+   "leak": 3,
+   "children": [
+    [
+     "blue",
+     1
+    ]
+   ],
+   "props": []
+  },
+  {
+   "name": "yellow",
+   "hp": 1.0,
+   "speed": 8.0,
+   "leak": 4,
+   "children": [
+    [
+     "green",
+     1
+    ]
+   ],
+   "props": []
+  },
+  {
+   "name": "pink",
+   "hp": 1.0,
+   "speed": 8.75,
+   "leak": 5,
+   "children": [
+    [
+     "yellow",
+     1
+    ]
+   ],
+   "props": []
+  },
+  {
+   "name": "black",
+   "hp": 1.0,
+   "speed": 4.5,
+   "leak": 11,
+   "children": [
+    [
+     "pink",
+     2
+    ]
+   ],
+   "props": [
+    "black"
+   ]
+  },
+  {
+   "name": "white",
+   "hp": 1.0,
+   "speed": 5.0,
+   "leak": 11,
+   "children": [
+    [
+     "pink",
+     2
+    ]
+   ],
+   "props": [
+    "white"
+   ]
+  },
+  {
+   "name": "lead",
+   "hp": 1.0,
+   "speed": 2.5,
+   "leak": 23,
+   "children": [
+    [
+     "black",
+     2
+    ]
+   ],
+   "props": [
+    "lead"
+   ]
+  },
+  {
+   "name": "zebra",
+   "hp": 1.0,
+   "speed": 4.5,
+   "leak": 23,
+   "children": [
+    [
+     "black",
+     1
+    ],
+    [
+     "white",
+     1
+    ]
+   ],
+   "props": [
+    "black",
+    "white"
+   ]
+  }
+ ],
+ "towers": [
+  {
+   "name": "dart",
+   "cost": 200,
+   "upgrade_costs": [
+    [
+     90,
+     120,
+     500
+    ],
+    [
+     100,
+     190,
+     400
+    ],
+    []
+   ],
+   "variants": [
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 3.2,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.95,
+       "damage": 1,
+       "pierce": 2,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      1,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.95,
+       "damage": 1,
+       "pierce": 2,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      2,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.76,
+       "damage": 1,
+       "pierce": 2,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      3,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.45599999999999996,
+       "damage": 1,
+       "pierce": 2,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      0,
+      0
+     ],
+     "range": 3.2,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.95,
+       "damage": 1,
+       "pierce": 3,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      1,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.95,
+       "damage": 1,
+       "pierce": 3,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      2,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.76,
+       "damage": 1,
+       "pierce": 3,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      3,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.45599999999999996,
+       "damage": 1,
+       "pierce": 3,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      0,
+      0
+     ],
+     "range": 3.2,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.95,
+       "damage": 1,
+       "pierce": 5,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      1,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.95,
+       "damage": 1,
+       "pierce": 5,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      2,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.76,
+       "damage": 1,
+       "pierce": 5,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      3,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.45599999999999996,
+       "damage": 1,
+       "pierce": 5,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      0,
+      0
+     ],
+     "range": 3.2,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.95,
+       "damage": 2,
+       "pierce": 5,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      1,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.95,
+       "damage": 2,
+       "pierce": 5,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      2,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "dart",
+       "cooldown": 0.76,
+       "damage": 2,
+       "pierce": 5,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "tack",
+   "cost": 280,
+   "upgrade_costs": [
+    [
+     150,
+     300,
+     600
+    ],
+    [
+     100,
+     250,
+     500
+    ],
+    []
+   ],
+   "variants": [
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 2.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.4,
+       "damage": 1,
+       "pierce": 8,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      1,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.4,
+       "damage": 1,
+       "pierce": 8,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      2,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.4,
+       "damage": 1,
+       "pierce": 12,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      3,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.4,
+       "damage": 1,
+       "pierce": 20,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      0,
+      0
+     ],
+     "range": 2.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.1199999999999999,
+       "damage": 1,
+       "pierce": 8,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      1,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.1199999999999999,
+       "damage": 1,
+       "pierce": 8,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      2,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.1199999999999999,
+       "damage": 1,
+       "pierce": 12,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      3,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 1.1199999999999999,
+       "damage": 1,
+       "pierce": 20,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      0,
+      0
+     ],
+     "range": 2.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 0.8399999999999999,
+       "damage": 1,
+       "pierce": 8,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      1,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 0.8399999999999999,
+       "damage": 1,
+       "pierce": 8,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      2,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 0.8399999999999999,
+       "damage": 1,
+       "pierce": 12,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      3,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 0.8399999999999999,
+       "damage": 1,
+       "pierce": 20,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      0,
+      0
+     ],
+     "range": 2.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 0.8399999999999999,
+       "damage": 2,
+       "pierce": 8,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      1,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 0.8399999999999999,
+       "damage": 2,
+       "pierce": 8,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      2,
+      0
+     ],
+     "range": 2.8,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "tack",
+       "cooldown": 0.8399999999999999,
+       "damage": 2,
+       "pierce": 12,
+       "cannot_damage": [
+        "lead"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "sniper",
+   "cost": 350,
+   "upgrade_costs": [
+    [
+     350,
+     1100,
+     3000
+    ],
+    [
+     250,
+     450,
+     1800
+    ],
+    []
+   ],
+   "variants": [
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 1.6,
+       "damage": 2,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      1,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 1.1199999999999999,
+       "damage": 2,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      2,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 0.6719999999999999,
+       "damage": 2,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      3,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 0.6719999999999999,
+       "damage": 2,
+       "pierce": 3,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      0,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 1.6,
+       "damage": 4,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      1,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 1.1199999999999999,
+       "damage": 4,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      2,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 0.6719999999999999,
+       "damage": 4,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      3,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 0.6719999999999999,
+       "damage": 4,
+       "pierce": 3,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      0,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 1.6,
+       "damage": 7,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      1,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 1.1199999999999999,
+       "damage": 7,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      2,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 0.6719999999999999,
+       "damage": 7,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      3,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 0.6719999999999999,
+       "damage": 7,
+       "pierce": 3,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      0,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 1.6,
+       "damage": 15,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      1,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 1.1199999999999999,
+       "damage": 15,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      2,
+      0
+     ],
+     "range": 99.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "sniper",
+       "cooldown": 0.6719999999999999,
+       "damage": 15,
+       "pierce": 1,
+       "cannot_damage": [],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "bomb",
+   "cost": 525,
+   "upgrade_costs": [
+    [
+     250,
+     650,
+     1200
+    ],
+    [
+     250,
+     400,
+     900
+    ],
+    []
+   ],
+   "variants": [
+    {
+     "tiers": [
+      0,
+      0,
+      0
+     ],
+     "range": 3.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.5,
+       "damage": 1,
+       "pierce": 14,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.2
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      1,
+      0
+     ],
+     "range": 3.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.125,
+       "damage": 1,
+       "pierce": 14,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.2
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      2,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.125,
+       "damage": 1,
+       "pierce": 14,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.2
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      0,
+      3,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 0.6749999999999999,
+       "damage": 1,
+       "pierce": 14,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.2
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      0,
+      0
+     ],
+     "range": 3.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.5,
+       "damage": 1,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.6
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      1,
+      0
+     ],
+     "range": 3.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.125,
+       "damage": 1,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.6
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      2,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.125,
+       "damage": 1,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.6
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      1,
+      3,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 0.6749999999999999,
+       "damage": 1,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.6
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      0,
+      0
+     ],
+     "range": 3.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.5,
+       "damage": 2,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.6
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      1,
+      0
+     ],
+     "range": 3.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.125,
+       "damage": 2,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.6
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      2,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.125,
+       "damage": 2,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.6
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      2,
+      3,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 0.6749999999999999,
+       "damage": 2,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 1.6
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      0,
+      0
+     ],
+     "range": 3.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.5,
+       "damage": 4,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 2.1
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      1,
+      0
+     ],
+     "range": 3.3,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.125,
+       "damage": 4,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 2.1
+       }
+      }
+     ]
+    },
+    {
+     "tiers": [
+      3,
+      2,
+      0
+     ],
+     "range": 4.0,
+     "footprint": 0.5,
+     "attacks": [
+      {
+       "tag": "bomb",
+       "cooldown": 1.125,
+       "damage": 4,
+       "pierce": 22,
+       "cannot_damage": [
+        "black"
+       ],
+       "camo": true,
+       "delivery": {
+        "kind": "hitscan_splash",
+        "radius": 2.1
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "rounds": [
+  [
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 0.9843489761028231,
+    "end": 0.9843489761028231
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 1.9686979522056463,
+    "end": 1.9686979522056463
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 2.9530469283084693,
+    "end": 2.9530469283084693
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 3.9373959044112925,
+    "end": 3.9373959044112925
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 4.921744880514115,
+    "end": 4.921744880514115
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 5.9060938566169385,
+    "end": 5.9060938566169385
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 6.890442832719762,
+    "end": 6.890442832719762
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 7.874791808822585,
+    "end": 7.874791808822585
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 9.751679420720725,
+    "end": 9.751679420720725
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 10.356800391448013,
+    "end": 10.356800391448013
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 10.961921362175302,
+    "end": 10.961921362175302
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 11.56704233290259,
+    "end": 11.56704233290259
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.172163303629878,
+    "end": 12.172163303629878
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.639933714236344,
+    "end": 13.639933714236344
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 14.313612772049913,
+    "end": 14.313612772049913
+   }
+  ],
+  [
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 0.937993039015322,
+    "end": 0.937993039015322
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 1.875986078030644,
+    "end": 1.875986078030644
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 2.813979117045966,
+    "end": 2.813979117045966
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 3.751972156061288,
+    "end": 3.751972156061288
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 4.68996519507661,
+    "end": 4.68996519507661
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 5.627958234091932,
+    "end": 5.627958234091932
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 6.565951273107254,
+    "end": 6.565951273107254
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 7.503944312122576,
+    "end": 7.503944312122576
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 10.237573857299775,
+    "end": 10.237573857299775
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 11.116493913921747,
+    "end": 11.116493913921747
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 11.99541397054372,
+    "end": 11.99541397054372
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.874334027165691,
+    "end": 12.874334027165691
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.753254083787663,
+    "end": 13.753254083787663
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 14.632174140409635,
+    "end": 14.632174140409635
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 15.511094197031607,
+    "end": 15.511094197031607
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 16.39001425365358,
+    "end": 16.39001425365358
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 17.26893431027555,
+    "end": 17.26893431027555
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 18.981984854094605,
+    "end": 18.981984854094605
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 19.923116571384494,
+    "end": 19.923116571384494
+   }
+  ],
+  [
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 0.8052911454432876,
+    "end": 0.8052911454432876
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 1.6105822908865752,
+    "end": 1.6105822908865752
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 3.0060794054612066,
+    "end": 3.0060794054612066
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 3.733424492377499,
+    "end": 3.733424492377499
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 4.460769579293792,
+    "end": 4.460769579293792
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.188114666210084,
+    "end": 5.188114666210084
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.915459753126377,
+    "end": 5.915459753126377
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 6.642804840042669,
+    "end": 6.642804840042669
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.370149926958962,
+    "end": 7.370149926958962
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 9.396387546159609,
+    "end": 9.396387546159609
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 10.313783714311924,
+    "end": 10.313783714311924
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 11.23117988246424,
+    "end": 11.23117988246424
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.148576050616555,
+    "end": 12.148576050616555
+   }
+  ],
+  [
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 0.9273871882637758,
+    "end": 0.9273871882637758
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 1.8547743765275515,
+    "end": 1.8547743765275515
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 2.7821615647913274,
+    "end": 2.7821615647913274
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 4.4397600097472765,
+    "end": 4.4397600097472765
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.375170138360806,
+    "end": 5.375170138360806
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 6.310580266974336,
+    "end": 6.310580266974336
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.2459903955878655,
+    "end": 7.2459903955878655
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.181400524201395,
+    "end": 8.181400524201395
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 9.747135235724704,
+    "end": 9.747135235724704
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 10.63320644049313,
+    "end": 10.63320644049313
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 11.519277645261555,
+    "end": 11.519277645261555
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 12.40534885002998,
+    "end": 12.40534885002998
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 14.212998449247221,
+    "end": 14.212998449247221
+   }
+  ],
+  [
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 0.7174612051010248,
+    "end": 0.7174612051010248
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 1.4349224102020497,
+    "end": 1.4349224102020497
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 2.1523836153030746,
+    "end": 2.1523836153030746
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 2.8698448204040994,
+    "end": 2.8698448204040994
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 3.587306025505124,
+    "end": 3.587306025505124
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 4.304767230606149,
+    "end": 4.304767230606149
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.0222284357071745,
+    "end": 5.0222284357071745
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.7396896408082,
+    "end": 5.7396896408082
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 7.095423166181645,
+    "end": 7.095423166181645
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 7.92187893444096,
+    "end": 7.92187893444096
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 8.748334702700275,
+    "end": 8.748334702700275
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 9.57479047095959,
+    "end": 9.57479047095959
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 10.401246239218905,
+    "end": 10.401246239218905
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 11.22770200747822,
+    "end": 11.22770200747822
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.054157775737535,
+    "end": 12.054157775737535
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.88061354399685,
+    "end": 12.88061354399685
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.707069312256165,
+    "end": 13.707069312256165
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 15.706891263883662,
+    "end": 15.706891263883662
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 16.626492691314223,
+    "end": 16.626492691314223
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 17.546094118744783,
+    "end": 17.546094118744783
+   }
+  ],
+  [
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.8149399041789576,
+    "end": 0.8149399041789576
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.6298798083579151,
+    "end": 1.6298798083579151
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 4.22791952929324,
+    "end": 4.22791952929324
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.037311506002358,
+    "end": 5.037311506002358
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.846703482711476,
+    "end": 5.846703482711476
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 6.656095459420594,
+    "end": 6.656095459420594
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.465487436129711,
+    "end": 7.465487436129711
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.274879412838828,
+    "end": 8.274879412838828
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 10.797517443391381,
+    "end": 10.797517443391381
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 11.512863508108047,
+    "end": 11.512863508108047
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 12.228209572824714,
+    "end": 12.228209572824714
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 12.94355563754138,
+    "end": 12.94355563754138
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 15.078080222824006,
+    "end": 15.078080222824006
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 15.767688338344557,
+    "end": 15.767688338344557
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 16.45729645386511,
+    "end": 16.45729645386511
+   }
+  ],
+  [
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.57043721508531,
+    "end": 0.57043721508531
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.14087443017062,
+    "end": 1.14087443017062
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.7113116452559298,
+    "end": 1.7113116452559298
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 2.28174886034124,
+    "end": 2.28174886034124
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 2.85218607542655,
+    "end": 2.85218607542655
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 3.42262329051186,
+    "end": 3.42262329051186
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 3.99306050559717,
+    "end": 3.99306050559717
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.448811415194545,
+    "end": 5.448811415194545
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 5.957413233576009,
+    "end": 5.957413233576009
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 6.4660150519574735,
+    "end": 6.4660150519574735
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.964358613409944,
+    "end": 7.964358613409944
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.71653833254903,
+    "end": 8.71653833254903
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 9.468718051688116,
+    "end": 9.468718051688116
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 10.849058874321308,
+    "end": 10.849058874321308
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 11.619609268675896,
+    "end": 11.619609268675896
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 12.390159663030484,
+    "end": 12.390159663030484
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 13.160710057385073,
+    "end": 13.160710057385073
+   }
+  ],
+  [
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.8014624727015186,
+    "end": 0.8014624727015186
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.6029249454030372,
+    "end": 1.6029249454030372
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 3.6518277018849354,
+    "end": 3.6518277018849354
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 4.2233837711852615,
+    "end": 4.2233837711852615
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 4.794939840485587,
+    "end": 4.794939840485587
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.206008159112362,
+    "end": 7.206008159112362
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.695801355722863,
+    "end": 7.695801355722863
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.185594552333363,
+    "end": 8.185594552333363
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.675387748943864,
+    "end": 8.675387748943864
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 9.165180945554365,
+    "end": 9.165180945554365
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 9.654974142164866,
+    "end": 9.654974142164866
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 10.144767338775367,
+    "end": 10.144767338775367
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 10.634560535385868,
+    "end": 10.634560535385868
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 11.124353731996369,
+    "end": 11.124353731996369
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 12.806566911956695,
+    "end": 12.806566911956695
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 13.425615584292697,
+    "end": 13.425615584292697
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 14.044664256628698,
+    "end": 14.044664256628698
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 16.39899375643211,
+    "end": 16.39899375643211
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 16.996512513404507,
+    "end": 16.996512513404507
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 17.594031270376906,
+    "end": 17.594031270376906
+   }
+  ],
+  [
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 0.5352637339989059,
+    "end": 0.5352637339989059
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 1.0705274679978118,
+    "end": 1.0705274679978118
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 2.849048994823188,
+    "end": 2.849048994823188
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 3.4135627518339797,
+    "end": 3.4135627518339797
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 3.9780765088447714,
+    "end": 3.9780765088447714
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 4.542590265855563,
+    "end": 4.542590265855563
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 5.107104022866355,
+    "end": 5.107104022866355
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.104687671456425,
+    "end": 7.104687671456425
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.680797021922566,
+    "end": 7.680797021922566
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.256906372388707,
+    "end": 8.256906372388707
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.83301572285485,
+    "end": 8.83301572285485
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 9.40912507332099,
+    "end": 9.40912507332099
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 9.98523442378713,
+    "end": 9.98523442378713
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 10.56134377425327,
+    "end": 10.56134377425327
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 13.032250940912341,
+    "end": 13.032250940912341
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 13.578355864080082,
+    "end": 13.578355864080082
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 14.124460787247823,
+    "end": 14.124460787247823
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 16.018783332409114,
+    "end": 16.018783332409114
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 16.806717916578588,
+    "end": 16.806717916578588
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 17.59465250074806,
+    "end": 17.59465250074806
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 18.382587084917535,
+    "end": 18.382587084917535
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 19.17052166908701,
+    "end": 19.17052166908701
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 19.958456253256482,
+    "end": 19.958456253256482
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 20.746390837425956,
+    "end": 20.746390837425956
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 21.53432542159543,
+    "end": 21.53432542159543
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.5234625491488798,
+    "end": 0.5234625491488798
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.0469250982977596,
+    "end": 1.0469250982977596
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.5703876474466394,
+    "end": 1.5703876474466394
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.093850196595519,
+    "end": 2.093850196595519
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.6173127457443988,
+    "end": 2.6173127457443988
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.1407752948932783,
+    "end": 3.1407752948932783
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.664237844042158,
+    "end": 3.664237844042158
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.1877003931910375,
+    "end": 4.1877003931910375
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 6.250301582712161,
+    "end": 6.250301582712161
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 6.922298195240144,
+    "end": 6.922298195240144
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.594294807768128,
+    "end": 7.594294807768128
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.266291420296112,
+    "end": 8.266291420296112
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 8.938288032824095,
+    "end": 8.938288032824095
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 9.61028464535208,
+    "end": 9.61028464535208
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 10.282281257880063,
+    "end": 10.282281257880063
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 10.954277870408047,
+    "end": 10.954277870408047
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.280015685031781,
+    "end": 12.280015685031781
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.004526768932049,
+    "end": 13.004526768932049
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.729037852832317,
+    "end": 13.729037852832317
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 14.453548936732584,
+    "end": 14.453548936732584
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 15.178060020632852,
+    "end": 15.178060020632852
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 15.90257110453312,
+    "end": 15.90257110453312
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 16.627082188433388,
+    "end": 16.627082188433388
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 18.9420594193267,
+    "end": 18.9420594193267
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.49833370874909483,
+    "end": 0.49833370874909483
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.9966674174981897,
+    "end": 0.9966674174981897
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.4950011262472844,
+    "end": 1.4950011262472844
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.9933348349963793,
+    "end": 1.9933348349963793
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.491668543745474,
+    "end": 2.491668543745474
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.990002252494569,
+    "end": 2.990002252494569
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.4883359612436635,
+    "end": 3.4883359612436635
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 5.930089803901049,
+    "end": 5.930089803901049
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.377162991063958,
+    "end": 6.377162991063958
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.824236178226868,
+    "end": 6.824236178226868
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.190026681072755,
+    "end": 9.190026681072755
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.692661436473673,
+    "end": 9.692661436473673
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.19529619187459,
+    "end": 10.19529619187459
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 12.080879425902868,
+    "end": 12.080879425902868
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 12.59160064803736,
+    "end": 12.59160064803736
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 13.102321870171853,
+    "end": 13.102321870171853
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 13.613043092306345,
+    "end": 13.613043092306345
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 14.123764314440837,
+    "end": 14.123764314440837
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.5225938832448315,
+    "end": 0.5225938832448315
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.045187766489663,
+    "end": 1.045187766489663
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.5677816497344943,
+    "end": 1.5677816497344943
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.3635200133109615,
+    "end": 3.3635200133109615
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.902780959096214,
+    "end": 3.902780959096214
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.442041904881466,
+    "end": 4.442041904881466
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.745997855436239,
+    "end": 6.745997855436239
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 7.524671261950301,
+    "end": 7.524671261950301
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 8.303344668464362,
+    "end": 8.303344668464362
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.082018074978425,
+    "end": 9.082018074978425
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.860691481492488,
+    "end": 9.860691481492488
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.63936488800655,
+    "end": 10.63936488800655
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.418038294520613,
+    "end": 11.418038294520613
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.785207553246163,
+    "end": 12.785207553246163
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.265290958698204,
+    "end": 13.265290958698204
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.745374364150244,
+    "end": 13.745374364150244
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 14.225457769602285,
+    "end": 14.225457769602285
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 14.705541175054325,
+    "end": 14.705541175054325
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 15.185624580506365,
+    "end": 15.185624580506365
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 15.665707985958406,
+    "end": 15.665707985958406
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 16.145791391410445,
+    "end": 16.145791391410445
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 17.308995459156073,
+    "end": 17.308995459156073
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 17.810873283697102,
+    "end": 17.810873283697102
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 18.312751108238132,
+    "end": 18.312751108238132
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 18.81462893277916,
+    "end": 18.81462893277916
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.5407328951953912,
+    "end": 0.5407328951953912
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.0814657903907825,
+    "end": 1.0814657903907825
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.6221986855861736,
+    "end": 1.6221986855861736
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.162931580781565,
+    "end": 2.162931580781565
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.7036644759769564,
+    "end": 2.7036644759769564
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.2443973711723477,
+    "end": 3.2443973711723477
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.785130266367739,
+    "end": 3.785130266367739
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.32586316156313,
+    "end": 4.32586316156313
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 5.653569615250633,
+    "end": 5.653569615250633
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 6.088070206274582,
+    "end": 6.088070206274582
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 6.522570797298532,
+    "end": 6.522570797298532
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 6.957071388322482,
+    "end": 6.957071388322482
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 7.391571979346431,
+    "end": 7.391571979346431
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 8.46500785743518,
+    "end": 8.46500785743518
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.118663790121563,
+    "end": 9.118663790121563
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.772319722807945,
+    "end": 9.772319722807945
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.425975655494327,
+    "end": 10.425975655494327
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.079631588180709,
+    "end": 11.079631588180709
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.682804247370296,
+    "end": 13.682804247370296
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 14.336033463879966,
+    "end": 14.336033463879966
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 14.989262680389636,
+    "end": 14.989262680389636
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 15.642491896899307,
+    "end": 15.642491896899307
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 16.295721113408977,
+    "end": 16.295721113408977
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 16.948950329918645,
+    "end": 16.948950329918645
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 18.854706928043473,
+    "end": 18.854706928043473
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 19.589639288214002,
+    "end": 19.589639288214002
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 20.32457164838453,
+    "end": 20.32457164838453
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 21.05950400855506,
+    "end": 21.05950400855506
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.4449848562136055,
+    "end": 0.4449848562136055
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.889969712427211,
+    "end": 0.889969712427211
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.3349545686408164,
+    "end": 1.3349545686408164
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.3705590813871136,
+    "end": 3.3705590813871136
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.8828557776454296,
+    "end": 3.8828557776454296
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.395152473903746,
+    "end": 4.395152473903746
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.907449170162062,
+    "end": 4.907449170162062
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 5.419745866420378,
+    "end": 5.419745866420378
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 5.932042562678694,
+    "end": 5.932042562678694
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.44433925893701,
+    "end": 6.44433925893701
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.956635955195326,
+    "end": 6.956635955195326
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 7.468932651453642,
+    "end": 7.468932651453642
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 9.809224747926605,
+    "end": 9.809224747926605
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 10.449368182844413,
+    "end": 10.449368182844413
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 11.089511617762222,
+    "end": 11.089511617762222
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 11.72965505268003,
+    "end": 11.72965505268003
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 12.369798487597839,
+    "end": 12.369798487597839
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 13.009941922515647,
+    "end": 13.009941922515647
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 13.650085357433456,
+    "end": 13.650085357433456
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.290228792351265,
+    "end": 14.290228792351265
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 16.37693081833594,
+    "end": 16.37693081833594
+   }
+  ],
+  [
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.7273361332560307,
+    "end": 0.7273361332560307
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.4546722665120615,
+    "end": 1.4546722665120615
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 2.182008399768092,
+    "end": 2.182008399768092
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 2.909344533024123,
+    "end": 2.909344533024123
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 3.636680666280154,
+    "end": 3.636680666280154
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 4.364016799536184,
+    "end": 4.364016799536184
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 5.091352932792215,
+    "end": 5.091352932792215
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.718345015083946,
+    "end": 6.718345015083946
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.121559536557891,
+    "end": 7.121559536557891
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.524774058031836,
+    "end": 7.524774058031836
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.927988579505781,
+    "end": 7.927988579505781
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.331203100979726,
+    "end": 8.331203100979726
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.734417622453671,
+    "end": 8.734417622453671
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 9.137632143927616,
+    "end": 9.137632143927616
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 9.540846665401562,
+    "end": 9.540846665401562
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 11.658095667754141,
+    "end": 11.658095667754141
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 12.094728685313129,
+    "end": 12.094728685313129
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 12.531361702872116,
+    "end": 12.531361702872116
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 12.967994720431104,
+    "end": 12.967994720431104
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 13.404627737990092,
+    "end": 13.404627737990092
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 13.84126075554908,
+    "end": 13.84126075554908
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.277893773108067,
+    "end": 14.277893773108067
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.714526790667055,
+    "end": 14.714526790667055
+   }
+  ],
+  [
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 0.6375928954689302,
+    "end": 0.6375928954689302
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 1.2751857909378603,
+    "end": 1.2751857909378603
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 3.43648525265717,
+    "end": 3.43648525265717
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 3.9076056499601513,
+    "end": 3.9076056499601513
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 4.378726047263132,
+    "end": 4.378726047263132
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 4.849846444566114,
+    "end": 4.849846444566114
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.320966841869096,
+    "end": 5.320966841869096
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.792087239172077,
+    "end": 5.792087239172077
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.263207636475059,
+    "end": 6.263207636475059
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.7343280337780405,
+    "end": 6.7343280337780405
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.747540368803451,
+    "end": 7.747540368803451
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.278671450272281,
+    "end": 8.278671450272281
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.809802531741111,
+    "end": 8.809802531741111
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 9.340933613209941,
+    "end": 9.340933613209941
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 9.872064694678771,
+    "end": 9.872064694678771
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 10.403195776147601,
+    "end": 10.403195776147601
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 10.934326857616432,
+    "end": 10.934326857616432
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 13.050654059793338,
+    "end": 13.050654059793338
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 13.502492300611333,
+    "end": 13.502492300611333
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 13.954330541429329,
+    "end": 13.954330541429329
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 14.406168782247324,
+    "end": 14.406168782247324
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 15.428384650948585,
+    "end": 15.428384650948585
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 15.944882434381142,
+    "end": 15.944882434381142
+   }
+  ],
+  [
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 0.6623851127367646,
+    "end": 0.6623851127367646
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 1.3247702254735292,
+    "end": 1.3247702254735292
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 1.9871553382102938,
+    "end": 1.9871553382102938
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 2.6495404509470584,
+    "end": 2.6495404509470584
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 3.3119255636838227,
+    "end": 3.3119255636838227
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 3.974310676420587,
+    "end": 3.974310676420587
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.160910743837213,
+    "end": 6.160910743837213
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.550525640908996,
+    "end": 6.550525640908996
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.940140537980779,
+    "end": 6.940140537980779
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 7.3297554350525616,
+    "end": 7.3297554350525616
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 8.282674707109127,
+    "end": 8.282674707109127
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 8.964560853884368,
+    "end": 8.964560853884368
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.64644700065961,
+    "end": 9.64644700065961
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.32833314743485,
+    "end": 10.32833314743485
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.010219294210092,
+    "end": 11.010219294210092
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 12.664195892214597,
+    "end": 12.664195892214597
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 13.132923058180243,
+    "end": 13.132923058180243
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 13.601650224145889,
+    "end": 13.601650224145889
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 14.070377390111535,
+    "end": 14.070377390111535
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 14.53910455607718,
+    "end": 14.53910455607718
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 15.007831722042827,
+    "end": 15.007831722042827
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 15.476558888008473,
+    "end": 15.476558888008473
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 15.945286053974119,
+    "end": 15.945286053974119
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 16.414013219939765,
+    "end": 16.414013219939765
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 17.595551317511386,
+    "end": 17.595551317511386
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 18.250204334719683,
+    "end": 18.250204334719683
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 18.90485735192798,
+    "end": 18.90485735192798
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 19.559510369136277,
+    "end": 19.559510369136277
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 20.214163386344573,
+    "end": 20.214163386344573
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 20.86881640355287,
+    "end": 20.86881640355287
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 22.76662034407971,
+    "end": 22.76662034407971
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 23.291311913787034,
+    "end": 23.291311913787034
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 23.81600348349436,
+    "end": 23.81600348349436
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 24.340695053201685,
+    "end": 24.340695053201685
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 24.86538662290901,
+    "end": 24.86538662290901
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 25.390078192616336,
+    "end": 25.390078192616336
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 26.61582738166195,
+    "end": 26.61582738166195
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 27.175008950208348,
+    "end": 27.175008950208348
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 27.734190518754744,
+    "end": 27.734190518754744
+   }
+  ],
+  [
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 0.49021871738144285,
+    "end": 0.49021871738144285
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 0.9804374347628857,
+    "end": 0.9804374347628857
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 1.4706561521443287,
+    "end": 1.4706561521443287
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 1.9608748695257714,
+    "end": 1.9608748695257714
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 2.451093586907214,
+    "end": 2.451093586907214
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.574334004383425,
+    "end": 4.574334004383425
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 5.123683985376422,
+    "end": 5.123683985376422
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 5.673033966369419,
+    "end": 5.673033966369419
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 6.222383947362417,
+    "end": 6.222383947362417
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 7.844940106129485,
+    "end": 7.844940106129485
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 8.384396748341365,
+    "end": 8.384396748341365
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 8.923853390553244,
+    "end": 8.923853390553244
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.463310032765124,
+    "end": 9.463310032765124
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.002766674977003,
+    "end": 10.002766674977003
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.542223317188883,
+    "end": 10.542223317188883
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.081679959400763,
+    "end": 11.081679959400763
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.621136601612642,
+    "end": 11.621136601612642
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 12.160593243824522,
+    "end": 12.160593243824522
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 14.678482826116625,
+    "end": 14.678482826116625
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 15.111278109768854,
+    "end": 15.111278109768854
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 15.544073393421083,
+    "end": 15.544073393421083
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 15.976868677073313,
+    "end": 15.976868677073313
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 16.409663960725542,
+    "end": 16.409663960725542
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 16.84245924437777,
+    "end": 16.84245924437777
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 17.27525452803,
+    "end": 17.27525452803
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 17.70804981168223,
+    "end": 17.70804981168223
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 18.14084509533446,
+    "end": 18.14084509533446
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 19.079503584343385,
+    "end": 19.079503584343385
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 19.57593478385467,
+    "end": 19.57593478385467
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 20.072365983365955,
+    "end": 20.072365983365955
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 21.376043488749957,
+    "end": 21.376043488749957
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 21.950076381974817,
+    "end": 21.950076381974817
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 22.524109275199677,
+    "end": 22.524109275199677
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 23.098142168424538,
+    "end": 23.098142168424538
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 23.672175061649398,
+    "end": 23.672175061649398
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 24.246207954874258,
+    "end": 24.246207954874258
+   }
+  ],
+  [
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.3997243032957049,
+    "end": 0.3997243032957049
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.7994486065914098,
+    "end": 0.7994486065914098
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 1.1991729098871147,
+    "end": 1.1991729098871147
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 1.5988972131828196,
+    "end": 1.5988972131828196
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 1.9986215164785246,
+    "end": 1.9986215164785246
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 2.3983458197742293,
+    "end": 2.3983458197742293
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 2.7980701230699343,
+    "end": 2.7980701230699343
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 3.764195198817591,
+    "end": 3.764195198817591
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 4.421417852194375,
+    "end": 4.421417852194375
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.07864050557116,
+    "end": 5.07864050557116
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.735863158947945,
+    "end": 5.735863158947945
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.393085812324729,
+    "end": 6.393085812324729
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.050308465701514,
+    "end": 7.050308465701514
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.707531119078299,
+    "end": 7.707531119078299
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.364753772455083,
+    "end": 8.364753772455083
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 9.021976425831868,
+    "end": 9.021976425831868
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 10.56590774552338,
+    "end": 10.56590774552338
+   }
+  ],
+  [
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.5239127110130424,
+    "end": 0.5239127110130424
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.0478254220260848,
+    "end": 1.0478254220260848
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.5717381330391271,
+    "end": 1.5717381330391271
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 2.0956508440521695,
+    "end": 2.0956508440521695
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 2.619563555065212,
+    "end": 2.619563555065212
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 3.1434762660782543,
+    "end": 3.1434762660782543
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 3.6673889770912966,
+    "end": 3.6673889770912966
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.385101804247249,
+    "end": 5.385101804247249
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.750069118257484,
+    "end": 5.750069118257484
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.115036432267718,
+    "end": 6.115036432267718
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.480003746277953,
+    "end": 6.480003746277953
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.844971060288188,
+    "end": 6.844971060288188
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.209938374298423,
+    "end": 7.209938374298423
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.574905688308657,
+    "end": 7.574905688308657
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.939873002318892,
+    "end": 7.939873002318892
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.304840316329127,
+    "end": 8.304840316329127
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 9.582346772752443,
+    "end": 9.582346772752443
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 10.208551512942316,
+    "end": 10.208551512942316
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 10.83475625313219,
+    "end": 10.83475625313219
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 11.460960993322063,
+    "end": 11.460960993322063
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 12.087165733511936,
+    "end": 12.087165733511936
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 13.597465818604572,
+    "end": 13.597465818604572
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.039243063119716,
+    "end": 14.039243063119716
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.48102030763486,
+    "end": 14.48102030763486
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.922797552150005,
+    "end": 14.922797552150005
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.36457479666515,
+    "end": 15.36457479666515
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.806352041180293,
+    "end": 15.806352041180293
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 16.248129285695438,
+    "end": 16.248129285695438
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 16.689906530210582,
+    "end": 16.689906530210582
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 17.131683774725726,
+    "end": 17.131683774725726
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 18.62523856522923,
+    "end": 18.62523856522923
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 18.976217192185985,
+    "end": 18.976217192185985
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 19.32719581914274,
+    "end": 19.32719581914274
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.41622203327350343,
+    "end": 0.41622203327350343
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.8324440665470069,
+    "end": 0.8324440665470069
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.2486660998205104,
+    "end": 1.2486660998205104
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.6648881330940137,
+    "end": 1.6648881330940137
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.0811101663675173,
+    "end": 2.0811101663675173
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 3.855951751573908,
+    "end": 3.855951751573908
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 4.330413597111933,
+    "end": 4.330413597111933
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 4.8048754426499585,
+    "end": 4.8048754426499585
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.279337288187984,
+    "end": 5.279337288187984
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.530469326528367,
+    "end": 7.530469326528367
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 8.02741407810349,
+    "end": 8.02741407810349
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 8.524358829678613,
+    "end": 8.524358829678613
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 9.021303581253736,
+    "end": 9.021303581253736
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 9.51824833282886,
+    "end": 9.51824833282886
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 10.015193084403982,
+    "end": 10.015193084403982
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 10.512137835979106,
+    "end": 10.512137835979106
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 11.009082587554229,
+    "end": 11.009082587554229
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 13.42545529899631,
+    "end": 13.42545529899631
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 13.830817989584931,
+    "end": 13.830817989584931
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.236180680173552,
+    "end": 14.236180680173552
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.641543370762173,
+    "end": 14.641543370762173
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.046906061350795,
+    "end": 15.046906061350795
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.452268751939416,
+    "end": 15.452268751939416
+   }
+  ],
+  [
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 0.39827297343714196,
+    "end": 0.39827297343714196
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 0.7965459468742839,
+    "end": 0.7965459468742839
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 1.194818920311426,
+    "end": 1.194818920311426
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 1.5930918937485679,
+    "end": 1.5930918937485679
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.193158314235776,
+    "end": 3.193158314235776
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.742693668067484,
+    "end": 3.742693668067484
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.2922290218991925,
+    "end": 4.2922290218991925
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.841764375730901,
+    "end": 4.841764375730901
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.3912997295626095,
+    "end": 5.3912997295626095
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.940835083394318,
+    "end": 5.940835083394318
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.242571889798743,
+    "end": 7.242571889798743
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.572815277115214,
+    "end": 7.572815277115214
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.9030586644316845,
+    "end": 7.9030586644316845
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 9.983025734684777,
+    "end": 9.983025734684777
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 10.571153680227114,
+    "end": 10.571153680227114
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 11.159281625769452,
+    "end": 11.159281625769452
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 11.74740957131179,
+    "end": 11.74740957131179
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 12.335537516854128,
+    "end": 12.335537516854128
+   }
+  ],
+  [
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.3775338497294964,
+    "end": 0.3775338497294964
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.7550676994589928,
+    "end": 0.7550676994589928
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 1.132601549188489,
+    "end": 1.132601549188489
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 2.757981051183429,
+    "end": 2.757981051183429
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 3.165487081549099,
+    "end": 3.165487081549099
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 3.5729931119147693,
+    "end": 3.5729931119147693
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 3.9804991422804394,
+    "end": 3.9804991422804394
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 4.38800517264611,
+    "end": 4.38800517264611
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 4.79551120301178,
+    "end": 4.79551120301178
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 6.353418072009685,
+    "end": 6.353418072009685
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 6.751421985919183,
+    "end": 6.751421985919183
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.149425899828682,
+    "end": 7.149425899828682
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.54742981373818,
+    "end": 7.54742981373818
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 9.154744070829643,
+    "end": 9.154744070829643
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 9.479026125044726,
+    "end": 9.479026125044726
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 9.803308179259808,
+    "end": 9.803308179259808
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 10.12759023347489,
+    "end": 10.12759023347489
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 10.451872287689973,
+    "end": 10.451872287689973
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 11.54470131621839,
+    "end": 11.54470131621839
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 11.919670159138585,
+    "end": 11.919670159138585
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.4632848308386532,
+    "end": 0.4632848308386532
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.9265696616773064,
+    "end": 0.9265696616773064
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.3898544925159595,
+    "end": 1.3898544925159595
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.8531393233546127,
+    "end": 1.8531393233546127
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.3164241541932657,
+    "end": 2.3164241541932657
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.779708985031919,
+    "end": 2.779708985031919
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.2429938158705722,
+    "end": 3.2429938158705722
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.7062786467092255,
+    "end": 3.7062786467092255
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 6.009049919210392,
+    "end": 6.009049919210392
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 6.566168719754991,
+    "end": 6.566168719754991
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 7.12328752029959,
+    "end": 7.12328752029959
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 7.680406320844188,
+    "end": 7.680406320844188
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 8.237525121388787,
+    "end": 8.237525121388787
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 8.794643921933385,
+    "end": 8.794643921933385
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 9.351762722477984,
+    "end": 9.351762722477984
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.701057397670196,
+    "end": 10.701057397670196
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.23876176213994,
+    "end": 11.23876176213994
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.776466126609686,
+    "end": 11.776466126609686
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 12.31417049107943,
+    "end": 12.31417049107943
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 12.851874855549175,
+    "end": 12.851874855549175
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 13.38957922001892,
+    "end": 13.38957922001892
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 13.927283584488665,
+    "end": 13.927283584488665
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.16571514671105,
+    "end": 15.16571514671105
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.4773064648485,
+    "end": 15.4773064648485
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.78889778298595,
+    "end": 15.78889778298595
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 16.1004891011234,
+    "end": 16.1004891011234
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 16.412080419260853,
+    "end": 16.412080419260853
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 16.723671737398305,
+    "end": 16.723671737398305
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 17.035263055535758,
+    "end": 17.035263055535758
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 17.34685437367321,
+    "end": 17.34685437367321
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 17.658445691810662,
+    "end": 17.658445691810662
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 18.82045333494466,
+    "end": 18.82045333494466
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 19.16045816128032,
+    "end": 19.16045816128032
+   }
+  ],
+  [
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.41799462049806557,
+    "end": 0.41799462049806557
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.8359892409961311,
+    "end": 0.8359892409961311
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 1.2539838614941967,
+    "end": 1.2539838614941967
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 1.6719784819922623,
+    "end": 1.6719784819922623
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 3.6321126363265925,
+    "end": 3.6321126363265925
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 4.079449292160534,
+    "end": 4.079449292160534
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 4.526785947994476,
+    "end": 4.526785947994476
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 4.974122603828418,
+    "end": 4.974122603828418
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 5.42145925966236,
+    "end": 5.42145925966236
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 5.868795915496301,
+    "end": 5.868795915496301
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.316132571330243,
+    "end": 6.316132571330243
+   }
+  ],
+  [
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.4827069921136342,
+    "end": 0.4827069921136342
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.9654139842272684,
+    "end": 0.9654139842272684
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 1.4481209763409026,
+    "end": 1.4481209763409026
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 1.9308279684545369,
+    "end": 1.9308279684545369
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 2.413534960568171,
+    "end": 2.413534960568171
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 2.8962419526818053,
+    "end": 2.8962419526818053
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.3789489447954395,
+    "end": 3.3789489447954395
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.8616559369090737,
+    "end": 3.8616559369090737
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 5.207856766892352,
+    "end": 5.207856766892352
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 5.636772605557554,
+    "end": 5.636772605557554
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.065688444222756,
+    "end": 6.065688444222756
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.494604282887958,
+    "end": 6.494604282887958
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.92352012155316,
+    "end": 6.92352012155316
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 7.352435960218362,
+    "end": 7.352435960218362
+   }
+  ],
+  [
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.29322865027324146,
+    "end": 0.29322865027324146
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.5864573005464829,
+    "end": 0.5864573005464829
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.8796859508197243,
+    "end": 0.8796859508197243
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.012449966580773,
+    "end": 3.012449966580773
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.377622151165503,
+    "end": 3.377622151165503
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.742794335750233,
+    "end": 3.742794335750233
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.107966520334963,
+    "end": 4.107966520334963
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 6.0722281480741795,
+    "end": 6.0722281480741795
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 6.50699382550577,
+    "end": 6.50699382550577
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 6.94175950293736,
+    "end": 6.94175950293736
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.370994441779045,
+    "end": 9.370994441779045
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.866391514767555,
+    "end": 9.866391514767555
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.361788587756065,
+    "end": 10.361788587756065
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 10.857185660744575,
+    "end": 10.857185660744575
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.352582733733085,
+    "end": 11.352582733733085
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 11.847979806721595,
+    "end": 11.847979806721595
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.062106525833176,
+    "end": 14.062106525833176
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.49500581230057,
+    "end": 14.49500581230057
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 14.927905098767965,
+    "end": 14.927905098767965
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.36080438523536,
+    "end": 15.36080438523536
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 15.793703671702755,
+    "end": 15.793703671702755
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 16.22660295817015,
+    "end": 16.22660295817015
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 16.659502244637547,
+    "end": 16.659502244637547
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 18.903567571017316,
+    "end": 18.903567571017316
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 19.375165062524673,
+    "end": 19.375165062524673
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 19.846762554032033,
+    "end": 19.846762554032033
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 20.318360045539393,
+    "end": 20.318360045539393
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 20.789957537046753,
+    "end": 20.789957537046753
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 21.261555028554113,
+    "end": 21.261555028554113
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 23.496728969379017,
+    "end": 23.496728969379017
+   }
+  ],
+  [
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.3560502870837797,
+    "end": 0.3560502870837797
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.7121005741675595,
+    "end": 0.7121005741675595
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 2.9415786698684747,
+    "end": 2.9415786698684747
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 3.221932456299331,
+    "end": 3.221932456299331
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 3.5022862427301873,
+    "end": 3.5022862427301873
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.383175559422484,
+    "end": 5.383175559422484
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.806246881269188,
+    "end": 5.806246881269188
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 6.229318203115892,
+    "end": 6.229318203115892
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 6.652389524962596,
+    "end": 6.652389524962596
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 7.0754608468093005,
+    "end": 7.0754608468093005
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 7.498532168656005,
+    "end": 7.498532168656005
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 9.905088975400693,
+    "end": 9.905088975400693
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 10.349665160991613,
+    "end": 10.349665160991613
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 10.794241346582533,
+    "end": 10.794241346582533
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 11.238817532173453,
+    "end": 11.238817532173453
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 11.683393717764373,
+    "end": 11.683393717764373
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 12.127969903355293,
+    "end": 12.127969903355293
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 12.572546088946213,
+    "end": 12.572546088946213
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.3766050113068204,
+    "end": 0.3766050113068204
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.7532100226136408,
+    "end": 0.7532100226136408
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.1298150339204611,
+    "end": 1.1298150339204611
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.5064200452272816,
+    "end": 1.5064200452272816
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.883025056534102,
+    "end": 1.883025056534102
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.2596300678409222,
+    "end": 2.2596300678409222
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.6362350791477427,
+    "end": 2.6362350791477427
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.012840090454563,
+    "end": 3.012840090454563
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.112807725360251,
+    "end": 5.112807725360251
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.372641066788215,
+    "end": 5.372641066788215
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.632474408216178,
+    "end": 5.632474408216178
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.892307749644142,
+    "end": 5.892307749644142
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.106690134123401,
+    "end": 7.106690134123401
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.403315616359633,
+    "end": 7.403315616359633
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.699941098595865,
+    "end": 7.699941098595865
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 7.996566580832097,
+    "end": 7.996566580832097
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 9.182613735693817,
+    "end": 9.182613735693817
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 9.466987152519653,
+    "end": 9.466987152519653
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 9.75136056934549,
+    "end": 9.75136056934549
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 10.035733986171326,
+    "end": 10.035733986171326
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 10.320107402997163,
+    "end": 10.320107402997163
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 10.604480819823,
+    "end": 10.604480819823
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 10.888854236648836,
+    "end": 10.888854236648836
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 12.29691259112028,
+    "end": 12.29691259112028
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 12.584635263911387,
+    "end": 12.584635263911387
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 12.872357936702494,
+    "end": 12.872357936702494
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 13.160080609493601,
+    "end": 13.160080609493601
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 13.447803282284708,
+    "end": 13.447803282284708
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 13.735525955075815,
+    "end": 13.735525955075815
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 15.114517199926505,
+    "end": 15.114517199926505
+   }
+  ],
+  [
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.41338848770951153,
+    "end": 0.41338848770951153
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.8267769754190231,
+    "end": 0.8267769754190231
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 1.2401654631285346,
+    "end": 1.2401654631285346
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 1.6535539508380461,
+    "end": 1.6535539508380461
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.013133137125459,
+    "end": 3.013133137125459
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.30521880779038,
+    "end": 3.30521880779038
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.597304478455301,
+    "end": 3.597304478455301
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 5.476120935225345,
+    "end": 5.476120935225345
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 5.775149212180227,
+    "end": 5.775149212180227
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.074177489135109,
+    "end": 6.074177489135109
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.373205766089991,
+    "end": 6.373205766089991
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.672234043044873,
+    "end": 6.672234043044873
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 8.39110565099884,
+    "end": 8.39110565099884
+   }
+  ],
+  [
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 0.2759851311994749,
+    "end": 0.2759851311994749
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 0.5519702623989498,
+    "end": 0.5519702623989498
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 0.8279553935984246,
+    "end": 0.8279553935984246
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 1.1039405247978995,
+    "end": 1.1039405247978995
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 1.3799256559973743,
+    "end": 1.3799256559973743
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 1.655910787196849,
+    "end": 1.655910787196849
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.4851586130272936,
+    "end": 2.4851586130272936
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.895615867176064,
+    "end": 2.895615867176064
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.3060731213248347,
+    "end": 3.3060731213248347
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.716530375473605,
+    "end": 3.716530375473605
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.126987629622375,
+    "end": 4.126987629622375
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.537444883771146,
+    "end": 4.537444883771146
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.534941247103671,
+    "end": 6.534941247103671
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.846776715910089,
+    "end": 6.846776715910089
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 7.158612184716507,
+    "end": 7.158612184716507
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 7.470447653522925,
+    "end": 7.470447653522925
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 7.782283122329343,
+    "end": 7.782283122329343
+   }
+  ],
+  [
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.3403025293372978,
+    "end": 0.3403025293372978
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 0.6806050586745956,
+    "end": 0.6806050586745956
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.0209075880118934,
+    "end": 1.0209075880118934
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.3612101173491913,
+    "end": 1.3612101173491913
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 1.7015126466864892,
+    "end": 1.7015126466864892
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.5582994034627395,
+    "end": 3.5582994034627395
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 3.914218904583277,
+    "end": 3.914218904583277
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.270138405703815,
+    "end": 4.270138405703815
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 4.626057906824353,
+    "end": 4.626057906824353
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.902720516339046,
+    "end": 6.902720516339046
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 7.2872717480562885,
+    "end": 7.2872717480562885
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 7.671822979773531,
+    "end": 7.671822979773531
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 8.056374211490773,
+    "end": 8.056374211490773
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 8.440925443208016,
+    "end": 8.440925443208016
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 8.825476674925259,
+    "end": 8.825476674925259
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 9.210027906642502,
+    "end": 9.210027906642502
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 9.594579138359745,
+    "end": 9.594579138359745
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 11.232345825230855,
+    "end": 11.232345825230855
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 11.52808404922372,
+    "end": 11.52808404922372
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 11.823822273216585,
+    "end": 11.823822273216585
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 12.11956049720945,
+    "end": 12.11956049720945
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 12.415298721202316,
+    "end": 12.415298721202316
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 12.71103694519518,
+    "end": 12.71103694519518
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 13.006775169188046,
+    "end": 13.006775169188046
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 14.000884597097711,
+    "end": 14.000884597097711
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 14.343604429509355,
+    "end": 14.343604429509355
+   }
+  ],
+  [
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.3133636513876023,
+    "end": 0.3133636513876023
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.6267273027752046,
+    "end": 0.6267273027752046
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 2.3048730279900758,
+    "end": 2.3048730279900758
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 2.6723363219423297,
+    "end": 2.6723363219423297
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.0397996158945837,
+    "end": 3.0397996158945837
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.4072629098468377,
+    "end": 3.4072629098468377
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.7747262037990916,
+    "end": 3.7747262037990916
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.142189497751345,
+    "end": 4.142189497751345
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.509652791703599,
+    "end": 4.509652791703599
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 5.481726122743821,
+    "end": 5.481726122743821
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 5.78044263257435,
+    "end": 5.78044263257435
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 6.079159142404879,
+    "end": 6.079159142404879
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 7.943160100704381,
+    "end": 7.943160100704381
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 8.259149087560786,
+    "end": 8.259149087560786
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 8.575138074417191,
+    "end": 8.575138074417191
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 10.618527841887882,
+    "end": 10.618527841887882
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 10.871649949260881,
+    "end": 10.871649949260881
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 11.12477205663388,
+    "end": 11.12477205663388
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 11.377894164006879,
+    "end": 11.377894164006879
+   }
+  ],
+  [
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 0.2378263569495219,
+    "end": 0.2378263569495219
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 0.4756527138990438,
+    "end": 0.4756527138990438
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 0.7134790708485657,
+    "end": 0.7134790708485657
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 2.3565234167110742,
+    "end": 2.3565234167110742
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 2.7222348464373884,
+    "end": 2.7222348464373884
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 3.0879462761637027,
+    "end": 3.0879462761637027
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 4.282087378406047,
+    "end": 4.282087378406047
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 4.586002726871429,
+    "end": 4.586002726871429
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 4.889918075336812,
+    "end": 4.889918075336812
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 5.193833423802195,
+    "end": 5.193833423802195
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 5.4977487722675775,
+    "end": 5.4977487722675775
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 5.80166412073296,
+    "end": 5.80166412073296
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 7.8560612577838915,
+    "end": 7.8560612577838915
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 8.16723912774897,
+    "end": 8.16723912774897
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 8.478416997714051,
+    "end": 8.478416997714051
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 8.789594867679131,
+    "end": 8.789594867679131
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 9.100772737644212,
+    "end": 9.100772737644212
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 10.642060287262929,
+    "end": 10.642060287262929
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 10.930162793598099,
+    "end": 10.930162793598099
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 11.218265299933268,
+    "end": 11.218265299933268
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 11.506367806268438,
+    "end": 11.506367806268438
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 11.794470312603607,
+    "end": 11.794470312603607
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 12.082572818938777,
+    "end": 12.082572818938777
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 12.370675325273947,
+    "end": 12.370675325273947
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 14.052058610395514,
+    "end": 14.052058610395514
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 14.39174510154681,
+    "end": 14.39174510154681
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 14.731431592698106,
+    "end": 14.731431592698106
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 15.071118083849402,
+    "end": 15.071118083849402
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 15.410804575000698,
+    "end": 15.410804575000698
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 15.750491066151994,
+    "end": 15.750491066151994
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 16.090177557303292,
+    "end": 16.090177557303292
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 16.42986404845459,
+    "end": 16.42986404845459
+   },
+   {
+    "bloon": "green",
+    "count": 1,
+    "start": 16.769550539605888,
+    "end": 16.769550539605888
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 19.01210931778272,
+    "end": 19.01210931778272
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 19.372260709709224,
+    "end": 19.372260709709224
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 19.732412101635727,
+    "end": 19.732412101635727
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 20.09256349356223,
+    "end": 20.09256349356223
+   }
+  ],
+  [
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.20196035681219238,
+    "end": 0.20196035681219238
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.40392071362438475,
+    "end": 0.40392071362438475
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 2.5686723505773807,
+    "end": 2.5686723505773807
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 2.9179320717150525,
+    "end": 2.9179320717150525
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 3.2671917928527243,
+    "end": 3.2671917928527243
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 3.616451513990396,
+    "end": 3.616451513990396
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 3.965711235128068,
+    "end": 3.965711235128068
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.049921467413638,
+    "end": 5.049921467413638
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.289208686183316,
+    "end": 5.289208686183316
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.528495904952994,
+    "end": 5.528495904952994
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.767783123722672,
+    "end": 5.767783123722672
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.5398667581544165,
+    "end": 6.5398667581544165
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.76439815740213,
+    "end": 6.76439815740213
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.988929556649844,
+    "end": 6.988929556649844
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 7.213460955897558,
+    "end": 7.213460955897558
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 7.437992355145272,
+    "end": 7.437992355145272
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 7.662523754392986,
+    "end": 7.662523754392986
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.6679693234561,
+    "end": 9.6679693234561
+   }
+  ],
+  [
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.26569163870618845,
+    "end": 0.26569163870618845
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.5313832774123769,
+    "end": 0.5313832774123769
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.7970749161185653,
+    "end": 0.7970749161185653
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 1.0627665548247538,
+    "end": 1.0627665548247538
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 1.9648382025117361,
+    "end": 1.9648382025117361
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 2.2819061336183113,
+    "end": 2.2819061336183113
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 2.5989740647248865,
+    "end": 2.5989740647248865
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 2.9160419958314616,
+    "end": 2.9160419958314616
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.233109926938037,
+    "end": 3.233109926938037
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.550177858044612,
+    "end": 3.550177858044612
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.867245789151187,
+    "end": 3.867245789151187
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 5.855763080869476,
+    "end": 5.855763080869476
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.134061401661054,
+    "end": 6.134061401661054
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.412359722452631,
+    "end": 6.412359722452631
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.690658043244209,
+    "end": 6.690658043244209
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 6.968956364035787,
+    "end": 6.968956364035787
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 7.2472546848273645,
+    "end": 7.2472546848273645
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 8.792401502814542,
+    "end": 8.792401502814542
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 9.048219352441336,
+    "end": 9.048219352441336
+   }
+  ],
+  [
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.3013072457711703,
+    "end": 0.3013072457711703
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.6026144915423406,
+    "end": 0.6026144915423406
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 0.9039217373135109,
+    "end": 0.9039217373135109
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 1.2052289830846812,
+    "end": 1.2052289830846812
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 1.5065362288558515,
+    "end": 1.5065362288558515
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.0921674927938883,
+    "end": 3.0921674927938883
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.3441812021879818,
+    "end": 3.3441812021879818
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.5961949115820753,
+    "end": 3.5961949115820753
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 3.848208620976169,
+    "end": 3.848208620976169
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.100222330370262,
+    "end": 4.100222330370262
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.352236039764356,
+    "end": 4.352236039764356
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.604249749158449,
+    "end": 4.604249749158449
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 4.856263458552543,
+    "end": 4.856263458552543
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.391245528556771,
+    "end": 6.391245528556771
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.625621749195206,
+    "end": 6.625621749195206
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 6.859997969833641,
+    "end": 6.859997969833641
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.094374190472076,
+    "end": 7.094374190472076
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 7.975647576060696,
+    "end": 7.975647576060696
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.276239090456258,
+    "end": 8.276239090456258
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.57683060485182,
+    "end": 8.57683060485182
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 10.621834795232926,
+    "end": 10.621834795232926
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 10.840931980383262,
+    "end": 10.840931980383262
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.060029165533598,
+    "end": 11.060029165533598
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.279126350683933,
+    "end": 11.279126350683933
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.498223535834269,
+    "end": 11.498223535834269
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.717320720984604,
+    "end": 11.717320720984604
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.93641790613494,
+    "end": 11.93641790613494
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 12.155515091285276,
+    "end": 12.155515091285276
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 12.374612276435611,
+    "end": 12.374612276435611
+   }
+  ],
+  [
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.2569257886346012,
+    "end": 0.2569257886346012
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.5138515772692024,
+    "end": 0.5138515772692024
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 0.7707773659038035,
+    "end": 0.7707773659038035
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 1.0277031545384048,
+    "end": 1.0277031545384048
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 2.9454158285562153,
+    "end": 2.9454158285562153
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 3.1137467989019765,
+    "end": 3.1137467989019765
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 3.2820777692477376,
+    "end": 3.2820777692477376
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 3.450408739593499,
+    "end": 3.450408739593499
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.060541719548906,
+    "end": 5.060541719548906
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.276639701110872,
+    "end": 5.276639701110872
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.492737682672837,
+    "end": 5.492737682672837
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.708835664234803,
+    "end": 5.708835664234803
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 5.924933645796768,
+    "end": 5.924933645796768
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 6.141031627358734,
+    "end": 6.141031627358734
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 6.357129608920699,
+    "end": 6.357129608920699
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 6.573227590482665,
+    "end": 6.573227590482665
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.678891434104019,
+    "end": 8.678891434104019
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 8.95878746403738,
+    "end": 8.95878746403738
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 9.238683493970742,
+    "end": 9.238683493970742
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 10.72709456190091,
+    "end": 10.72709456190091
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 10.936056377899055,
+    "end": 10.936056377899055
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.145018193897199,
+    "end": 11.145018193897199
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.353980009895343,
+    "end": 11.353980009895343
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.562941825893487,
+    "end": 11.562941825893487
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 11.771903641891631,
+    "end": 11.771903641891631
+   }
+  ],
+  [
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.21616143312974376,
+    "end": 0.21616143312974376
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.4323228662594875,
+    "end": 0.4323228662594875
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 0.6484842993892312,
+    "end": 0.6484842993892312
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 1.7424343804103346,
+    "end": 1.7424343804103346
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 2.004720052994569,
+    "end": 2.004720052994569
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 2.2670057255788034,
+    "end": 2.2670057255788034
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 2.529291398163038,
+    "end": 2.529291398163038
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 2.7915770707472722,
+    "end": 2.7915770707472722
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 4.785556976757673,
+    "end": 4.785556976757673
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 4.951098493802378,
+    "end": 4.951098493802378
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.116640010847083,
+    "end": 5.116640010847083
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.282181527891788,
+    "end": 5.282181527891788
+   },
+   {
+    "bloon": "pink",
+    "count": 1,
+    "start": 5.447723044936493,
+    "end": 5.447723044936493
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.597199506819215,
+    "end": 6.597199506819215
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 6.87401606123975,
+    "end": 6.87401606123975
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 7.150832615660286,
+    "end": 7.150832615660286
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 7.427649170080821,
+    "end": 7.427649170080821
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 7.704465724501357,
+    "end": 7.704465724501357
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 7.981282278921892,
+    "end": 7.981282278921892
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 9.936419300695949,
+    "end": 9.936419300695949
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 10.21304757696968,
+    "end": 10.21304757696968
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 10.489675853243412,
+    "end": 10.489675853243412
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 10.766304129517144,
+    "end": 10.766304129517144
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 11.042932405790875,
+    "end": 11.042932405790875
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 11.319560682064607,
+    "end": 11.319560682064607
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 11.596188958338338,
+    "end": 11.596188958338338
+   },
+   {
+    "bloon": "black",
+    "count": 1,
+    "start": 11.87281723461207,
+    "end": 11.87281723461207
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 13.999571190387325,
+    "end": 13.999571190387325
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 14.198427579834382,
+    "end": 14.198427579834382
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 14.397283969281439,
+    "end": 14.397283969281439
+   }
+  ],
+  [
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.0,
+    "end": 0.0
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.21726315957026865,
+    "end": 0.21726315957026865
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.4345263191405373,
+    "end": 0.4345263191405373
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.651789478710806,
+    "end": 0.651789478710806
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 0.8690526382810746,
+    "end": 0.8690526382810746
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 1.7671488674167708,
+    "end": 1.7671488674167708
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.011774109747216,
+    "end": 2.011774109747216
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.2563993520776613,
+    "end": 2.2563993520776613
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.5010245944081064,
+    "end": 2.5010245944081064
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.7456498367385516,
+    "end": 2.7456498367385516
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 2.9902750790689967,
+    "end": 2.9902750790689967
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 4.57619866225736,
+    "end": 4.57619866225736
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 4.716747563844067,
+    "end": 4.716747563844067
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 4.857296465430775,
+    "end": 4.857296465430775
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 4.997845367017482,
+    "end": 4.997845367017482
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 5.1383942686041895,
+    "end": 5.1383942686041895
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 5.278943170190897,
+    "end": 5.278943170190897
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 5.419492071777604,
+    "end": 5.419492071777604
+   },
+   {
+    "bloon": "zebra",
+    "count": 1,
+    "start": 5.560040973364312,
+    "end": 5.560040973364312
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 6.765747492606486,
+    "end": 6.765747492606486
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 6.943134501925326,
+    "end": 6.943134501925326
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.120521511244166,
+    "end": 7.120521511244166
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.2979085205630065,
+    "end": 7.2979085205630065
+   },
+   {
+    "bloon": "blue",
+    "count": 1,
+    "start": 7.475295529881847,
+    "end": 7.475295529881847
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 8.694253954807385,
+    "end": 8.694253954807385
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 8.923926029042441,
+    "end": 8.923926029042441
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.153598103277496,
+    "end": 9.153598103277496
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.38327017751255,
+    "end": 9.38327017751255
+   },
+   {
+    "bloon": "yellow",
+    "count": 1,
+    "start": 9.612942251747604,
+    "end": 9.612942251747604
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 11.835722490816682,
+    "end": 11.835722490816682
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.015343897701557,
+    "end": 12.015343897701557
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.194965304586432,
+    "end": 12.194965304586432
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.374586711471308,
+    "end": 12.374586711471308
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.554208118356183,
+    "end": 12.554208118356183
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.733829525241058,
+    "end": 12.733829525241058
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 12.913450932125933,
+    "end": 12.913450932125933
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.093072339010808,
+    "end": 13.093072339010808
+   },
+   {
+    "bloon": "red",
+    "count": 1,
+    "start": 13.272693745895683,
+    "end": 13.272693745895683
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 14.766213242809732,
+    "end": 14.766213242809732
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 15.02254516244281,
+    "end": 15.02254516244281
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 15.278877082075889,
+    "end": 15.278877082075889
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 15.535209001708967,
+    "end": 15.535209001708967
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 15.791540921342046,
+    "end": 15.791540921342046
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 16.047872840975124,
+    "end": 16.047872840975124
+   },
+   {
+    "bloon": "white",
+    "count": 1,
+    "start": 16.304204760608204,
+    "end": 16.304204760608204
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 17.358402247732595,
+    "end": 17.358402247732595
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 17.514080383475267,
+    "end": 17.514080383475267
+   },
+   {
+    "bloon": "lead",
+    "count": 1,
+    "start": 17.66975851921794,
+    "end": 17.66975851921794
+   }
+  ]
+ ],
+ "income": [
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 101.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 102.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 103.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 104.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 105.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 106.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 107.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 108.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 109.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 110.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 111.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 112.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 113.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 114.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 115.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 116.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 117.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 118.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 119.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 120.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 121.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 122.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 123.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 124.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 125.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 126.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 127.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 128.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 129.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 130.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 131.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 132.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 133.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 134.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 135.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 136.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 137.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 138.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 139.0
+  },
+  {
+   "cash_per_pop": 1.0,
+   "end_bonus": 140.0
+  }
+ ]
+}

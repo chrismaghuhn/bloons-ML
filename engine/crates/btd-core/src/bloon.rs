@@ -1,43 +1,65 @@
 //! Bloons als Structure-of-Arrays, Schaden und Splitting.
 
-use btd_data::{BloonDef, BloonKind, DamageType};
+use btd_data::v1::{BloonDefV1, Flags, Props};
+use btd_data::BloonKind;
 use smallvec::SmallVec;
 
-use crate::Real;
+use crate::{real, Real};
 
 /// Ergebnis eines Treffers auf einen Bloon.
-pub struct PopResult {
-    /// Übrig gebliebene Bloons (leer = komplett zerplatzt). Unverändert = immun.
-    pub rest: SmallVec<[BloonKind; 4]>,
-    /// Anzahl geplatzter Schichten (= Cash).
+pub struct HitResult {
+    /// Übrig gebliebene Bloons mit Rest-HP. Bei `pops == 0` und `changed` ist das der getroffene
+    /// Bloon selbst mit weniger HP; bei `pops > 0` sind es seine Kinder (leer = komplett zerplatzt).
+    pub rest: SmallVec<[(BloonKind, Real); 4]>,
+    /// Anzahl geplatzter Schichten (Grundlage für Cash).
     pub pops: u32,
+    /// Hat der Treffer überhaupt etwas bewirkt (sonst immun oder 0 Schaden)?
+    pub changed: bool,
 }
 
-/// Wendet `damage` auf einen Bloon an. Überschuss-Schaden geht rekursiv an die Kinder
-/// (wie `btd_sim.engine.pop`).
-pub fn pop(defs: &[BloonDef], kind: BloonKind, damage: i32, dmg_type: DamageType) -> PopResult {
-    let mut res = PopResult { rest: SmallVec::new(), pops: 0 };
-    pop_into(defs, kind, damage, dmg_type, &mut res);
+/// Wendet `damage` auf einen Bloon mit `hp` an. Überschuss-Schaden geht an die Kinder weiter,
+/// jedes Kind bekommt ihn voll (wie `btd_sim.engine.pop`, dort mit 1 HP pro Schicht).
+pub fn hit(defs: &[BloonDefV1], kind: BloonKind, hp: Real, damage: Real, cannot: Props) -> HitResult {
+    let mut res = HitResult { rest: SmallVec::new(), pops: 0, changed: false };
+    hit_into(defs, kind, hp, damage, cannot, &mut res);
     res
 }
 
-fn pop_into(defs: &[BloonDef], kind: BloonKind, damage: i32, dmg_type: DamageType, out: &mut PopResult) {
+fn hit_into(
+    defs: &[BloonDefV1],
+    kind: BloonKind,
+    hp: Real,
+    damage: Real,
+    cannot: Props,
+    out: &mut HitResult,
+) {
     let def = &defs[kind as usize];
-    if damage <= 0 || def.immune.contains(dmg_type) {
-        out.rest.push(kind);
+    if damage <= 0.0 || cannot.intersects(def.props) {
+        out.rest.push((kind, hp));
+        return;
+    }
+    out.changed = true;
+    if damage < hp {
+        out.rest.push((kind, hp - damage));
         return;
     }
     out.pops += 1;
-    for &child in &def.children {
-        pop_into(defs, child, damage - 1, dmg_type, out);
+    let overflow = damage - hp;
+    for &(child, count) in &def.children {
+        let child_hp = real(defs[child as usize].hp);
+        for _ in 0..count {
+            hit_into(defs, child, child_hp, overflow, cannot, out);
+        }
     }
 }
 
-/// Alle Bloons auf dem Track. Tote werden im Tick nur markiert und am Tick-Ende
-/// stabil entfernt, damit die Reihenfolge (= Spawn-Reihenfolge) erhalten bleibt.
+/// Alle Bloons auf dem Track. Tote werden im Tick nur markiert und am Tick-Ende stabil
+/// entfernt, damit die Reihenfolge (= Spawn-Reihenfolge) erhalten bleibt.
 #[derive(Clone, Debug, Default)]
 pub struct BloonStore {
     pub kind: Vec<BloonKind>,
+    pub flags: Vec<Flags>,
+    pub hp: Vec<Real>,
     pub dist: Vec<Real>,
     pub seg: Vec<u16>,
     pub alive: Vec<bool>,
@@ -52,8 +74,10 @@ impl BloonStore {
         self.kind.is_empty()
     }
 
-    pub fn push(&mut self, kind: BloonKind, dist: Real, seg: u16) {
+    pub fn push(&mut self, kind: BloonKind, flags: Flags, hp: Real, dist: Real, seg: u16) {
         self.kind.push(kind);
+        self.flags.push(flags);
+        self.hp.push(hp);
         self.dist.push(dist);
         self.seg.push(seg);
         self.alive.push(true);
@@ -61,6 +85,8 @@ impl BloonStore {
 
     pub fn clear(&mut self) {
         self.kind.clear();
+        self.flags.clear();
+        self.hp.clear();
         self.dist.clear();
         self.seg.clear();
         self.alive.clear();
@@ -72,6 +98,8 @@ impl BloonStore {
         for r in 0..self.kind.len() {
             if self.alive[r] {
                 self.kind[w] = self.kind[r];
+                self.flags[w] = self.flags[r];
+                self.hp[w] = self.hp[r];
                 self.dist[w] = self.dist[r];
                 self.seg[w] = self.seg[r];
                 self.alive[w] = true;
@@ -79,6 +107,8 @@ impl BloonStore {
             }
         }
         self.kind.truncate(w);
+        self.flags.truncate(w);
+        self.hp.truncate(w);
         self.dist.truncate(w);
         self.seg.truncate(w);
         self.alive.truncate(w);
@@ -88,60 +118,80 @@ impl BloonStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use btd_data::Immunities;
+    use btd_data::v1::Classes;
 
-    fn defs() -> Vec<BloonDef> {
-        let b = |name: &str, children: Vec<u8>, immune: u8| BloonDef {
+    fn defs() -> Vec<BloonDefV1> {
+        let b = |name: &str, hp: f64, children: Vec<(u8, u16)>, props: u8| BloonDefV1 {
             name: name.into(),
-            children,
+            hp,
             speed: 1.0,
-            rbe: 1,
-            immune: Immunities(immune),
+            leak: 1,
+            children,
+            props: Props(props),
+            classes: Classes::default(),
         };
         vec![
-            b("red", vec![], 0),                                 // 0
-            b("blue", vec![0], 0),                               // 1
-            b("pink", vec![1], 0),                               // 2
-            b("black", vec![2, 2], DamageType::Explosive.bit()), // 3
-            b("lead", vec![3, 3], DamageType::Sharp.bit()),      // 4
+            b("red", 1.0, vec![], 0),                    // 0
+            b("blue", 1.0, vec![(0, 1)], 0),             // 1
+            b("pink", 1.0, vec![(1, 1)], 0),             // 2
+            b("black", 1.0, vec![(2, 2)], Props::BLACK), // 3
+            b("lead", 1.0, vec![(3, 2)], Props::LEAD),   // 4
+            b("ceramic", 10.0, vec![(2, 2)], 0),         // 5
         ]
+    }
+
+    const SHARP: Props = Props(Props::LEAD);
+    const EXPLOSIVE: Props = Props(Props::BLACK);
+
+    fn kinds(r: &HitResult) -> Vec<u8> {
+        r.rest.iter().map(|&(k, _)| k).collect()
     }
 
     #[test]
     fn single_layer_and_overkill() {
         let d = defs();
-        let r = pop(&d, 1, 1, DamageType::Sharp);
-        assert_eq!((r.rest.as_slice(), r.pops), (&[0u8][..], 1));
-        let r = pop(&d, 1, 5, DamageType::Sharp);
+        let r = hit(&d, 1, 1.0, 1.0, SHARP);
+        assert_eq!((kinds(&r), r.pops), (vec![0], 1));
+        let r = hit(&d, 1, 1.0, 5.0, SHARP);
         assert_eq!((r.rest.len(), r.pops), (0, 2));
     }
 
     #[test]
     fn splitting_with_excess_damage() {
         let d = defs();
-        let r = pop(&d, 3, 1, DamageType::Sharp);
-        assert_eq!((r.rest.as_slice(), r.pops), (&[2u8, 2][..], 1));
-        let r = pop(&d, 3, 2, DamageType::Sharp);
-        assert_eq!((r.rest.as_slice(), r.pops), (&[1u8, 1][..], 3));
+        let r = hit(&d, 3, 1.0, 1.0, SHARP);
+        assert_eq!((kinds(&r), r.pops), (vec![2, 2], 1));
+        let r = hit(&d, 3, 1.0, 2.0, SHARP);
+        assert_eq!((kinds(&r), r.pops), (vec![1, 1], 3));
     }
 
     #[test]
     fn immunities() {
         let d = defs();
-        let r = pop(&d, 4, 3, DamageType::Sharp);
-        assert_eq!((r.rest.as_slice(), r.pops), (&[4u8][..], 0));
-        let r = pop(&d, 3, 3, DamageType::Explosive);
-        assert_eq!(r.pops, 0);
-        // Lead -> 2x Black per Explosion, Blacks sind gegen den Überschuss immun
-        let r = pop(&d, 4, 2, DamageType::Explosive);
-        assert_eq!((r.rest.as_slice(), r.pops), (&[3u8, 3][..], 1));
+        let r = hit(&d, 4, 1.0, 3.0, SHARP);
+        assert_eq!((kinds(&r), r.pops, r.changed), (vec![4], 0, false));
+        let r = hit(&d, 3, 1.0, 3.0, EXPLOSIVE);
+        assert!(!r.changed);
+        // Lead -> 2x Black per Explosion, die Blacks sind gegen den Überschuss immun
+        let r = hit(&d, 4, 1.0, 2.0, EXPLOSIVE);
+        assert_eq!((kinds(&r), r.pops), (vec![3, 3], 1));
+    }
+
+    #[test]
+    fn multi_hp_bloons_take_partial_damage() {
+        let d = defs();
+        let r = hit(&d, 5, 10.0, 3.0, SHARP);
+        assert_eq!((r.rest.as_slice(), r.pops, r.changed), (&[(5u8, 7.0 as Real)][..], 0, true));
+        // 12 Schaden auf 10 HP: Ceramic platzt, 2 Überschuss gehen an beide Pinks
+        let r = hit(&d, 5, 10.0, 12.0, SHARP);
+        assert_eq!((kinds(&r), r.pops), (vec![0, 0], 5));
     }
 
     #[test]
     fn compact_keeps_order() {
         let mut s = BloonStore::default();
         for k in 0..5 {
-            s.push(k, k as Real, 0);
+            s.push(k, Flags::default(), 1.0, k as Real, 0);
         }
         s.alive[1] = false;
         s.alive[3] = false;
