@@ -20,13 +20,22 @@ STEPS_PER_SECOND = 60
 
 
 def load(path: Path) -> list[dict]:
+    """Liest auch abgeschnittene Dateien (Spiel abgestürzt/beendet, bevor gzip abgeschlossen war)."""
     opener = gzip.open if path.suffix == ".gz" else open
-    with opener(path, "rt", encoding="utf-8") as f:
-        return [json.loads(line) for line in f if line.strip()]
+    events: list[dict] = []
+    try:
+        with opener(path, "rt", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    events.append(json.loads(line))
+    except (EOFError, gzip.BadGzipFile, json.JSONDecodeError) as e:
+        print(f"  Hinweis: {path.name} unvollständig ({type(e).__name__}), {len(events)} Zeilen gelesen")
+    return events
 
 
 def bloon_keys(events: list[dict]) -> dict[int, tuple]:
-    """Spiel-ID -> Schlüssel (spawnRound, emissionIndex, Kind-Nr. je Elternteil …), unabhängig von IDs."""
+    """Spiel-ID -> Schlüssel (spawnRound, emissionIndex, Kind-Nr. je Elternteil …), unabhängig von IDs.
+    Bloons mit mehrdeutigem Schlüssel werden weggelassen (und gemeldet)."""
     keys: dict[int, tuple] = {}
     children: Counter = Counter()
     for e in events:
@@ -39,7 +48,11 @@ def bloon_keys(events: list[dict]) -> dict[int, tuple]:
             keys[e["id"]] = keys[parent] + (children[parent],)
         else:
             keys[e["id"]] = (e.get("spawnRound"), e.get("emissionIndex"))
-    return keys
+    counts = Counter(keys.values())
+    dupes = {k for k, n in counts.items() if n > 1}
+    if dupes:
+        print(f"  Hinweis: {len(dupes)} mehrdeutige Bloon-Schlüssel (z.B. {sorted(dupes)[:3]}), nicht verglichen")
+    return {bid: key for bid, key in keys.items() if key not in dupes}
 
 
 def summarize(path: Path, events: list[dict]) -> dict:
@@ -70,7 +83,17 @@ def summarize(path: Path, events: list[dict]) -> dict:
     leaks = {e["id"]: e for e in events if e["ev"] == "leak"}
     if spawns:
         dists = Counter(round(e["dist"], 3) for e in spawns.values())
-        print(f"  Spawns: {len(spawns)}, Spawn-Distanzen {dict(dists)}, Typen {dict(Counter(e['type'] for e in spawns.values()))}")
+        print(f"  Spawns: {len(spawns)}, Spawn-Distanzen (beim Erzeugen) {dict(dists)}, "
+              f"Typen {dict(Counter(e['type'] for e in spawns.values()))}")
+        first_seen: dict[int, tuple] = {}
+        for s in steps:
+            for bid, _path, dist, x, y in s.get("b", []):
+                first_seen.setdefault(bid, (s["rt"], dist, x, y))
+        firsts = [first_seen[i] for i in spawns if i in first_seen]
+        if firsts:
+            fd = Counter(round(d, 3) for _, d, _, _ in firsts)
+            fx = Counter((round(x, 1), round(y, 1)) for _, _, x, y in firsts)
+            print(f"  Erste Position im Trace: Distanzen {dict(fd)}, Punkte {dict(fx.most_common(3))}")
     if leaks:
         dists = Counter(round(e["dist"], 1) for e in leaks.values())
         times = [leaks[i]["t"] - spawns[i]["t"] for i in leaks if i in spawns]
@@ -100,22 +123,37 @@ def positions_by_key(info: dict) -> dict[tuple, dict[int, float]]:
     return out
 
 
+def interpolate(series: list[tuple[int, float]], rt: int) -> float | None:
+    """Distanz zur Rundenzeit rt, linear zwischen den Nachbarpunkten (None außerhalb)."""
+    import bisect
+    times = [t for t, _ in series]
+    i = bisect.bisect_left(times, rt)
+    if i < len(series) and times[i] == rt:
+        return series[i][1]
+    if i == 0 or i == len(series):
+        return None
+    (t0, d0), (t1, d1) = series[i - 1], series[i]
+    return d0 + (d1 - d0) * (rt - t0) / (t1 - t0)
+
+
 def compare(a: dict, b: dict) -> None:
     pa, pb = positions_by_key(a), positions_by_key(b)
     common = set(pa) & set(pb)
     print(f"\n== Vergleich: {len(common)} gemeinsame Bloons (nur in A: {len(set(pa) - common)}, nur in B: {len(set(pb) - common)})")
     worst = (0.0, None, None)
-    compared = 0
+    compared = exact = 0
     for key in common:
+        series_b = sorted(pb[key].items())
         for rt, dist in pa[key].items():
-            other = pb[key].get(rt)
+            exact += rt in pb[key]
+            other = interpolate(series_b, rt)
             if other is None:
                 continue
             compared += 1
             diff = abs(dist - other)
             if diff > worst[0]:
                 worst = (diff, key, rt)
-    print(f"  {compared} Vergleichspunkte (gleicher Bloon, gleiche Rundenzeit)")
+    print(f"  {compared} Vergleichspunkte (gleicher Bloon, gleiche Rundenzeit), davon {exact} ohne Interpolation")
     if compared == 0:
         print("  keine Vergleichspunkte (Positionen fehlen oder Schlüssel passen nicht)")
     elif worst[1] is None:

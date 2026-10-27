@@ -56,7 +56,15 @@ public sealed class TraceWriter : IDisposable
     public void Dispose()
     {
         queue.CompleteAdding();
-        thread.Join(TimeSpan.FromSeconds(10));
-        queue.Dispose();
+        if (thread.Join(TimeSpan.FromSeconds(10)))
+        {
+            queue.Dispose();
+        }
+        else
+        {
+            // Queue nicht entsorgen, sonst bricht der Schreib-Thread ab und verliert den Rest
+            BloonsMLMod.Log.Warning($"Trace {Path}: Schreiben dauert länger als 10 s, läuft im Hintergrund weiter " +
+                                    $"({queue.Count} Zeilen offen).");
+        }
     }
 }

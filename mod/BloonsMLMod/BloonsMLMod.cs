@@ -103,8 +103,6 @@ public class BloonsMLMod : BloonsTD6Mod
 
     public override void OnRoundEnd() => TraceRecorder.OnRoundEnd();
 
-    public override void OnFastForwardChanged(bool newValue) => TraceRecorder.OnFastForwardChanged(newValue);
-
     public override void OnBloonCreated(Bloon bloon) => TraceRecorder.OnBloonCreated(bloon);
 
     public override bool PreBloonLeaked(Bloon bloon)
@@ -130,6 +128,8 @@ public class BloonsMLMod : BloonsTD6Mod
     public override void OnRestart() => TraceRecorder.Stop("Neustart");
 
     public override void OnMainMenu() => TraceRecorder.Stop("Hauptmenü");
+
+    public override void OnApplicationQuit() => TraceRecorder.Stop("Spiel beendet");
 
     public override void OnNewGameModel(GameModel result, IReadOnlyList<ModModel> mods) => MapDumper.RememberMods(result, mods);
 

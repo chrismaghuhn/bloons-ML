@@ -29,8 +29,7 @@ public static class TraceRecorder
     private static TraceWriter writer;
     private static int lastUnityFrame = -1;
     private static int stepsThisFrame;
-    private static int stepCounter;
-    private static bool fastForward;
+    private static bool lastFastForward;
 
     public static bool Active => writer != null;
 
@@ -66,7 +65,13 @@ public static class TraceRecorder
             stepsThisFrame = 0;
         }
         stepsThisFrame++;
-        stepCounter++;
+
+        var ff = FastForward();
+        if (ff != lastFastForward)
+        {
+            lastFastForward = ff;
+            Emit(Event("fastforward").Append(",\"on\":").Append(ff ? "true" : "false").Append('}'));
+        }
 
         var sb = new StringBuilder(256);
         sb.Append("{\"ev\":\"step\",\"t\":").Append(sim.time.elapsed)
@@ -75,10 +80,10 @@ public static class TraceRecorder
             .Append(",\"sif\":").Append(stepsThisFrame)
             .Append(",\"ts\":").Append(F(Time.timeScale))
             .Append(",\"dt\":").Append(F(Time.deltaTime))
-            .Append(",\"ff\":").Append(fastForward ? "true" : "false");
+            .Append(",\"ff\":").Append(FastForward() ? "true" : "false");
 
         var every = Math.Max(1, (int)BloonsMLMod.TracePositionEvery);
-        if (stepCounter % every == 0)
+        if (sim.roundTime.elapsed % every == 0) // an der Rundenzeit ausgerichtet, damit zwei Aufnahmen dieselben Punkte haben
         {
             // je Bloon [id, Pfad-Index, Distanz, x, y]
             sb.Append(",\"b\":[");
@@ -93,7 +98,7 @@ public static class TraceRecorder
                     if (!first) sb.Append(',');
                     first = false;
                     var pos = bloon.Position;
-                    sb.Append('[').Append(bloon.Id.Id).Append(',').Append(p).Append(',').Append(F(bloon.distanceTraveled))
+                    sb.Append('[').Append(bloon.Id.Raw).Append(',').Append(p).Append(',').Append(F(bloon.distanceTraveled))
                         .Append(',').Append(F(pos.X)).Append(',').Append(F(pos.Y)).Append(']');
                 }
             }
@@ -114,7 +119,6 @@ public static class TraceRecorder
             var dir = RecordingsDir();
             var file = $"{DateTime.Now:yyyyMMdd-HHmmss}_{mapName}_{mode}_{difficulty}.trace.jsonl.gz";
             writer = new TraceWriter(Path.Combine(dir, OutputPaths.Sanitize(file)));
-            stepCounter = 0;
             lastUnityFrame = -1;
 
             var paths = new JArray();
@@ -147,7 +151,7 @@ public static class TraceRecorder
                 ["startTime"] = sim.time.elapsed,
                 ["round"] = CurrentRound(),
                 ["mapWideBloonSpeed"] = sim.map.mapWideBloonSpeed,
-                ["fastForward"] = fastForward,
+                ["fastForward"] = FastForward(),
                 ["paths"] = paths
             };
             writer.Enqueue(header.ToString(Formatting.None));
@@ -157,6 +161,7 @@ public static class TraceRecorder
         catch (Exception e)
         {
             BloonsMLMod.Log.Error($"Trace konnte nicht starten: {e}");
+            writer?.Dispose();
             writer = null;
             BloonsMLMod.RecordTrace.SetValue(false); // nicht jeden Schritt erneut versuchen
             return false;
@@ -175,13 +180,6 @@ public static class TraceRecorder
     }
 
     // ------------------------------------------------------------------ Ereignisse aus Mod-Helper-Hooks
-
-    public static void OnFastForwardChanged(bool value)
-    {
-        fastForward = value;
-        if (!Active) return;
-        Emit(Event("fastforward").Append(",\"on\":").Append(value ? "true" : "false").Append('}'));
-    }
 
     public static void OnRoundStart() => RoundEvent("round_start");
 
@@ -209,7 +207,7 @@ public static class TraceRecorder
             for (var i = 0; i < lineage.Count; i++)
             {
                 if (i > 0) sb.Append(',');
-                sb.Append(lineage[i].Id);
+                sb.Append(lineage[i].Raw);
             }
         }
         sb.Append("]}");
@@ -233,7 +231,7 @@ public static class TraceRecorder
         if (!Active) return;
         var pos = tower.Position;
         var sb = Event(what);
-        sb.Append(",\"id\":").Append(tower.Id.Id)
+        sb.Append(",\"id\":").Append(tower.Id.Raw)
             .Append(",\"tower\":").Append(JsonConvert.ToString(tower.towerModel?.name))
             .Append(",\"x\":").Append(F(pos.X)).Append(",\"y\":").Append(F(pos.Y))
             .Append(",\"range\":").Append(F(tower.towerModel?.range ?? 0));
@@ -247,7 +245,7 @@ public static class TraceRecorder
         if (!Active) return;
         var tower = weapon.attack?.tower;
         var sb = Event("shot");
-        sb.Append(",\"tower\":").Append(tower != null ? tower.Id.Id : -1)
+        sb.Append(",\"tower\":").Append(tower != null ? tower.Id.Raw : -1)
             .Append(",\"weapon\":").Append(JsonConvert.ToString(weapon.weaponModel?.name))
             .Append(",\"rateFrames\":").Append(weapon.rateFrames)
             .Append('}');
@@ -255,6 +253,19 @@ public static class TraceRecorder
     }
 
     // ------------------------------------------------------------------ Hilfen
+
+    /// <summary>Vorspulen: Mod Helpers OnFastForwardChanged wird in 3.6.10 nicht mehr aufgerufen.</summary>
+    private static bool FastForward()
+    {
+        try
+        {
+            return TimeManager.FastForwardActive;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 
     private static Simulation Sim => InGame.instance?.bridge?.Simulation;
 
@@ -270,7 +281,7 @@ public static class TraceRecorder
     private static void AppendBloon(StringBuilder sb, Bloon bloon)
     {
         var pos = bloon.Position;
-        sb.Append(",\"id\":").Append(bloon.Id.Id)
+        sb.Append(",\"id\":").Append(bloon.Id.Raw)
             .Append(",\"type\":").Append(JsonConvert.ToString(bloon.bloonModel?.id))
             .Append(",\"dist\":").Append(F(bloon.distanceTraveled))
             .Append(",\"x\":").Append(F(pos.X)).Append(",\"y\":").Append(F(pos.Y));
