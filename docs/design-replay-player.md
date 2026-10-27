@@ -46,7 +46,7 @@ einem Spieler.
 
 **Platzierungsfehler erkennen (vor, bei und nach der Aktion):**
 
-1. Vorher: `QueryPlacementPosition` → `positionValid`; dazu Kosten gegen `GetCash()`.
+1. Vorher: `QueryPlacementPosition` → `positionValid`; dazu Kosten gegen `GetCash(inputId)`.
 2. Callback `Action<bool>` von `CreateTowerAt`/`UpgradeTower` (Erfolg ja/nein).
 3. Nachher: neuer Turm in `GetAllTowers()`, seine `Position` gleich der angefragten (Toleranz 1e-3). Weicht sie ab
    (das Spiel könnte einrasten) oder fehlt der Turm, ist das ein Fehler.
@@ -118,7 +118,10 @@ gleich gesetzt werden. Lohnt sich, sobald Weg A steht.
 Partie starten kann der Player selbst: Mod Helpers Tests setzen `InGameData.Editable.selectedMap/Mode/Difficulty`
 und rufen `UI.instance.LoadGameEnumerator()`. Karte/Modus/Schwierigkeit stehen in `game_v1` heute nicht als eigene
 Felder (nur `name`, z.B. `Tutorial-chimps-57.4`, und `map.name`); bis der Konverter sie und die Spielversion als Felder
-schreibt (oder der `/3`-Header sie trägt, Abschnitt 4), liest der Player sie aus `name`.
+schreibt (oder der `/3`-Header sie trägt, Abschnitt 4), kommen sie **aus Einstellungen des Players** (Karte, Modus,
+Schwierigkeit). Aus `name` lassen sie sich nicht verlässlich ablesen: `Tutorial-medium60-57.4` nennt ein Preset statt
+einer Schwierigkeit, `Tutorial-chimps-57.4` nur den Modus (Hard ist implizit), und `sim_v0` enthält gar nichts davon.
+Der Player prüft aber die Karte (`map.name`) und, wo vorhanden, die Version am Ende von `name` gegen das Spiel.
 
 ## 4. Zeitpunkte
 
@@ -131,10 +134,11 @@ Runde). `result.cash` sind ganze Dollar, im Spiel ist Cash ein Bruch: verglichen
 
 **Später (`btd-replay/3`, `docs/design-recorder.md` §1): mit Frame.** Aktion `{"frame": n, …}` = Rundenzeit in
 Sim-Schritten. Der Player führt sie in einem Harmony-**Prefix** auf `Simulation.Simulate` aus, sobald
-`roundTime.elapsed` den Wert erreicht, und zwar direkt (sofort ausgeführt, siehe Abschnitt 1), nicht über die
-Warteschlange: die wird womöglich nur einmal je Unity-Frame geleert, und vorgespult laufen 3 Sim-Schritte je Frame
-(Aktion könnte bis zu 2 Schritte zu spät kommen). Der Recorder protokolliert den tatsächlichen Schritt jeder Aktion,
-so fällt eine Abweichung sofort auf. Damit ist jede Aktion auf den Schritt genau, unabhängig vom Vorspulen. Der Header von `/3` bekommt zusätzlich
+`roundTime.elapsed` den Wert erreicht. Ziel ist, dass sie sofort im selben Schritt läuft und nicht in der
+Warteschlange landet: die wird womöglich nur einmal je Unity-Frame geleert, und vorgespult laufen 3 Sim-Schritte je
+Frame (Aktion könnte bis zu 2 Schritte zu spät kommen). **[prüfen]**: ob ein Aufruf aus dem `Simulate`-Prefix sofort
+läuft oder gerade dann in die Warteschlange geht; sonst die Simulation direkt statt über die Bridge ansprechen. Der
+Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt eine Abweichung sofort auf. Der Header von `/3` bekommt zusätzlich
 `map`, `mode`, `difficulty`, `game_version` (der Player bricht ab, wenn die laufende Partie nicht passt).
 
 **Targeting:** heute immer "First" (wie die Sim); sobald das Replay Targeting kennt, `SetNextTowerTargetType` so oft,
@@ -147,7 +151,7 @@ bis der gewünschte Typ eingestellt ist (Kontrolle über den Turm).
   `data/local/replay_inbox/` (gitignored wie `data/local/`) und der Player bietet die neueste an. Unterstützt: `btd-replay/2` (`.jsonl`) und
   `StartState` (`.json`, ein Objekt); ein Replay kann mit einem Startzustand beginnen.
 - **Prüfen vor dem Start:** Format, Karte/Modus/Schwierigkeit gegen die laufende bzw. zu startende Partie,
-  Spielversion gegen die Version im Namen der Datendatei (z.B. `…-57.4`, siehe Abschnitt 3), alle Turmnamen bekannt. Fehler → nichts tun, Meldung.
+  Spielversion gegen die Version im Namen der Datendatei, sofern vorhanden (z.B. `…-57.4`, siehe Abschnitt 3), alle Turmnamen bekannt. Fehler → nichts tun, Meldung.
 - **Ausgabe:** neben dem Trace des Recorders eine Ergebnisdatei
   `data/raw/recordings/<Zeit>_<Karte>_<Modus>.player.jsonl`: je Aktion Status (ok/Fehler + Grund, Sim-Schritt,
   Cash vorher/nachher), je Runde das echte Ergebnis (Leben, Cash, Pops) neben dem erwarteten aus dem Replay. Das
