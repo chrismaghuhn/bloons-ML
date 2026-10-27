@@ -25,13 +25,19 @@ OUT = ROOT / "data" / "local"
 # Die 6 klassischen Primary-Türme (docs/m2-plan.md)
 TOWERS = ["DartMonkey", "BoomerangMonkey", "BombShooter", "TackShooter", "IceMonkey", "GlueGunner"]
 # Turm-Sets (--towers): primary = die 6 klassischen Primary-Türme, t12 = dazu Schritt 1 aus
-# docs/design-towers-step1.md
-TOWER_SETS = {"primary": TOWERS,
-              "t12": TOWERS + ["SniperMonkey", "Desperado", "SuperMonkey", "Druid", "NinjaMonkey", "WizardMonkey"]}
+# docs/design-towers-step1.md, t14 = dazu Village und Farm (docs/design-towers-step2.md)
+T12 = TOWERS + ["SniperMonkey", "Desperado", "SuperMonkey", "Druid", "NinjaMonkey", "WizardMonkey"]
+TOWER_SETS = {"primary": TOWERS, "t12": T12, "t14": T12 + ["MonkeyVillage", "BananaFarm"]}
 TOWER_NAMES = {"DartMonkey": "dart", "BoomerangMonkey": "boomerang", "BombShooter": "bomb",
                "TackShooter": "tack", "IceMonkey": "ice", "GlueGunner": "glue", "SniperMonkey": "sniper",
                "Desperado": "desperado", "SuperMonkey": "super", "Druid": "druid", "NinjaMonkey": "ninja",
-               "WizardMonkey": "wizard"}
+               "WizardMonkey": "wizard", "MonkeyVillage": "village", "BananaFarm": "farm"}
+# towerSet des Spiels -> game_v1
+TOWER_SET_NAMES = {1: "primary", 2: "military", 4: "magic", 8: "support"}
+# Türme, deren Mechanik die Engine noch nicht kann: in allen Presets gesperrt (rules.locked_towers),
+# aber schon in Daten und Layout, damit sich der Aktionsraum später nicht ändert
+# (docs/design-towers-step2.md §2.4)
+MECHANIC_LOCKED = {"BananaFarm"}
 
 # Flächentypen im Spiel (AreaType) -> game_v1
 AREA_KINDS = {2: "land", 0: "track", 1: "water", 3: "blocked"}
@@ -84,6 +90,17 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
 STRICT = {"InstantModel", "InstantDamageEmissionModel", "FilterAllExceptTargetModel", "BurstWeaponBehaviorModel",
           "RandomArcEmissionModel", "RandomEmissionModel", "OffsetModel", "RemoveBloonModifiersModel",
           "TrackTargetModel", "TrackTargetWithinTimeModel"}
+# Türme Schritt 2 (docs/design-towers-step2.md): Auren und Rabatt (convert_supports), Einkommen
+# (convert_income) und Footprint (convert_footprint); alle nur dort erlaubt, wo sie ausgewertet werden
+SUPPORT_MODELS = {"RangeSupportModel", "RateSupportModel", "VisibilitySupportModel", "PierceSupportModel",
+                  "ProjectileSpeedSupportModel", "DamageTypeSupportModel"}
+INCOME_MODELS = {"CashModel", "EmissionsPerRoundFilterModel", "WeaponRateMinModel", "RandomPositionBasicModel",
+                 "SingleEmmisionTowardsTargetModel", "ArriveAtTargetModel", "HeightOffsetProjectileModel",
+                 "PickupModel", "ScaleProjectileModel"}
+STRICT |= SUPPORT_MODELS | INCOME_MODELS | {
+    "SupportRemoveFilterOutTagModel", "FilterInSetModel", "DiscountZoneModel", "AddBehaviorToBloonInZoneModel",
+    "RectangleFootprintModel", "PerRoundCashBonusTowerModel", "BonusLivesPerRoundModel", "CollectCashZoneModel",
+    "CentralMarketBuffModel"}
 HANDLED |= STRICT
 _used: set = set()
 
@@ -110,15 +127,17 @@ PUSH_TAGS = (("Moab", "multiplierMOAB"), ("Bfb", "multiplierBFB"), ("Ddt", "mult
 
 PRESETS = {
     # Medium-Standard; Benchmark (a): Runde 1-40
-    "medium": dict(start_cash=650, start_lives=150, start_round=1, end_round=40, selling=True,
+    "medium": dict(start_cash=650, start_lives=150, start_round=1, end_round=40,
                    cost_multiplier=1.0, match="Standard_Standard_Medium"),
     # Medium bis zum regulären Ende; Benchmark (b): Runde 1-60
-    "medium60": dict(start_cash=650, start_lives=150, start_round=1, end_round=60, selling=True,
+    "medium60": dict(start_cash=650, start_lives=150, start_round=1, end_round=60,
                      cost_multiplier=1.0, match="Standard_Standard_Medium"),
     # CHIMPS (Werte aus dem Dump: matches/Standard_Clicks_Hard_Tutorial.json)
-    "chimps": dict(start_cash=650, start_lives=1, start_round=6, end_round=100, selling=False,
+    "chimps": dict(start_cash=650, start_lives=1, start_round=6, end_round=100,
                    cost_multiplier=1.08, match="Standard_Clicks_Hard"),
 }
+# Verkaufen und Turm-Sperren kommen aus den Mods der Partie (match_rules); Verkaufsquote fest
+SELL_RATIO = 0.7
 
 # Laufstrecke auf dem Pfad: Bloons erscheinen erst bei `start` und leaken bei `end` (Distanz auf der
 # Pfad-Polylinie des Dumps). Gemessen mit der Recorder-Mod (docs/design-recorder.md §6, Runde 1 auf
@@ -151,6 +170,42 @@ def bloon_speed_factor(dump: Path, match: str, map_name: str) -> float:
     if len(factors) > 1:
         sys.exit(f"{path}: mehrere GlobalSpeedModModel ({factors})")
     return factors[0] if factors else 1.0
+
+
+def match_rules(dump: Path, match: str, map_name: str) -> tuple:
+    """Verkaufen erlaubt? und gesperrte Türme (Basis-IDs) aus den Mods der Partie: DisableSellTowerModModel
+    (gegengeprüft mit dem Partie-Feld towerSellEnabled) und LockTowerModModel (CHIMPS: Banana Farm).
+    Andere Sperr-Mods (z.B. LockTowerSetModModel) kann der Konverter nicht und bricht ab."""
+    path = dump / "matches" / f"{match}_{map_name}.json"
+    if not path.exists():
+        sys.exit(f"{path} fehlt: einmal eine Partie in diesem Modus mit der Mod starten")
+    m = load(path)
+    selling, locked = True, []
+
+    def walk(n):
+        nonlocal selling
+        if isinstance(n, dict):
+            t = short(n.get("$type", ""))
+            if t == "DisableSellTowerModModel":
+                selling = False
+            elif t == "LockTowerModModel":
+                if n["towerToLock"] not in locked:
+                    locked.append(n["towerToLock"])
+            elif t.endswith("ModModel") and "Lock" in t:
+                sys.exit(f"{path}: Sperr-Mod {t} nicht unterstützt")
+            for v in n.values():
+                walk(v)
+        elif isinstance(n, list):
+            for v in n:
+                walk(v)
+    walk(m.get("mods", []))
+    fields = m.get("fields") or {}
+    enabled = fields.get("towerSellEnabled")
+    if enabled is not None and enabled != selling:
+        sys.exit(f"{path}: towerSellEnabled={enabled} passt nicht zu den Mods (Verkaufen {selling})")
+    if selling and fields.get("sellMultiplier", SELL_RATIO) != SELL_RATIO:
+        sys.exit(f"{path}: sellMultiplier={fields['sellMultiplier']}, die Sim verkauft fest zu {SELL_RATIO}")
+    return selling, locked
 
 
 def trim_path(pts: list, start: float, end: float) -> list:
@@ -501,6 +556,9 @@ def convert_filters(filters) -> tuple:
             if x.get("isActive"):
                 camo = False
         elif t == "FilterOutTagModel":
+            # MIB (Village x3x) schaltet diese Filter ab; das kann die Sim noch nicht
+            if MIB_MUTATOR in (x.get("disableWhenSupportMutatorIDs") or []):
+                raise Unsupported("FilterOutTagModel, den MIB abschaltet")
             f.setdefault("exclude_tags", [])
             if x["tag"] not in f["exclude_tags"]:
                 f["exclude_tags"].append(x["tag"])
@@ -800,17 +858,23 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
             delivery["clear_hits"] = clear[0]["interval"]
     else:
         # kein Flug: Flächentreffer um den Turm (Ice, Ring of Fire). Der Radius steht im Projektil
-        # (LinkProjectileRadiusToTowerRange hat ihn im Dump schon auf Reichweite + Versatz gesetzt).
+        # (LinkProjectileRadiusToTowerRange am Turm hat ihn im Dump schon auf Reichweite + Versatz gesetzt).
         if behaviors(proj, "CreateProjectileOnContactModel") or behaviors(proj, "CreateProjectileOnExhaustFractionModel"):
             raise Unsupported("Flächentreffer mit Kontakt-Projektilen")
         if short(weapon["emission"]["$type"]) != "SingleEmissionModel":
             raise Unsupported("Flächentreffer mit Mehrfach-Emission")
         if clear:
             raise Unsupported("Flächentreffer mit ClearHitBloons")
-        link = behaviors(proj, "LinkProjectileRadiusToTowerRangeModel")
+        link = [lk for lk in behaviors(tower, "LinkProjectileRadiusToTowerRangeModel")
+                if (lk.get("projectileModel") or {}).get("id") == proj.get("id")]
+        if len(link) > 1:
+            raise Unsupported("mehrere LinkProjectileRadiusToTowerRange für ein Projektil")
         if link and abs(proj["radius"] - (attack["range"] + link[0].get("projectileRadiusOffset", 0.0))) > 1e-3:
             raise Unsupported("LinkProjectileRadiusToTowerRange passt nicht zum Radius")
         delivery = {"kind": "area", "radius": proj["radius"]}
+        if link:
+            # gekoppelt an die Reichweite: zählt erst mit Reichweiten-Buffs (Village)
+            delivery["radius_offset"] = link[0].get("projectileRadiusOffset", 0.0)
     crit = [b for b in weapon.get("behaviors") or [] if short(b.get("$type", "")) == "CritMultiplierModel"]
     out = {
         "tag": f"{attack.get('name', 'attack')}-{idx}".replace(" ", "_"),
@@ -833,17 +897,172 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
     return out
 
 
+MIB_MUTATOR = "MibMutator"
+# Felder, die bei allen Auren-Modellen aus sein müssen (sonst andere Reichweite/Ziele als die Village)
+SUPPORT_OFF = ("isGlobal", "isCustomRadius", "appliesToOwningTower", "onlyAffectParagon")
+
+
+def support_sets(sup) -> list:
+    """Turmgruppen-Filter einer Aura (FilterInSetModel) -> game_v1 `sets` (leer = alle Türme)."""
+    sets = []
+    for f in sup.get("filters") or []:
+        if short(f.get("$type", "")) != "FilterInSetModel":
+            raise Unsupported(f"Support-Filter {short(f.get('$type', ''))}")
+        use(f)
+        for s in f.get("towerSets") or [f["towerSet"]]:
+            if s not in TOWER_SET_NAMES:
+                raise Unsupported(f"towerSet {s}")
+            if TOWER_SET_NAMES[s] not in sets:
+                sets.append(TOWER_SET_NAMES[s])
+    return sets
+
+
+def convert_supports(model) -> tuple:
+    """Auren und Rabatt-Zonen am Turm (Village) -> (supports, discount). Radius ist immer die
+    Reichweite des Turms; Stapeln über `group` (= mutatorId, docs/design-towers-step2.md §1.1)."""
+    supports, discount = [], []
+    for b in model.get("behaviors") or []:
+        t = short(b.get("$type", ""))
+        if t in SUPPORT_MODELS:
+            if any(b.get(k) for k in SUPPORT_OFF) or b.get("maxStacks") or b.get("maxStackSize"):
+                raise Unsupported(f"{t} (global/eigener Radius/stapelbar)")
+            if not b.get("isUnique") or not b.get("mutatorId"):
+                raise Unsupported(f"{t} ohne isUnique/mutatorId")
+            s = {"kind": None, "group": b["mutatorId"]}
+            sets = support_sets(b)
+            if sets:
+                s["sets"] = sets
+            if t == "RangeSupportModel":
+                s.update(kind="range", add_frac=b.get("multiplier", 0.0), add=b.get("additive", 0.0))
+            elif t == "RateSupportModel":
+                if not 0.0 < b["multiplier"] <= 1.0:
+                    raise Unsupported(f"RateSupportModel(multiplier {b['multiplier']})")
+                s.update(kind="rate", factor=b["multiplier"])
+            elif t == "VisibilitySupportModel":
+                s["kind"] = "camo"
+            elif t == "PierceSupportModel":
+                if b["pierce"] != int(b["pierce"]) or b["pierce"] < 0:
+                    raise Unsupported(f"PierceSupportModel(pierce {b['pierce']})")
+                s.update(kind="pierce", add=int(b["pierce"]))
+            elif t == "ProjectileSpeedSupportModel":
+                s.update(kind="projectile_speed", add_frac=b["multiplier"])
+            elif t == "DamageTypeSupportModel":
+                if b.get("immuneBloonProperties"):
+                    raise Unsupported("DamageTypeSupportModel mit Immunitäten")
+                s["kind"] = "damage_all"
+            use(b)
+            supports.append(s)
+        elif t == "SupportRemoveFilterOutTagModel":
+            # schaltet FilterOutTag-Filter ab, die den MIB-Mutator nennen; solche Filter sperrt
+            # convert_filters, also hier ohne eigene Wirkung
+            if b.get("removeScriptWithSupportMutatorId") != MIB_MUTATOR or b.get("isGlobal"):
+                raise Unsupported("SupportRemoveFilterOutTagModel (anderer Mutator)")
+            support_sets(b)
+            use(b)
+        elif t == "DiscountZoneModel":
+            if b.get("isGlobal") or b.get("isGlobalRange") or b.get("isBuffFromArea") or b.get("towerBaseIdList") \
+                    or b.get("towerBaseIds") or b.get("upgradeId"):
+                raise Unsupported("DiscountZoneModel (global/nur bestimmte Türme)")
+            discount.append({"fraction": b["discountMultiplier"], "tier_min": int(b["tierMin"]),
+                             "tier_cap": int(b["tierCap"]), "stack": b["stackName"],
+                             "stack_limit": int(b["stackLimit"]), "affect_self": bool(b.get("affectSelf"))})
+            use(b)
+        elif t == "AddBehaviorToBloonInZoneModel":
+            # Grow Blocker: Regrow wird nicht simuliert, also ohne Wirkung (wie GrowBlockModel)
+            if any(short(x.get("$type", "")) != "GrowBlockModel" for x in b.get("behaviors") or []):
+                raise Unsupported("AddBehaviorToBloonInZoneModel (außer GrowBlock)")
+            use(b)
+    return supports, discount
+
+
+def is_income(weapon) -> bool:
+    """Bananen-Waffe der Farm: Projektil mit CashModel."""
+    return bool(behaviors(weapon["projectile"], "CashModel"))
+
+
+def convert_income(attack, weapon) -> float:
+    """Bananen je Runde × Wert (mit bonusMultiplier) -> Einkommen je Runde. Annahme: alles wird
+    eingesammelt; Flugbahn, Lebensdauer und Einsammeln haben dann keine Wirkung [KAL]."""
+    cash = behaviors(weapon["projectile"], "CashModel")
+    per = [b for b in weapon.get("behaviors") or [] if short(b.get("$type", "")) == "EmissionsPerRoundFilterModel"]
+    if len(cash) != 1 or len(per) != 1:
+        raise Unsupported("Einkommens-Waffe ohne genau ein CashModel/EmissionsPerRoundFilterModel")
+    c = cash[0]
+    if c["minimum"] != c["maximum"]:
+        raise Unsupported("CashModel mit zufälligem Wert")
+    if short(weapon["emission"]["$type"]) not in ("SingleEmmisionTowardsTargetModel", "SingleEmissionModel"):
+        raise Unsupported("Einkommens-Waffe mit Mehrfach-Emission")
+    if c.get("emittedByCashEarnedMultiplier", 1.0) != 1.0:
+        raise Unsupported("CashModel(emittedByCashEarnedMultiplier)")
+    if len(attack.get("weapons") or []) != 1:
+        raise Unsupported("Einkommens-Waffe zusammen mit anderen Waffen")
+
+    def mark(n):
+        if isinstance(n, dict):
+            if short(n.get("$type", "")) in INCOME_MODELS:
+                use(n)
+            for k, v in n.items():
+                if not k[:1].isupper():
+                    mark(v)
+        elif isinstance(n, list):
+            for v in n:
+                mark(v)
+    # nur diese Waffe und die Zielposition der Attacke (Bananen landen zufällig um die Farm)
+    mark(weapon)
+    for n in behaviors(attack, "RandomPositionBasicModel") + [attack.get("targetProvider")]:
+        if isinstance(n, dict) and short(n.get("$type", "")) == "RandomPositionBasicModel":
+            use(n)
+    return per[0]["count"] * c["minimum"] * (1.0 + c.get("bonusMultiplier", 0.0))
+
+
+def convert_footprint(model) -> tuple:
+    """-> (Radius, rechteckig?). Rechtecke (Farm) als Außenkreis: etwas strenger als im Spiel, aber
+    nie über Track oder anderen Türmen [KAL]."""
+    fp = model["footprint"]
+    t = short(fp.get("$type", ""))
+    for b in [fp] + behaviors(model, t):
+        use(b)
+    if any(fp.get(k) for k in ("doesntBlockTowerPlacement", "ignoresPlacementCheck", "ignoresTowerOverlap")):
+        raise Unsupported(f"{t} mit Sonderregeln für die Platzierung")
+    if t == "RectangleFootprintModel":
+        return math.hypot(fp["xWidth"], fp["yWidth"]) / 2.0, True
+    if t != "CircleFootprintModel":
+        raise Unsupported(f"Footprint {t}")
+    return fp["radius"], False
+
+
 def convert_variant(model, tiers) -> dict:
     _used.clear()  # id() gilt nur, solange das Modell lebt
     unknown = set()
     check_types(model, unknown)
     if unknown:
         raise Unsupported(", ".join(sorted(unknown)))
-    attacks = []
+    attacks, income = [], None
     for a in behaviors(model, "AttackModel"):
-        for i, w in enumerate(a.get("weapons") or []):
-            attacks.append(convert_attack(model, a, w, len(attacks)))
-    if not attacks:
+        for i, w in enumerate(a.get("weapons") or []):  # ohne Waffen (Village): nur Reichweitenkreis
+            if is_income(w):
+                if income is not None:
+                    raise Unsupported("mehrere Einkommens-Waffen")
+                income = {"per_round": convert_income(a, w)}
+            else:
+                attacks.append(convert_attack(model, a, w, len(attacks)))
+    supports, discount = convert_supports(model)
+    footprint, rect = convert_footprint(model)
+    bonus = behaviors(model, "PerRoundCashBonusTowerModel") + behaviors(model, "BonusLivesPerRoundModel")
+    extra = behaviors(model, "CollectCashZoneModel") + behaviors(model, "CentralMarketBuffModel")
+    if (bonus or extra) and income is None:
+        raise Unsupported("Einkommens-Bonus ohne Bananen")
+    for b in bonus:
+        if short(b["$type"]) == "PerRoundCashBonusTowerModel":
+            if b.get("distributeCash") or b.get("cashRoundBonusMultiplier"):
+                raise Unsupported("PerRoundCashBonusTowerModel(distributeCash/cashRoundBonusMultiplier)")
+            income["per_round"] += b.get("cashPerRound", 0.0)
+        else:
+            income["lives"] = income.get("lives", 0) + int(b["amount"])
+    # CollectCashZone: Einsammeln ohne Wirkung; CentralMarketBuff wirkt auf Merchantmen (nicht im Set) [KAL]
+    for b in bonus + extra:
+        use(b)
+    if not attacks and not supports and not discount and income is None:
         raise Unsupported("kein Angriff")
     check_strict(model)
     for a in attacks:
@@ -856,9 +1075,19 @@ def convert_variant(model, tiers) -> dict:
         camo, filt = convert_filters(z.get("filters") or [])
         radius = model["range"] + z.get("radiusOffset", 0.0) if z.get("bindRadiusToTowerRange") else z["zoneRadius"]
         zones.append({"radius": radius, "speed_scale": z["speedScale"], "camo": camo, "filter": filt})
-    v = {"tiers": tiers, "range": model["range"], "footprint": model["footprint"]["radius"], "attacks": attacks}
+    v = {"tiers": tiers, "range": model["range"], "footprint": footprint, "attacks": attacks}
     if zones:
         v["zones"] = zones
+    if supports:
+        v["supports"] = supports
+    if discount:
+        v["discount"] = discount
+    if income is not None:
+        v["income"] = income
+    if model.get("sellbackModifierAdd"):
+        v["sell_bonus"] = model["sellbackModifierAdd"]
+    if rect:
+        v["_rect"] = True  # nur für das Baubar-Raster (main), wird vor dem Schreiben entfernt
     return v
 
 
@@ -909,8 +1138,11 @@ def build_tower(dump: Path, base: str, coverage: list) -> dict:
     if not any(v["tiers"] == [0, 0, 0] for v in variants):
         sys.exit(f"{base}: Basisvariante wird nicht unterstützt: {next(c[2] for c in coverage if c[:2] == (base, '000'))}")
     variants.sort(key=lambda v: v["tiers"])
-    return {"name": TOWER_NAMES[base], "game_id": base, "cost": int(base_model["cost"]), "upgrade_costs": costs,
-            "variants": variants}
+    tower_set = TOWER_SET_NAMES.get(base_model.get("towerSet"))
+    if tower_set is None:
+        sys.exit(f"{base}: unbekanntes towerSet {base_model.get('towerSet')}")
+    return {"name": TOWER_NAMES[base], "game_id": base, "set": tower_set, "cost": int(base_model["cost"]),
+            "upgrade_costs": costs, "variants": variants}
 
 
 # ---------------------------------------------------------------- Main
@@ -929,7 +1161,14 @@ def main():
 
     coverage = []
     towers = [build_tower(dump, t, coverage) for t in TOWER_SETS[args.towers]]
-    footprint = max(v["footprint"] for t in towers for v in t["variants"])
+    # Baubar-Raster mit dem größten runden Footprint: mit dem Außenkreis der Farm würde es für alle
+    # Türme viel kleiner (die Maske je Turm prüft ohnehin den eigenen Footprint)
+    footprint = max(v["footprint"] for t in towers for v in t["variants"] if not v.get("_rect"))
+    for t in towers:
+        for v in t["variants"]:
+            v.pop("_rect", None)
+    selling, mod_locked = match_rules(dump, preset["match"], args.map)
+    locked = [TOWER_NAMES[b] for b in TOWER_SETS[args.towers] if b in mod_locked or b in MECHANIC_LOCKED]
     last = preset["end_round"]
     rounds = build_rounds(dump, args.rounds, last)
     needed = {g["bloon"] for r in rounds for g in r}
@@ -945,7 +1184,8 @@ def main():
         "meta": {"map": args.map, "mode": preset["match"].split("_")[1],
                  "difficulty": preset["match"].split("_")[2], "game_version": dump.name},
         "rules": {"tick_rate": 60.0, "cd_eps": 1e-9, "max_round_seconds": 900.0, "child_spacing": 0.0,
-                  "sell_ratio": 0.7, "cost_rounding": 5, **{k: v for k, v in preset.items() if k != "match"}},
+                  "sell_ratio": SELL_RATIO, "cost_rounding": 5, "selling": selling,
+                  **{k: v for k, v in preset.items() if k != "match"}, **({"locked_towers": locked} if locked else {})},
         "map": build_map(dump, args.map, footprint),
         "bloons": bloons,
         "towers": towers,
@@ -966,6 +1206,9 @@ def main():
              "- Projektile starten in der Turmmitte (Abwurf-Versatz der Waffe ignoriert); Boomerang-Kurven "
              "werden nicht gespiegelt (FlipFollowPath).",
              "- Zufall durch Mittelwerte ersetzt: Cluster-Reichweite, Crit-Intervall.",
+             "- Auren, Rabatte und Einkommen (Village, Farm) stehen in den Daten, wirken in der Engine aber noch "
+             "nicht (docs/design-towers-step2.md, Schritt 1).",
+             f"- Gesperrte Türme (rules.locked_towers): {', '.join(locked) or '-'}.",
              f"- Tags ohne Bloon in dieser Konfiguration entfernt: {', '.join(sorted(dropped)) or '-'}.", ""]
     for base in TOWER_SETS[args.towers]:
         rows = [c for c in coverage if c[0] == base]

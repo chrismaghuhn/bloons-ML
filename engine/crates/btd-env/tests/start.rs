@@ -93,20 +93,6 @@ fn invalid_states_are_rejected() {
 fn downgrade_refunds_and_lives_stay_in_range() {
     let base = StartState::from_game(&played().game);
     let e = env();
-    let data = e.game.data().clone();
-    // Wert der Türme zu Spielpreisen (Basis + alle gekauften Upgrades)
-    let value = |s: &StartState| -> f64 {
-        s.towers
-            .iter()
-            .map(|t| {
-                let d = data.towers.iter().find(|d| d.name == t.tower).unwrap();
-                let ups: i64 = (0..t.tiers.len())
-                    .map(|p| (0..t.tiers[p] as usize).map(|k| data.cost(d.upgrade_costs[p][k])).sum::<i64>())
-                    .sum();
-                (data.cost(d.cost) + ups) as f64
-            })
-            .sum()
-    };
     let mut refunds = 0;
     for seed in 0..300 {
         let p = perturb(&base, &e.game, e.layout.cell, &mut Seq(seed));
@@ -117,15 +103,29 @@ fn downgrade_refunds_and_lives_stay_in_range() {
             assert_eq!(p.state.lives, base.lives);
         }
         assert!(p.state.cash >= 0.0);
-        let lost = value(&base) - value(&p.state);
-        if lost > 0.0 {
-            // Downgrade ohne Cash-Störung: Cash steigt um genau den verlorenen Turmwert
-            if (p.state.cash - base.cash - lost).abs() < 1e-9 {
-                refunds += 1;
-            }
+        assert_eq!(
+            p.state.towers.iter().map(|t| t.tiers).collect::<Vec<_>>(),
+            base.towers.iter().map(|t| t.tiers).collect::<Vec<_>>(),
+            "Stufen sinken erst nach dem Aufbau"
+        );
+        let mut g = e.game.clone();
+        if p.downgrades.is_empty() || p.sell.is_some() || p.state.build(&mut g).is_err() {
+            continue;
         }
+        // Zurückstufen: Cash steigt um genau das, was `spent` sinkt (Preis am Ort)
+        let spent = |g: &btd_core::Game| g.towers.iter().map(|t| t.spent.0).sum::<i64>();
+        let (cash0, spent0) = (g.cash.0, spent(&g));
+        p.finish(&mut g);
+        assert!(g.cash.0 > cash0);
+        assert_eq!(g.cash.0 - cash0, spent0 - spent(&g));
+        let tiers =
+            |g: &btd_core::Game| g.towers.iter().map(|t| t.tiers.iter().sum::<u8>() as usize).sum::<usize>();
+        let mut built = e.game.clone();
+        p.state.build(&mut built).unwrap();
+        assert_eq!(tiers(&built) - tiers(&g), p.downgrades.len());
+        refunds += 1;
     }
-    assert!(refunds > 10, "Downgrades mit exakter Erstattung kommen vor ({refunds})");
+    assert!(refunds > 10, "Downgrades mit Erstattung kommen vor ({refunds})");
 }
 
 #[test]
@@ -363,12 +363,24 @@ fn upgrade_path_avoids_missing_intermediate_variants() {
         round: 0,
         cash: 0.0,
         lives: 10,
-        towers: vec![btd_env::start::TowerState { tower: "pin".into(), x: 0.0, y: 20.0, tiers: [1, 0, 1] }],
+        towers: vec![btd_env::start::TowerState {
+            tower: "pin".into(),
+            x: 0.0,
+            y: 20.0,
+            tiers: [1, 0, 1],
+            spent: None,
+        }],
     };
     state.build(&mut g).unwrap();
     assert_eq!(g.towers[0].tiers, [1, 0, 1]);
     let missing = StartState {
-        towers: vec![btd_env::start::TowerState { tower: "pin".into(), x: 0.0, y: 20.0, tiers: [1, 0, 0] }],
+        towers: vec![btd_env::start::TowerState {
+            tower: "pin".into(),
+            x: 0.0,
+            y: 20.0,
+            tiers: [1, 0, 0],
+            spent: None,
+        }],
         ..state
     };
     assert!(missing.build(&mut g).unwrap_err().contains("Upgrade-Weg"));

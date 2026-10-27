@@ -14,6 +14,10 @@ pub struct TowerState {
     pub x: f64,
     pub y: f64,
     pub tiers: [u8; PATHS],
+    /// Insgesamt bezahlt (Dollar). Mit Rabatt-Zonen hängt das von der Reihenfolge der Käufe ab, die
+    /// der Aufbau nicht kennt; fehlt es (ältere Zustände), gilt der beim Aufbau bezahlte Preis.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spent: Option<f64>,
 }
 
 /// Spielstand vor der nächsten Runde: `round` = Anzahl geschaffter Runden.
@@ -39,7 +43,13 @@ impl StartState {
                 .iter()
                 .map(|t| {
                     let (x, y) = t.pos();
-                    TowerState { tower: data.towers[t.kind as usize].name.clone(), x, y, tiers: t.tiers }
+                    TowerState {
+                        tower: data.towers[t.kind as usize].name.clone(),
+                        x,
+                        y,
+                        tiers: t.tiers,
+                        spent: Some(t.spent.as_f64()),
+                    }
                 })
                 .collect(),
         }
@@ -74,6 +84,13 @@ impl StartState {
                 .map_err(|e| format!("{} bei ({}, {}): {e:?}", t.tower, t.x, t.y))?
                 .expect("Place liefert eine ID");
             upgrade_to(game, id, t.tiers).map_err(|e| format!("{} {:?}: {e}", t.tower, t.tiers))?;
+            if let Some(spent) = t.spent {
+                if !(0.0..=MAX_CASH).contains(&spent) {
+                    return Err(format!("{}: spent muss in 0..={MAX_CASH} liegen", t.tower));
+                }
+                game.towers.iter_mut().find(|x| x.id == id).expect("gerade gebaut").spent =
+                    Money::from_f64(spent);
+            }
         }
         game.cash = Money::from_f64(self.cash);
         game.lives = self.lives;
@@ -176,9 +193,26 @@ const PERTURBATIONS: [Perturbation; 4] =
 /// Ergebnis von `perturb`: der gestörte Zustand und ob die Leben verändert wurden.
 pub struct Perturbed {
     pub state: StartState,
+    /// Nach dem Aufbau zurückzunehmende Upgrades (Index in `state.towers`, Pfad), in dieser
+    /// Reihenfolge; der Zustand selbst hat noch die ursprünglichen Stufen und `spent`.
+    pub downgrades: Vec<(usize, u8)>,
     /// Nach dem Aufbau zu verkaufender Turm (Index in `state.towers`).
     pub sell: Option<usize>,
     pub lives_perturbed: bool,
+}
+
+impl Perturbed {
+    /// Nach `state.build`: Upgrades zurücknehmen (`Game::downgrade`: Erstattung zum Preis am Ort,
+    /// `spent` sinkt entsprechend) und den Turm verkaufen (docs/design-towers-step2.md §2.2).
+    pub fn finish(&self, game: &mut Game) {
+        for &(i, p) in &self.downgrades {
+            let res = game.downgrade(i as TowerId, p);
+            debug_assert!(res.is_ok(), "Zurückstufen von Turm {i} Pfad {p}: {res:?}");
+        }
+        if let Some(i) = self.sell {
+            let _ = game.apply(Action::Sell { tower: i as TowerId });
+        }
+    }
 }
 
 /// Würfelt 1–2 Störungen (Cash, Upgrade zurück mit Erstattung, Verschieben, Verkaufen; nur
@@ -189,10 +223,12 @@ pub fn perturb(base: &StartState, game: &Game, cell: f64, dice: &mut impl Dice) 
     let data = game.data();
     let mut s = base.clone();
     let mut sell = None;
+    let mut downgrades = Vec::new();
+    // Stufen nach den geplanten Zurückstufungen (der Zustand behält die ursprünglichen)
+    let mut tiers: Vec<[u8; PATHS]> = s.towers.iter().map(|t| t.tiers).collect();
     let n = 1 + dice.below(2);
     for _ in 0..n {
-        let upgraded: Vec<usize> =
-            (0..s.towers.len()).filter(|&i| s.towers[i].tiers.iter().any(|&t| t > 0)).collect();
+        let upgraded: Vec<usize> = (0..s.towers.len()).filter(|&i| tiers[i].iter().any(|&t| t > 0)).collect();
         let options: Vec<Perturbation> = PERTURBATIONS
             .into_iter()
             .filter(|p| match p {
@@ -210,13 +246,18 @@ pub fn perturb(base: &StartState, game: &Game, cell: f64, dice: &mut impl Dice) 
                 s.cash = (s.cash * (1.0 + sign * amp)).clamp(0.0, MAX_CASH);
             }
             Perturbation::Downgrade => {
-                let t = &mut s.towers[upgraded[dice.below(upgraded.len())]];
-                let paths: Vec<usize> = (0..PATHS).filter(|&p| t.tiers[p] > 0).collect();
+                let i = upgraded[dice.below(upgraded.len())];
+                let paths: Vec<usize> = (0..PATHS).filter(|&p| tiers[i][p] > 0).collect();
                 let p = paths[dice.below(paths.len())];
-                let Some(def) = data.towers.iter().find(|d| d.name == t.tower) else { continue };
-                t.tiers[p] -= 1;
-                // Klick verfehlt: das Geld für das Upgrade ist noch da
-                s.cash += data.cost(def.upgrade_costs[p][t.tiers[p] as usize]) as f64;
+                let mut lower = tiers[i];
+                lower[p] -= 1;
+                // nur, wenn es die niedrigere Kombination gibt (Crosspaths stecken in den Daten)
+                let def = data.towers.iter().find(|d| d.name == s.towers[i].tower);
+                if def.and_then(|d| d.variant(lower)).is_some() {
+                    // Klick verfehlt: das Geld für das Upgrade ist noch da (Erstattung nach dem Aufbau)
+                    downgrades.push((i, p as u8));
+                    tiers[i] = lower;
+                }
             }
             Perturbation::Move => {
                 let i = dice.below(s.towers.len());
@@ -241,7 +282,7 @@ pub fn perturb(base: &StartState, game: &Game, cell: f64, dice: &mut impl Dice) 
     if lives_perturbed {
         s.lives = ((s.lives as f64 * (0.5 + 0.5 * dice.unit())).ceil() as i32).max(1);
     }
-    Perturbed { state: s, sell, lives_perturbed }
+    Perturbed { state: s, downgrades, sell, lives_perturbed }
 }
 
 /// Gemeinsame Einstellungen aller Envs für Startzustände (von Python gesetzt).

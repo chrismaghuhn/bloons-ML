@@ -153,6 +153,9 @@ if __name__ == "__main__":
         pool, states_b = StartPool(), []
         for f in args.start_replays:
             states_b += states_from_replay(Path(f).read_text(), game_data["rules"]["end_round"])
+        # nie mehr Leben als der Modus zum Start hat (Replays aus Medium mit 150 Leben für CHIMPS mit 1)
+        for st in states_b:
+            st["lives"] = min(st["lives"], game_data["rules"]["start_lives"])
         # Zustände aus Replays anderer Daten (z.B. 6 statt 12 Türme) können hier ungültig sein
         import btd_rs
         check, n_all = btd_rs.Env(args.data or DEFAULT_DATA), len(states_b)

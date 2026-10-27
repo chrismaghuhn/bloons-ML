@@ -11,9 +11,9 @@ pub mod replay;
 pub mod start;
 
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 
-use btd_core::{Action, Game, Money, RoundReport};
+use btd_core::{Action, Buffs, Game, Money, RoundReport};
 use btd_data::v1::GameV1;
 use btd_data::DataError;
 use rayon::prelude::*;
@@ -26,6 +26,9 @@ pub use start::{StartConfig, StartKind, StartOutcome, StartState};
 use std::collections::VecDeque;
 
 use start::{Dice, CHECK_ROUNDS};
+
+/// Einkommen je Runde, bei dem der Einkommens-Skalar 1 erreicht.
+const INCOME_NORM: f64 = 20_000.0;
 
 /// Seed für den Hash der Datendatei im Replay-Header.
 const DATA_HASH_SEED: u64 = 0xDA7A;
@@ -117,6 +120,9 @@ pub struct Layout {
     pub a_upgrade: usize,
     pub a_sell: usize,
     pub n_actions: usize,
+    /// Daten mit Support-Türmen (Village/Farm): 5 Buff-Kanäle, Sperr-Skalare immer, Einkommens-Skalar
+    /// (docs/design-towers-step2.md §4). Ohne sie bleibt das Layout wie bisher.
+    pub support: bool,
     pub n_channels: usize,
     pub n_scalars: usize,
     pub obs_size: usize,
@@ -146,9 +152,11 @@ impl Layout {
         let a_place = 1;
         let a_upgrade = a_place + towers * cells;
         let a_sell = a_upgrade + paths * cells;
-        let n_channels = 2 + towers + paths; // Pfad, baubar, Turmtyp one-hot, Tier je Pfad
+        let support = has_support_towers(data);
+        // Pfad, baubar, Turmtyp one-hot, Tier je Pfad; mit Support-Türmen dazu die Buff-Kanäle
+        let n_channels = 2 + towers + paths + if support { BUFF_CHANNELS } else { 0 };
         let preview = if preview_rounds > 0 { RoundPreview::len(preview_rounds) } else { 0 };
-        let n_scalars = 4 + preview + if tower_bans { towers } else { 0 };
+        let n_scalars = 4 + preview + if tower_bans || support { towers } else { 0 } + support as usize;
         Layout {
             grid_w: g.w,
             grid_h: g.h,
@@ -163,6 +171,7 @@ impl Layout {
             a_upgrade,
             a_sell,
             n_actions: a_sell + cells,
+            support,
             n_channels,
             n_scalars,
             obs_size: n_channels * cells + n_scalars,
@@ -196,6 +205,37 @@ impl Layout {
         let (cx, cy) = (((x - self.x0) / self.cell).floor(), ((y - self.y0) / self.cell).floor());
         (cx >= 0.0 && cy >= 0.0 && cx < self.grid_w as f64 && cy < self.grid_h as f64)
             .then(|| cy as usize * self.grid_w + cx as usize)
+    }
+}
+
+/// Buff-Kanäle je Zelle: Reichweite, Tempo, Camo, MIB, Rabatt.
+pub const BUFF_CHANNELS: usize = 5;
+
+/// Ob die Daten Support-Türme haben (Auren, Rabatt oder Einkommen an irgendeiner Variante).
+pub fn has_support_towers(data: &GameV1) -> bool {
+    data.towers
+        .iter()
+        .flat_map(|t| &t.variants)
+        .any(|v| !v.supports.is_empty() || !v.discount.is_empty() || v.income.is_some())
+}
+
+/// Auren und Platzier-Rabatt je Zelle (am Zellmittelpunkt), gecacht bis sich die Auren ändern
+/// (`Game::buff_epoch`). Für die Place-Maske und die Buff-Kanäle.
+#[derive(Clone, Debug, Default)]
+struct Raster {
+    epoch: u64,
+    aura: Vec<Buffs>,
+    discount: Vec<f64>,
+}
+
+/// Cache hinter `&self` (Maske und Observation). Mutex statt RefCell, weil die VecEnv die Envs
+/// parallel über `&Env` maskiert; je Env gibt es nie Konkurrenz um die Sperre.
+#[derive(Debug, Default)]
+struct RasterCache(Mutex<Raster>);
+
+impl Clone for RasterCache {
+    fn clone(&self) -> Self {
+        RasterCache(Mutex::new(self.0.lock().unwrap().clone()))
     }
 }
 
@@ -235,6 +275,7 @@ pub struct Env {
     fallbacks: u64,
     recorder: Option<Recorder>,
     last_replay: Option<Replay>,
+    raster: RasterCache,
 }
 
 impl Env {
@@ -249,9 +290,10 @@ impl Env {
                 "record und randomness zusammen werden noch nicht unterstützt".into(),
             ));
         }
-        if cfg.max_banned_towers >= spec.data.towers.len().max(1) {
+        let free = (0..spec.data.towers.len()).filter(|&k| !game.is_locked(k as u8)).count();
+        if cfg.max_banned_towers >= free.max(1) {
             return Err(DataError::Invalid(
-                "max_banned_towers muss kleiner als die Zahl der Türme sein".into(),
+                "max_banned_towers muss kleiner als die Zahl der nicht gesperrten Türme sein".into(),
             ));
         }
         let layout = Layout::new(&spec.data, cfg.preview_rounds, cfg.max_banned_towers > 0);
@@ -281,7 +323,29 @@ impl Env {
             preview,
             recorder,
             last_replay: None,
+            raster: RasterCache::default(),
         })
+    }
+
+    /// Das Raster für den aktuellen Spielstand (neu gerechnet, wenn sich die Auren geändert haben).
+    fn raster(&self) -> MutexGuard<'_, Raster> {
+        let epoch = self.game.buff_epoch();
+        let mut r = self.raster.0.lock().unwrap();
+        if r.epoch != epoch {
+            let l = &self.layout;
+            r.epoch = epoch;
+            r.aura = self.game.auras_at((0..l.cells).map(|c| l.center(c)));
+            r.discount = (0..l.cells)
+                .map(|c| l.center(c))
+                .map(|(x, y)| self.game.discount_at(x, y, 0, None))
+                .collect();
+        }
+        r
+    }
+
+    /// Turmtyp in dieser Episode nicht baubar (zufällig gesperrt oder in den Regeln gesperrt)?
+    fn unavailable(&self, kind: usize) -> bool {
+        self.banned.get(kind) == Some(&true) || self.game.is_locked(kind as u8)
     }
 
     pub fn spec(&self) -> &EnvSpec {
@@ -390,9 +454,7 @@ impl Env {
         for _ in 0..8 {
             let p = start::perturb(base, &g, self.layout.cell, &mut RngDice(&mut rng));
             if p.state.build(&mut g).is_ok() {
-                if let Some(i) = p.sell {
-                    let _ = g.apply(Action::Sell { tower: i as btd_core::TowerId });
-                }
+                p.finish(&mut g);
                 return Ok(StartState::from_game(&g));
             }
         }
@@ -445,9 +507,7 @@ impl Env {
         for _ in 0..8 {
             let p = start::perturb(&sc.pool[base], &self.game, self.layout.cell, &mut RngDice(&mut self.rng));
             if p.state.build(&mut self.game).is_ok() {
-                if let Some(i) = p.sell {
-                    let _ = self.game.apply(Action::Sell { tower: i as btd_core::TowerId });
-                }
+                p.finish(&mut self.game);
                 self.start = EpisodeStart {
                     kind: StartKind::Pool,
                     base: Some(sc.id(base)),
@@ -484,7 +544,7 @@ impl Env {
                 let kind = RngDice(&mut self.rng).below(l.towers);
                 let c = RngDice(&mut self.rng).below(l.cells);
                 let (x, y) = l.center(c);
-                if !self.banned[kind] && self.map_ok[kind * l.cells + c] {
+                if !self.unavailable(kind) && self.map_ok[kind * l.cells + c] {
                     let _ = self.game.apply(Action::Place { kind: kind as u8, x, y });
                 }
             } else {
@@ -564,7 +624,7 @@ impl Env {
             }
         } else {
             let banned = matches!(self.layout.decode(action),
-                Some(CellAction::Place { kind, .. }) if self.banned.get(kind as usize) == Some(&true));
+                Some(CellAction::Place { kind, .. }) if self.unavailable(kind as usize));
             match self.layout.decode(action).filter(|_| !banned).and_then(|ca| self.to_action(ca)) {
                 Some(a) => {
                     let described = replay::describe(&self.game, a);
@@ -602,9 +662,11 @@ impl Env {
         if max == 0 {
             return;
         }
-        let n = self.banned.len();
+        // nur unter den nicht in den Regeln gesperrten Türmen (feste Sperren zählen nicht mit)
+        let mut order: Vec<usize> =
+            (0..self.banned.len()).filter(|&t| !self.game.is_locked(t as u8)).collect();
+        let n = order.len();
         let k = (self.next_rand() % (max as u64 + 1)) as usize;
-        let mut order: Vec<usize> = (0..n).collect();
         for i in 0..k {
             let j = i + (self.next_rand() % (n - i) as u64) as usize; // Fisher-Yates, nur k Schritte
             order.swap(i, j);
@@ -666,13 +728,22 @@ impl Env {
         }
         let g = &self.game;
         let data = g.data();
+        // mit Rabatt-Zonen hängt der Preis von der Zelle ab (Raster), sonst nur vom Turmtyp
+        let raster = l.support.then(|| self.raster());
         for (k, t) in data.towers.iter().enumerate() {
-            if self.banned[k] || g.cash < g.price(t.cost) {
+            if self.unavailable(k) {
                 continue;
             }
+            let list = g.price(t.cost);
             let base = l.a_place + k * l.cells;
             for c in 0..l.cells {
-                if self.map_ok[k * l.cells + c] {
+                let price = match &raster {
+                    Some(r) if r.discount[c] > 0.0 => {
+                        Money::from_dollars(data.cost_discounted(t.cost, r.discount[c]))
+                    }
+                    _ => list,
+                };
+                if g.cash >= price && self.map_ok[k * l.cells + c] {
                     let (x, y) = l.center(c);
                     mask[base + c] = !g.occupied(k as u8, x, y);
                 }
@@ -705,6 +776,20 @@ impl Env {
                 obs[(2 + l.towers + p) * l.cells + c] = t.tiers[p] as f32 / max_tier;
             }
         }
+        if l.support {
+            // Buff-Kanäle: was ein Turm in der Zelle bekäme (Auren ohne Turmgruppen-Filter), normiert
+            // auf die Größenordnung im Spiel (docs/design-towers-step2.md §4)
+            let r = self.raster();
+            let b0 = (2 + l.towers + l.paths) * l.cells;
+            for c in 0..l.cells {
+                let a = r.aura[c];
+                obs[b0 + c] = (a.range_frac * 5.0).min(1.0) as f32;
+                obs[b0 + l.cells + c] = ((1.0 - a.rate) * 4.0).clamp(0.0, 1.0) as f32;
+                obs[b0 + 2 * l.cells + c] = a.camo as u8 as f32;
+                obs[b0 + 3 * l.cells + c] = a.damage_all as u8 as f32;
+                obs[b0 + 4 * l.cells + c] = (r.discount[c] * 4.0).min(1.0) as f32;
+            }
+        }
         let s = l.n_channels * l.cells;
         obs[s] = (g.cash.dollars() as f64 / 5000.0).min(1.0) as f32;
         obs[s + 1] = (g.lives as f64 / data.rules.start_lives as f64) as f32;
@@ -715,10 +800,20 @@ impl Env {
             p.write(g.round as usize, &mut obs[o..]);
             o += RoundPreview::len(self.cfg.preview_rounds);
         }
-        if self.cfg.max_banned_towers > 0 {
-            for (k, &b) in self.banned.iter().enumerate() {
-                obs[o + k] = if b { 0.0 } else { 1.0 };
+        if self.cfg.max_banned_towers > 0 || l.support {
+            for k in 0..l.towers {
+                obs[o + k] = if self.unavailable(k) { 0.0 } else { 1.0 };
             }
+            o += l.towers;
+        }
+        if l.support {
+            // Einkommen der nächsten Runde (Farm), log-normiert (wird ab 4xx schnell groß)
+            let income: f64 = g
+                .towers
+                .iter()
+                .filter_map(|t| data.towers[t.kind as usize].variant(t.tiers)?.income.map(|i| i.per_round))
+                .sum();
+            obs[o] = (libm::log(1.0 + income) / libm::log(1.0 + INCOME_NORM)).min(1.0) as f32;
         }
     }
 

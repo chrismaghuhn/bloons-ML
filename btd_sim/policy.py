@@ -27,10 +27,14 @@ def grid_spec(data_path: str, obs_size: int, n_actions: int) -> dict:
     towers = len(d["towers"])
     paths = max(max((p + 1 for p, c in enumerate(t["upgrade_costs"]) if c), default=0) for t in d["towers"])
     h, w = g["h"], g["w"]
-    channels = 2 + towers + paths
+    # mit Support-Türmen (Village/Farm) 5 Buff-Kanäle (btd-env: Layout::support, BUFF_CHANNELS)
+    support = any(v.get("supports") or v.get("discount") or v.get("income")
+                  for t in d["towers"] for v in t["variants"])
+    channels = 2 + towers + paths + (5 if support else 0)
     scalars = obs_size - channels * h * w
     heads = towers + paths + 1
-    if scalars < 0 or 1 + heads * h * w != n_actions:
+    # mehr Skalare als ein ganzer Kanal: dann zählt Python Kanäle anders als die Rust-Env
+    if scalars < 0 or scalars >= h * w or 1 + heads * h * w != n_actions:
         raise ValueError(f"Layout passt nicht: obs {obs_size}, Aktionen {n_actions}, Raster {channels}×{h}×{w}")
     return dict(channels=channels, height=h, width=w, scalars=scalars, heads=heads)
 

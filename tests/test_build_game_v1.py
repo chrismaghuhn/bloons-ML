@@ -105,8 +105,17 @@ def test_area_radius_comes_from_projectile():
     proj = proj_of(m)
     proj["behaviors"] = [x for x in proj["behaviors"] if "TravelStrait" not in x["$type"]]
     proj["radius"] = 34.0
-    proj["behaviors"].append(T("LinkProjectileRadiusToTowerRangeModel", projectileRadiusOffset=2.0))
+    proj["id"] = "Projectile"
     assert b.convert_variant(m, [0, 0, 0])["attacks"][0]["delivery"] == {"kind": "area", "radius": 34.0}
+    # die Kopplung an die Reichweite steht im Dump am Turm und verweist auf das Projektil
+    link = T("LinkProjectileRadiusToTowerRangeModel", projectileModel={"id": "Projectile", "radius": 34.0},
+             baseTowerRange=32.0, projectileRadiusOffset=2.0)
+    m["behaviors"].append(link)
+    assert b.convert_variant(m, [0, 0, 0])["attacks"][0]["delivery"] == \
+        {"kind": "area", "radius": 34.0, "radius_offset": 2.0}
+    link["projectileModel"]["id"] = "Other"  # gehört zu einem anderen Projektil
+    assert "radius_offset" not in b.convert_variant(m, [0, 0, 0])["attacks"][0]["delivery"]
+    link["projectileModel"]["id"] = "Projectile"
     proj["radius"] = 32.0  # passt nicht zu Reichweite 32 + Versatz 2
     with pytest.raises(b.Unsupported, match="LinkProjectileRadius"):
         b.convert_variant(m, [0, 0, 0])
@@ -366,3 +375,192 @@ def test_presets_name_mode_and_difficulty():
         parts = p["match"].split("_")
         assert len(parts) == 3 and all(parts), name
     assert b.PRESETS["chimps"]["match"].split("_")[1:] == ["Clicks", "Hard"]
+
+
+# ---------------------------------------------------------------- Türme Schritt 2 (Village, Farm)
+
+def support(typ, **kw):
+    base = dict(isUnique=True, isGlobal=False, isCustomRadius=False, appliesToOwningTower=False,
+                onlyAffectParagon=False, maxStackSize=0, filters=None)
+    return T(typ, **{**base, **kw})
+
+
+def village_like(*supports_):
+    """Support-Turm wie die Village: ein AttackModel ohne Waffen (nur Reichweitenkreis) + Auren."""
+    empty = T("AttackModel", range=40.0, weapons=[],
+              behaviors=[T("AttackFilterModel", filters=[T("FilterInvisibleModel", isActive=True)])])
+    return T("TowerModel", cost=1200.0, range=40.0, towerSet=8, footprint=T("CircleFootprintModel", radius=11.0),
+             behaviors=[empty, *supports_])
+
+
+PRIMARY = [T("FilterInSetModel", towerSets=[1], towerSet=1)]
+
+
+def test_village_auras_and_discount():
+    v = b.convert_variant(village_like(
+        support("RangeSupportModel", multiplier=0.1, additive=0.0, mutatorId="Range:Support", maxStacks=0),
+        support("RateSupportModel", multiplier=0.85, mutatorId="Village:Rate"),
+        support("VisibilitySupportModel", mutatorId="Village:Visibility"),
+        support("PierceSupportModel", pierce=1.0, mutatorId="P", filters=PRIMARY),
+        support("ProjectileSpeedSupportModel", multiplier=0.25, mutatorId="S", filters=PRIMARY),
+        support("DamageTypeSupportModel", immuneBloonProperties=0, mutatorId="Village:DamageType"),
+        support("SupportRemoveFilterOutTagModel", removeScriptWithSupportMutatorId="MibMutator", isUnique=None),
+        T("DiscountZoneModel", discountMultiplier=0.1, stackLimit=1, stackName="Major", affectSelf=False,
+          tierCap=3, tierMin=0, towerBaseIds="", towerBaseIdList=[], isGlobal=False, isGlobalRange=False),
+        T("AddBehaviorToBloonInZoneModel", behaviors=[T("GrowBlockModel")]),
+    ), [0, 0, 0])
+    assert v["attacks"] == [] and v["footprint"] == 11.0
+    assert v["supports"] == [
+        {"kind": "range", "group": "Range:Support", "add_frac": 0.1, "add": 0.0},
+        {"kind": "rate", "group": "Village:Rate", "factor": 0.85},
+        {"kind": "camo", "group": "Village:Visibility"},
+        {"kind": "pierce", "group": "P", "sets": ["primary"], "add": 1},
+        {"kind": "projectile_speed", "group": "S", "sets": ["primary"], "add_frac": 0.25},
+        {"kind": "damage_all", "group": "Village:DamageType"},
+    ]
+    assert v["discount"] == [{"fraction": 0.1, "tier_min": 0, "tier_cap": 3, "stack": "Major", "stack_limit": 1,
+                              "affect_self": False}]
+
+
+@pytest.mark.parametrize("model, why", [
+    (support("RateSupportModel", multiplier=0.85, mutatorId="R", isGlobal=True), "global"),
+    (support("RateSupportModel", multiplier=0.85, mutatorId="R", isUnique=False), "isUnique"),
+    (support("RateSupportModel", multiplier=1.2, mutatorId="R"), "multiplier"),
+    (support("VisibilitySupportModel", mutatorId="V", filters=[T("FilterInvisibleModel")]), "Support-Filter"),
+    (support("DamageTypeSupportModel", immuneBloonProperties=1, mutatorId="D"), "Immunitäten"),
+    (T("DiscountZoneModel", discountMultiplier=0.1, stackLimit=1, stackName="M", tierCap=3, tierMin=0,
+       towerBaseIdList=["DartMonkey"]), "bestimmte Türme"),
+    (T("AddBehaviorToBloonInZoneModel", behaviors=[T("SlowModel")]), "GrowBlock"),
+])
+def test_unsupported_auras_are_refused(model, why):
+    with pytest.raises(b.Unsupported, match=why):
+        b.convert_variant(village_like(model), [0, 0, 0])
+
+
+def test_tower_without_attack_support_or_income_is_refused():
+    with pytest.raises(b.Unsupported, match="kein Angriff"):
+        b.convert_variant(village_like(), [0, 0, 0])
+
+
+def test_support_models_are_strict_elsewhere():
+    """Ein Auren-Modell unterhalb eines Projektils (nicht am Turm) bleibt gesperrt."""
+    hidden = support("RateSupportModel", multiplier=0.85, mutatorId="R")
+    with pytest.raises(b.Unsupported, match="RateSupportModel"):
+        b.convert_variant(dart_like(proj_extra=[hidden]), [0, 0, 0])
+
+
+def test_filter_disabled_by_mib_is_refused():
+    out = T("FilterOutTagModel", tag="Ddt", disableWhenSupportMutatorIDs=["MibMutator"])
+    with pytest.raises(b.Unsupported, match="MIB"):
+        b.convert_filters([out])
+    out["disableWhenSupportMutatorIDs"] = ["false"]  # Ice: anderer, wirkungsloser Eintrag
+    assert b.convert_filters([out]) == (True, {"exclude_tags": ["Ddt"]})
+
+
+def farm_like(count=4, value=20.0, bonus=0.0, extra=()):
+    """Farm: Bananen-Waffe (CashModel je Banane, EmissionsPerRoundFilter) und Rechteck-Footprint."""
+    proj = T("ProjectileModel", pierce=9999999.0, radius=5.0, behaviors=[
+        T("PickupModel", collectRadius=50.0), T("CashModel", minimum=value, maximum=value, bonusMultiplier=bonus),
+        T("AgeModel", lifespan=15.0), T("ScaleProjectileModel"), T("ArriveAtTargetModel"),
+        T("HeightOffsetProjectileModel")])
+    weapon = T("WeaponModel", rate=0.05, emission=T("SingleEmmisionTowardsTargetModel"), projectile=proj,
+               behaviors=[T("EmissionsPerRoundFilterModel", count=count), T("WeaponRateMinModel", min=0.05)])
+    pos = T("RandomPositionBasicModel", minRadius=20.0, maxRadius=40.0)
+    attack = T("AttackModel", range=40.0, weapons=[weapon], targetProvider=pos, behaviors=[pos])
+    rect = T("RectangleFootprintModel", xWidth=30.0, yWidth=30.0)
+    return T("TowerModel", cost=1250.0, range=40.0, towerSet=8, footprint=rect,
+             behaviors=[rect, attack, *extra])
+
+
+def test_farm_income_and_footprint():
+    v = b.convert_variant(farm_like(count=4, value=20.0, bonus=0.25), [0, 2, 0])
+    assert v["attacks"] == [] and v["income"] == {"per_round": 100.0}
+    assert v["footprint"] == pytest.approx(15.0 * 2 ** 0.5) and v["_rect"] is True
+    bonus = [T("PerRoundCashBonusTowerModel", cashPerRound=500.0), T("BonusLivesPerRoundModel", amount=15),
+             T("CollectCashZoneModel")]
+    v = b.convert_variant(farm_like(count=16, value=70.0, extra=bonus), [0, 0, 5])
+    assert v["income"] == {"per_round": 16 * 70.0 + 500.0, "lives": 15}
+    m = farm_like()
+    m["sellbackModifierAdd"] = 0.1
+    assert b.convert_variant(m, [0, 0, 2])["sell_bonus"] == 0.1
+
+
+def test_farm_income_edge_cases_are_refused():
+    m = farm_like()
+    m["behaviors"][1]["weapons"][0]["projectile"]["behaviors"][1]["maximum"] = 30.0
+    with pytest.raises(b.Unsupported, match="zufälligem"):
+        b.convert_variant(m, [0, 0, 0])
+    with pytest.raises(b.Unsupported, match="ohne Bananen"):
+        b.convert_variant(village_like(support("VisibilitySupportModel", mutatorId="V"),
+                                       T("PerRoundCashBonusTowerModel", cashPerRound=1.0)), [0, 0, 0])
+    # Bananen-Modelle sind nur in der Einkommens-Waffe erlaubt
+    with pytest.raises(b.Unsupported, match="PickupModel"):
+        b.convert_variant(dart_like(proj_extra=[T("PickupModel")]), [0, 0, 0])
+
+
+def write_match(tmp_path, name, mutators, fields=None):
+    import json
+    (tmp_path / "matches").mkdir(exist_ok=True)
+    mods = [{"$type": "X.ModModel, A", "mutatorMods": [
+        {"$type": f"Il2CppAssets.Scripts.Models.Gameplay.Mods.{t}, Assembly-CSharp", **kw} for t, kw in mutators]}]
+    (tmp_path / "matches" / f"{name}_Tutorial.json").write_text(json.dumps({"mods": mods, "fields": fields or {}}))
+
+
+def test_match_rules_selling_and_locks(tmp_path):
+    write_match(tmp_path, "Standard_Clicks_Hard", [("LockTowerModModel", {"towerToLock": "BananaFarm"}),
+                                                   ("DisableSellTowerModModel", {}),
+                                                   ("SellMultiplierModModel", {"multiplier": 0.0, "addition": 0.0})],
+                {"towerSellEnabled": False})
+    assert b.match_rules(tmp_path, "Standard_Clicks_Hard", "Tutorial") == (False, ["BananaFarm"])
+    write_match(tmp_path, "Standard_Standard_Medium", [("SellMultiplierModModel", {"addition": 0.7})],
+                {"towerSellEnabled": True})
+    assert b.match_rules(tmp_path, "Standard_Standard_Medium", "Tutorial") == (True, [])
+    write_match(tmp_path, "Bad", [("DisableSellTowerModModel", {})], {"towerSellEnabled": True})
+    with pytest.raises(SystemExit, match="towerSellEnabled"):
+        b.match_rules(tmp_path, "Bad", "Tutorial")
+    write_match(tmp_path, "Only", [("LockTowerSetModModel", {"towerSet": 4})])
+    with pytest.raises(SystemExit, match="LockTowerSetModModel"):
+        b.match_rules(tmp_path, "Only", "Tutorial")
+
+
+def test_income_weapon_must_be_alone_and_plain():
+    """Bananen-Modelle werden nur in der Einkommens-Waffe freigegeben, nicht in Nachbar-Waffen."""
+    m = farm_like()
+    dart_weapon = dart_like()["behaviors"][0]["weapons"][0]
+    m["behaviors"][1]["weapons"].append(dart_weapon)
+    with pytest.raises(b.Unsupported, match="anderen Waffen"):
+        b.convert_variant(m, [0, 0, 0])
+    m = farm_like(extra=[T("PerRoundCashBonusTowerModel", cashPerRound=1.0, distributeCash=True)])
+    with pytest.raises(b.Unsupported, match="distributeCash"):
+        b.convert_variant(m, [0, 0, 0])
+    m = farm_like()
+    m["footprint"]["ignoresTowerOverlap"] = True
+    with pytest.raises(b.Unsupported, match="Platzierung"):
+        b.convert_variant(m, [0, 0, 0])
+    m = farm_like()
+    m["behaviors"][1]["weapons"][0]["projectile"]["behaviors"][1]["emittedByCashEarnedMultiplier"] = 2.0
+    with pytest.raises(b.Unsupported, match="emittedByCashEarnedMultiplier"):
+        b.convert_variant(m, [0, 0, 0])
+
+
+def test_remove_filter_support_only_for_mib():
+    other = support("SupportRemoveFilterOutTagModel", removeScriptWithSupportMutatorId="HitBlack", isUnique=None)
+    with pytest.raises(b.Unsupported, match="anderer Mutator"):
+        b.convert_variant(village_like(support("VisibilitySupportModel", mutatorId="V"), other), [0, 0, 0])
+
+
+def test_two_radius_links_for_one_projectile_are_refused():
+    m = dart_like()
+    proj = proj_of(m)
+    proj["behaviors"] = [x for x in proj["behaviors"] if "TravelStrait" not in x["$type"]]
+    proj.update(radius=34.0, id="Projectile")
+    link = dict(projectileModel={"id": "Projectile", "radius": 34.0}, baseTowerRange=32.0, projectileRadiusOffset=2.0)
+    m["behaviors"] += [T("LinkProjectileRadiusToTowerRangeModel", **link)] * 2
+    with pytest.raises(b.Unsupported, match="mehrere LinkProjectileRadius"):
+        b.convert_variant(m, [0, 0, 0])
+
+
+def test_match_rules_checks_sell_ratio(tmp_path):
+    write_match(tmp_path, "Odd", [], {"towerSellEnabled": True, "sellMultiplier": 0.5})
+    with pytest.raises(SystemExit, match="sellMultiplier"):
+        b.match_rules(tmp_path, "Odd", "Tutorial")

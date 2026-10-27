@@ -103,8 +103,11 @@ def main():
         policies = {d: LookaheadPolicy(model, env.env, k, h, deterministic=d) for d in (True, False)}
         global PREDICT
         PREDICT = lambda m, obs, mask, det: policies[det].choose(obs, mask)  # noqa: E731
-    names = [t["name"] for t in json.load(open(args.data))["towers"]]
-    end = json.load(open(args.data))["rules"]["end_round"]
+    d = json.load(open(args.data))
+    names = [t["name"] for t in d["towers"]]
+    end = d["rules"]["end_round"]
+    # ohnehin gesperrte Türme (rules.locked_towers, z.B. die Farm) nicht als Sperre kombinieren
+    free = [i for i, n in enumerate(names) if n not in d["rules"].get("locked_towers", [])]
     none = [False] * len(names)
 
     # Teil 1: Vielfalt ohne Sperre
@@ -160,7 +163,7 @@ def main():
     print(f"\n== Überleben je Sperre (det. Runde/Leben | stochastisch Ø Runde, Siege von {args.per_set})")
     table = []
     for k in range(args.max_banned + 1):
-        for combo in itertools.combinations(range(len(names)), k):
+        for combo in itertools.combinations(free, k):
             banned = [i in combo for i in range(len(names))]
             det, _ = play(env, model, banned, deterministic=True)
             st = [play(env, model, banned, deterministic=False)[0]["round"] for _ in range(args.per_set)]
