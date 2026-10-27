@@ -355,6 +355,33 @@ impl Env {
         res
     }
 
+    /// Vorausschau (docs/design-lookahead.md): auf einer Kopie optional `action` ausführen und danach
+    /// bis zu `rounds` Runden ohne weitere Aktionen spielen. Die Env selbst bleibt unverändert; die
+    /// Kopie hat denselben Zufallszustand, die Vorhersage passt also zur laufenden Episode.
+    pub fn lookahead(&self, action: Option<usize>, rounds: u32) -> Lookahead {
+        let mut sim = self.clone();
+        sim.recorder = None;
+        sim.starts = None; // keine Snapshots/Ergebnisse aus der Kopie
+        let mut obs = vec![0.0; self.layout.obs_size];
+        let lives_before = sim.game.lives;
+        let mut out = Lookahead { invalid: false, ..Lookahead::default() };
+        if let Some(a) = action {
+            let info = sim.step(a, &mut obs);
+            out.invalid = info.invalid;
+            if info.round_played.is_some() {
+                out.rounds_played += 1;
+            }
+        }
+        while out.rounds_played < rounds && !sim.game.over() {
+            sim.step(0, &mut obs);
+            out.rounds_played += 1;
+        }
+        out.lives_lost = lives_before - sim.game.lives;
+        out.cash = sim.game.cash.as_f64();
+        out.game_over = sim.game.over() && !sim.game.won();
+        out
+    }
+
     /// Ein gestörter Zustand als fester Zustand (z.B. für einen Eval-Satz): Störungen wie beim
     /// Training, aber mit eigenem Seed; ein verkaufter Turm ist danach schon weg. Ändert die Env nicht.
     pub fn perturbed_state(&self, base: &StartState, seed: u64) -> Result<StartState, String> {
@@ -864,6 +891,19 @@ fn splitmix64(x: u64) -> u64 {
 /// Höchstzahl gesammelter Snapshots je Env und unabgeholter Ergebnisse.
 const SNAPSHOTS: usize = 16;
 const MAX_OUTCOMES: usize = 10_000;
+
+/// Ergebnis von `Env::lookahead`.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Lookahead {
+    pub lives_lost: i32,
+    pub rounds_played: u32,
+    /// Cash danach (Dollar).
+    pub cash: f64,
+    /// Spiel in der Vorausschau verloren.
+    pub game_over: bool,
+    /// Die Aktion war ungültig (nichts ausgeführt).
+    pub invalid: bool,
+}
 
 /// Herkunft und 3-Runden-Prüfung der laufenden Episode (`rounds`: gespielte Runden seit dem Start).
 #[derive(Clone, Copy, Debug, Default)]

@@ -180,6 +180,28 @@ impl PyEnv {
         Ok(serde_json::to_string(&s).expect("serialisierbar"))
     }
 
+    /// Vorausschau auf einer Kopie: optional `action` ausführen, dann bis zu `rounds` Runden ohne weitere
+    /// Aktionen. -> {lives_lost, rounds_played, cash, game_over, invalid}; die Env bleibt unverändert.
+    #[pyo3(signature = (action=None, rounds=2))]
+    fn lookahead<'py>(
+        &self,
+        py: Python<'py>,
+        action: Option<usize>,
+        rounds: u32,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        if action.is_some_and(|a| a >= self.env.layout.n_actions) {
+            return Err(value_err(format!("Aktion außerhalb von 0..{}", self.env.layout.n_actions)));
+        }
+        let r = self.env.lookahead(action, rounds);
+        let d = PyDict::new(py);
+        d.set_item("lives_lost", r.lives_lost)?;
+        d.set_item("rounds_played", r.rounds_played)?;
+        d.set_item("cash", r.cash)?;
+        d.set_item("game_over", r.game_over)?;
+        d.set_item("invalid", r.invalid)?;
+        Ok(d)
+    }
+
     /// Aktueller Spielstand als Startzustand (JSON).
     fn state(&self) -> String {
         serde_json::to_string(&StartState::from_game(&self.env.game)).expect("serialisierbar")

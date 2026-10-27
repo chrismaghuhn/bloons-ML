@@ -34,6 +34,7 @@ if __name__ == "__main__":
     ap.add_argument("--stochastic", action="store_true", help="Aktionen samplen statt argmax")
     ap.add_argument("--ban-towers", type=int, default=0, help="wie beim Training (Observation muss passen)")
     ap.add_argument("--per-ban", action="store_true", help="je einen Turmtyp sperren und getrennt auswerten")
+    ap.add_argument("--lookahead", default=None, help="K,H: Vorausschau vor Rundenstart (nur mit --data)")
     args = ap.parse_args()
 
     if args.data:
@@ -49,6 +50,13 @@ if __name__ == "__main__":
         model = MaskablePPO.load(args.model)
         det = not args.stochastic
         policy = lambda obs, mask: model.predict(obs, action_masks=mask, deterministic=det)[0]
+        if args.lookahead:
+            if not args.data:
+                ap.error("--lookahead braucht --data (Rust-Env)")
+            from btd_sim.lookahead import LookaheadPolicy
+            k, h = map(int, args.lookahead.split(","))
+            la = LookaheadPolicy(model, env.env, k, h, deterministic=det)
+            policy = lambda obs, mask: la.choose(obs, mask)  # noqa: E731
 
     def report(label, banned=None):
         results = [play(env, policy, args.show, banned) for _ in range(args.episodes)]

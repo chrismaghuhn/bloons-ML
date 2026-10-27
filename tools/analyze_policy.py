@@ -31,14 +31,21 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from btd_sim.rust_env import RustBTDEnv  # noqa: E402
 
-PATHS = "abc"  # Pfad 0/1/2 als a/b/c in den Schlüsseln
+PATHS = "abc"
+
+
+def _plain(model, obs, mask, deterministic):
+    return model.predict(obs, action_masks=mask, deterministic=deterministic)[0]
+
+
+PREDICT = _plain  # mit --lookahead ersetzt  # Pfad 0/1/2 als a/b/c in den Schlüsseln
 
 
 def play(env, model, banned, deterministic):
     obs, info = env.reset(options={"banned": banned})
     done = False
     while not done:
-        a = model.predict(obs, action_masks=env.action_masks(), deterministic=deterministic)[0]
+        a = PREDICT(model, obs, env.action_masks(), deterministic)
         obs, _, done, _, info = env.step(a)
     return info, env.env.replay_jsonl()
 
@@ -84,11 +91,18 @@ def main():
     ap.add_argument("--json", default=None, help="Ergebnisse zusätzlich als JSON speichern")
     ap.add_argument("--recovery", default=None, help="Eval-Satz 'Erholung' (JSON-Liste von Zuständen)")
     ap.add_argument("--skip-bans", action="store_true", help="Teil 2 auslassen")
+    ap.add_argument("--lookahead", default=None, help="K,H: Vorausschau vor Rundenstart (docs/design-lookahead.md)")
     args = ap.parse_args()
 
     from sb3_contrib import MaskablePPO
     model = MaskablePPO.load(args.model, device="cuda")
     env = RustBTDEnv(args.data, record=True, preview_rounds=args.preview, max_banned_towers=args.ban_towers)
+    if args.lookahead:
+        from btd_sim.lookahead import LookaheadPolicy
+        k, h = map(int, args.lookahead.split(","))
+        policies = {d: LookaheadPolicy(model, env.env, k, h, deterministic=d) for d in (True, False)}
+        global PREDICT
+        PREDICT = lambda m, obs, mask, det: policies[det].choose(obs, mask)  # noqa: E731
     names = [t["name"] for t in json.load(open(args.data))["towers"]]
     end = json.load(open(args.data))["rules"]["end_round"]
     none = [False] * len(names)
@@ -126,7 +140,7 @@ def main():
                 obs = env.env.reset_from(json.dumps(s))
                 done, info = False, {}
                 while not done:
-                    a = model.predict(obs, action_masks=env.action_masks(), deterministic=det)[0]
+                    a = PREDICT(model, obs, env.action_masks(), det)
                     obs, _, done, _, info = env.step(a)
                 acc.append((info["round"], info["lives"] > 0, info["round"] - s["round"]))
         recovery = {}

@@ -1,4 +1,4 @@
-# Design: Vorausschau beim Spielen (Entwurf)
+# Design: Vorausschau beim Spielen (umgesetzt 2026-10-27)
 
 Idee (vom User): Bevor der Bot eine Runde startet, prüft er in der Sim, ob er Leben verlieren würde,
 und probiert sonst bessere Aktionen. Anlass: Im echten Spiel hielt ein vorgezogener Crossbow Master
@@ -58,3 +58,20 @@ Erwartung: deutlich weniger verlorene Leben, vor allem in Runden mit Spezial-Blo
 1. Startwerte `H = 2`, `k = 8` ok?
 2. Nur bei "Runde starten" prüfen (Vorschlag), oder auch einzelne Bauaktionen der Policy gegenprüfen?
 3. Zählt nur "Leben verloren", oder bei Gleichstand auch übrig bleibendes Geld (spart unnötige Käufe)?
+
+## 6. Entschieden und gemessen
+
+Entschieden: `H = 2`, `k = 8`, nur bei "Runde starten" prüfen, bei gleich vielen verlorenen Leben mehr
+übriges Geld bevorzugen. Umgesetzt: `Env::lookahead` (Rust, Kopie mit gleichem Zufallszustand),
+`btd_sim/lookahead.py` (`LookaheadPolicy`), `evaluate.py`/`tools/analyze_policy.py --lookahead 8,2`.
+
+Messung mit `t12_r60_v2` (12 Türme, R60, korrigierte Sim), deterministisch:
+
+| | ohne Vorausschau | mit Vorausschau |
+|---|---|---|
+| ohne Sperre | gewonnen, 72 Leben | gewonnen, 150 Leben |
+| Einzelsperren gewonnen (von 12) | 7 | 11, alle mit 150 Leben |
+| ohne Dart | Runde 9 | Runde 47 |
+| Erholung (von 50) | 46 | 50 |
+
+Rechenzeit der ganzen Auswertung 30 s statt 25 s.

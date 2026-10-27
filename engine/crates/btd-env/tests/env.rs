@@ -591,3 +591,37 @@ fn randomness_gives_each_env_its_own_game_seed() {
     // Replays mit Zufall gibt es (noch) nicht
     assert!(Env::new(spec(), EnvConfig { record: true, randomness: true, ..Default::default() }).is_err());
 }
+
+#[test]
+fn lookahead_predicts_without_changing_the_env() {
+    let mut e = env(true);
+    let mut obs = vec![0.0; e.layout.obs_size];
+    e.reset(&mut obs);
+    let mut rng = Rng(5);
+    let mut mask = vec![false; e.layout.n_actions];
+    // ein paar Runden mit zufälligen Bauaktionen, dann vorhersagen und nachprüfen
+    for _ in 0..40 {
+        e.action_mask(&mut mask);
+        let a = rng.pick(&mask);
+        let hash = (e.game.state_hash(), e.builds_left, e.game.lives);
+        let pred = e.lookahead(Some(a), 2);
+        assert_eq!((e.game.state_hash(), e.builds_left, e.game.lives), hash, "Env unverändert");
+        // dasselbe wirklich spielen
+        let mut real = e.clone();
+        let mut o2 = obs.clone();
+        let lives = real.game.lives;
+        let info = real.step(a, &mut o2);
+        let mut played = info.round_played.is_some() as u32;
+        while played < 2 && !real.game.over() {
+            real.step(0, &mut o2);
+            played += 1;
+        }
+        assert_eq!(pred.lives_lost, lives - real.game.lives);
+        assert_eq!(pred.rounds_played, played);
+        assert_eq!(pred.cash, real.game.cash.as_f64());
+        if e.step(a, &mut obs).terminated {
+            break;
+        }
+    }
+    assert_eq!(e.lookahead(None, 0).rounds_played, 0);
+}
