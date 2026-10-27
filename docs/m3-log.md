@@ -181,10 +181,12 @@ Dart 0-0-4 bei (−5, −1) + Bomb 0-0-0 bei (15, −31), ab Runde 16 keine Akti
 | ≤ 42 | 150 | 150 |
 | 43 | 91 (erste Leaks) | erste Leaks |
 | 44 | 91 | 65 (Screenshot während/nach Runde 44) |
-| 45 | 13 | – |
+| 45 | 13 (−78) | **Defeat, Leak-Anzeige −78** (Leads; nur noch 65 Leben) |
 | 47 | 0 | – |
 
-Erste Leak-Runde stimmt exakt; der Schaden ist im echten Spiel größer (≥ 26 Leben mehr bis Runde 44).
+Erste Leak-Runde stimmt exakt, der Verlust in Runde 45 (verstärkte Leads) auf das Leben genau (−78).
+Abweichung nur in Runde 43/44 (echtes Spiel ≥ 26 Leben mehr verloren), dort hängt das Ergebnis stark
+am Crit-Timing (Sim mit festem Abstand 8-12: Leben nach Runde 44 zwischen 89 und 150).
 Passt zum Verdacht, dass die Sim leicht großzügig ist (keine Sichtlinie, Crits exakt jeder 10. Schuss).
 
 ## 2026-10-27: Entropie-Schedule (t12_r60_ent)
