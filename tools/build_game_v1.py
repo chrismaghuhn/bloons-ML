@@ -909,7 +909,8 @@ def build_tower(dump: Path, base: str, coverage: list) -> dict:
     if not any(v["tiers"] == [0, 0, 0] for v in variants):
         sys.exit(f"{base}: Basisvariante wird nicht unterstützt: {next(c[2] for c in coverage if c[:2] == (base, '000'))}")
     variants.sort(key=lambda v: v["tiers"])
-    return {"name": TOWER_NAMES[base], "cost": int(base_model["cost"]), "upgrade_costs": costs, "variants": variants}
+    return {"name": TOWER_NAMES[base], "game_id": base, "cost": int(base_model["cost"]), "upgrade_costs": costs,
+            "variants": variants}
 
 
 # ---------------------------------------------------------------- Main
@@ -939,6 +940,10 @@ def main():
     data = {
         "format": "game_v1",
         "name": f"{args.map}-{args.preset}-{dump.name}",
+        # Herkunft für die Mod (Replay-Player); Modus/Schwierigkeit aus dem Partie-Namen
+        # "<Spieltyp>_<Modus>_<Schwierigkeit>"
+        "meta": {"map": args.map, "mode": preset["match"].split("_")[1],
+                 "difficulty": preset["match"].split("_")[2], "game_version": dump.name},
         "rules": {"tick_rate": 60.0, "cd_eps": 1e-9, "max_round_seconds": 900.0, "child_spacing": 0.0,
                   "sell_ratio": 0.7, "cost_rounding": 5, **{k: v for k, v in preset.items() if k != "match"}},
         "map": build_map(dump, args.map, footprint),

@@ -618,6 +618,8 @@ pub struct VariantV1 {
 #[derive(Clone, Debug)]
 pub struct TowerDefV1 {
     pub name: String,
+    /// ID des Turms im Spiel (z.B. `DartMonkey`), für die Mod (Replay-Player); fehlt bei sim_v0.
+    pub game_id: Option<String>,
     /// Medium-Kosten.
     pub cost: i64,
     /// `upgrade_costs[pfad][tier-1]`, Medium.
@@ -668,6 +670,8 @@ pub struct IncomeV1 {
 #[derive(Clone, Debug)]
 pub struct GameV1 {
     pub name: String,
+    /// Herkunft der Daten (aus dem Spiel-Dump); fehlt bei sim_v0.
+    pub meta: Option<MetaV1>,
     pub rules: RulesV1,
     pub map: MapV1,
     pub bloons: Vec<BloonDefV1>,
@@ -678,6 +682,18 @@ pub struct GameV1 {
     pub income: Vec<IncomeV1>,
 }
 
+/// Herkunft einer Konfiguration aus dem Spiel: interner Kartenname (`Tutorial` = Monkey Meadow),
+/// Modus und Schwierigkeit wie in den Partie-Regeln (`Standard`, `Clicks` = CHIMPS; `Medium`, `Hard`)
+/// und Spielversion des Dumps.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MetaV1 {
+    pub map: String,
+    pub mode: String,
+    pub difficulty: String,
+    pub game_version: String,
+}
+
 // ---------------------------------------------------------------- Rohformat
 
 #[derive(Deserialize)]
@@ -685,6 +701,8 @@ pub struct GameV1 {
 struct Raw {
     format: String,
     name: String,
+    #[serde(default)]
+    meta: Option<MetaV1>,
     rules: RulesV1,
     map: RawMap,
     bloons: Vec<RawBloon>,
@@ -745,6 +763,8 @@ struct RawBloon {
 #[serde(deny_unknown_fields)]
 struct RawTower {
     name: String,
+    #[serde(default)]
+    game_id: Option<String>,
     cost: i64,
     upgrade_costs: Vec<Vec<i64>>,
     variants: Vec<RawVariant>,
@@ -907,8 +927,16 @@ impl GameV1 {
             areas: m.areas.clone(),
         };
 
-        let data =
-            GameV1 { name: raw.name, rules: raw.rules, map, bloons, towers, rounds, income: raw.income };
+        let data = GameV1 {
+            name: raw.name,
+            meta: raw.meta,
+            rules: raw.rules,
+            map,
+            bloons,
+            towers,
+            rounds,
+            income: raw.income,
+        };
         data.validate()?;
         Ok(data)
     }
@@ -1205,7 +1233,14 @@ fn resolve_tower(t: &RawTower) -> Result<TowerDefV1, DataError> {
     for (p, c) in t.upgrade_costs.iter().enumerate() {
         costs[p] = c.clone();
     }
-    Ok(TowerDefV1 { name: t.name.clone(), cost: t.cost, upgrade_costs: costs, variants, variant_index })
+    Ok(TowerDefV1 {
+        name: t.name.clone(),
+        game_id: t.game_id.clone(),
+        cost: t.cost,
+        upgrade_costs: costs,
+        variants,
+        variant_index,
+    })
 }
 
 #[cfg(test)]
@@ -1227,6 +1262,21 @@ mod tests {
         assert_eq!(black.children[0].1, 2);
         assert!(black.props.intersects(Props(Props::BLACK)));
         assert_eq!(g.income[0].end_bonus, 101.0);
+    }
+
+    #[test]
+    fn meta_and_game_ids_are_optional() {
+        let parse = |v: serde_json::Value| GameV1::from_json(&v.to_string());
+        assert_eq!(parse(mini()).unwrap().meta, None, "Fixture ohne meta");
+        let mut v = mini();
+        v["meta"] = serde_json::json!({"map": "Tutorial", "mode": "Clicks", "difficulty": "Hard", "game_version": "57.4"});
+        v["towers"][0]["game_id"] = serde_json::json!("DartMonkey");
+        let d = parse(v.clone()).unwrap();
+        assert_eq!(d.meta.as_ref().unwrap().mode, "Clicks");
+        assert_eq!(d.towers[0].game_id.as_deref(), Some("DartMonkey"));
+        assert_eq!(d.towers[1].game_id, None);
+        v["meta"]["extra"] = serde_json::json!(1);
+        assert!(parse(v).is_err(), "unbekannte Felder in meta werden abgelehnt");
     }
 
     fn mini() -> serde_json::Value {

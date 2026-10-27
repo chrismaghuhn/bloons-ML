@@ -358,3 +358,11 @@ def test_bloon_speed_factor_from_match_rules(tmp_path):
     assert b.bloon_speed_factor(tmp_path, "Standard_Standard_Easy", "Tutorial") == 1.0
     with pytest.raises(SystemExit):
         b.bloon_speed_factor(tmp_path, "Standard_Clicks_Hard", "Tutorial")
+
+
+def test_presets_name_mode_and_difficulty():
+    # meta.mode/difficulty werden aus dem Partie-Namen gelesen: "<Spieltyp>_<Modus>_<Schwierigkeit>"
+    for name, p in b.PRESETS.items():
+        parts = p["match"].split("_")
+        assert len(parts) == 3 and all(parts), name
+    assert b.PRESETS["chimps"]["match"].split("_")[1:] == ["Clicks", "Hard"]
