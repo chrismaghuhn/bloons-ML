@@ -85,7 +85,7 @@ def dump_entries(tower: dict) -> list[dict]:
 def dump_camo(tower: dict) -> bool | None:
     """Camo der Hauptattacke = erste Attacke mit DamageModel; Camo, wenn sie keinen aktiven FilterInvisible*-Filter
     hat. Attacken ohne Schaden (Buffs, Effekte) zählen nicht. None, wenn der Turm selbst keine solche Attacke hat
-    (Village, Beast Handler: Camo kommt dort über Buffs bzw. Sub-Tower und ist so nicht prüfbar)."""
+    (Village ohne Ballista, Beast Handler: Camo kommt dort über Buffs bzw. Sub-Tower und ist so nicht prüfbar)."""
     for a in attacks_of(tower):
         entries: list[dict] = []
         for w in a.get("weapons") or []:
@@ -125,9 +125,11 @@ def match_attack(wiki_attack: dict, entries: list[dict]) -> tuple[str, dict | No
     if best is None:
         return "no-dump-attack", None
     s = score(best)
+    if "damage" not in keys:
+        # ohne damage kann jede beliebige Nebenattacke mit gleichem pierce/cooldown passen: nicht zählen
+        return ("weak" if s == len(keys) else "weak-mismatch"), best
     if s == len(keys):
-        # ohne damage kann jede beliebige Nebenattacke mit gleichem pierce/cooldown passen
-        return ("match" if "damage" in keys else "weak"), best
+        return "match", best
     return f"{s}/{len(keys)}", best
 
 
@@ -144,7 +146,8 @@ def compare(dump: Path, wiki_dir: Path) -> str:
         upgrades[u.get("name")] = u
     lines = [f"# Dump {dump.name} vs. Wiki ({wiki_dir})", ""]
     totals = {"cost": [0, 0], "range": [0, 0], "camo": [0, 0], "attack": [0, 0]}
-    weak = 0  # nur pierce/cooldown verglichen (Wiki ohne damage), nicht in "attack" gezählt
+    weak = 0  # Wiki ohne damage, pierce/cooldown gleich; nicht in "attack" gezählt
+    weak_mismatch = 0  # Wiki ohne damage, nicht gleich; in der Liste, nicht in "attack" gezählt
     no_dump = 0  # Attacke steckt in einem Sub-Tower (z.B. Beast-Handler-Tiere), nicht in diesem TowerModel
     diffs: list[str] = []
 
@@ -206,11 +209,14 @@ def compare(dump: Path, wiki_dir: Path) -> str:
                 if result == "weak":
                     weak += 1
                     continue
+                if result == "weak-mismatch":
+                    weak_mismatch += 1
                 if result == "no-dump-attack":
                     no_dump += 1
                     diffs.append(f"- {tag} `{a.get('name')}`: keine Attacke im TowerModel (Sub-Tower?)")
                     continue
-                totals["attack"][1] += 1
+                if result != "weak-mismatch":
+                    totals["attack"][1] += 1
                 if result == "match":
                     totals["attack"][0] += 1
                     continue
@@ -223,7 +229,8 @@ def compare(dump: Path, wiki_dir: Path) -> str:
     for k, (ok, n) in totals.items():
         lines.append(f"| {k} | {ok} | {n} |")
     lines.append("")
-    lines.append(f"Nicht in `attack` gezählt: {weak} Wiki-Attacken ohne damage (nur pierce/cooldown gleich), "
+    lines.append(f"Nicht in `attack` gezählt: Wiki-Attacken ohne damage ({weak} mit gleichem pierce/cooldown, "
+                 f"{weak_mismatch} abweichend, siehe Liste), "
                  f"{no_dump} ohne Attacke im TowerModel (Sub-Tower, z.B. Beast-Handler-Tiere).")
     lines += ["", "## Abweichungen", ""] + (diffs or ["keine"])
     return "\n".join(lines) + "\n"

@@ -140,7 +140,8 @@ python mod/tools/compare_dump_wiki.py --dump data/raw/game_dump/57.4
 Vergleicht Basis und reine Pfad-Tiers jedes Turms mit `data/base/towers/` (Kosten, Reichweite, Camo der
 ersten schadensverursachenden Attacke, damage/pierce/cooldown jeder Wiki-Attacke) und schreibt `compare_wiki.md` in
 den (gitignored) Dump-Ordner. Stand 57.4: Kosten 416/416 und Reichweite 416/416 gleich, Camo 351/355
-(Village/Beast Handler nicht prüfbar), Attacken 454/569 exakt; nicht gezählt werden Wiki-Attacken ohne `damage`
-und Attacken von Sub-Towern (Beast-Handler-Tiere liegen als eigene Türme unter `towers/`).
+(Beast Handler und Village ohne Ballista nicht prüfbar), Attacken 454/549 exakt. Nicht gezählt, aber im Bericht
+aufgeführt: Wiki-Attacken ohne `damage` und Attacken von Sub-Towern (Beast-Handler-Tiere liegen als eigene Türme
+unter `towers/`).
 
 Ein Fehler bei einem einzelnen Objekt (auch eine Dateinamen-Kollision) bricht den Dump nicht ab; er steht in `manifest.json` → `errors` und im Log.
