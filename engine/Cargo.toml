@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = ["crates/btd-data", "crates/btd-core"]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.80" # f32::round_ties_even ab 1.77
+publish = false
+
+[workspace.dependencies]
+btd-data = { path = "crates/btd-data" }
+btd-core = { path = "crates/btd-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+smallvec = "1"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+[profile.release]
+debug = 1

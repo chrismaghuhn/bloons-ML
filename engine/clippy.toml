@@ -1,0 +1,20 @@
+# Transzendente Funktionen aus std hängen von der System-libm ab und sind nicht
+# plattformstabil. Im Sim-Pfad stattdessen das `libm`-Crate nutzen (docs/engine-design.md §3).
+disallowed-methods = [
+    { path = "f32::sin", reason = "libm::sinf nutzen" },
+    { path = "f32::cos", reason = "libm::cosf nutzen" },
+    { path = "f32::tan", reason = "libm::tanf nutzen" },
+    { path = "f32::atan2", reason = "libm::atan2f nutzen" },
+    { path = "f32::powf", reason = "libm::powf nutzen" },
+    { path = "f32::exp", reason = "libm::expf nutzen" },
+    { path = "f32::ln", reason = "libm::logf nutzen" },
+    { path = "f64::sin", reason = "libm::sin nutzen" },
+    { path = "f64::cos", reason = "libm::cos nutzen" },
+    { path = "f64::tan", reason = "libm::tan nutzen" },
+    { path = "f64::atan2", reason = "libm::atan2 nutzen" },
+    { path = "f64::powf", reason = "libm::pow nutzen" },
+    { path = "f64::exp", reason = "libm::exp nutzen" },
+    { path = "f64::ln", reason = "libm::log nutzen" },
+    { path = "f32::mul_add", reason = "FMA ist nicht überall gleich, vermeiden" },
+    { path = "f64::mul_add", reason = "FMA ist nicht überall gleich, vermeiden" },
+]

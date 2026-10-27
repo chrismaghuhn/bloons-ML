@@ -333,7 +333,7 @@ class Game:
                         hit = np.flatnonzero((bx - bx[first]) ** 2 + (by - by[first]) ** 2 <= tw.blast ** 2)
                     else:
                         hit = in_range
-                    hit = hit[np.argsort(-dist[hit])][: tw.pierce]
+                    hit = hit[np.argsort(-dist[hit], kind="stable")][: tw.pierce]  # stabil: gleiche Distanz -> Index-Reihenfolge
                     tw.cd_left = max(tw.cd_left, -DT) + tw.cooldown
 
                     keep = np.ones(len(dist), dtype=bool)

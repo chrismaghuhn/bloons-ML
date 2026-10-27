@@ -1,0 +1,15 @@
+[package]
+name = "btd-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+# Sim-Zustand in f64 statt f32. Nur für die Paritätstests gegen die Python-Referenz (numpy rechnet in f64).
+f64 = []
+
+[dependencies]
+btd-data.workspace = true
+smallvec.workspace = true
+xxhash-rust.workspace = true
