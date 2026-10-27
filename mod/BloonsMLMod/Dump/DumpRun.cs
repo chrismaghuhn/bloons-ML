@@ -23,6 +23,9 @@ public sealed class DumpRun
     public string RunId { get; }
     public string Root { get; }
     public string FinalRoot { get; }
+
+    /// <summary>Basisordner (DumpRoot) mit .gitignore und Zustandsdateien der Mod.</summary>
+    public string BaseDir => Path.GetDirectoryName(FinalRoot)!;
     public Dictionary<string, int> Written { get; } = new();
     public List<string> Errors { get; } = new();
 

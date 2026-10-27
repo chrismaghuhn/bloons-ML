@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using BloonsML.Common;
@@ -24,18 +25,27 @@ public static class GameDataDumper
     /// <summary>Nach so vielen geschriebenen Objekten einen Frame abgeben.</summary>
     private const int ItemsPerFrame = 25;
 
-    /// <summary>GameData-Felder mit eigenem Ordner (rounds/, maps/_index.json).</summary>
+    /// <summary>
+    /// GameData-Felder, die nicht nach gamedata/ kommen: eigene Ordner (rounds/, maps/_index.json) und
+    /// Kampagnen-/Event-Daten, die Mod Helper beim eigenen Export ebenfalls ausblendet. questData bringt BTD6 57.4
+    /// beim Serialisieren zum Absturz (nativ, nicht abfangbar); für die Simulation wird keins davon gebraucht.
+    /// </summary>
     private static readonly HashSet<string> GameDataSkip = new(StringComparer.OrdinalIgnoreCase)
     {
-        "roundSets", "mapSet"
+        "roundSets", "mapSet", "questData", "rogueData", "frontierData", "legendsData"
     };
 
+    /// <summary>Große GameData-Felder: zuletzt, damit ein Problem möglichst wenig verhindert.</summary>
+    private static readonly string[] GameDataLast = { "assetLibrary", "mapEditorData", "skinsData", "artifactsData" };
+
     /// <summary>
-    /// Große, verschachtelte GameData-Felder, die Mod Helper beim eigenen Export teilweise ausblendet.
-    /// Kommen als letzte Daten vor summary/manifest, damit ein Problem (im schlimmsten Fall ein Absturz) möglichst
-    /// wenig verhindert; dank des temporären Ordners bleibt der alte Dump dann erhalten, und das Log nennt das Feld.
+    /// Selbstheilung bei Abstürzen: Vor jedem GameData-Feld steht sein Name in dieser Datei (im Dump-Basisordner),
+    /// danach wird sie gelöscht. Existiert sie beim nächsten F6 noch, ist das Spiel an diesem Feld abgestürzt;
+    /// es kommt dann dauerhaft in <see cref="CrashSkipFile"/>.
     /// </summary>
-    private static readonly string[] GameDataLast = { "assetLibrary", "questData", "rogueData", "frontierData", "legendsData" };
+    private const string CrashMarkerFile = ".bloonsml-dumping-field";
+
+    private const string CrashSkipFile = ".bloonsml-skip-fields";
 
     public static bool Running { get; private set; }
 
@@ -166,14 +176,24 @@ public static class GameDataDumper
         }
 
         // --- Restliches GameData (Income-Sets, Modus-/Schwierigkeits-Mods, Modi, …): ein File pro Feld
+        var marker = Path.Combine(run.BaseDir, CrashMarkerFile);
+        var crashSkip = LoadCrashSkips(run.BaseDir, marker);
         foreach (var prop in GameDataProperties())
         {
+            if (crashSkip.Contains(prop.Name))
+            {
+                run.Fail($"gameData.{prop.Name}", new InvalidOperationException(
+                    $"übersprungen, früherer Dump ist daran abgestürzt (siehe {CrashSkipFile})"));
+                continue;
+            }
             BloonsMLMod.Log.Msg($"gamedata.{prop.Name}");
+            File.WriteAllText(marker, prop.Name);
             TryDump(run, () =>
             {
                 var value = prop.GetValue(gameData);
                 run.Write("gameData", ModelJson.ToJTokenAny(value), "gamedata", prop.Name + ".json");
             }, $"gameData.{prop.Name}");
+            File.Delete(marker);
             yield return null;
         }
 
@@ -237,6 +257,26 @@ public static class GameDataDumper
         };
         run.Write("roundSets", set, "rounds", setName, "_set.json");
         summary.AddRoundSet(setName, rounds);
+    }
+
+    /// <summary>Felder aus früheren Abstürzen; ein liegengebliebener Marker wird dabei übernommen.</summary>
+    private static HashSet<string> LoadCrashSkips(string baseDir, string marker)
+    {
+        var skipFile = Path.Combine(baseDir, CrashSkipFile);
+        if (File.Exists(marker))
+        {
+            var crashed = File.ReadAllText(marker).Trim();
+            if (crashed.Length > 0)
+            {
+                File.AppendAllText(skipFile, crashed + "\n");
+                BloonsMLMod.Log.Warning($"Letzter Dump ist bei gamedata.{crashed} abgestürzt; das Feld wird ab jetzt übersprungen " +
+                                        $"(Liste: {skipFile}, Zeile löschen zum erneuten Versuch).");
+            }
+            File.Delete(marker);
+        }
+        return File.Exists(skipFile)
+            ? File.ReadAllLines(skipFile).Select(l => l.Trim()).Where(l => l.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>GameData-Felder; die großen aus <see cref="GameDataLast"/> am Ende.</summary>

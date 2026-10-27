@@ -93,6 +93,10 @@ Ein kompletter Dump schreibt erst in `<Spielversion>.tmp-<runId>/` und ersetzt `
 Schritt; `maps/` und `matches/` aus dem alten Stand werden übernommen. Bricht der Dump ab (Fehler, Absturz), bleibt der
 alte Stand unverändert; der Rest wird beim nächsten Dump aufgeräumt. `manifest.json` trägt die `runId`.
 
+Stürzt das Spiel beim Serialisieren eines `GameData`-Felds ab, merkt sich die Mod das Feld (`<DumpRoot>/.bloonsml-skip-fields`)
+und überspringt es bei allen weiteren Dumps; im Manifest steht es dann unter `errors`. Zum erneuten Versuch die Zeile
+aus der Datei löschen.
+
 ## Ausgabeformat
 
 `<DumpRoot>/<Spielversion>/` (Spielversion = `Application.version`, z.B. `57.4`):
@@ -109,7 +113,7 @@ alte Stand unverändert; der Rest wird beim nächsten Dump aufgeräumt. `manifes
 | `maps/_index.json` | Metadaten aller Karten (`id`, `difficulty`, …) aus `GameData.mapSet` |
 | `maps/<mapName>.json` | `{gameVersion, mapName, dumpedInMode, dumpedInDifficulty, reverseMode, map: MapModel}`: Pfade (`paths[].points[].point`), Flächen (`areas[]` mit `polygon` und `type`), Blocker, Spawner |
 | `matches/<Spieltyp>_<Modus>_<Schwierigkeit>_<Karte>.json` | Regeln einer echten Partie, geschrieben nachdem das Spiel Modus-, Schwierigkeits- und Challenge-Regeln angewendet hat: `fields` (Partie-Felder des GameModels wie `cash`, `startingHealth`, `maxHealth`, `startRound`/`endRound`, `roundSet`, `incomeSet`, `sellMultiplier`, `gameMode`, `difficultyId`, globale Skalierungen) und `mods` (die `ModModel`s der Partie). CHIMPS hat die Modus-ID `Clicks` |
-| `gamedata/<feld>.json` | Alle übrigen Felder von `GameData` einzeln, u.a. `incomeSets` (Rundengeld), `mods` (Schwierigkeits- und Modus-Presets wie CHIMPS), `modesData`, Bosse, Artefakte; auch reine Asset-/UI-Felder |
+| `gamedata/<feld>.json` | Die übrigen Felder von `GameData` einzeln, u.a. `incomeSets` (Rundengeld-Faktoren je Runde), `mods` (Schwierigkeits- und Modus-Presets wie `Clicks` = CHIMPS, `Hard`, `Impoppable`), `modesData`, Bosse, Artefakte; auch reine Asset-/UI-Felder. Nicht enthalten: `questData`, `rogueData`, `frontierData`, `legendsData` (Kampagnen/Events; `questData` lässt BTD6 57.4 beim Serialisieren abstürzen) |
 | `gamemodel/<feld>.json` | Statische Felder von `GameModel` einzeln (z.B. `freeplayGroups`, Powers, Wissensbaum, Buff-Indikatoren, Helden-/Turm-Sets, globale Skalierungen). Ohne Duplikate (`upgradesByName`, `bloonsByName`, Backing-Fields) und ohne Partie-Felder, die im Menü nur Standardwerte haben (stehen in `matches/`) |
 
 **Rohformat:** Jede Datei ist eine möglichst unveränderte Serialisierung des Spiel-Models über den Serializer von
