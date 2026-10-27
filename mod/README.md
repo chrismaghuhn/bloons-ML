@@ -111,9 +111,8 @@ Behavior-Hierarchie: `AttackModel` → `weapons[]` (`WeaponModel`, `Rate` = Cool
 am Turm und an den Attacks; Camo-Erkennung über `FilterInvisibleModel`/Detection-Behaviors.
 Feldnamen entsprechen den Feldern im Spiel und können sich mit Updates ändern.
 
-Einheiten: Distanzen in Spiel-Einheiten (dieselben wie im Wiki), Cooldowns/Lebensdauern in Sekunden. Die Einheit
-von `start`/`end` in `RoundModel.groups` (Sekunden oder Frames) wird beim ersten Dump gegen die bekannten Runden
-geprüft und hier nachgetragen.
+Einheiten: Distanzen in Spiel-Einheiten (dieselben wie im Wiki), Cooldowns/Lebensdauern in Sekunden.  Ausnahme:
+`start`/`end` in `RoundModel.groups` zählen in Frames bei 60 fps (Runde 1: 20 Red, `start` 0, `end` 1050.75 ≈ 17,5 s).
 
 **`summary.json`** (Übersicht, aus den Rohdaten abgeleitet):
 
@@ -131,5 +130,15 @@ sondern ist Spiel-Code; falls er als Konstante im GameModel steckt, liegt er unt
 
 Der Dump-Ordner bekommt eine eigene `.gitignore` mit `*`, damit die Daten auch in einem Checkout ohne passende
 Repo-`.gitignore` nicht versehentlich committet werden.
+
+## Plausibilitätsprüfung gegen das Wiki
+
+```bash
+python mod/tools/compare_dump_wiki.py --dump data/raw/game_dump/57.4
+```
+
+Vergleicht Basis und reine Pfad-Tiers jedes Turms mit `data/base/towers/` (Kosten, Reichweite, Camo der
+Hauptattacke, damage/pierce/cooldown jeder Wiki-Attacke) und schreibt `compare_wiki.md` in den (gitignored)
+Dump-Ordner. Stand 57.4: Kosten 416/416 und Reichweite 416/416 gleich, Camo 413/416, Attacken 463/608.
 
 Ein Fehler bei einem einzelnen Objekt (auch eine Dateinamen-Kollision) bricht den Dump nicht ab; er steht in `manifest.json` → `errors` und im Log.
