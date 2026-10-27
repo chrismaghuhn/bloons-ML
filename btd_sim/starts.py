@@ -122,8 +122,12 @@ class StartPool:
 class StartStatesCallback(BaseCallback):
     """Pool pflegen und Kennzahlen je Starttyp loggen (`RustVecEnv` mit Startzuständen)."""
 
-    def __init__(self, pool: StartPool, budget: list[float], p_start=0.3, p_random=0.2, every=1):
+    def __init__(self, pool: StartPool, budget: list[float], p_start=0.3, p_random=0.2, every=1, valid=None):
+        """`valid(state_json) -> bool` prüft eigene Snapshots vor der Aufnahme (ein ungültiger Zustand
+        würde sonst `set_starts` und damit das Training abbrechen)."""
         super().__init__()
+        self.valid = valid
+        self.rejected = 0
         self.pool, self.budget = pool, budget
         self.p_start, self.p_random, self.every = p_start, p_random, every
         self.steps = np.zeros(3)
@@ -159,7 +163,11 @@ class StartStatesCallback(BaseCallback):
             if lives_perturbed:
                 self.checks["leben_gestört"].append(survived)
         for s in venv.take_snapshots():
-            self.pool.add(s, "A")
+            if self.valid is None or self.valid(s):
+                self.pool.add(s, "A")
+            else:
+                self.rejected += 1
+        self.logger.record("starts/snapshots_verworfen", self.rejected)
         total = self.steps.sum() or 1.0
         for k, name in enumerate(KINDS):
             self.logger.record(f"starts/schritte_{name}", self.steps[k] / total)

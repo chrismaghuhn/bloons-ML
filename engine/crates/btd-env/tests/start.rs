@@ -345,3 +345,31 @@ fn reset_from_has_no_bans() {
         assert!(obs[e.layout.obs_size - 4..].iter().all(|&v| v == 1.0), "alle verfügbar in der Observation");
     }
 }
+
+#[test]
+fn upgrade_path_avoids_missing_intermediate_variants() {
+    // Pin bekommt 1-0-1, aber 1-0-0 wird aus den Daten entfernt: nur der Weg über 0-0-1 geht
+    // (die alte Reihenfolge "erst Pfad 0" scheiterte daran)
+    let path =
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/fixtures/game_v1_mini.json");
+    let mut raw: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    raw["towers"][0]["variants"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|v| v["tiers"] != serde_json::json!([1, 0, 0]));
+    let d = std::sync::Arc::new(btd_data::v1::GameV1::from_json(&raw.to_string()).unwrap());
+    let mut g = btd_core::Game::new(d).unwrap();
+    let state = StartState {
+        round: 0,
+        cash: 0.0,
+        lives: 10,
+        towers: vec![btd_env::start::TowerState { tower: "pin".into(), x: 0.0, y: 20.0, tiers: [1, 0, 1] }],
+    };
+    state.build(&mut g).unwrap();
+    assert_eq!(g.towers[0].tiers, [1, 0, 1]);
+    let missing = StartState {
+        towers: vec![btd_env::start::TowerState { tower: "pin".into(), x: 0.0, y: 20.0, tiers: [1, 0, 0] }],
+        ..state
+    };
+    assert!(missing.build(&mut g).unwrap_err().contains("Upgrade-Weg"));
+}

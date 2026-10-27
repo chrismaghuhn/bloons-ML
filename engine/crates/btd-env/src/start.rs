@@ -107,16 +107,44 @@ fn can_move(game: &Game, s: &StartState, i: usize, x: f64, y: f64) -> bool {
         })
 }
 
-/// Upgradet Turm `id` von 0-0-0 auf `tiers`; der höchste Pfad zuerst, damit jeder Zwischenstand
-/// eine erlaubte Kombination ist (z.B. 2-0-5: erst 0-0-5, dann 2-0-5).
+/// Upgradet Turm `id` von 0-0-0 auf `tiers` über erlaubte Zwischenstufen. Welche Reihenfolge
+/// geht, hängt von den Daten ab (nicht unterstützte Kombinationen fehlen dort): Breitensuche über
+/// die Stufen-Kombinationen, je Schritt ein Pfad +1, jede Zwischenstufe muss eine Variante haben
+/// (z.B. Wizard 1-0-2 über 1-0-0 und 1-0-1, wenn 0-0-1 gesperrt ist). Bei mehreren Wegen gewinnt
+/// der mit dem kleinsten Pfad zuerst (deterministisch).
 pub fn upgrade_to(game: &mut Game, id: TowerId, tiers: [u8; PATHS]) -> Result<(), String> {
-    let mut order: Vec<usize> = (0..PATHS).collect();
-    order.sort_by_key(|&p| std::cmp::Reverse(tiers[p]));
-    for p in order {
-        for _ in 0..tiers[p] {
-            game.apply(Action::Upgrade { tower: id, path: p as u8 })
-                .map_err(|e| format!("Pfad {p}: {e:?}"))?;
+    let kind = game.tower(id).ok_or("kein Turm")?.kind as usize;
+    let def = &game.data().towers[kind];
+    let mut prev: std::collections::HashMap<[u8; PATHS], ([u8; PATHS], usize)> = Default::default();
+    let mut queue = std::collections::VecDeque::from([[0u8; PATHS]]);
+    while let Some(t) = queue.pop_front() {
+        if t == tiers {
+            break;
         }
+        for p in 0..PATHS {
+            if t[p] >= tiers[p] {
+                continue;
+            }
+            let mut n = t;
+            n[p] += 1;
+            if def.variant(n).is_some() && !prev.contains_key(&n) {
+                prev.insert(n, (t, p));
+                queue.push_back(n);
+            }
+        }
+    }
+    if tiers != [0; PATHS] && !prev.contains_key(&tiers) {
+        return Err(format!("kein erlaubter Upgrade-Weg zu {tiers:?}"));
+    }
+    let mut steps = Vec::new();
+    let mut t = tiers;
+    while t != [0; PATHS] {
+        let (from, p) = prev[&t];
+        steps.push(p);
+        t = from;
+    }
+    for p in steps.into_iter().rev() {
+        game.apply(Action::Upgrade { tower: id, path: p as u8 }).map_err(|e| format!("Pfad {p}: {e:?}"))?;
     }
     Ok(())
 }

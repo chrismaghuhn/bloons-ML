@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
         def buildable(st):
             try:
-                check.reset_from(json.dumps(st))
+                check.reset_from(st if isinstance(st, str) else json.dumps(st))
                 return True
             except ValueError:
                 return False
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             pool.add(st, "B")
         budget = budget_curve(states_b, game_data)
         print(f"Startzustände: {len(states_b)} aus {len(args.start_replays)} Replays (Quelle B)")
-        callbacks.append(StartStatesCallback(pool, budget, args.start_states, args.start_random))
+        callbacks.append(StartStatesCallback(pool, budget, args.start_states, args.start_random, valid=buildable))
     model.learn(total_timesteps=args.steps,
                 callback=callbacks,
                 reset_num_timesteps=not args.resume, tb_log_name=Path(args.out).name)
