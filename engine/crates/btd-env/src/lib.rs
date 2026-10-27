@@ -243,6 +243,12 @@ impl Env {
             return Err(DataError::Invalid("max_builds_per_round muss > 0 sein".into()));
         }
         let game = Game::new(Arc::clone(&spec.data))?;
+        if cfg.record && cfg.randomness {
+            // Replays speichern den Seed nicht und würden beim Nachspielen abweichen
+            return Err(DataError::Invalid(
+                "record und randomness zusammen werden noch nicht unterstützt".into(),
+            ));
+        }
         if cfg.max_banned_towers >= spec.data.towers.len().max(1) {
             return Err(DataError::Invalid(
                 "max_banned_towers muss kleiner als die Zahl der Türme sein".into(),
@@ -714,6 +720,11 @@ impl Env {
     ) -> Result<Vec<replay::RoundCheck>, ReplayError> {
         let (game, checks) = replay.replay_to(&self.spec, until_round, strict)?;
         self.game = game;
+        if self.cfg.randomness {
+            // das nachgespielte Spiel läuft ab hier mit eigenem Zufall weiter
+            let seed = self.next_rand();
+            self.game.set_seed(Some(seed));
+        }
         self.builds_left = self.cfg.max_builds_per_round;
         self.last_replay = None;
         // geladenes Spiel zählt als normale Episode (kein 3-Runden-Ergebnis, kein alter Snapshot)

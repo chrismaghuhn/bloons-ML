@@ -569,20 +569,25 @@ fn last_replay_survives_the_next_reset() {
 }
 
 #[test]
-fn randomness_off_by_default_and_reproducible_per_seed() {
-    let play = |cfg: EnvConfig| {
-        let mut e = Env::new(spec(), cfg).unwrap();
-        let mut obs = vec![0.0; e.layout.obs_size];
-        e.reset(&mut obs);
-        while !e.step(0, &mut obs).terminated {}
-        e.game.state_hash()
-    };
-    let base = play(EnvConfig::default());
-    assert_eq!(
-        base,
-        play(EnvConfig { seed: 9, ..Default::default() }),
-        "ohne randomness zählt der Seed nicht"
-    );
-    let r = |seed| play(EnvConfig { randomness: true, seed, ..Default::default() });
-    assert_eq!(r(1), r(1));
+fn randomness_gives_each_env_its_own_game_seed() {
+    let cfg = |randomness| EnvConfig { randomness, seed: 4, ..Default::default() };
+    let mut v = VecEnv::new(spec(), cfg(true), 4).unwrap();
+    let mut obs = vec![0.0; 4 * v.layout.obs_size];
+    v.reset(&mut obs);
+    let seeds: Vec<_> = v.envs.iter().map(|e| e.game.rng_state()).collect();
+    assert!(seeds.iter().all(Option::is_some));
+    assert!(seeds.windows(2).all(|w| w[0] != w[1]), "{seeds:?}");
+    let first = seeds[0];
+    v.reset(&mut obs);
+    assert_ne!(v.envs[0].game.rng_state(), first, "jede Episode ein neuer Seed");
+    // gleiche Konfiguration, gleiche Seeds
+    let mut w = VecEnv::new(spec(), cfg(true), 4).unwrap();
+    w.reset(&mut obs);
+    assert_eq!(w.envs[0].game.rng_state(), first);
+    // ohne Zufall kein Seed
+    let mut off = VecEnv::new(spec(), cfg(false), 2).unwrap();
+    off.reset(&mut vec![0.0; 2 * off.layout.obs_size]);
+    assert!(off.envs.iter().all(|e| e.game.rng_state().is_none()));
+    // Replays mit Zufall gibt es (noch) nicht
+    assert!(Env::new(spec(), EnvConfig { record: true, randomness: true, ..Default::default() }).is_err());
 }

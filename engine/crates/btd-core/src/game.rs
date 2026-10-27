@@ -491,6 +491,11 @@ impl Game {
         self.rng = seed.map(splitmix64);
     }
 
+    /// Aktueller Zustand des Zufalls (`None` = Mittelwerte), z.B. für Tests und Diagnose.
+    pub fn rng_state(&self) -> Option<u64> {
+        self.rng
+    }
+
     pub fn data(&self) -> &Arc<GameV1> {
         &self.data
     }
