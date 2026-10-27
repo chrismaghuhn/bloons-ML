@@ -973,3 +973,34 @@ fn frozen_bloons_do_not_grow_and_their_timer_pauses() {
     assert_eq!((short.leaked, long.leaked), (2, 2), "{short:?} {long:?}");
     assert!(((long.seconds - short.seconds) - 3.0).abs() < 0.02, "{short:?} vs {long:?}");
 }
+
+#[test]
+fn regrow_chain_takes_one_step_per_interval_and_restores_hp() {
+    // Ceramic (Regrow) mit 11 Schaden: platzt bis zu zwei Reds mit den Vorfahren Ceramic, Blue. Alle Typen
+    // gleich schnell, damit der Leak-Zeitpunkt fest ist; der Leak-Wert zeigt den Typ beim Durchkommen
+    let run_rate = |rate: f64, pin: bool| {
+        let mut d = regrow(with_round(vec![group(3, 1, 0.0, 0.0)]), rate);
+        (d.bloons[3].regrow, d.bloons[3].grow_rate) = (true, rate);
+        for b in &mut d.bloons {
+            b.speed = 25.0;
+        }
+        atk(&mut d, DART).damage = 11.0;
+        for kind in [DART, PIN] {
+            for v in &mut d.towers[kind as usize].variants {
+                v.attacks[0].cooldown = 1000.0;
+            }
+        }
+        d.towers[PIN as usize].variants[0].range = 20.0; // erst kurz vor dem Ende
+        let mut g = Game::new(Arc::new(d)).unwrap();
+        g.cash = Money::from_dollars(10_000);
+        g.apply(Action::Place { kind: DART, x: 0.0, y: 15.0 }).unwrap();
+        if pin {
+            // ein Pin am Ende: 1 Schaden platzt nur eine nachgewachsene Ceramic ohne volle HP
+            g.apply(Action::Place { kind: PIN, x: 45.0, y: 15.0 }).unwrap();
+        }
+        g.play_round()
+    };
+    assert_eq!(run_rate(1.0, false).leaked, 30, "Red -> Blue -> Ceramic vor dem Ende");
+    assert_eq!(run_rate(2.0, false).leaked, 4, "zweiter Schritt erst 2 s nach dem ersten: noch Blue");
+    assert_eq!(run_rate(1.0, true).pops, 3, "Ceramic wächst mit vollen HP nach");
+}
