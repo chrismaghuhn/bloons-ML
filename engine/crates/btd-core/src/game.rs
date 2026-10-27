@@ -106,6 +106,8 @@ struct Projectile {
     clear_left: u32,
     /// IDs der Bloons, die dieses Projektil schon getroffen hat (inkl. Kindern davon).
     hit: SmallVec<[u32; 8]>,
+    /// Ziel der Zielsuche (Bloon-ID), nur mit `ProjectileDef::homing`.
+    target: Option<u32>,
 }
 
 /// Wirkung eines Treffers: Pops, entfernte Bloons (0/1) und neue Kinder.
@@ -799,6 +801,7 @@ impl Game {
                                         clear_every,
                                         clear_left: clear_every,
                                         hit: SmallVec::new(),
+                                        target: def.homing.map(|_| b.id[first]),
                                     });
                                 }
                             }
@@ -932,6 +935,9 @@ fn step_projectiles(
             p.x = *ox + lx * *rc - ly * *rs;
             p.y = *oy + lx * *rs + ly * *rc;
         } else {
+            if let Some(h) = p.def.as_ref().and_then(|d| d.homing) {
+                steer(w, bloons, p, h, dt);
+            }
             p.x += p.vx * dt;
             p.y += p.vy * dt;
         }
@@ -974,6 +980,44 @@ fn step_projectiles(
     projectiles.retain(|p| p.pierce > 0.0 && p.ttl > 0);
     projectiles.extend(fx.spawned); // fliegen ab dem nächsten Tick
     pops
+}
+
+/// Zielsuche: hält das Ziel, solange es lebt, anvisierbar ist und noch nicht getroffen wurde; sonst
+/// (mit `retarget`) der nächste solche Bloon im Suchradius und Kegel um die Flugrichtung [KAL: das
+/// Spiel wählt evtl. anders]. Dreht die Flugrichtung um höchstens `turn * dt` zum Ziel.
+fn steer(w: &World, b: &BloonStore, p: &mut Projectile, h: crate::tower::HomingRt, dt: Real) {
+    let ok = |i: usize, p: &Projectile| {
+        b.alive[i] && !p.hit.contains(&b.id[i]) && w.eligible(b, i, p.camo, &p.extras)
+    };
+    let mut idx = p.target.and_then(|id| b.id.iter().position(|&x| x == id)).filter(|&i| ok(i, p));
+    if idx.is_none() && h.retarget {
+        let speed = (p.vx * p.vx + p.vy * p.vy).sqrt();
+        let mut best = Real::INFINITY;
+        for i in 0..b.len() {
+            let (dx, dy) = (b.x[i] - p.x, b.y[i] - p.y);
+            let d2 = dx * dx + dy * dy;
+            // im Kegel: cos(Winkel zwischen Flugrichtung und Ziel) >= cos_half
+            let in_cone = dx * p.vx + dy * p.vy >= h.cos_half * d2.sqrt() * speed;
+            if d2 <= h.dist2 && d2 < best && in_cone && ok(i, p) {
+                (best, idx) = (d2, Some(i));
+            }
+        }
+    }
+    p.target = idx.map(|i| b.id[i]);
+    let Some(i) = idx else { return };
+    let cur = atan2(p.vy, p.vx);
+    let want = atan2(b.y[i] - p.y, b.x[i] - p.x);
+    let pi = std::f64::consts::PI as Real;
+    let mut diff = want - cur;
+    if diff > pi {
+        diff -= 2.0 * pi;
+    } else if diff < -pi {
+        diff += 2.0 * pi;
+    }
+    let step = h.turn * dt;
+    let a = cur + diff.clamp(-step, step);
+    let speed = (p.vx * p.vx + p.vy * p.vy).sqrt();
+    (p.vx, p.vy) = (speed * cos(a), speed * sin(a));
 }
 
 /// Puffer für Kontakt- und Verbrauchs-Effekte eines Ticks.
@@ -1041,6 +1085,7 @@ impl Effects {
                             clear_left: 0,
                             // Spiel: passOnCollidedWith -> Splitter treffen nichts, was das Projektil schon traf
                             hit: if *inherit_hit { p.hit.clone() } else { SmallVec::new() },
+                            target: None,
                         });
                     }
                 }

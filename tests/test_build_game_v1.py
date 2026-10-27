@@ -305,3 +305,19 @@ def test_strict_models_only_where_they_are_evaluated():
     proj_of(m)["filters"].append(T("FilterAllExceptTargetModel"))
     with pytest.raises(b.Unsupported, match="FilterAllExceptTargetModel"):
         b.convert_variant(m, [0, 0, 0])
+
+
+def test_homing_from_track_target_models():
+    wiz = T("TrackTargetModel", distance=80.0, trackNewTargets=True, constantlyAquireNewTarget=False,
+            maxSeekAngle=360.0, ignoreSeekAngle=False, overrideRotation=False, useLifetimeAsDistance=False,
+            expireOnContactTarget=False, turnRate=360.0, turnRatePerFrame=0.0, TurnRate=360.0)
+    h = b.convert_variant(dart_like(proj_extra=[wiz]), [0, 0, 0])["attacks"][0]["delivery"]["homing"]
+    assert h == {"turn_rate": 360.0, "distance": 80.0, "max_angle": 360.0, "retarget": True}
+    ninja = T("TrackTargetWithinTimeModel", timeInFrames=3.0, distance=9999999.0, trackNewTargets=True,
+              constantlyAquireNewTarget=False, maxSeekAngle=144.0, ignoreSeekAngle=False, overrideRotation=False,
+              useLifetimeAsDistance=True, expireOnContactTarget=False, turnRatePerFrame=0.0, TurnRate=9999999.0)
+    h = b.convert_variant(dart_like(proj_extra=[ninja]), [0, 0, 0])["attacks"][0]["delivery"]["homing"]
+    # Reichweite = Flugweite (300 × 0,25), Drehung bis zur Kegelkante (72°) in 3 Frames
+    assert (h["distance"], h["max_angle"], h["turn_rate"]) == (75.0, 144.0, 72.0 / 0.05)
+    with pytest.raises(b.Unsupported, match="Sonderfälle"):
+        b.convert_variant(dart_like(proj_extra=[dict(wiz, constantlyAquireNewTarget=True)]), [0, 0, 0])

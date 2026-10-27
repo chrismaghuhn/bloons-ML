@@ -82,7 +82,8 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
 # Nur dort erlaubt, wo der Konverter sie wirklich auswertet (`use`); jedes andere Vorkommen (z.B. in
 # einem Kontakt-Projektil eines späteren Upgrades) macht die Variante "nicht unterstützt".
 STRICT = {"InstantModel", "InstantDamageEmissionModel", "FilterAllExceptTargetModel", "BurstWeaponBehaviorModel",
-          "RandomArcEmissionModel", "RandomEmissionModel", "OffsetModel", "RemoveBloonModifiersModel"}
+          "RandomArcEmissionModel", "RandomEmissionModel", "OffsetModel", "RemoveBloonModifiersModel",
+          "TrackTargetModel", "TrackTargetWithinTimeModel"}
 HANDLED |= STRICT
 _used: set = set()
 
@@ -658,6 +659,29 @@ def check_remove_modifiers(proj):
         use(b)
 
 
+def convert_homing(proj, speed: float, lifespan: float):
+    """Zielsuche (Wizard: TrackTargetModel, Ninja: TrackTargetWithinTimeModel) -> game_v1 `homing`."""
+    found = behaviors(proj, "TrackTargetModel") + behaviors(proj, "TrackTargetWithinTimeModel")
+    if not found:
+        return None
+    if len(found) > 1:
+        raise Unsupported("mehrere Zielsuchen")
+    h = found[0]
+    if h.get("constantlyAquireNewTarget") or h.get("expireOnContactTarget") or h.get("overrideRotation") \
+            or h.get("turnRatePerFrame", 0.0):
+        raise Unsupported(f"{short(h['$type'])}(Sonderfälle)")
+    distance = speed * lifespan if h.get("useLifetimeAsDistance") else h["distance"]
+    max_angle = 360.0 if h.get("ignoreSeekAngle") else min(h["maxSeekAngle"], 360.0)
+    if short(h["$type"]) == "TrackTargetWithinTimeModel":
+        # dreht sich innerhalb von timeInFrames (60/s) bis zur Kegelkante aufs Ziel [KAL]
+        turn_rate = max_angle / 2.0 / max(h["timeInFrames"] / 60.0, 1e-6)
+    else:
+        turn_rate = h.get("TurnRate", h.get("turnRate"))
+    use(h)
+    return {"turn_rate": float(turn_rate), "distance": float(distance), "max_angle": float(max_angle),
+            "retarget": bool(h.get("trackNewTargets"))}
+
+
 def convert_instant(proj, weapon) -> dict:
     """Sofort-Treffer (Sniper, Desperado): trifft genau das Ziel ("First") ohne Flug."""
     if short(weapon["emission"]["$type"]) not in ("InstantDamageEmissionModel", "SingleEmissionModel"):
@@ -707,6 +731,9 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
         else:
             delivery = {"kind": "projectile", "speed": travel[0], "lifespan": travel[1],
                         "radius": proj["radius"], "emission": emission}
+            homing = convert_homing(proj, travel[0], travel[1])
+            if homing:
+                delivery["homing"] = homing
         delivery["on_contact"] = convert_contacts(proj)
         delivery["on_exhaust"] = convert_exhaust(proj, nested=False)
         if clear:

@@ -248,10 +248,24 @@ pub enum Delivery {
         /// Frag Bombs: Explosion + Splitter).
         #[serde(default)]
         on_contact: Vec<Contact>,
+        /// Zielsuche (Wizard, Ninja): das Projektil dreht sich im Flug auf sein Ziel.
+        #[serde(default)]
+        homing: Option<Homing>,
     },
 }
 
-/// Effekt bei Kontakt eines Projektils.
+/// Zielsuchendes Projektil (Spiel: TrackTargetModel / TrackTargetWithinTimeModel). Startziel ist
+/// das Ziel des Turms; ist es weg, sucht es mit `retarget` den nächsten Bloon im Umkreis `distance`
+/// und im Kegel `max_angle` (voller Öffnungswinkel, Grad) um die Flugrichtung [KAL].
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Homing {
+    /// Grad pro Sekunde.
+    pub turn_rate: f64,
+    pub distance: f64,
+    pub max_angle: f64,
+    pub retarget: bool,
+}
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Contact {
@@ -1030,8 +1044,15 @@ impl GameV1 {
                                 path,
                                 clear_hits,
                                 on_exhaust,
+                                homing,
                             } => {
                                 a.pierce >= 1 // ohne Pierce wäre das Projektil sofort verbraucht
+                                    && homing.map_or(true, |h| {
+                                        pos(h.turn_rate)
+                                            && pos(h.distance)
+                                            && (0.0..=360.0).contains(&h.max_angle)
+                                            && path.is_none()
+                                    })
                                     && clear_hits.map_or(true, |c| c > 0.0)
                                     && on_exhaust.len() <= 8
                                     && on_contact.len() <= 8

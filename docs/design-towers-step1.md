@@ -1,4 +1,4 @@
-# Design: mehr Türme, Schritt 1 (abgestimmt 2026-10-27; Teil 1 umgesetzt)
+# Design: mehr Türme, Schritt 1 (abgestimmt 2026-10-27; Teil 1 und 2 umgesetzt)
 
 Ziel: von 6 auf 12 Türme (Sniper, Desperado, Super Monkey, Druid, Ninja, Wizard), mit Mechaniken
 nah an dem, was die Engine schon kann. Buffs/Farm (Village, Banana Farm, Alchemist) sind Schritt 2
@@ -71,3 +71,11 @@ Druid 7, Ninja 3, Wizard 5 von je 64. Sofort-Treffer laufen über die vorhandene
 Modelle sind "strikt": nur an der ausgewerteten Stelle erlaubt, sonst bleibt die Variante gesperrt.
 Häufigste Lücken danach: Abilities (M4), Wind/Knockback, Zielsuche (Teil 2, v.a. Wizard), Desperado-
 Eigenheiten (Vagrant/Standoff/Distanz-Bonus).
+
+## Stand Teil 2 (Zielsuche)
+
+`homing {turn_rate, distance, max_angle, retarget}` an geraden Projektilen: Startziel = Ziel des Turms;
+ist es weg oder schon getroffen, mit `retarget` der nächste anvisierbare Bloon im Suchradius und im
+Kegel um die Flugrichtung; Drehung höchstens `turn_rate` pro Sekunde. TrackTargetWithinTime (Ninja):
+Drehung bis zur Kegelkante in `timeInFrames`. [KAL: Zielwahl beim Neu-Anvisieren, Kegel = voller
+Öffnungswinkel.] Damit 275 von 768 Kombinationen (Wizard 21, Ninja 6).

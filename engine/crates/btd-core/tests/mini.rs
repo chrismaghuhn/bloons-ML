@@ -370,7 +370,9 @@ fn shards_can_inherit_the_hit_set() {
 
 // ---------------------------------------------------------------- M2c: Effekte
 
-use btd_data::v1::{Burst, Contact, Crit, Delivery, Dot, Emission, Freeze, Push, Slow, TagFactor, Zone};
+use btd_data::v1::{
+    Burst, Contact, Crit, Delivery, Dot, Emission, Freeze, Homing, Push, Slow, TagFactor, Zone,
+};
 
 fn atk(d: &mut GameV1, kind: u8) -> &mut btd_data::v1::AttackV1 {
     &mut d.towers[kind as usize].variants[0].attacks[0]
@@ -844,4 +846,43 @@ fn validation_rejects_empty_bursts() {
     assert!(d.validate().is_err());
     atk(&mut d, PIN).burst = Some(Burst { count: 2, interval: -1.0 });
     assert!(d.validate().is_err());
+}
+
+/// Tack über dem Track mit einer einzigen Nadel fest Richtung +x (fliegt ohne Zielsuche vorbei).
+fn homing_tack(homing: Option<Homing>) -> btd_core::RoundReport {
+    let mut d = data();
+    d.rounds[0] = vec![group(0, 10, 0.0, 9.0)];
+    if let Delivery::Projectile { emission, homing: h, .. } = &mut d.towers[3].variants[0].attacks[0].delivery
+    {
+        *emission = Emission::Arc { count: 1, angle: 360.0, offset: 0.0, fixed: true };
+        *h = homing;
+    }
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.apply(Action::Place { kind: 3, x: 0.0, y: -13.0 }).unwrap();
+    g.play_round()
+}
+
+#[test]
+fn homing_projectiles_turn_towards_their_target() {
+    let h = |turn_rate| Some(Homing { turn_rate, distance: 100.0, max_angle: 360.0, retarget: true });
+    assert_eq!(homing_tack(None).pops, 0, "ohne Zielsuche vorbei");
+    let fast = homing_tack(h(2000.0));
+    assert!(fast.pops >= 8, "dreht schnell genug zum Track: {fast:?}");
+    assert_eq!(homing_tack(h(30.0)).pops, 0, "30°/s reicht in 0,2 s Flug nicht für 90°");
+}
+
+#[test]
+fn validation_rejects_bad_homing() {
+    let mut d = data();
+    let set = |d: &mut GameV1, homing| {
+        if let Delivery::Projectile { homing: h, .. } = &mut d.towers[3].variants[0].attacks[0].delivery {
+            *h = Some(homing);
+        }
+    };
+    set(&mut d, Homing { turn_rate: 0.0, distance: 10.0, max_angle: 90.0, retarget: true });
+    assert!(d.validate().is_err(), "Drehrate 0");
+    set(&mut d, Homing { turn_rate: 90.0, distance: 10.0, max_angle: 400.0, retarget: true });
+    assert!(d.validate().is_err(), "Kegel > 360°");
+    set(&mut d, Homing { turn_rate: 90.0, distance: 10.0, max_angle: 90.0, retarget: true });
+    assert!(d.validate().is_ok());
 }

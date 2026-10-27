@@ -201,6 +201,16 @@ pub struct ProjectileDef {
     pub clear_hits: Option<Real>,
     /// Kollidiert mit Bloons (nur Splitter können es abschalten)
     pub collide: bool,
+    pub homing: Option<HomingRt>,
+}
+
+/// Zielsuche im Sim-Typ: Drehung pro Sekunde (Radiant), Suchradius², cos des halben Kegels.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HomingRt {
+    pub turn: Real,
+    pub dist2: Real,
+    pub cos_half: Real,
+    pub retarget: bool,
 }
 
 /// Kurvenbahn (Boomerang) in lokalen Koordinaten, +y = Richtung zum Ziel.
@@ -308,6 +318,7 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
                 path: None,
                 clear_hits: None,
                 collide: *collide,
+                homing: None,
             }),
             pierce: *pierce,
             damage: real(*damage),
@@ -419,6 +430,7 @@ impl Tower {
                             path,
                             clear_hits,
                             on_exhaust,
+                            homing,
                         } => AttackKind::Projectile(Arc::new(ProjectileDef {
                             speed: real(*speed),
                             lifespan: real(*lifespan),
@@ -429,6 +441,12 @@ impl Tower {
                             path: path.as_ref().map(|p| PathRt::new(p)),
                             clear_hits: clear_hits.map(real),
                             collide: true,
+                            homing: homing.map(|h| HomingRt {
+                                turn: real(h.turn_rate.to_radians()),
+                                dist2: real(h.distance * h.distance),
+                                cos_half: real(libm::cos((h.max_angle / 2.0).to_radians())),
+                                retarget: h.retarget,
+                            }),
                         })),
                     },
                     extras: Arc::new(ExtrasRt::new(&a.extras, tags)),
