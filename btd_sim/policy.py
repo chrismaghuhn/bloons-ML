@@ -88,7 +88,7 @@ class GridNet(nn.Module):
         pooled = torch.cat([x.mean((2, 3)), x.amax((2, 3)), s], 1)
         return x, pooled
 
-    def compile(self, device) -> bool:
+    def try_compile(self, device) -> bool:
         """Rumpf mit torch.compile übersetzen (~1,5x schneller auf CUDA, braucht python3-dev).
         Nur die Methode wird ersetzt, Parameter und state_dict bleiben unverändert. Klappt das
         Übersetzen nicht, bleibt alles wie es war und es gibt `False`."""

@@ -68,7 +68,8 @@ Runde 40 und Freeplay bis zum Verlust (Daten für Runde 41–60 fehlen der Sim n
 ## 2026-10-27: Training schneller (bf16, channels_last, torch.compile)
 
 Die Zeit pro PPO-Iteration (32k Schritte, 64 Envs) steckt zu ~85 % im Update (6 Epochen Backprop
-durch das Conv-Netz), nicht in der Engine. Gemessen mit Conv 32×4, Batch 1024, alles andere gleich:
+durch das Conv-Netz), nicht in der Engine. Gemessen mit Conv 32×4, Batch 1024, alles andere gleich
+(die f32-Zeile lief parallel zu BTD6 auf derselben GPU, ist also etwas zu langsam):
 
 | Variante | Rollout | Update | Schritte/s |
 |---|---|---|---|
@@ -77,8 +78,9 @@ durch das Conv-Netz), nicht in der Engine. Gemessen mit Conv 32×4, Batch 1024, 
 | + torch.compile (`--compile`, Standard) | 3,7 s | 11,2 s | **2 200** |
 | + 256 statt 64 Envs | 2,3 s | 11,7 s | 2 330 (ändert die Rollout-Länge, nicht übernommen) |
 
-bf16 lernt gleich gut: Lauf mit Seed 1 erreicht Ø Runde 40 ab 1,57M Schritten (f32: 2,6M, Streuung
-zwischen Läufen), 19/19 Siege, 3M Schritte in 28 statt 57 min. torch.compile braucht die
+bf16 lernt gleich gut: Lauf mit Seed 1 erreicht Ø Runde 40 erstmals bei 1,44M und stabil ab 1,57M
+Schritten (f32: 2,6M, Streuung zwischen Läufen), 19/19 Siege. 3M Schritte dauerten 28 min (ohne
+compile, GPU für sich); der f32-Lauf brauchte 57 min, teilte sich die GPU aber mit dem MLP-Lauf. torch.compile braucht die
 Python-Header (`sudo apt install python3.12-dev`); ohne sie rechnet `train.py` mit einer Warnung
 unkompiliert weiter. Schneller ginge es nur noch mit weniger Epochen oder kleinerem Netz, was das
 Lernen verändert.
