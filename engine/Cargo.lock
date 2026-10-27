@@ -7,6 +7,8 @@ name = "btd-core"
 version = "0.1.0"
 dependencies = [
  "btd-data",
+ "serde",
+ "serde_json",
  "smallvec",
  "xxhash-rust",
 ]

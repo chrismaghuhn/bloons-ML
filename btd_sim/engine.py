@@ -127,6 +127,8 @@ TOWERS = [
 MAX_TIER = 3
 MAX_SECOND_PATH = 2  # wie in BTD6: nur ein Pfad darf auf die höchste Stufe
 SELL_RATIO = 0.7
+CHILD_SPACING = 0.15  # Kinder spawnen leicht hinter dem Parent (Zellen)
+ROUND_BONUS_BASE = 100  # Rundenbonus = ROUND_BONUS_BASE + Rundennummer
 
 
 @dataclass
@@ -345,7 +347,7 @@ class Game:
                         keep[i] = False
                         pops_total += pops
                         for j, c in enumerate(rest):  # Kinder leicht versetzt
-                            add_d.append(dist[i] - 0.15 * j)
+                            add_d.append(dist[i] - CHILD_SPACING * j)
                             add_k.append(c)
                     if not keep.all() or add_d:
                         dist = np.concatenate([dist[keep], np.array(add_d)])
@@ -359,7 +361,7 @@ class Game:
         self.cash += pops_total
         if self.lives > 0:
             self.round += 1
-            self.cash += 100 + self.round  # Rundenbonus
+            self.cash += ROUND_BONUS_BASE + self.round
         return {"leaked": lives_before - self.lives, "pops": pops_total, "seconds": t}
 
     # -- Debug-Ausgabe -------------------------------------------------

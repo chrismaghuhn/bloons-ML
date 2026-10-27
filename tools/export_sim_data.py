@@ -4,7 +4,8 @@ Die Rust-Engine lädt diese Datei für den M1-Paritätsmodus. So gibt es nur ein
 Karte, Bloons, Türme und Runden, und Rust muss weder das Pfad-Raster noch den
 Runden-Generator nachbauen.
 
-    python tools/export_sim_data.py
+    python tools/export_sim_data.py           # schreiben
+    python tools/export_sim_data.py --check   # nur prüfen, ob die Datei aktuell ist
 """
 import json
 import sys
@@ -21,19 +22,19 @@ def grid(mask):
     return ["".join("#" if v else "." for v in row) for row in mask]
 
 
-def main():
+def build() -> dict:
     track = e.Track(e.MONKEY_MEADOW)
-    data = {
+    return {
         "format": "sim_v0",
         "rules": {
             "dt": e.DT,
             "cd_eps": e.CD_EPS,
             "max_round_seconds": e.Game.MAX_ROUND_SECONDS,
-            "child_spacing": 0.15,
+            "child_spacing": e.CHILD_SPACING,
             "start_cash": e.Game.START_CASH,
             "start_lives": e.Game.START_LIVES,
             "sell_ratio": e.SELL_RATIO,
-            "round_bonus_base": 100,
+            "round_bonus_base": e.ROUND_BONUS_BASE,
             "max_tier": e.MAX_TIER,
             "max_second_path": e.MAX_SECOND_PATH,
         },
@@ -42,6 +43,8 @@ def main():
             "grid_w": e.GRID_W,
             "grid_h": e.GRID_H,
             "points": track.pts.tolist(),
+            # kumulierte Längen mitliefern statt in Rust neu zu rechnen (np.hypot != sqrt bei Diagonalen)
+            "cum": track.cum.tolist(),
             "path_mask": grid(track.path_mask),
             "buildable": grid(track.buildable),
         },
@@ -58,7 +61,21 @@ def main():
         ],
         "rounds": [[[t, e.BLOON_NAMES[k]] for t, k in r] for r in e.ROUNDS],
     }
-    OUT.write_text(json.dumps(data, indent=1) + "\n")
+
+
+def render(data: dict) -> str:
+    return json.dumps(data, indent=1) + "\n"
+
+
+def main():
+    text = render(build())
+    if "--check" in sys.argv:
+        if not OUT.exists() or OUT.read_text() != text:
+            sys.exit(f"{OUT.relative_to(ROOT)} ist veraltet: python tools/export_sim_data.py")
+        print(f"{OUT.relative_to(ROOT)} ist aktuell")
+        return
+    OUT.write_text(text)
+    data = json.loads(text)
     print(f"{OUT.relative_to(ROOT)}: {len(data['rounds'])} Runden, {len(data['towers'])} Türme, "
           f"{len(data['bloons'])} Bloons")
 

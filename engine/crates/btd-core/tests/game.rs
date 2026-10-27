@@ -10,7 +10,7 @@ fn data() -> GameData {
 }
 
 fn game() -> Game {
-    Game::new(Arc::new(data()))
+    Game::new(Arc::new(data())).unwrap()
 }
 
 const DART: u8 = 0;
@@ -107,7 +107,7 @@ fn cooldown_is_not_snapped_to_tick() {
     for cooldown in [0.12, 0.2, 0.23] {
         let mut d = data();
         d.rounds[0] = (0..100).map(|i| Spawn { time: i as f64 * 0.1, kind: 0 }).collect();
-        let mut g = Game::new(Arc::new(d));
+        let mut g = Game::new(Arc::new(d)).unwrap();
         g.cash = Money::from_dollars(10_000);
         g.apply(Action::Place { kind: DART, x: 7, y: 4 }).unwrap();
         let tw = &mut g.towers[0];
@@ -118,6 +118,13 @@ fn cooldown_is_not_snapped_to_tick() {
         assert_eq!((r.pops, r.leaked), (100, 0));
         assert!((r.seconds - 99.0 * cooldown).abs() <= 0.1 + 1e-6, "{cooldown}: {r:?}");
     }
+}
+
+#[test]
+fn rejects_invalid_hand_built_data() {
+    let mut d = data();
+    d.bloons[0].children = vec![0]; // red -> red: Zyklus
+    assert!(Game::new(Arc::new(d)).is_err());
 }
 
 #[test]

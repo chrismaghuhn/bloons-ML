@@ -2,7 +2,9 @@
 //!
 //! M1: Funktionsumfang der Python-Referenz-Sim (`btd_sim`), Hitscan-Angriffe, Grid-Platzierung.
 //! Mit dem Feature `f64` rechnet der Sim-Zustand in f64 und ist dann bit-identisch zu numpy,
-//! was die Paritätstests nutzen. Standard ist f32 wie in Unity.
+//! was die Paritätstests nutzen (`tests/parity.rs`). Standard ist f32 wie in Unity; dieser
+//! Build ist nur zu sich selbst deterministisch und weicht von der Referenz ab, weil sich
+//! Positionen in f32 anders runden.
 
 pub mod bloon;
 pub mod game;
