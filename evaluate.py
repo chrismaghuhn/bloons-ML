@@ -2,6 +2,7 @@
 
     python evaluate.py --random
     python evaluate.py --model models/ppo_btd --show
+    python evaluate.py --model models/exp_conv --data data/local/game_v1_tutorial_medium.json --preview 3
 """
 import argparse
 
@@ -16,7 +17,7 @@ def play(env, policy, show=False):
     while not done:
         a = policy(obs, env.action_masks())
         obs, r, done, _, info = env.step(a)
-    if show:
+    if show and hasattr(env, "render"):
         print(env.render())
     return info["round"], info["lives"]
 
@@ -27,16 +28,24 @@ if __name__ == "__main__":
     ap.add_argument("--random", action="store_true")
     ap.add_argument("--episodes", type=int, default=10)
     ap.add_argument("--show", action="store_true")
+    ap.add_argument("--data", default=None, help="game_v1-Datei: Rust-Env statt Python-Referenz")
+    ap.add_argument("--preview", type=int, default=0)
+    ap.add_argument("--stochastic", action="store_true", help="Aktionen samplen statt argmax")
     args = ap.parse_args()
 
-    env = BTDEnv()
+    if args.data:
+        from btd_sim.rust_env import RustBTDEnv
+        env = RustBTDEnv(args.data, preview_rounds=args.preview)
+    else:
+        env = BTDEnv()
     rng = np.random.default_rng(0)
     if args.random:
         policy = lambda obs, mask: rng.choice(np.flatnonzero(mask))
     else:
         from sb3_contrib import MaskablePPO
         model = MaskablePPO.load(args.model)
-        policy = lambda obs, mask: model.predict(obs, action_masks=mask, deterministic=True)[0]
+        det = not args.stochastic
+        policy = lambda obs, mask: model.predict(obs, action_masks=mask, deterministic=det)[0]
 
     results = [play(env, policy, args.show) for _ in range(args.episodes)]
     rounds = [r for r, _ in results]

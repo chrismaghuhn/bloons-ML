@@ -41,8 +41,13 @@ cargo run --release -p btd-tools -- demo --data ../data/local/game_v1_tutorial_m
 cargo run --release -p btd-tools -- script --data ../data/local/game_v1_tutorial_medium.json
 cargo test --release -p btd-core --test dump_local -- --ignored
 cargo test --release -p btd-tools --test benchmark -- --ignored
-cd .. && .venv/bin/python train.py --data data/local/game_v1_tutorial_medium.json --preview 3 --envs 64
+cd .. && .venv/bin/python train.py --data data/local/game_v1_tutorial_medium.json --preview 3 --envs 64 --arch conv
+.venv/bin/python evaluate.py --model models/ppo_btd --data data/local/game_v1_tutorial_medium.json --preview 3
 ```
+
+`--arch conv` nutzt die Faltungs-Policy aus `btd_sim/policy.py`: Raster und Skalare gehen durch
+Residual-Faltungen, die Logits für Bauen/Upgrade/Verkaufen kommen pro Zelle direkt aus dem Netz.
+Standard ist das flache MLP (`--arch mlp`). Die erreichte Runde steht in Tensorboard unter `btd/`.
 
 Der Konverter schreibt neben der Datei einen Abdeckungs-Report (`*_coverage.md`): welche der 384
 Upgrade-Kombinationen der 6 Primary-Türme die Engine simuliert und was den übrigen fehlt.

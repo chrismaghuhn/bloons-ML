@@ -75,7 +75,7 @@ pub struct BloonStore {
     pub hp: Vec<Real>,
     pub dist: Vec<Real>,
     pub seg: Vec<u16>,
-    /// Position auf dem Track, zwischengespeichert: immer `track.pos(dist, seg)`.
+    /// Position auf dem Track, zwischengespeichert: für lebende Bloons immer `track.pos(dist, seg)`.
     pub x: Vec<Real>,
     pub y: Vec<Real>,
     pub alive: Vec<bool>,
