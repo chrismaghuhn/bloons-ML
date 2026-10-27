@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use btd_data::v1::{
-    Contact, Delivery, Emission, HitExtras, HitFilter, Props, TagFactor, TowerDefV1, VariantV1, PATHS,
+    Contact, Delivery, Emission, HitExtras, HitFilter, Props, TagFactor, Targeting, TowerDefV1, VariantV1,
+    PATHS,
 };
 use btd_data::TowerKind;
 use smallvec::SmallVec;
@@ -176,6 +177,8 @@ pub struct AttackRt {
     pub burst: Option<(u32, Real)>,
     pub burst_left: u32,
     pub burst_cd: Real,
+    /// `Targeting::TrackBest`: Explosionsradius, zu dem `Game` den festen Zielpunkt kennt.
+    pub track_best: Option<f64>,
 }
 
 /// Wie der Angriff trifft (Sim-Typ, aus `Delivery`).
@@ -205,6 +208,16 @@ pub struct ProjectileDef {
     /// Kollidiert mit Bloons (nur Splitter können es abschalten)
     pub collide: bool,
     pub homing: Option<HomingRt>,
+    /// Wurf: fliegt zum Zielpunkt und löst dort `on_exhaust` aus (`collide` ist dann aus).
+    pub lob: Option<LobRt>,
+}
+
+/// Wurf im Sim-Typ (aus `Delivery::Lob`): feste Flugzeit oder Tempo, Streuung um den Zielpunkt.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LobRt {
+    pub time: Option<Real>,
+    pub speed: Option<Real>,
+    pub spread: Real,
 }
 
 /// Zielsuche im Sim-Typ: Drehung pro Sekunde (Radiant), Suchradius², cos des halben Kegels.
@@ -322,6 +335,7 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
                 clear_hits: None,
                 collide: *collide,
                 homing: None,
+                lob: None,
             }),
             pierce: *pierce,
             damage: real(*damage),
@@ -550,7 +564,27 @@ impl Tower {
                                 cos_half: real(libm::cos((h.max_angle / 2.0).to_radians())),
                                 retarget: h.retarget,
                             }),
+                            lob: None,
                         })),
+                        Delivery::Lob { time, speed, spread, on_arrive } => {
+                            AttackKind::Projectile(Arc::new(ProjectileDef {
+                                speed: 0.0,
+                                lifespan: 0.0,
+                                radius: 0.0,
+                                emission: emission_rt(&Emission::Single {}),
+                                contacts: Vec::new(),
+                                on_exhaust: on_arrive.iter().map(|c| contact_rt(c, tags)).collect(),
+                                path: None,
+                                clear_hits: None,
+                                collide: false,
+                                homing: None,
+                                lob: Some(LobRt {
+                                    time: time.map(real),
+                                    speed: speed.map(real),
+                                    spread: real(*spread),
+                                }),
+                            }))
+                        }
                     },
                     extras: Arc::new(ExtrasRt::new(&a.extras, tags)),
                     crit: a.crit.map(|c| (real(c.damage), c.every.max(1))),
@@ -564,6 +598,9 @@ impl Tower {
                     burst: a.burst.map(|b| (b.count, real(b.interval))),
                     burst_left: 0,
                     burst_cd: 0.0,
+                    track_best: (a.targeting == Targeting::TrackBest)
+                        .then(|| a.delivery.track_best_radius())
+                        .flatten(),
                 }
             })
             .collect();

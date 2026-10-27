@@ -185,7 +185,9 @@ in den Daten, läuft der Tick-Loop genau wie bisher (Parität, §6).
 
 ### 2.1 Wurf (B1)
 
-Neue Option an `Delivery::Projectile`: `lob: {time | speed}`. Das Projektil fliegt geradlinig zu einem
+Neue Lieferart `Delivery::Lob {time | speed, spread, on_arrive}` (zuerst als Option an `Delivery::Projectile`
+geplant; als eigene Lieferart in Teil 1a umgesetzt, weil Tempo, Lebensdauer und Radius eines Flugs dort keinen
+Sinn ergeben). Das Projektil fliegt geradlinig zu einem
 **Zielpunkt** (Position des Ziels beim Abwurf bzw. der Zielpunkt aus §2.2), trifft unterwegs nichts
 (`filterCollisionWhileMoving`) und löst bei Ankunft `on_exhaust` aus bzw. wird zum Bodenobjekt (§2.3).
 - `time`: feste Flugzeit (Spike 0,9 s, Mortar 0,5 s), `speed`: Flugzeit = Abstand / Tempo (Alchemist 250, Sentry 80).
@@ -552,3 +554,58 @@ Antworten auf §10:
     auf einen gesperrten Typ verfällt. Bei t21 sind das 7 von 21 (bei t14 1 von 14), zufällige Startzustände
     haben also weniger Türme. Bewusst nicht in Teil 0 geändert, weil eine Ziehung nur unter freien Typen den
     Zufallsstrom für t14 verschiebt; vor dem t21-Lauf entscheiden.
+
+## Stand Teil 1a (Mortar, Engineer Pin/Double Gun, 2026-10-27)
+
+- **btd-data:**
+  - Neue Lieferart `Delivery::Lob {time | speed, spread, on_arrive}`.
+  - `Targeting::TrackBest`, nur mit Wurf und Explosion; der Radius ist die größte Explosion des Wurfs
+    (`Delivery::track_best_radius`).
+  - Validierung: genau eins von `time`/`speed`, `on_arrive` nicht leer, nur Explosionen.
+- **Engine:**
+  - Ein Wurf ist ein Projektil ohne Kollision. Es fliegt in ganzen Ticks (`ticks_of`) vom Turm zum Zielpunkt
+    und löst dort `on_exhaust` aus.
+  - Zielpunkt ist der vorderste Bloon beim Abwurf oder bei `track_best` der feste Punkt.
+  - Gefeuert wird wie bisher nur, wenn ein anvisierbarer Bloon in Reichweite ist; beim Mortar ist das die
+    ganze Karte.
+  - `map::best_track_point` rastert die Strecke in Schritten von 1 und nimmt nur Punkte innerhalb der
+    `bounds`. Gewertet wird die Streckenlänge im Kreis, als exakter Schnitt Segment/Kreis. Gleichstand (bis
+    auf 1e-9) entscheidet die größere Pfad-Distanz.
+  - Die Punkte rechnet `Game::new` einmal je Radius in f64 aus (`Game::track_best_points`).
+  - Streuung nur mit `randomness` (gleichverteilt im Kreis aus `Game::rng`), sonst genau der Punkt.
+- **Konverter:**
+  - Erkennungsmerkmal ist `TargetSelectedPointModel`; ausgewertet wird es in `convert_point_lob` (Mortar).
+    Die Granate hat `InstantModel` + `AgeModel` (Flugzeit), `FilterAll` und keinen eigenen Schaden.
+  - Explosionen bei der Ankunft (`CreateProjectileOnExhaustFraction`) werden zu `on_arrive`. Das Streuen
+    (`RandomTargetSpreadModel`) wird zu `spread`.
+  - Die neuen Modelle sind STRICT. `maxDamage` ab 10⁶ gilt als unbegrenzt (Mortar-Explosion 9 999 999).
+  - `EmissionWithOffsetsModel`: ein Projektil je Schuss wird `single` (Double Gun wechselt nur den
+    Abwurfpunkt). Je Abwurfpunkt eins, symmetrisch angeordnet, wird `parallel`.
+  - Abwurfpunkte, das Kartenobjekt `ChipMapBasedObjectModel` und Pin (`SlowOnPopModel`) werden ignoriert.
+- **Abdeckung t21:** 374 von 1344 Kombinationen.
+  - Mortar **14** statt der hochgerechneten 29, jetzt frei (nicht mehr in `MECHANIC_LOCKED`).
+  - Engineer **12**.
+  - t14-Daten bleiben bytegleich, im t14-Report ändern sich nur Begründungstexte.
+- **Abweichungen vom Plan:**
+  - Burny Stuff (Mortar xx2, 15 Kombinationen bis xx4) braucht einen erweiterten DoT, den die Engine noch
+    nicht kann: Feuer-DoT mit Tag-Filter (nicht DDT/Black/Zebra), "nur bei Schaden" und eigener Immunität
+    (Purple). Damit hängen auch Signal Flare (xx3) und Shattering Shells (xx4) daran. Vorschlag: zusammen mit
+    B6 in Teil 2.
+  - Pin (`SlowOnPopModel`: 1 s Stopp der Kinder beim Pop, Feld `Lifespan`) bleibt ohne Wirkung, weil die
+    Engine noch keinen Status-Effekt beim Pop setzen kann [KAL: auch `chance` 0 – immer oder nie?]. Die Sim ist
+    dadurch eher zu schwach. Nachholen mit B6 in Teil 2.
+  - Wurf-Angriffe haben selbst weder Schaden noch Crit (Validierung); beides steckt in den Explosionen.
+  - Für Teil 1b merken: Der Village-Tempo-Buff wirkt auf `def.speed`, nicht auf `LobRt.speed`. Für den Mortar
+    (feste Zeit) egal, beim Alchemisten (Tempo) zu entscheiden.
+  - Double Gun ist kein zweiter Nagel. Das Tempo kommt aus der Rate der Variante.
+- **Tests:**
+  - `btd-core/tests/lob.rs`: Flugzeit (fest und über Tempo), Explosion am Punkt statt am Ziel bei der Ankunft,
+    `track_best` von überall, Streuung nur mit Zufall und deterministisch je Seed, ungültige Würfe.
+  - `map.rs`: Punktwahl in einer Haarnadel, Gleichstand, `bounds`, Schnittlänge.
+  - Ein lokaler Test gegen die t21-Daten (`dump_local`, `--ignored`) zeigt die Zielpunkte auf Monkey Meadow:
+    Radius 20 bei (−50,8; −19,0), Radius 28 bei (−50,8; −2,0). Ein Mortar in einer Ecke platzt dort alle 20
+    Reds von Runde 1.
+  - Konverter-Tests für Mortar und `EmissionWithOffsetsModel`.
+  - sim_v0-Parität (f64) und alle übrigen Tests unverändert grün.
+- **Gemessen** (Release, eine Env, Zufallspolicy, verrauscht): t14 etwa 6,0 k Schritte/s, t21 mit Mortar und
+  Engineer etwa 5,7 k Schritte/s.

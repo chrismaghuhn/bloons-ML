@@ -578,5 +578,67 @@ def test_placeholder_for_tower_without_mechanic():
     assert v == {"tiers": [0, 0, 0], "range": 22.0, "footprint": pytest.approx(27.0 * 2 ** 0.5 / 2),
                  "attacks": [], "_rect": True}
     assert b.placeholder(dart_like())["footprint"] == 6.0
-    # alle t21-Türme ohne Mechanik sind fest gesperrt, Engineer (Basis geht) nicht
-    assert set(b.T21) - set(b.T14) - b.MECHANIC_LOCKED == {"EngineerMonkey"}
+    # alle t21-Türme ohne Mechanik sind fest gesperrt, Engineer und Mortar (Teil 1a) nicht
+    assert set(b.T21) - set(b.T14) - b.MECHANIC_LOCKED == {"EngineerMonkey", "MortarMonkey"}
+
+
+def mortar_like(spread=18.0, point_extra=None):
+    expl = T("ProjectileModel", id="Explosion", pierce=25.0, radius=20.0,
+             filters=[T("FilterInvisibleModel", isActive=True)],
+             behaviors=[T("DamageModel", damage=2.0, maxDamage=9999999.0, immuneBloonProperties=2),
+                        T("AgeModel", lifespan=0.05), T("ChipMapBasedObjectModel", chipTag="ChipCaveMonkey")])
+    shell = T("ProjectileModel", id="Projectile", pierce=1.0, radius=2.0, dontUseCollisionChecker=True,
+              filters=[T("FilterAllModel")],
+              behaviors=[T("ProjectileFilterModel", filters=[T("FilterAllModel")]), T("AgeModel", lifespan=0.5),
+                         T("InstantModel", destroyIfInvalid=True),
+                         T("CreateProjectileOnExhaustFractionModel", fraction=1.0, durationfraction=-1.0,
+                           projectile=expl, emission=T("SingleEmissionModel"))])
+    weapon = T("WeaponModel", rate=2.0, emission=T("RandomTargetSpreadModel", spread=spread), projectile=shell)
+    attack = T("AttackModel", range=9999999.0, weapons=[weapon],
+               behaviors=[T("AttackFilterModel", filters=[T("FilterInvisibleModel", isActive=True)]),
+                          T("TargetSelectedPointModel", isSelectable=True, **(point_extra or {})),
+                          T("RotateToPointerModel", rate=9999999.0)])
+    return T("TowerModel", cost=600.0, range=30.0, towerSet=2, footprint=T("CircleFootprintModel", radius=11.0),
+             behaviors=[attack])
+
+
+def test_mortar_lobs_onto_the_best_track_point():
+    a = b.convert_variant(mortar_like(), [0, 0, 0])["attacks"][0]
+    assert a["targeting"] == "track_best" and a["camo"] is False and a["range"] == 9999999.0
+    assert a["delivery"] == {"kind": "lob", "time": 0.5, "spread": 18.0, "on_arrive": [
+        {"kind": "explosion", "radius": 20.0, "pierce": 25, "damage": 2.0, "cannot_damage": ["black"],
+         "camo": False, "extras": {}}]}
+    # Zielpunkt "nächster Streckenpunkt" (Engineer-Schaum) kommt erst mit Teil 2
+    with pytest.raises(b.Unsupported, match="nächster Streckenpunkt"):
+        b.convert_variant(mortar_like(point_extra={"startWithClosestTrackPoint": True}), [0, 0, 0])
+    # Zielpunkt-Modelle sind nur dort erlaubt
+    with pytest.raises(b.Unsupported, match="RandomTargetSpreadModel"):
+        b.convert_variant(dart_like(emission=T("RandomTargetSpreadModel", spread=4.0)), [0, 0, 0])
+
+
+def test_emission_with_offsets():
+    marker = lambda x: T("ThrowMarkerOffsetModel", ejectX=x, ejectY=12.0)  # noqa: E731
+    one = T("EmissionWithOffsetsModel", projectileCount=1, rotateProjectileWithTower=True,
+            spreadProjectilesAcrossMarkers=True, throwMarkerOffsetModels=[marker(3.08), marker(-3.08)])
+    assert b.convert_emission(one, False) == {"kind": "single"}, "Double Gun: nur der Abwurfpunkt wechselt"
+    two = dict(one, projectileCount=2, throwMarkerOffsetModels=[marker(4.5), marker(-4.5)])
+    assert b.convert_emission(two, False) == {"kind": "parallel", "count": 2, "spread": 9.0}
+    with pytest.raises(b.Unsupported, match="asymmetrisch"):
+        b.convert_emission(dict(two, throwMarkerOffsetModels=[marker(4.5), marker(-2.0)]), False)
+    with pytest.raises(b.Unsupported, match="Zufallskegel"):
+        b.convert_emission(dict(one, randomRotationCone=5.0), False)
+
+
+@pytest.mark.parametrize("change, why", [
+    (lambda m: m["behaviors"][0]["weapons"][0]["projectile"]["behaviors"].append(
+        T("DamageModel", damage=1.0, immuneBloonProperties=0)), "Schaden/Kontakt/Flugbahn"),
+    (lambda m: m["behaviors"][0]["weapons"][0]["projectile"].update(filters=[T("FilterInvisibleModel")]),
+     "Treffern im Flug"),
+    (lambda m: m["behaviors"][0]["behaviors"][1].update(lockToInsideTowerRange=True), "innerhalb der Reichweite"),
+    (lambda m: m["behaviors"][0]["weapons"][0]["projectile"]["behaviors"][1].update(rounds=1), "AgeModel"),
+])
+def test_point_lob_refuses_unknown_variants(change, why):
+    m = mortar_like()
+    change(m)
+    with pytest.raises(b.Unsupported, match=why):
+        b.convert_variant(m, [0, 0, 0])

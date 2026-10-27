@@ -44,8 +44,7 @@ TOWER_SET_NAMES = {1: "primary", 2: "military", 4: "magic", 8: "support"}
 # aber schon in Daten und Layout, damit sich der Aktionsraum später nicht ändert
 # (docs/design-towers-step2.md §2.4). Geht ihre Basisvariante noch nicht durch den Konverter, steht sie als
 # Platzhalter in den Daten (docs/design-towers-step3.md §4).
-MECHANIC_LOCKED = {"BananaFarm", "Alchemist", "MortarMonkey", "DartlingGunner", "SpikeFactory", "HeliPilot",
-                   "MonkeyAce"}
+MECHANIC_LOCKED = {"BananaFarm", "Alchemist", "DartlingGunner", "SpikeFactory", "HeliPilot", "MonkeyAce"}
 
 # Flächentypen im Spiel (AreaType) -> game_v1
 AREA_KINDS = {2: "land", 0: "track", 1: "water", 3: "blocked"}
@@ -92,13 +91,20 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
            "DamageOverTimeModel", "AddBehaviorModifierForTagModel", "PushBackModel", "ClearHitBloonsModel",
            "CritMultiplierModel", "ParallelEmissionModel", "SlowBloonsZoneModel",
            # Türme Schritt 1: Zielen ohne Abwurf-Versatz (die Sim zielt ohnehin von der Turmmitte)
-           "CheckTargetsWithoutOffsetsModel"}
+           "CheckTargetsWithoutOffsetsModel",
+           # Türme Schritt 3 (docs/design-towers-step3.md): Abwurfpunkte (wie ejectX/ejectY ignoriert; die
+           # Emission selbst wertet convert_emission aus), Kartenobjekt einer anderen Karte (Mortar-Explosion),
+           # Pin (Engineer xx2: SlowOnPop = 1 s Stopp der Kinder beim Pop; Status-Effekte beim Pop kann die Engine
+           # noch nicht, deshalb ohne Wirkung [KAL: auch `chance` 0 – immer oder nie?])
+           "EmissionWithOffsetsModel", "ThrowMarkerOffsetModel", "ChipMapBasedObjectModel", "SlowOnPopModel"}
 
 # Nur dort erlaubt, wo der Konverter sie wirklich auswertet (`use`); jedes andere Vorkommen (z.B. in
 # einem Kontakt-Projektil eines späteren Upgrades) macht die Variante "nicht unterstützt".
 STRICT = {"InstantModel", "InstantDamageEmissionModel", "FilterAllExceptTargetModel", "BurstWeaponBehaviorModel",
           "RandomArcEmissionModel", "RandomEmissionModel", "OffsetModel", "RemoveBloonModifiersModel",
-          "TrackTargetModel", "TrackTargetWithinTimeModel"}
+          "TrackTargetModel", "TrackTargetWithinTimeModel",
+          # Türme Schritt 3: Wurf auf einen festen Punkt (convert_point_lob)
+          "TargetSelectedPointModel", "RotateToPointerModel", "RandomTargetSpreadModel", "FilterAllModel"}
 # Türme Schritt 2 (docs/design-towers-step2.md): Auren und Rabatt (convert_supports), Einkommen
 # (convert_income) und Footprint (convert_footprint); alle nur dort erlaubt, wo sie ausgewertet werden
 SUPPORT_MODELS = {"RangeSupportModel", "RateSupportModel", "VisibilitySupportModel", "PierceSupportModel",
@@ -512,6 +518,23 @@ def convert_emission(em, fixed: bool) -> dict:
             raise Unsupported("RandomEmissionModel(SpeedMultiplier/MainAttackRotation)")
         use(em)
         return {"kind": "arc", "count": em["count"], "angle": em["angle"], "offset": 0.0, "fixed": fixed}
+    if et == "EmissionWithOffsetsModel":
+        # Projektile über Abwurfpunkte verteilt: eins je Schuss wechselt nur den Abwurfpunkt (Engineer Double
+        # Gun), eins je Punkt = nebeneinander mit dem Abstand der Punkte quer zur Schussrichtung
+        markers = em.get("throwMarkerOffsetModels") or []
+        n = em.get("projectileCount", 1)
+        if em.get("randomRotationCone", 0.0) or not em.get("rotateProjectileWithTower", True):
+            raise Unsupported("EmissionWithOffsetsModel(Zufallskegel/feste Richtung)")
+        if n == 1:
+            return {"kind": "single"}
+        xs = sorted(m["ejectX"] for m in markers)
+        if n != len(markers) or not em.get("spreadProjectilesAcrossMarkers") \
+                or any(abs(a + b) > 1e-6 for a, b in zip(xs, reversed(xs))):
+            raise Unsupported("EmissionWithOffsetsModel(mehrere Projektile je Punkt/asymmetrisch)")
+        gaps = {round(b - a, 6) for a, b in zip(xs, xs[1:])}
+        if len(gaps) != 1:
+            raise Unsupported("EmissionWithOffsetsModel(ungleiche Abstände)")
+        return {"kind": "parallel", "count": n, "spread": gaps.pop()}
     if et == "ParallelEmissionModel":
         n, width = em["count"], em["spreadLength"]
         # Projektile gleichmäßig auf spreadLength quer zur Schussrichtung, mittig; yOffset (Versatz nach
@@ -565,7 +588,8 @@ def straight_travel(proj):
 
 def check_damage(proj):
     for d in behaviors(proj, "DamageModel"):
-        if d.get("maxDamage", 0.0) > 0.0:
+        # 9 999 999 (Mortar-Explosion) heißt unbegrenzt
+        if 0.0 < d.get("maxDamage", 0.0) < 1e6:
             raise Unsupported("DamageModel(maxDamage)")
 
 
@@ -854,8 +878,55 @@ def convert_instant(proj, weapon) -> dict:
     return {"kind": "hitscan"}
 
 
+def convert_point_lob(tower, attack, weapon, idx) -> dict:
+    """Wurf auf einen festen Punkt (Mortar): Granate ohne Treffer im Flug (FilterAll, InstantModel), Explosion
+    nach der Lebensdauer am Zielpunkt. Ziel ist `track_best` statt des gewählten Punkts, Streuung als `spread`
+    (docs/design-towers-step3.md §2.1/§3)."""
+    proj, em = weapon["projectile"], weapon["emission"]
+    point = behaviors(attack, "TargetSelectedPointModel")
+    instant, age = behaviors(proj, "InstantModel"), behaviors(proj, "AgeModel")
+    if len(point) != 1 or len(instant) != 1 or len(age) != 1:
+        raise Unsupported("Zielpunkt-Angriff ohne InstantModel/AgeModel")
+    if point[0].get("isOnSubTower") or point[0].get("projectileToExpireOnTargetChangeModel") \
+            or em.get("throwMarkerOffsets"):
+        raise Unsupported("Zielpunkt-Angriff auf Sub-Turm/mit Ablauf bei Zielwechsel/Abwurfpunkten")
+    if point[0].get("startWithClosestTrackPoint") or point[0].get("lockToInsideTowerRange"):
+        raise Unsupported("TargetSelectedPointModel(nächster Streckenpunkt/innerhalb der Reichweite)")
+    if short(em["$type"]) != "RandomTargetSpreadModel":
+        raise Unsupported(f"Zielpunkt-Angriff mit Emission {short(em['$type'])}")
+    if age[0].get("rounds") or age[0].get("useRoundTime") or instant[0].get("dontFollowTarget"):
+        raise Unsupported("Zielpunkt-Angriff mit AgeModel(rounds/useRoundTime)/InstantModel(dontFollowTarget)")
+    blocks = all_filters(proj)
+    if not blocks or any(short(f.get("$type", "")) != "FilterAllModel" for f in blocks):
+        raise Unsupported("Zielpunkt-Angriff mit Treffern im Flug")
+    if behaviors(proj, "DamageModel") or behaviors(proj, "CreateProjectileOnContactModel") or straight_travel(proj):
+        raise Unsupported("Zielpunkt-Angriff mit Schaden/Kontakt/Flugbahn der Granate")
+    on_arrive = convert_exhaust(proj, nested=False)
+    if not on_arrive or any(c["kind"] != "explosion" for c in on_arrive):
+        raise Unsupported("Zielpunkt-Angriff ohne Explosion")
+    camo, extras = convert_extras({"behaviors": []}, all_filters(attack))
+    for n in point + instant + age + blocks + [em] + behaviors(attack, "RotateToPointerModel"):
+        use(n)
+    out = {
+        "tag": f"{attack.get('name', 'attack')}-{idx}".replace(" ", "_"),
+        "range": attack["range"] if attack["range"] != tower["range"] else None,
+        "targeting": "track_best",
+        "cooldown": weapon["rate"],
+        "damage": 0.0,
+        "pierce": 1,
+        "cannot_damage": [],
+        "camo": camo,
+        "delivery": {"kind": "lob", "time": age[0]["lifespan"], "spread": em["spread"], "on_arrive": on_arrive},
+        "extras": extras,
+    }
+    convert_weapon_behaviors(weapon, out)
+    return out
+
+
 def convert_attack(tower, attack, weapon, idx) -> dict:
     proj = weapon["projectile"]
+    if behaviors(attack, "TargetSelectedPointModel"):
+        return convert_point_lob(tower, attack, weapon, idx)
     check_remove_modifiers(proj)
     if proj.get("dontUseCollisionChecker") or not proj.get("canCollideWithBloons", True):
         raise Unsupported("Projektil ohne Kollision")

@@ -84,3 +84,32 @@ fn darts_alone_hold_until_the_lead_round() {
     // Runde 28: 6 Leads, Darts (spitz) können sie nicht platzen -> 6 x 23 RBE
     assert!(g.lives <= 150 - 6 * 23, "Leads müssen durchkommen, Leben {}", g.lives);
 }
+
+/// Mortar (docs/design-towers-step3.md, Teil 1a) auf den t21-Daten: fester Zielpunkt auf der Strecke, ein
+/// Mortar irgendwo auf der Karte platzt Bloons dort.
+#[test]
+#[ignore = "braucht den lokalen Spiel-Dump (data/local/)"]
+fn mortar_hits_its_fixed_track_point() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../data/local/game_v1_tutorial_medium60_t21.json");
+    if !path.exists() {
+        eprintln!("übersprungen: {} fehlt (tools/build_game_v1.py --towers t21)", path.display());
+        return;
+    }
+    let d = GameV1::load(path).expect("lokaler Datensatz gültig");
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    let points = g.track_best_points().to_vec();
+    assert!(!points.is_empty());
+    for (r, (x, y)) in &points {
+        eprintln!("Zielpunkt Radius {r}: ({x:.1}, {y:.1})");
+        assert!((-150.0..=150.0).contains(x) && (-116.0..=116.0).contains(y));
+    }
+    let mortar = g.data().towers.iter().position(|t| t.name == "mortar").unwrap() as u8;
+    let spot = best_cells(g.data(), 1.0).into_iter().rev().find(|&(x, y)| g.can_place_at(mortar, x, y));
+    let (x, y) = spot.expect("ein Bauplatz");
+    g.cash = btd_core::Money::from_dollars(10_000);
+    g.apply(Action::Place { kind: mortar, x, y }).unwrap();
+    let r = g.play_round();
+    eprintln!("Runde 1 mit Mortar bei ({x:.0}, {y:.0}): {} Pops, {} durch", r.pops, r.leaked);
+    assert!(r.pops > 0, "Mortar trifft am Zielpunkt");
+}

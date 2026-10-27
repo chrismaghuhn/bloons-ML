@@ -214,6 +214,10 @@ pub struct BloonDefV1 {
 #[serde(rename_all = "snake_case")]
 pub enum Targeting {
     First,
+    /// Fester Punkt je Karte: der Streckenpunkt mit der meisten Streckenlänge im Explosionsradius
+    /// (Mortar, docs/design-towers-step3.md §3). Nur mit `Delivery::Lob` mit Explosion; gefeuert wird,
+    /// sobald ein anvisierbarer Bloon in Reichweite ist.
+    TrackBest,
 }
 
 /// Wie ein Angriff seine Ziele trifft.
@@ -262,6 +266,19 @@ pub enum Delivery {
         /// Zielsuche (Wizard, Ninja): das Projektil dreht sich im Flug auf sein Ziel.
         #[serde(default)]
         homing: Option<Homing>,
+    },
+    /// Wurf (docs/design-towers-step3.md §2.1): fliegt geradlinig zum Zielpunkt (Position des Ziels beim
+    /// Abwurf bzw. Punkt aus `targeting`), trifft unterwegs nichts und löst bei Ankunft `on_arrive` aus.
+    /// Flugzeit fest (`time`, Mortar) oder Abstand / `speed` (Alchemist); genau eins von beiden.
+    Lob {
+        #[serde(default)]
+        time: Option<f64>,
+        #[serde(default)]
+        speed: Option<f64>,
+        /// Streuung um den Zielpunkt (Radius, Spiel: RandomTargetSpreadModel); ohne Zufall der Punkt selbst.
+        #[serde(default)]
+        spread: f64,
+        on_arrive: Vec<Contact>,
     },
 }
 
@@ -418,8 +435,25 @@ impl GameV1 {
                 contacts(on_contact, &mut out);
                 contacts(on_exhaust, &mut out);
             }
+            if let Delivery::Lob { on_arrive, .. } = &a.delivery {
+                contacts(on_arrive, &mut out);
+            }
         }
         out
+    }
+}
+
+impl Delivery {
+    /// Radius für `Targeting::TrackBest`: die größte Explosion eines Wurfs (sonst keiner).
+    pub fn track_best_radius(&self) -> Option<f64> {
+        let Delivery::Lob { on_arrive, .. } = self else { return None };
+        on_arrive
+            .iter()
+            .filter_map(|c| match c {
+                Contact::Explosion { radius, .. } => Some(*radius),
+                Contact::Shards { .. } => None,
+            })
+            .reduce(f64::max)
     }
 }
 
@@ -1287,6 +1321,15 @@ impl GameV1 {
                                 radius.map_or(true, pos) && radius_offset.map_or(true, |o| pos(range + o))
                             }
                             Delivery::HitscanSplash { radius } => pos(*radius),
+                            Delivery::Lob { time, speed, spread, on_arrive } => {
+                                time.is_some() != speed.is_some()
+                                    && time.map_or(true, pos)
+                                    && speed.map_or(true, pos)
+                                    && non_neg(*spread)
+                                    && !on_arrive.is_empty()
+                                    && on_arrive.len() <= 8
+                                    && on_arrive.iter().all(|c| c.valid(false, &tags))
+                            }
                             Delivery::Projectile {
                                 speed,
                                 lifespan,
@@ -1326,6 +1369,16 @@ impl GameV1 {
                         };
                     if !ok {
                         return Err(invalid(format!("{what} Angriff {}: ungültige Werte", a.tag)));
+                    }
+                    // Schaden und Crit stecken beim Wurf in den Explosionen, nicht im Angriff
+                    if matches!(a.delivery, Delivery::Lob { .. }) && (a.damage != 0.0 || a.crit.is_some()) {
+                        return Err(invalid(format!("{what} Angriff {}: Wurf ohne damage/crit", a.tag)));
+                    }
+                    if a.targeting == Targeting::TrackBest && a.delivery.track_best_radius().is_none() {
+                        return Err(invalid(format!(
+                            "{what} Angriff {}: track_best nur mit Wurf und Explosion",
+                            a.tag
+                        )));
                     }
                     if !a.extras.valid(&tags) {
                         return Err(invalid(format!("{what} Angriff {}: ungültige extras", a.tag)));

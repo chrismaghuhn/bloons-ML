@@ -129,6 +129,61 @@ pub fn contains(poly: &[[f64; 2]], x: f64, y: f64) -> bool {
     inside
 }
 
+/// Fester Zielpunkt für `Targeting::TrackBest` (Mortar, docs/design-towers-step3.md §3): der
+/// Streckenpunkt (Raster 1 Einheit entlang des Pfads, nur innerhalb von `bounds`) mit der meisten
+/// Streckenlänge im Kreis mit `radius`; bei Gleichstand der mit der größeren Pfad-Distanz. In f64 und
+/// fester Reihenfolge gerechnet, damit f32- und f64-Build denselben Punkt bekommen.
+pub fn best_track_point(map: &MapV1, radius: f64) -> (f64, f64) {
+    let (pts, cum) = (&map.points, &map.cum);
+    let [x0, y0, x1, y1] = map.bounds;
+    let at = |s: f64| {
+        let j = cum.partition_point(|&c| c <= s).clamp(1, cum.len() - 1);
+        let seg = cum[j] - cum[j - 1];
+        let t = if seg > 0.0 { ((s - cum[j - 1]) / seg).clamp(0.0, 1.0) } else { 1.0 };
+        (pts[j - 1][0] + (pts[j][0] - pts[j - 1][0]) * t, pts[j - 1][1] + (pts[j][1] - pts[j - 1][1]) * t)
+    };
+    let length = *cum.last().unwrap();
+    let mut best = (f64::NEG_INFINITY, at(0.0));
+    let mut s = 0.0;
+    while s <= length {
+        let (cx, cy) = at(s);
+        if (x0..=x1).contains(&cx) && (y0..=y1).contains(&cy) {
+            let covered = length_in_circle(pts, cx, cy, radius);
+            // Gleichstand (bis auf Rundung der Schnittpunkte): der spätere Punkt gewinnt
+            if covered >= best.0 - 1e-9 {
+                best = (best.0.max(covered), (cx, cy));
+            }
+        }
+        s += 1.0;
+    }
+    best.1
+}
+
+/// Länge der Polylinie innerhalb des Kreises (Summe der geschnittenen Segmentstücke).
+fn length_in_circle(pts: &[[f64; 2]], cx: f64, cy: f64, r: f64) -> f64 {
+    let mut total = 0.0;
+    for w in pts.windows(2) {
+        let (ax, ay) = (w[0][0] - cx, w[0][1] - cy);
+        let (dx, dy) = (w[1][0] - w[0][0], w[1][1] - w[0][1]);
+        let a = dx * dx + dy * dy;
+        if a == 0.0 {
+            continue;
+        }
+        // |A + t D|² <= r²  <=>  a t² + 2 b t + c <= 0
+        let (b, c) = (ax * dx + ay * dy, ax * ax + ay * ay - r * r);
+        let disc = b * b - a * c;
+        if disc <= 0.0 {
+            continue;
+        }
+        let root = disc.sqrt();
+        let (t0, t1) = (((-b - root) / a).max(0.0), ((-b + root) / a).min(1.0));
+        if t1 > t0 {
+            total += (t1 - t0) * a.sqrt();
+        }
+    }
+    total
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -216,5 +271,54 @@ mod tests {
         assert!(!placeable(&m, 5.0, 5.0, 0.5), "auf dem Track");
         assert!(!placeable(&m, 3.7, 5.0, 0.5), "Footprint ragt in den Track");
         assert!(placeable(&m, 3.4, 5.0, 0.5), "berührt den Track nicht");
+    }
+
+    fn track_map(points: Vec<[f64; 2]>) -> MapV1 {
+        let mut cum = vec![0.0];
+        for w in points.windows(2) {
+            cum.push(cum.last().unwrap() + (w[1][0] - w[0][0]).hypot(w[1][1] - w[0][1]));
+        }
+        let grid = btd_data::v1::GridV1 {
+            x0: -100.0,
+            y0: -100.0,
+            cell: 10.0,
+            w: 20,
+            h: 20,
+            path: vec![false; 400],
+            buildable: vec![true; 400],
+        };
+        MapV1 {
+            name: "test".into(),
+            bounds: [-100.0, -100.0, 100.0, 100.0],
+            points,
+            cum,
+            grid,
+            placement: Placement::Grid,
+            areas: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn best_track_point_prefers_dense_track_then_later_points() {
+        // Haarnadel: zwei parallele Bahnen bei y = 0 und y = 10 bis x = 50 → am dichtesten in der Kurve
+        let m = track_map(vec![[-90.0, 0.0], [50.0, 0.0], [50.0, 10.0], [-90.0, 10.0]]);
+        let (x, y) = best_track_point(&m, 20.0);
+        assert!((25.0..=50.0).contains(&x) && (0.0..=10.0).contains(&y), "in der Kurve: ({x}, {y})");
+        // gerade Strecke: überall gleich viel, außer an den Enden → Gleichstand, der spätere Punkt gewinnt
+        let m = track_map(vec![[-90.0, 0.0], [90.0, 0.0]]);
+        let (x, _) = best_track_point(&m, 10.0);
+        assert_eq!(x, 80.0, "letzter Punkt mit vollem Kreis");
+        // Punkte außerhalb der bounds zählen nicht
+        let m = track_map(vec![[-90.0, 0.0], [90.0, 0.0], [90.0, 200.0], [91.0, 200.0], [91.0, 0.0]]);
+        let (_, y) = best_track_point(&m, 10.0);
+        assert!(y <= 100.0);
+    }
+
+    #[test]
+    fn length_in_circle_clips_segments() {
+        let pts = [[-10.0, 0.0], [10.0, 0.0]];
+        assert!((length_in_circle(&pts, 0.0, 0.0, 5.0) - 10.0).abs() < 1e-12);
+        assert!((length_in_circle(&pts, 8.0, 0.0, 5.0) - 7.0).abs() < 1e-12);
+        assert_eq!(length_in_circle(&pts, 0.0, 6.0, 5.0), 0.0);
     }
 }

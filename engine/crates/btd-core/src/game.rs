@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use btd_data::v1::{BloonDefV1, Flags, GameV1, Props, SpawnGroup, Support, VariantV1, PATHS};
+use btd_data::v1::{BloonDefV1, Flags, GameV1, Props, SpawnGroup, Support, Targeting, VariantV1, PATHS};
 use btd_data::{DataError, TowerKind};
 use smallvec::SmallVec;
 use xxhash_rust::xxh3::Xxh3;
@@ -74,6 +74,8 @@ pub struct Game {
     /// Ändert sich bei jeder Neuberechnung der Auren und beim Reset (global eindeutig), damit
     /// Caches (Rabatt-/Buff-Raster der Env) wissen, wann sie neu rechnen müssen. Nicht im Hash.
     buff_epoch: u64,
+    /// Feste Zielpunkte für `Targeting::TrackBest` je Explosionsradius (aus Karte und Daten, `Game::new`).
+    track_best: Arc<Vec<(f64, (Real, Real))>>,
 }
 
 /// Quelle für `Game::buff_epoch` (eindeutig über alle Spiele, auch nach `clone`).
@@ -89,6 +91,12 @@ fn splitmix64(x: u64) -> u64 {
     z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
     z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
     z ^ (z >> 31)
+}
+
+/// Gleichverteilt in [0, 1) aus dem nächsten SplitMix64-Schritt.
+fn unit(state: &mut u64) -> f64 {
+    *state = splitmix64(*state);
+    (*state >> 11) as f64 / (1u64 << 53) as f64
 }
 
 /// Schüsse bis zum nächsten Crit: mit Zufall gleichverteilt im Bereich, sonst der Mittelwert.
@@ -413,6 +421,27 @@ fn apply_effects(b: &mut BloonStore, i: usize, ex: &ExtrasRt, tags: u32) {
     }
 }
 
+/// Zielpunkte aller `Targeting::TrackBest`-Angriffe der Daten, je verschiedenem Explosionsradius einmal.
+fn track_best_points(data: &GameV1) -> Vec<(f64, (Real, Real))> {
+    let mut radii: Vec<f64> = data
+        .towers
+        .iter()
+        .flat_map(|t| &t.variants)
+        .flat_map(|v| &v.attacks)
+        .filter(|a| a.targeting == Targeting::TrackBest)
+        .filter_map(|a| a.delivery.track_best_radius())
+        .collect();
+    radii.sort_by(f64::total_cmp);
+    radii.dedup();
+    radii
+        .into_iter()
+        .map(|r| {
+            let (x, y) = crate::map::best_track_point(&data.map, r);
+            (r, (real(x), real(y)))
+        })
+        .collect()
+}
+
 /// Lebensdauer in ganzen Ticks (mindestens 1).
 fn ticks_of(lifespan: Real, dt: Real) -> u32 {
     ((lifespan / dt).round() as u32).max(1)
@@ -507,6 +536,7 @@ impl Game {
             rng: None,
             locked: data.towers.iter().map(|t| data.rules.locked_towers.contains(&t.name)).collect(),
             buff_epoch: 0,
+            track_best: Arc::new(track_best_points(&data)),
             data,
         };
         g.reset();
@@ -714,6 +744,11 @@ impl Game {
         let t = self.towers.iter_mut().find(|t| t.id == tower).unwrap();
         t.spent = Money((t.spent.0 - refund.0).max(0));
         Ok(refund)
+    }
+
+    /// Feste Zielpunkte für `Targeting::TrackBest` je Explosionsradius (für Tests und Werkzeuge).
+    pub fn track_best_points(&self) -> &[(f64, (Real, Real))] {
+        &self.track_best
     }
 
     /// Gesperrter Turmtyp (`rules.locked_towers`)?
@@ -1075,8 +1110,53 @@ impl Game {
                         let (cannot, cooldown, pierce) = (atk.cannot_damage, atk.cooldown, atk.pierce);
                         let extras = atk.extras.clone();
                         let (fx, fy) = (b.x[first], b.y[first]);
+                        // fester Zielpunkt (Mortar) statt des vordersten Bloons
+                        // (Radius und Tabelle kommen aus denselben Daten, Buffs ändern ihn nicht)
+                        let aim = atk.track_best.map_or((fx, fy), |r| {
+                            self.track_best.iter().find(|p| p.0 == r).expect("Zielpunkt aus Game::new").1
+                        });
                         hit_list.clear();
                         match &atk.kind {
+                            AttackKind::Projectile(def) if def.lob.is_some() => {
+                                let lob = def.lob.unwrap();
+                                let (mut tx, mut ty) = aim;
+                                if lob.spread > 0.0 {
+                                    // Streuung: mit Zufall gleichverteilt im Kreis, sonst genau der Punkt
+                                    if let Some(state) = self.rng.as_mut() {
+                                        let (u, v) = (unit(state), unit(state));
+                                        let (r, a) =
+                                            (lob.spread * real(u.sqrt()), real(v * std::f64::consts::TAU));
+                                        (tx, ty) = (tx + r * cos(a), ty + r * sin(a));
+                                    }
+                                }
+                                let (dx, dy) = (tx - cx, ty - cy);
+                                let flight = match (lob.time, lob.speed) {
+                                    (Some(t), _) => t,
+                                    (None, Some(s)) => (dx * dx + dy * dy).sqrt() / s,
+                                    (None, None) => 0.0,
+                                };
+                                let ttl = ticks_of(flight, dt);
+                                let steps = ttl as Real * dt;
+                                self.projectiles.push(Projectile {
+                                    x: cx,
+                                    y: cy,
+                                    vx: dx / steps,
+                                    vy: dy / steps,
+                                    ttl,
+                                    pierce: 1.0,
+                                    radius: 0.0,
+                                    damage: 0.0,
+                                    cannot_damage: cannot,
+                                    camo: atk.camo,
+                                    extras: extras.clone(),
+                                    path: None,
+                                    def: Some(Arc::clone(def)),
+                                    clear_every: 0,
+                                    clear_left: 0,
+                                    hit: SmallVec::new(),
+                                    target: None,
+                                });
+                            }
                             AttackKind::Projectile(def) => {
                                 let em = &def.emission;
                                 let base = if em.fixed { 0.0 } else { atan2(fy - cy, fx - cx) };
