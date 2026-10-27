@@ -258,3 +258,22 @@ Nachtrag 040c8a6 (game_v1 `meta`/`game_id`): neu erzeugte Datendateien brauchen 
 Python-Erweiterung (`maturin develop`). Ihr Daten-Hash ändert sich, daher passen ältere Replays in
 `data/local/starts|eval|calib` beim strikten Nachspielen (`btd-tools replay`) nicht mehr; Startzustände
 und Eval-Sätze prüfen den Hash nicht.
+
+## 2026-10-27: Neu trainiert auf korrigierten Daten (t12_r60_v2)
+
+Daten nach dc15beb (Laufstrecke 912 E., Bloon-Tempo ×1,1 auf Medium), sonst wie t12_r60_ent
+(12 Türme, R60, 5M Schritte, Seed 1, Turm-Strafe, Sperren bis 3, Startzustände 0,3, Entropie
+0,01 → 0,001). ~1 700 Schritte/s (GPU 96 %).
+
+| | t12_r60_ent auf korrigierten Daten | t12_r60_v2 |
+|---|---|---|
+| deterministisch ohne Sperre | Runde 17 | gewonnen (72 Leben) |
+| deterministisch: Einzelsperren gewonnen (von 12) | – | 7 |
+| stochastisch ohne Sperre | 8/10 | 64/64 |
+| stochastisch: Einzelsperren mit ≥ 9/10 Siegen (von 12) | – | 11 |
+| Erholung det. / stoch. (50) | – | 46 / 47 |
+| ohne Dart (stoch.) | – | 0/10, Ø Runde 43 |
+| H(Schlüssel) ohne Sperre | – | 2,23 bit (12 Schlüssel) |
+
+Rezept: Bomb ohne Upgrade + Dart unten (Sharp Shooter / Crossbow Master), in 57/64 Spielen zuerst die
+Bombe. Deterministisches Spiel deutlich besser als bei allen früheren 12-Turm-Läufen.
