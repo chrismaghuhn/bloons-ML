@@ -63,9 +63,9 @@ den Vergleich wertlos.
 `glue` → `GlueGunner`, `sniper` → `SniperMonkey`, `desperado` → `Desperado`, `super` → `SuperMonkey`,
 `druid` → `Druid`, `ninja` → `NinjaMonkey`, `wizard` → `WizardMonkey`. Der Player nimmt das Basis-`TowerModel`
 (0-0-0) **aus dem GameModel der laufenden Partie** (`simulation.model`), nicht aus dem Menü-Modell, damit
-Schwierigkeit und Modus (Kosten, Tempo) gelten. Damit die Liste nicht zweimal gepflegt wird: der Konverter schreibt
-sie zusätzlich in `game_v1` (Feld `game_id` je Turm), der Player liest sie von dort; bis dahin eine feste Tabelle
-in der Mod, gegen die ein Test die Konverter-Liste prüft.
+Schwierigkeit und Modus (Kosten, Tempo) gelten. Die Zuordnung liest der Player aus der Datendatei: `game_v1` hat je
+Turm das Feld `game_id` (z.B. `DartMonkey`, Konverter seit Commit 040c8a6), eine eigene Tabelle in der Mod gibt es
+nicht.
 
 **Koordinaten:** Replays und `StartState` stehen schon in Spielkoordinaten (Ursprung Mitte, x rechts, y unten,
 Spielfeld ±150 × ±116; z.B. `dart` bei (−35, 39) in `data/local/starts/`). Der Player übergibt sie unverändert als
@@ -116,12 +116,11 @@ Replays schneller als Echtzeit und ohne Grafik im echten Spiel-Code laufen: viel
 gleich gesetzt werden. Lohnt sich, sobald Weg A steht.
 
 Partie starten kann der Player selbst: Mod Helpers Tests setzen `InGameData.Editable.selectedMap/Mode/Difficulty`
-und rufen `UI.instance.LoadGameEnumerator()`. Karte/Modus/Schwierigkeit stehen in `game_v1` heute nicht als eigene
-Felder (nur `name`, z.B. `Tutorial-chimps-57.4`, und `map.name`); bis der Konverter sie und die Spielversion als Felder
-schreibt (oder der `/3`-Header sie trägt, Abschnitt 4), kommen sie **aus Einstellungen des Players** (Karte, Modus,
-Schwierigkeit). Aus `name` lassen sie sich nicht verlässlich ablesen: `Tutorial-medium60-57.4` nennt ein Preset statt
-einer Schwierigkeit, `Tutorial-chimps-57.4` nur den Modus (Hard ist implizit), und `sim_v0` enthält gar nichts davon.
-Der Player prüft aber die Karte (`map.name`) und, wo vorhanden, die Version am Ende von `name` gegen das Spiel.
+und rufen `UI.instance.LoadGameEnumerator()`. Karte, Modus und Schwierigkeit kommen aus `game_v1.meta`
+(Konverter seit Commit 040c8a6): `meta.map` (z.B. `Tutorial`), `meta.mode` (Spiel-Modusname wie `Standard`,
+`Clicks`), `meta.difficulty` (`Medium`, `Hard`), `meta.game_version` (z.B. `57.4`); die Namen sind die des Spiels,
+wie in den `matches/`-Dateinamen des Dumps. `meta` ist optional: Datendateien ohne `meta` (z.B. `sim_v0`, ältere
+`game_v1`) lehnt der Player ab mit dem Hinweis, die Datei mit dem aktuellen Konverter neu zu bauen.
 
 ## 4. Zeitpunkte
 
@@ -138,8 +137,8 @@ Sim-Schritten. Der Player führt sie in einem Harmony-**Prefix** auf `Simulation
 Warteschlange landet: die wird womöglich nur einmal je Unity-Frame geleert, und vorgespult laufen 3 Sim-Schritte je
 Frame (Aktion könnte bis zu 2 Schritte zu spät kommen). **[prüfen]**: ob ein Aufruf aus dem `Simulate`-Prefix sofort
 läuft oder gerade dann in die Warteschlange geht; sonst die Simulation direkt statt über die Bridge ansprechen. Der
-Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt eine Abweichung sofort auf. Der Header von `/3` bekommt zusätzlich
-`map`, `mode`, `difficulty`, `game_version` (der Player bricht ab, wenn die laufende Partie nicht passt).
+Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt eine Abweichung sofort auf. Karte, Modus,
+Schwierigkeit und Spielversion braucht der `/3`-Header nicht: sie stehen in `meta` der Datendatei (Abschnitt 3).
 
 **Targeting:** heute immer "First" (wie die Sim); sobald das Replay Targeting kennt, `SetNextTowerTargetType` so oft,
 bis der gewünschte Typ eingestellt ist (Kontrolle über den Turm).
@@ -153,9 +152,9 @@ bis der gewünschte Typ eingestellt ist (Kontrolle über den Turm).
 - **Datendatei:** das Replay nennt sie im Header (`data`, z.B. `game_v1_tutorial_chimps.json`); der Player sucht sie
   im Datenordner (Einstellung, Standard `data/local/`) und prüft `data_hash`, falls gesetzt: xxh3_64 mit Seed
   `0xDA7A` über den Dateitext mit CRLF → LF, als 16 Hex-Ziffern klein (wie `engine/crates/btd-env/src/lib.rs`).
-- **Prüfen vor dem Start:** Format; Karte (`map.name` der Datendatei) gegen die Partie; Modus/Schwierigkeit kommen
-  aus den Einstellungen und werden bei einer schon laufenden Partie gegen diese geprüft; Spielversion gegen die
-  Version im Namen der Datendatei, sofern vorhanden (z.B. `…-57.4`, siehe Abschnitt 3); alle Turmnamen bekannt.
+- **Prüfen vor dem Start:** Format; Datendatei hat `meta` (Abschnitt 3); `meta.map`/`mode`/`difficulty` gegen die
+  laufende Partie (bzw. damit eine neue starten); `meta.game_version` gegen `Application.version`; jeder Turm hat
+  eine `game_id`, die es im GameModel der Partie gibt.
   Fehler → nichts tun, Meldung.
 - **Ausgabe:** neben dem Trace des Recorders eine Ergebnisdatei
   `data/raw/recordings/<Zeit>_<Karte>_<Modus>.player.jsonl`: je Aktion Status (ok/Fehler + Grund, Sim-Schritt,
@@ -211,8 +210,8 @@ Damit ist die Bridge im Kern "Replay, das Zeile für Zeile über den Socket komm
 1. Weg A (echter Modus, Zustand aufbauen) als Standard, Sandkasten nur für Messungen?
 2. Bei einem Fehler anhalten (Standard) oder überspringen?
 3. Laden per Einstellung + Hotkey (F10/F11) oder über einen Eingangsordner?
-4. Konverter-Änderung in der Trainings-Session: `game_v1` bekommt `game_id` je Turm sowie Karte, Modus,
-   Schwierigkeit und Spielversion als eigene Felder (statt Tabelle in der Mod bzw. Einstellungen im Player)?
+4. ~~Konverter-Änderung: `game_v1` bekommt `game_id` je Turm sowie Karte, Modus, Schwierigkeit und Spielversion als
+   eigene Felder?~~ Erledigt: `meta` und `game_id` (Commit 040c8a6, Trainings-Session).
 
 ## 10. Ergebnis Schritt 1: Player-Test (2026-10-27, BTD6 57.4, Monkey Meadow, CHIMPS)
 
