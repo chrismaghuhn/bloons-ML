@@ -58,7 +58,10 @@ class GridNet(nn.Module):
         self.cell_head = nn.Conv2d(width_ch, heads, 1)
         pooled = 2 * width_ch + scalar_dim
         self.global_pi = nn.Sequential(nn.Linear(pooled, 128), nn.ReLU(), nn.Linear(128, 1))
-        self.latent_dim_pi = 1 + heads * height * width
+        # Logits kommen fertig aus forward_actor; sb3 legt in _build trotzdem ein
+        # Linear(latent_dim_pi, n_actions) an, das GridPolicy gleich verwirft. Mit 1 bleibt es winzig
+        # (sonst n_actions² Gewichte, ~200 MB bei 7201 Aktionen).
+        self.latent_dim_pi = 1
         self.latent_dim_vf = 256
         self.vf = nn.Sequential(nn.Linear(pooled, 256), nn.ReLU())
         # Koordinaten-Ebenen, damit das Netz weiß, wo auf der Karte eine Zelle liegt

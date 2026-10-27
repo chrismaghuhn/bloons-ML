@@ -54,20 +54,20 @@ if __name__ == "__main__":
     ap.add_argument("--conv-blocks", type=int, default=4, help="Residual-Blöcke der Faltungs-Policy")
     ap.add_argument("--seed", type=int, default=None)
     args = ap.parse_args()
+    if args.engine != "rust" and (args.data or args.preview or args.arch == "conv"):
+        ap.error("--data/--preview/--arch conv gibt es nur mit --engine rust")
+    if args.resume:
+        print("--resume: Architektur und Seed kommen aus dem Modell, --arch/--conv-*/--seed werden ignoriert")
 
     if args.engine == "rust":
         from btd_sim.rust_env import DEFAULT_DATA, RustVecEnv
         env = RustVecEnv(args.envs, args.data or DEFAULT_DATA, preview_rounds=args.preview)
     else:
-        if args.data or args.preview:
-            ap.error("--data/--preview gibt es nur mit --engine rust")
         env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
     if args.resume:
         model = MaskablePPO.load(args.resume, env=env, device=args.device)
     else:
         if args.arch == "conv":
-            if args.engine != "rust":
-                ap.error("--arch conv gibt es nur mit --engine rust")
             from btd_sim.policy import GridPolicy, grid_spec
             policy = GridPolicy
             grid = grid_spec(args.data or DEFAULT_DATA, env.observation_space.shape[0], env.action_space.n)
@@ -83,6 +83,6 @@ if __name__ == "__main__":
         )
     model.learn(total_timesteps=args.steps,
                 callback=[CheckpointCallback(100_000 // args.envs, "models/checkpoints", name_prefix=Path(args.out).name), RoundLogger()],
-                reset_num_timesteps=not args.resume, tb_log_name=f"{args.arch}")
+                reset_num_timesteps=not args.resume, tb_log_name=Path(args.out).name)
     model.save(args.out)
     print("gespeichert:", args.out)

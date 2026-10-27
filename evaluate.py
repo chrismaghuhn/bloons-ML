@@ -17,7 +17,7 @@ def play(env, policy, show=False):
     while not done:
         a = policy(obs, env.action_masks())
         obs, r, done, _, info = env.step(a)
-    if show and hasattr(env, "render"):
+    if show and isinstance(env, BTDEnv):  # nur die Python-Referenz kann rendern
         print(env.render())
     return info["round"], info["lives"]
 
