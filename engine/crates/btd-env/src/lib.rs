@@ -197,6 +197,8 @@ pub struct Env {
     pub builds_left: u32,
     spec: EnvSpec,
     preview: Option<RoundPreview>,
+    /// Karten-Bebaubarkeit je (Turm, Zelle), einmal vorberechnet (Polygon-Tests sind teuer).
+    map_ok: Arc<Vec<bool>>,
     recorder: Option<Recorder>,
     last_replay: Option<Replay>,
 }
@@ -210,7 +212,14 @@ impl Env {
         let layout = Layout::new(&spec.data, cfg.preview_rounds);
         let preview = (cfg.preview_rounds > 0).then(|| RoundPreview::new(&spec.data, cfg.preview_rounds));
         let recorder = cfg.record.then(|| Recorder::new(&spec, &cfg));
+        let map_ok = (0..layout.towers * layout.cells)
+            .map(|i| {
+                let (x, y) = layout.center(i % layout.cells);
+                game.map_allows((i / layout.cells) as u8, x, y)
+            })
+            .collect();
         Ok(Env {
+            map_ok: Arc::new(map_ok),
             builds_left: cfg.max_builds_per_round,
             game,
             layout,
@@ -336,8 +345,10 @@ impl Env {
             }
             let base = l.a_place + k * l.cells;
             for c in 0..l.cells {
-                let (x, y) = l.center(c);
-                mask[base + c] = g.can_place_at(k as u8, x, y);
+                if self.map_ok[k * l.cells + c] {
+                    let (x, y) = l.center(c);
+                    mask[base + c] = !g.occupied(k as u8, x, y);
+                }
             }
         }
         for (c, t) in self.cell_towers() {
@@ -433,7 +444,9 @@ pub struct VecStepBuffers<'a> {
 
 impl VecEnv {
     pub fn new(spec: EnvSpec, cfg: EnvConfig, n: usize) -> Result<Self, DataError> {
-        let envs = (0..n).map(|_| Env::new(spec.clone(), cfg.clone())).collect::<Result<Vec<_>, _>>()?;
+        // frische Envs sind identisch: einmal anlegen (inkl. Vorberechnung), dann klonen
+        let env = Env::new(spec.clone(), cfg.clone())?;
+        let envs = vec![env; n];
         let layout = Layout::new(&spec.data, cfg.preview_rounds);
         Ok(VecEnv { envs, layout })
     }

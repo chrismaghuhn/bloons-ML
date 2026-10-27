@@ -75,6 +75,9 @@ pub struct BloonStore {
     pub hp: Vec<Real>,
     pub dist: Vec<Real>,
     pub seg: Vec<u16>,
+    /// Position auf dem Track, zwischengespeichert: immer `track.pos(dist, seg)`.
+    pub x: Vec<Real>,
+    pub y: Vec<Real>,
     pub alive: Vec<bool>,
     /// Status-Effekte: eingefroren (Sekunden), Schichten, die das Einfrieren überlebt.
     pub frozen: Vec<Real>,
@@ -104,13 +107,25 @@ impl BloonStore {
         self.kind.is_empty()
     }
 
-    pub fn push(&mut self, id: u32, kind: BloonKind, flags: Flags, hp: Real, dist: Real, seg: u16) {
+    #[allow(clippy::too_many_arguments)]
+    pub fn push(
+        &mut self,
+        id: u32,
+        kind: BloonKind,
+        flags: Flags,
+        hp: Real,
+        dist: Real,
+        seg: u16,
+        (x, y): (Real, Real),
+    ) {
         self.id.push(id);
         self.kind.push(kind);
         self.flags.push(flags);
         self.hp.push(hp);
         self.dist.push(dist);
         self.seg.push(seg);
+        self.x.push(x);
+        self.y.push(y);
         self.alive.push(true);
         self.frozen.push(0.0);
         self.freeze_layers.push(0);
@@ -133,6 +148,8 @@ impl BloonStore {
         self.hp.clear();
         self.dist.clear();
         self.seg.clear();
+        self.x.clear();
+        self.y.clear();
         self.alive.clear();
         self.frozen.clear();
         self.freeze_layers.clear();
@@ -150,8 +167,10 @@ impl BloonStore {
 
     /// Entfernt alle `alive == false`, Reihenfolge bleibt erhalten. O(n).
     pub fn compact(&mut self) {
-        let mut w = 0;
-        for r in 0..self.kind.len() {
+        // bis zum ersten toten Bloon bleibt alles, wo es ist
+        let Some(first_dead) = self.alive.iter().position(|&a| !a) else { return };
+        let mut w = first_dead;
+        for r in first_dead..self.kind.len() {
             if self.alive[r] {
                 self.id[w] = self.id[r];
                 self.kind[w] = self.kind[r];
@@ -159,6 +178,8 @@ impl BloonStore {
                 self.hp[w] = self.hp[r];
                 self.dist[w] = self.dist[r];
                 self.seg[w] = self.seg[r];
+                self.x[w] = self.x[r];
+                self.y[w] = self.y[r];
                 self.alive[w] = true;
                 self.frozen[w] = self.frozen[r];
                 self.freeze_layers[w] = self.freeze_layers[r];
@@ -181,6 +202,8 @@ impl BloonStore {
         self.hp.truncate(w);
         self.dist.truncate(w);
         self.seg.truncate(w);
+        self.x.truncate(w);
+        self.y.truncate(w);
         self.alive.truncate(w);
         self.frozen.truncate(w);
         self.freeze_layers.truncate(w);
@@ -277,7 +300,7 @@ mod tests {
     fn compact_keeps_order() {
         let mut s = BloonStore::default();
         for k in 0..5 {
-            s.push(k as u32, k, Flags::default(), 1.0, k as Real, 0);
+            s.push(k as u32, k, Flags::default(), 1.0, k as Real, 0, (k as Real, 0.0));
         }
         s.alive[1] = false;
         s.alive[3] = false;

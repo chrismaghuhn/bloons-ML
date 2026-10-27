@@ -96,7 +96,7 @@ struct Projectile {
     damage: Real,
     cannot_damage: Props,
     camo: bool,
-    extras: ExtrasRt,
+    extras: Arc<ExtrasRt>,
     /// Kontakt-/Ablauf-Effekte, Kurve und Treffer-Reset des Angriffs (Splitter haben keine).
     def: Option<Arc<ProjectileDef>>,
     /// Kurvenbahn: Ursprung, Drehung (cos, sin) und zurückgelegte Strecke.
@@ -199,7 +199,8 @@ impl World<'_> {
         for (j, &(child, hp)) in res.rest.iter().enumerate() {
             let cd = d - self.spacing * j as Real;
             let cseg = self.track.segment(cd, seg) as u16;
-            b.push(*next_id, child, flags, hp, cd, cseg); // Kinder erben die Flags [KAL]
+            let cpos = self.track.pos(cd, cseg as usize);
+            b.push(*next_id, child, flags, hp, cd, cseg, cpos); // Kinder erben die Flags [KAL]
             *next_id += 1;
             let c = b.len() - 1;
             parent.inherit(b, c);
@@ -216,6 +217,7 @@ impl World<'_> {
             if d > 0.0 {
                 b.dist[i] = (b.dist[i] - d).max(0.0);
                 b.seg[i] = self.track.segment(b.dist[i], b.seg[i] as usize) as u16;
+                (b.x[i], b.y[i]) = self.track.pos(b.dist[i], b.seg[i] as usize);
             }
         }
     }
@@ -249,7 +251,7 @@ impl World<'_> {
 
 /// Speed-Faktor durch Verlangsamungs-Zonen (der stärkste zählt).
 fn zone_scale(w: &World, b: &BloonStore, i: usize, zones: &[(Real, Real, crate::tower::ZoneRt)]) -> Real {
-    let (x, y) = w.track.pos(b.dist[i], b.seg[i] as usize);
+    let (x, y) = (b.x[i], b.y[i]);
     let br = real(w.defs[b.kind[i] as usize].radius);
     let mut s: Real = 1.0;
     for (cx, cy, z) in zones {
@@ -495,9 +497,23 @@ impl Game {
 
     /// Ob dort ein Turm dieser Art stehen könnte (Karte + andere Türme, ohne Cash).
     pub fn can_place_at(&self, kind: TowerKind, x: f64, y: f64) -> bool {
-        let Some(def) = self.data.towers.get(kind as usize) else { return false };
-        let r = def.variants[def.variant_id([0; PATHS]).unwrap() as usize].footprint;
-        placeable(&self.data.map, x, y, r) && !self.collides(x, y, r)
+        self.map_allows(kind, x, y) && !self.occupied(kind, x, y)
+    }
+
+    /// Nur der Karten-Teil von `can_place_at`; hängt nicht vom Spielzustand ab und lässt sich
+    /// daher vorberechnen.
+    pub fn map_allows(&self, kind: TowerKind, x: f64, y: f64) -> bool {
+        self.footprint(kind).is_some_and(|r| placeable(&self.data.map, x, y, r))
+    }
+
+    /// Nur der Turm-Teil von `can_place_at`: ein anderer Turm steht im Weg.
+    pub fn occupied(&self, kind: TowerKind, x: f64, y: f64) -> bool {
+        self.footprint(kind).map_or(true, |r| self.collides(x, y, r))
+    }
+
+    fn footprint(&self, kind: TowerKind) -> Option<f64> {
+        let def = self.data.towers.get(kind as usize)?;
+        Some(def.variants[def.variant_id([0; PATHS]).unwrap() as usize].footprint)
     }
 
     fn collides(&self, x: f64, y: f64, r: f64) -> bool {
@@ -633,7 +649,8 @@ impl Game {
             // Spawnen
             while si < spawns.len() && spawns[si].0 <= t {
                 let g = &groups[spawns[si].1];
-                self.bloons.push(next_id, g.kind, g.flags, real(defs[g.kind as usize].hp), 0.0, 0);
+                let pos = self.track.pos(0.0, 0);
+                self.bloons.push(next_id, g.kind, g.flags, real(defs[g.kind as usize].hp), 0.0, 0, pos);
                 next_id += 1;
                 si += 1;
             }
@@ -671,6 +688,7 @@ impl Game {
                         leaked += defs[b.kind[i] as usize].leak;
                     } else {
                         b.seg[i] = self.track.segment(b.dist[i], b.seg[i] as usize) as u16;
+                        (b.x[i], b.y[i]) = self.track.pos(b.dist[i], b.seg[i] as usize);
                     }
                 }
                 if leaked > 0 {
@@ -715,11 +733,10 @@ impl Game {
                         in_range.clear();
                         let mut first = usize::MAX;
                         for i in 0..b.len() {
-                            if !w.eligible(b, i, atk.camo, &atk.extras) {
-                                continue;
-                            }
-                            let (x, y) = self.track.pos(b.dist[i], b.seg[i] as usize);
-                            if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= atk.range2 {
+                            let (x, y) = (b.x[i], b.y[i]);
+                            if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= atk.range2
+                                && w.eligible(b, i, atk.camo, &atk.extras)
+                            {
                                 if first == usize::MAX || b.dist[i] > b.dist[first] {
                                     first = i; // Targeting "First"; bei Gleichstand der kleinere Index
                                 }
@@ -739,7 +756,7 @@ impl Game {
                         };
                         let (cannot, cooldown, pierce) = (atk.cannot_damage, atk.cooldown, atk.pierce);
                         let extras = atk.extras.clone();
-                        let (fx, fy) = self.track.pos(b.dist[first], b.seg[first] as usize);
+                        let (fx, fy) = (b.x[first], b.y[first]);
                         hit_list.clear();
                         match &atk.kind {
                             AttackKind::Projectile(def) => {
@@ -779,7 +796,7 @@ impl Game {
                                     if !b.alive[i] {
                                         continue;
                                     }
-                                    let (x, y) = self.track.pos(b.dist[i], b.seg[i] as usize);
+                                    let (x, y) = (b.x[i], b.y[i]);
                                     if (x - fx) * (x - fx) + (y - fy) * (y - fy) <= *r2 {
                                         hit_list.push(i);
                                     }
@@ -787,12 +804,11 @@ impl Game {
                             }
                             AttackKind::Area { radius } => {
                                 for i in 0..b.len() {
-                                    if !w.eligible(b, i, atk.camo, &extras) {
-                                        continue;
-                                    }
-                                    let (x, y) = self.track.pos(b.dist[i], b.seg[i] as usize);
+                                    let (x, y) = (b.x[i], b.y[i]);
                                     let rr = *radius + real(defs[b.kind[i] as usize].radius);
-                                    if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= rr * rr {
+                                    if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= rr * rr
+                                        && w.eligible(b, i, atk.camo, &extras)
+                                    {
                                         hit_list.push(i);
                                     }
                                 }
@@ -908,12 +924,13 @@ fn step_projectiles(
             if p.pierce <= 0.0 {
                 break;
             }
-            if p.hit.contains(&bloons.id[i]) || !w.eligible(bloons, i, p.camo, &p.extras) {
-                continue;
-            }
-            let (x, y) = w.track.pos(bloons.dist[i], bloons.seg[i] as usize);
+            // billigster Test zuerst; alle drei sind reine Prüfungen
+            let (x, y) = (bloons.x[i], bloons.y[i]);
             let rr = p.radius + real(w.defs[bloons.kind[i] as usize].radius);
-            if (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) > rr * rr {
+            if (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) > rr * rr
+                || p.hit.contains(&bloons.id[i])
+                || !w.eligible(bloons, i, p.camo, &p.extras)
+            {
                 continue;
             }
             p.hit.push(bloons.id[i]);
@@ -965,12 +982,11 @@ impl Effects {
                     let targets = &mut self.targets;
                     targets.clear();
                     for j in 0..bloons.len() {
-                        if !w.eligible(bloons, j, *camo, extras) {
-                            continue;
-                        }
-                        let (x, y) = w.track.pos(bloons.dist[j], bloons.seg[j] as usize);
+                        let (x, y) = (bloons.x[j], bloons.y[j]);
                         let rr = *radius + real(w.defs[bloons.kind[j] as usize].radius);
-                        if (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) <= rr * rr {
+                        if (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) <= rr * rr
+                            && w.eligible(bloons, j, *camo, extras)
+                        {
                             targets.push(j);
                         }
                     }

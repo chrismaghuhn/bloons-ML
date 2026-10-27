@@ -140,11 +140,13 @@ fn bench(args: &[String]) -> Result<(), String> {
     let (mut obs, mut mask) = (vec![0.0; env.layout.obs_size], vec![false; env.layout.n_actions]);
     let mut rng = Rng(42);
     let (mut steps, mut rounds, mut ticks, mut episodes) = (0u64, 0u64, 0u64, 0u64);
-    let (mut build_time, mut round_time) = (0.0f64, 0.0f64);
+    let (mut build_time, mut round_time, mut mask_time) = (0.0f64, 0.0f64, 0.0f64);
     env.reset(&mut obs);
     let start = Instant::now();
     while start.elapsed().as_secs_f64() < 3.0 {
+        let t0 = Instant::now();
         env.action_mask(&mut mask);
+        mask_time += t0.elapsed().as_secs_f64();
         let a = rng.pick(&mask);
         let t0 = Instant::now();
         let info = env.step(a, &mut obs);
@@ -166,7 +168,8 @@ fn bench(args: &[String]) -> Result<(), String> {
     let total = start.elapsed().as_secs_f64();
     println!("1 Env, Zufallspolicy ({total:.1} s, {episodes} Spiele):");
     println!("  Env-Schritte/s gesamt    {:>12.0}", steps as f64 / total);
-    println!("  Bau-Aktionen/s (+Maske)  {:>12.0}", (steps - rounds) as f64 / build_time.max(1e-9));
+    println!("  Masken/s                 {:>12.0}", steps as f64 / mask_time.max(1e-9));
+    println!("  Bau-Aktionen/s           {:>12.0}", (steps - rounds) as f64 / build_time.max(1e-9));
     println!("  Runden/s                 {:>12.0}", rounds as f64 / round_time.max(1e-9));
     println!("  simulierte Ticks/s       {:>12.0}", ticks as f64 / round_time.max(1e-9));
 

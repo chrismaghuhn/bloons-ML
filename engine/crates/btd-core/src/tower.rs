@@ -163,7 +163,8 @@ pub struct AttackRt {
     pub cannot_damage: Props,
     pub camo: bool,
     pub kind: AttackKind,
-    pub extras: ExtrasRt,
+    /// Geteilt (Arc), weil jedes Projektil die Extras seines Angriffs mitnimmt.
+    pub extras: Arc<ExtrasRt>,
     /// Kritischer Treffer: (Schaden, jeder n-te Schuss)
     pub crit: Option<(Real, u32)>,
     pub shots: u32,
@@ -255,7 +256,7 @@ pub enum ContactRt {
         damage: Real,
         cannot_damage: Props,
         camo: bool,
-        extras: ExtrasRt,
+        extras: Arc<ExtrasRt>,
     },
     /// Splitter; Flug und eigene Verbrauchs-Effekte stecken in `def`.
     Shards {
@@ -264,13 +265,13 @@ pub enum ContactRt {
         damage: Real,
         cannot_damage: Props,
         camo: bool,
-        extras: ExtrasRt,
+        extras: Arc<ExtrasRt>,
         inherit_hit: bool,
     },
 }
 
 fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
-    let extras = ExtrasRt::new(c.extras(), tags);
+    let extras = Arc::new(ExtrasRt::new(c.extras(), tags));
     match c {
         Contact::Explosion { radius, pierce, damage, camo, .. } => ContactRt::Explosion {
             radius: real(*radius),
@@ -426,7 +427,7 @@ impl Tower {
                             collide: true,
                         })),
                     },
-                    extras: ExtrasRt::new(&a.extras, tags),
+                    extras: Arc::new(ExtrasRt::new(&a.extras, tags)),
                     crit: a.crit.map(|c| (real(c.damage), c.every.max(1))),
                     shots,
                     cd_left,

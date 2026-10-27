@@ -9,6 +9,8 @@ pub struct Track {
     xs: Vec<Real>,
     ys: Vec<Real>,
     cum: Vec<Real>,
+    /// Steigung je Segment (dx/ds, dy/ds), vorberechnet: gleiche Formel wie in `pos`.
+    slope: Vec<(Real, Real)>,
     pub length: Real,
 }
 
@@ -19,7 +21,13 @@ impl Track {
         // Längen kommen aus den Daten (validiert: monoton, passend zu points)
         let cum: Vec<Real> = map.cum.iter().map(|&c| real(c)).collect();
         let length = *cum.last().unwrap();
-        Track { xs, ys, cum, length }
+        let slope = (0..cum.len() - 1)
+            .map(|j| {
+                let dx = cum[j + 1] - cum[j];
+                ((xs[j + 1] - xs[j]) / dx, (ys[j + 1] - ys[j]) / dx)
+            })
+            .collect();
+        Track { xs, ys, cum, slope, length }
     }
 
     /// Segmentindex `j` mit `cum[j] <= dist < cum[j+1]`, ausgehend von einem Startwert.
@@ -48,10 +56,8 @@ impl Track {
             return (self.xs[n], self.ys[n]);
         }
         let j = seg;
-        let dx = self.cum[j + 1] - self.cum[j];
         let off = dist - self.cum[j];
-        let sx = (self.xs[j + 1] - self.xs[j]) / dx;
-        let sy = (self.ys[j + 1] - self.ys[j]) / dx;
+        let (sx, sy) = self.slope[j];
         (sx * off + self.xs[j], sy * off + self.ys[j])
     }
 }
