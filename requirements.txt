@@ -1,4 +1,4 @@
-numpy
+numpy==2.5.4  # Runden-Generator der Python-Sim hängt am RNG-Stream
 gymnasium
 stable-baselines3
 sb3-contrib

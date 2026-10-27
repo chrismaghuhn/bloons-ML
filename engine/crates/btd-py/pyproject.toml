@@ -1,0 +1,14 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "btd-rs"
+version = "0.1.0"
+description = "Rust-Engine der bloons-ML-Simulation (Python-Bindings)"
+requires-python = ">=3.10"
+dependencies = ["numpy"]
+
+[tool.maturin]
+module-name = "btd_rs"
+features = ["pyo3/extension-module"]

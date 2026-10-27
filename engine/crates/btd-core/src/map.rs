@@ -16,11 +16,8 @@ impl Track {
     pub fn new(map: &MapDef) -> Self {
         let xs: Vec<Real> = map.points.iter().map(|p| real(p[0])).collect();
         let ys: Vec<Real> = map.points.iter().map(|p| real(p[1])).collect();
-        let mut cum = vec![0.0 as Real];
-        for i in 1..xs.len() {
-            let (dx, dy) = (xs[i] - xs[i - 1], ys[i] - ys[i - 1]);
-            cum.push(cum[i - 1] + (dx * dx + dy * dy).sqrt());
-        }
+        // Längen kommen aus den Daten (validiert: monoton, passend zu points)
+        let cum: Vec<Real> = map.cum.iter().map(|&c| real(c)).collect();
         let length = *cum.last().unwrap();
         Track { xs, ys, cum, length }
     }
@@ -69,6 +66,7 @@ mod tests {
             grid_w: 1,
             grid_h: 1,
             points: vec![[0.0, 0.0], [10.0, 0.0], [10.0, 5.0]],
+            cum: vec![0.0, 10.0, 15.0],
             path_mask: vec![false],
             buildable: vec![true],
         })
@@ -88,6 +86,24 @@ mod tests {
         let t = track();
         assert_eq!(t.pos(-1.0, t.segment(-1.0, 1)), (0.0, 0.0));
         assert_eq!(t.pos(99.0, t.segment(99.0, 0)), (10.0, 5.0));
+    }
+
+    #[test]
+    fn zero_length_segment_is_never_used_for_interpolation() {
+        let t = Track::new(&MapDef {
+            name: "z".into(),
+            grid_w: 1,
+            grid_h: 1,
+            points: vec![[0.0, 0.0], [5.0, 0.0], [5.0, 0.0], [10.0, 0.0]],
+            cum: vec![0.0, 5.0, 5.0, 10.0],
+            path_mask: vec![false],
+            buildable: vec![true],
+        });
+        for (d, hint) in [(5.0, 0), (5.0, 3), (4.0, 2), (7.5, 1)] {
+            let (x, y) = t.pos(d, t.segment(d, hint));
+            assert!(x.is_finite() && y.is_finite(), "d={d} hint={hint}");
+            assert_eq!(x, d);
+        }
     }
 
     #[test]

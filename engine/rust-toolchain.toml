@@ -1,0 +1,4 @@
+[toolchain]
+# fest, damit neue Clippy-Lints die CI nicht ohne Code-Änderung brechen
+channel = "1.99.1"
+components = ["clippy", "rustfmt"]

@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use btd_data::{GameData, TowerKind};
+use btd_data::{DataError, GameData, TowerKind};
 use xxhash_rust::xxh3::Xxh3;
 
 use crate::bloon::{pop, BloonStore};
@@ -56,7 +56,9 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(data: Arc<GameData>) -> Self {
+    /// Prüft die Daten (`GameData::validate`) und legt ein Spiel im Startzustand an.
+    pub fn new(data: Arc<GameData>) -> Result<Self, DataError> {
+        data.validate()?;
         let track = Track::new(&data.map);
         let dt = real(data.rules.dt);
         let speed_dt = data.bloons.iter().map(|b| real(b.speed) * dt).collect();
@@ -73,7 +75,7 @@ impl Game {
             data,
         };
         g.reset();
-        g
+        Ok(g)
     }
 
     pub fn reset(&mut self) {
@@ -203,12 +205,13 @@ impl Game {
         let dt = real(rules.dt);
         let eps = real(rules.cd_eps);
         let spacing = real(rules.child_spacing);
-        let max_t = real(rules.max_round_seconds);
 
         let lives_before = self.lives;
         let mut pops_total: u32 = 0;
         let mut si = 0;
-        let mut t: Real = 0.0;
+        // Rundenuhr immer in f64 (auch im f32-Build), sonst driften Spawn-Zeitpunkte über
+        // Tausende Additionen von dt. Die Bloon-Physik selbst läuft in `Real`.
+        let mut t: f64 = 0.0;
         let mut ticks = 0;
         self.bloons.clear();
         for tw in &mut self.towers {
@@ -217,9 +220,9 @@ impl Game {
         let mut in_range: Vec<usize> = Vec::new();
         let mut hit: Vec<usize> = Vec::new();
 
-        while t < max_t {
+        while t < rules.max_round_seconds {
             // Spawnen
-            while si < spawns.len() && real(spawns[si].time) <= t {
+            while si < spawns.len() && spawns[si].time <= t {
                 self.bloons.push(spawns[si].kind, 0.0, 0);
                 si += 1;
             }
@@ -252,7 +255,13 @@ impl Game {
                 tw.cd_left -= dt;
             }
             if !self.bloons.is_empty() {
+                // Lebende Bloons in diesem Tick. Sind alle weg, werden die restlichen Türme
+                // übersprungen und ihr Cooldown bleibt unangetastet (wie in der Referenz).
+                let mut alive = self.bloons.len();
                 for ti in 0..self.towers.len() {
+                    if alive == 0 {
+                        break;
+                    }
                     let tw = &self.towers[ti];
                     if tw.cd_left > eps {
                         continue;
@@ -308,6 +317,8 @@ impl Game {
                             continue;
                         }
                         self.bloons.alive[i] = false;
+                        alive -= 1;
+                        alive += res.rest.len();
                         pops_total += res.pops;
                         let (d, seg) = (self.bloons.dist[i], self.bloons.seg[i] as usize);
                         for (j, &child) in res.rest.iter().enumerate() {
@@ -320,7 +331,7 @@ impl Game {
                 self.bloons.compact();
             }
 
-            t += dt;
+            t += rules.dt;
             ticks += 1;
             if si >= spawns.len() && self.bloons.is_empty() {
                 break;
@@ -333,11 +344,12 @@ impl Game {
             self.cash += Money::from_dollars(rules.round_bonus_base + self.round as i64);
         }
         self.bloons.clear();
-        RoundReport { leaked: lives_before - self.lives, pops: pops_total, seconds: t as f64, ticks }
+        RoundReport { leaked: lives_before - self.lives, pops: pops_total, seconds: t, ticks }
     }
 
     /// Hash über den kompletten Spielzustand zwischen den Runden (xxh3, fester Seed,
     /// Floats über `to_bits`). Gleicher Seed + gleiche Aktionen ⇒ gleicher Hash.
+    /// `cd_left` fehlt bewusst: es wird zu Rundenbeginn ohnehin zurückgesetzt.
     pub fn state_hash(&self) -> u64 {
         let mut h = Xxh3::with_seed(HASH_SEED);
         h.update(&self.cash.0.to_le_bytes());
@@ -348,7 +360,7 @@ impl Game {
             h.update(&t.x.to_le_bytes());
             h.update(&t.y.to_le_bytes());
             h.update(&t.spent.0.to_le_bytes());
-            for v in [t.cd_left, t.range, t.cooldown, t.blast] {
+            for v in [t.range, t.cooldown, t.blast] {
                 h.update(&v.to_bits().to_le_bytes());
             }
             h.update(&t.damage.to_le_bytes());

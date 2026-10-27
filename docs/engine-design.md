@@ -529,7 +529,7 @@ der Sim verglichen. Ergebnisse kommen als Testfälle nach `tests/calibration/`.
 
 ## 10. Meilensteine
 
-1. **M1 – Parität (Pipeline-Test):** `btd-data` + `btd-core` mit dem Funktionsumfang der
+1. **M1 – Parität (Pipeline-Test)** ✅ *(erledigt: Golden-Trace-Paritätstest bit-genau, Rust-Env ~100× schneller als die Python-Env, VecEnv ~480×, Replays mit `btd-replay/1`)*: `btd-data` + `btd-core` mit dem Funktionsumfang der
    Python-Engine (4 Türme, Hitscan, prozedurale Runden), Paritätstests grün.
    `btd-env`/`btd-py` minimal, damit PPO einmal **durchläuft**. Kein ernsthaftes Training.
 2. **M2 – Echte Physik & Daten:** Projektile mit Flugzeit, Wiki-Runden 1–40 inkl.

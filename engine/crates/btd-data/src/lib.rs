@@ -66,6 +66,9 @@ pub struct MapDef {
     pub grid_h: usize,
     /// Pfad-Polylinie in Zellkoordinaten.
     pub points: Vec<[f64; 2]>,
+    /// Kumulierte Pfadlänge je Punkt (`cum[0] == 0`). Kommt aus den Daten statt neu berechnet
+    /// zu werden, damit alle Engines exakt dieselben Längen nutzen.
+    pub cum: Vec<f64>,
     /// Zeilenweise, Index = y * grid_w + x.
     pub path_mask: Vec<bool>,
     pub buildable: Vec<bool>,
@@ -145,6 +148,7 @@ struct RawMap {
     grid_w: usize,
     grid_h: usize,
     points: Vec<[f64; 2]>,
+    cum: Vec<f64>,
     path_mask: Vec<String>,
     buildable: Vec<String>,
 }
@@ -248,6 +252,9 @@ impl GameData {
         if raw.bloons.len() > BloonKind::MAX as usize || raw.towers.len() > TowerKind::MAX as usize {
             return Err(invalid("zu viele Bloon- oder Turmtypen"));
         }
+        // vor dem Auflösen prüfen, sonst gewinnt bei doppelten Namen stillschweigend der erste
+        check_unique(raw.bloons.iter().map(|b| b.name.as_str()), "Bloon")?;
+        check_unique(raw.towers.iter().map(|t| t.name.as_str()), "Turm")?;
         let bloon_id = |name: &str| -> Result<BloonKind, DataError> {
             raw.bloons
                 .iter()
@@ -307,6 +314,7 @@ impl GameData {
             grid_w: m.grid_w,
             grid_h: m.grid_h,
             points: m.points.clone(),
+            cum: m.cum.clone(),
             path_mask: parse_grid(&m.path_mask, m.grid_w, m.grid_h, "path_mask")?,
             buildable: parse_grid(&m.buildable, m.grid_w, m.grid_h, "buildable")?,
         };
@@ -316,40 +324,230 @@ impl GameData {
         Ok(data)
     }
 
+    /// Prüft alles, worauf sich der Core verlässt. Wird von `from_json` und von `Game::new`
+    /// aufgerufen, damit auch von Hand gebaute Daten geprüft sind.
     pub fn validate(&self) -> Result<(), DataError> {
         let r = &self.rules;
-        if r.dt.is_nan() || r.dt <= 0.0 || r.max_round_seconds.is_nan() || r.max_round_seconds <= 0.0 {
+        let pos = |x: f64| x.is_finite() && x > 0.0;
+        let non_neg = |x: f64| x.is_finite() && x >= 0.0;
+        if !pos(r.dt) || !pos(r.max_round_seconds) {
             return Err(invalid("rules: dt und max_round_seconds müssen > 0 sein"));
+        }
+        if r.max_round_seconds / r.dt > MAX_TICKS_PER_ROUND {
+            return Err(invalid("rules: max_round_seconds / dt ergibt zu viele Ticks pro Runde"));
+        }
+        if !non_neg(r.cd_eps) || !non_neg(r.child_spacing) {
+            return Err(invalid("rules: cd_eps und child_spacing müssen >= 0 sein"));
+        }
+        if !(r.sell_ratio.is_finite() && (0.0..=1.0).contains(&r.sell_ratio)) {
+            return Err(invalid("rules: sell_ratio muss in [0, 1] liegen"));
+        }
+        if r.start_lives <= 0 || !(0..=MAX_DOLLARS).contains(&r.start_cash) {
+            return Err(invalid("rules: start_lives > 0 und start_cash in [0, 1e12] erwartet"));
         }
         if r.max_second_path > r.max_tier {
             return Err(invalid("rules: max_second_path > max_tier"));
         }
-        if self.map.points.len() < 2 {
-            return Err(invalid("map: Pfad braucht mindestens 2 Punkte"));
+
+        let m = &self.map;
+        if m.points.len() < 2 || m.points.len() > u16::MAX as usize {
+            return Err(invalid("map: Pfad braucht 2 bis 65535 Punkte"));
         }
-        for b in &self.bloons {
-            if b.speed <= 0.0 || b.rbe <= 0 {
-                return Err(invalid(format!("Bloon {}: speed und rbe müssen > 0 sein", b.name)));
+        if m.cum.len() != m.points.len()
+            || m.cum[0] != 0.0
+            || m.cum.iter().any(|c| !c.is_finite())
+            || m.cum.windows(2).any(|w| w[1] < w[0])
+            || !pos(*m.cum.last().unwrap())
+        {
+            return Err(invalid("map: cum muss bei 0 beginnen, monoton steigen und zu points passen"));
+        }
+        if m.points.iter().flatten().any(|v| !v.is_finite()) {
+            return Err(invalid("map: points müssen endlich sein"));
+        }
+        for (i, w) in m.points.windows(2).enumerate() {
+            let len = (w[1][0] - w[0][0]).hypot(w[1][1] - w[0][1]);
+            if (m.cum[i + 1] - m.cum[i] - len).abs() > 1e-9 * len.max(1.0) {
+                return Err(invalid(format!("map: cum passt bei Segment {i} nicht zu points")));
             }
         }
+        let cells = m.grid_w.checked_mul(m.grid_h).filter(|&c| c > 0 && c <= u16::MAX as usize);
+        let Some(cells) = cells else {
+            return Err(invalid("map: grid_w x grid_h muss zwischen 1 und 65535 liegen"));
+        };
+        if m.path_mask.len() != cells || m.buildable.len() != cells {
+            return Err(invalid("map: Raster passen nicht zu grid_w x grid_h"));
+        }
+
+        check_unique(self.bloons.iter().map(|b| b.name.as_str()), "Bloon")?;
+        check_unique(self.towers.iter().map(|t| t.name.as_str()), "Turm")?;
+        for b in &self.bloons {
+            // Weg pro Tick muss auch in f32 > 0 sein, sonst bewegt sich der Bloon nie
+            if !pos(b.speed) || (b.speed as f32) * (r.dt as f32) <= 0.0 || b.rbe <= 0 {
+                return Err(invalid(format!("Bloon {}: speed und rbe müssen > 0 sein", b.name)));
+            }
+            if b.children.iter().any(|&c| c as usize >= self.bloons.len()) {
+                return Err(invalid(format!("Bloon {}: unbekanntes Kind", b.name)));
+            }
+        }
+        self.check_child_cycles()?;
+
         for t in &self.towers {
-            if t.cost <= 0 || t.cooldown <= 0.0 || t.range <= 0.0 {
-                return Err(invalid(format!("Turm {}: cost/cooldown/range müssen > 0 sein", t.name)));
+            if !(1..=MAX_DOLLARS).contains(&t.cost) || !pos(t.cooldown) || !pos(t.range) || !non_neg(t.blast)
+            {
+                return Err(invalid(format!(
+                    "Turm {}: cost/cooldown/range > 0 und blast >= 0 erwartet",
+                    t.name
+                )));
             }
             for (p, path) in t.upgrades.iter().enumerate() {
                 if path.len() != r.max_tier as usize {
                     return Err(invalid(format!("Turm {} Pfad {p}: {} Stufen erwartet", t.name, r.max_tier)));
                 }
-                if path.iter().any(|u| u.cost <= 0 || u.fx.rate <= 0.0) {
-                    return Err(invalid(format!("Turm {} Pfad {p}: Kosten/rate müssen > 0 sein", t.name)));
+                for u in path {
+                    let fx = &u.fx;
+                    // negative Deltas würden zwischen den Engines unterschiedlich behandelt
+                    // (Python-Slicing vs. Klemmen), deshalb gar nicht erst zulassen
+                    if !(1..=MAX_DOLLARS).contains(&u.cost) || !pos(fx.rate) || fx.pierce < 0 || fx.damage < 0
+                    {
+                        return Err(invalid(format!(
+                            "Turm {} Pfad {p}: Kosten/rate > 0, pierce/damage-Delta >= 0 erwartet",
+                            t.name
+                        )));
+                    }
+                    if !non_neg(fx.range) || !non_neg(fx.blast) {
+                        return Err(invalid(format!(
+                            "Turm {} Pfad {p}: range/blast-Delta >= 0 erwartet",
+                            t.name
+                        )));
+                    }
                 }
             }
         }
         for (i, round) in self.rounds.iter().enumerate() {
+            if round.iter().any(|s| !non_neg(s.time) || s.kind as usize >= self.bloons.len()) {
+                return Err(invalid(format!("Runde {}: ungültiger Spawn", i + 1)));
+            }
             if round.windows(2).any(|w| w[1].time < w[0].time) {
                 return Err(invalid(format!("Runde {}: Spawns nicht nach Zeit sortiert", i + 1)));
             }
         }
         Ok(())
+    }
+
+    /// Ein Zyklus im Kinder-Graph (z.B. red -> red) würde beim ersten Treffer endlos rekursieren.
+    fn check_child_cycles(&self) -> Result<(), DataError> {
+        // 0 = unbesucht, 1 = auf dem Stack, 2 = fertig
+        fn visit(defs: &[BloonDef], i: usize, state: &mut [u8]) -> bool {
+            match state[i] {
+                1 => return false,
+                2 => return true,
+                _ => {}
+            }
+            state[i] = 1;
+            let ok = defs[i].children.iter().all(|&c| visit(defs, c as usize, state));
+            state[i] = 2;
+            ok
+        }
+        let mut state = vec![0u8; self.bloons.len()];
+        for i in 0..self.bloons.len() {
+            if !visit(&self.bloons, i, &mut state) {
+                return Err(invalid(format!("Bloon {}: Zyklus in den Kindern", self.bloons[i].name)));
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Obergrenzen gegen Überläufe bei von Hand gebauten Daten (Money rechnet in 1/1000 $ als i64).
+const MAX_DOLLARS: i64 = 1_000_000_000_000;
+const MAX_TICKS_PER_ROUND: f64 = 1e7;
+
+fn check_unique<'a>(names: impl Iterator<Item = &'a str>, what: &str) -> Result<(), DataError> {
+    let mut seen = std::collections::HashSet::new();
+    for n in names {
+        if !seen.insert(n) {
+            return Err(invalid(format!("{what} {n:?} ist doppelt")));
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{json, Value};
+
+    fn minimal() -> Value {
+        let up = json!({"cost": 10, "effects": {"pierce": 1}});
+        json!({
+            "format": "sim_v0",
+            "rules": {"dt": 0.05, "cd_eps": 1e-9, "max_round_seconds": 300, "child_spacing": 0.15,
+                      "start_cash": 650, "start_lives": 150, "sell_ratio": 0.7, "round_bonus_base": 100,
+                      "max_tier": 1, "max_second_path": 1},
+            "map": {"name": "m", "grid_w": 2, "grid_h": 1, "points": [[0.0, 0.5], [2.0, 0.5]],
+                    "cum": [0.0, 2.0], "path_mask": ["#."], "buildable": [".#"]},
+            "bloons": [{"name": "red", "children": [], "speed": 2.5, "rbe": 1, "immune": []},
+                       {"name": "blue", "children": ["red"], "speed": 3.5, "rbe": 2, "immune": ["sharp"]}],
+            "towers": [{"name": "dart", "cost": 200, "range": 3.0, "cooldown": 1.0, "damage": 1, "pierce": 2,
+                        "dmg_type": "sharp", "blast": 0.0, "upgrades": [[up], [up]]}],
+            "rounds": [[[0.0, "red"], [0.5, "blue"]]]
+        })
+    }
+
+    fn load(v: &Value) -> Result<GameData, DataError> {
+        GameData::from_json(&v.to_string())
+    }
+
+    fn rejects(f: impl FnOnce(&mut Value), needle: &str) {
+        let mut v = minimal();
+        f(&mut v);
+        match load(&v) {
+            Err(e) => assert!(e.to_string().contains(needle), "{e} enthält nicht {needle:?}"),
+            Ok(_) => panic!("sollte abgelehnt werden: {needle}"),
+        }
+    }
+
+    #[test]
+    fn loads_and_resolves_names() {
+        let d = load(&minimal()).unwrap();
+        assert_eq!(d.bloons[1].children, vec![0]);
+        assert!(d.bloons[1].immune.contains(DamageType::Sharp));
+        assert!(!d.bloons[1].immune.contains(DamageType::Explosive));
+        assert_eq!(d.rounds[0][1], Spawn { time: 0.5, kind: 1 });
+        assert_eq!(d.map.path_mask, vec![true, false]);
+        assert_eq!(d.towers[0].upgrades[0][0].fx.rate, 1.0); // Standardwert
+    }
+
+    #[test]
+    fn floats_roundtrip_exactly() {
+        // 0.9843489761028231 wird ohne serde_json/float_roundtrip um 1 ULP falsch gelesen
+        let mut v = minimal();
+        v["rounds"][0][1][0] = json!(0.9843489761028231);
+        let d = load(&v).unwrap();
+        assert_eq!(d.rounds[0][1].time.to_bits(), 0.9843489761028231f64.to_bits());
+    }
+
+    #[test]
+    fn rejects_invalid_data() {
+        rejects(|v| v["format"] = json!("x"), "Format");
+        rejects(|v| v["bloons"][0]["children"] = json!(["green"]), "unbekannter Bloon");
+        rejects(|v| v["bloons"][0]["children"] = json!(["blue"]), "Zyklus");
+        rejects(|v| v["bloons"][1]["name"] = json!("red"), "doppelt");
+        rejects(|v| v["map"]["path_mask"] = json!(["#"]), "path_mask");
+        rejects(|v| v["map"]["buildable"] = json!(["x."]), "unbekanntes Zeichen");
+        rejects(|v| v["map"]["cum"] = json!([0.0, 1.0, 2.0]), "cum");
+        rejects(|v| v["map"]["cum"] = json!([0.0, 0.0]), "cum");
+        rejects(|v| v["rules"]["dt"] = json!(0.0), "dt");
+        rejects(|v| v["rules"]["max_round_seconds"] = json!(1e9), "Ticks");
+        rejects(|v| v["map"]["cum"] = json!([0.0, 3.0]), "Segment 0");
+        rejects(|v| v["bloons"][0]["speed"] = json!(1e-300), "speed");
+        rejects(|v| v["towers"][0]["cost"] = json!(10_000_000_000_000i64), "cost");
+        rejects(|v| v["rules"]["sell_ratio"] = json!(1.5), "sell_ratio");
+        rejects(|v| v["rules"]["max_second_path"] = json!(2), "max_second_path");
+        rejects(|v| v["towers"][0]["upgrades"] = json!([[]]), "2 Upgrade-Pfade");
+        rejects(|v| v["towers"][0]["upgrades"][0] = json!([]), "Stufen");
+        rejects(|v| v["towers"][0]["upgrades"][0][0]["effects"] = json!({"pierce": -1}), "Delta");
+        rejects(|v| v["towers"][0]["upgrades"][0][0]["effects"] = json!({"speed": 1}), "unknown field");
+        rejects(|v| v["rounds"][0] = json!([[1.0, "red"], [0.5, "red"]]), "sortiert");
     }
 }
