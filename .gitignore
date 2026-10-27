@@ -10,3 +10,4 @@ target/
 data/raw/game_dump/
 # Aus dem Dump abgeleitete Daten (game_v1 für die echte Karte) bleiben ebenfalls lokal
 data/local/
+data/raw/recordings/

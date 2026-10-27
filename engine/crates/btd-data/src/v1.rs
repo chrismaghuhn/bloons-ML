@@ -515,12 +515,16 @@ pub struct Push {
     pub factor_for: Vec<TagFactor>,
 }
 
-/// Kritischer Treffer: jeder `every`-te Schuss macht `damage` statt des normalen Schadens.
+/// Kritischer Treffer: jeder `every`-te Schuss macht `damage` statt des normalen Schadens. Das
+/// Spiel würfelt den Abstand je Crit aus `every_range`; die Sim würfelt inklusive der Obergrenze
+/// [KAL: ob das Spiel sie einschließt]. Ohne Zufall gilt `every`.
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Crit {
     pub damage: f64,
     pub every: u32,
+    #[serde(default)]
+    pub every_range: Option<[u32; 2]>,
 }
 
 /// Salve: `count` Schüsse je Angriff, `interval` Sekunden auseinander (Desperado).
@@ -1028,7 +1032,11 @@ impl GameV1 {
                 for a in &v.attacks {
                     let ok = pos(a.cooldown)
                         && non_neg(a.damage)
-                        && a.crit.map_or(true, |c| non_neg(c.damage) && c.every >= 1)
+                        && a.crit.map_or(true, |c| {
+                            non_neg(c.damage)
+                                && c.every >= 1
+                                && c.every_range.map_or(true, |[lo, hi]| lo >= 1 && lo <= hi)
+                        })
                         && a.burst.map_or(true, |b| b.count >= 1 && non_neg(b.interval))
                         && a.range.map_or(true, pos)
                         && match &a.delivery {

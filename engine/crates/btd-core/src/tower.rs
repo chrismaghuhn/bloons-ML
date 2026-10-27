@@ -167,6 +167,9 @@ pub struct AttackRt {
     pub extras: Arc<ExtrasRt>,
     /// Kritischer Treffer: (Schaden, jeder n-te Schuss)
     pub crit: Option<(Real, u32)>,
+    /// Würfelbereich für den Crit-Abstand (nur mit Zufall) und Schüsse bis zum nächsten Crit.
+    pub crit_range: Option<(u32, u32)>,
+    pub crit_next: u32,
     pub shots: u32,
     pub cd_left: Real,
     /// Salve: (Schüsse je Angriff, Abstand); offene Schüsse der laufenden Salve und Zeit bis zum nächsten.
@@ -451,6 +454,11 @@ impl Tower {
                     },
                     extras: Arc::new(ExtrasRt::new(&a.extras, tags)),
                     crit: a.crit.map(|c| (real(c.damage), c.every.max(1))),
+                    crit_range: a
+                        .crit
+                        .and_then(|c| c.every_range)
+                        .map(|[lo, hi]| (lo.max(1), hi.max(lo.max(1)))),
+                    crit_next: a.crit.map_or(0, |c| c.every.max(1)),
                     shots,
                     cd_left,
                     burst: a.burst.map(|b| (b.count, real(b.interval))),

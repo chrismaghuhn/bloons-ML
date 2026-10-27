@@ -171,3 +171,65 @@ Daten `--towers t12` (275/768 Kombinationen), R60, 5M Schritte, Seed 1, `--rewar
   ihre Wahrscheinlichkeit breit, die wahrscheinlichste Einzelaktion ist oft schlecht.
 - Nächster Schritt: Entropie-Schedule (abklingender ent_coef) als getrennter Lauf mit sonst gleicher
   Konfiguration.
+
+### Abgleich echtes Spiel, Teil 2: Zwei-Turm-Build über Runde 40 hinaus
+
+Dart 0-0-4 bei (−5, −1) + Bomb 0-0-0 bei (15, −31), ab Runde 16 keine Aktionen mehr (Freeplay bis 60).
+
+| Runde | Sim (medium60): Leben danach | echtes Spiel |
+|---|---|---|
+| ≤ 42 | 150 | 150 |
+| 43 | 91 (erste Leaks) | erste Leaks |
+| 44 | 91 | 65 (Screenshot während/nach Runde 44) |
+| 45 | 13 (−78) | **Defeat, Leak-Anzeige −78** (Leads; nur noch 65 Leben) |
+| 47 | 0 | – |
+
+Erste Leak-Runde stimmt exakt, der Verlust in Runde 45 (verstärkte Leads) auf das Leben genau (−78).
+Abweichung nur in Runde 43/44 (echtes Spiel ≥ 26 Leben mehr verloren), dort hängt das Ergebnis stark
+am Crit-Timing (Sim mit festem Abstand 8-12: Leben nach Runde 44 zwischen 89 und 150).
+Passt zum Verdacht, dass die Sim leicht großzügig ist (keine Sichtlinie, Crits exakt jeder 10. Schuss).
+
+## 2026-10-27: Entropie-Schedule (t12_r60_ent)
+
+Wie t12_r60, plus `--ent-coef 0.01 --ent-coef-end 0.001` (linear). Entropie der Policy fiel in den
+letzten 500k Schritten von ~2 auf 0,96 (ohne Schedule ~2); normale Starts am Ende Ø Runde 56,1 (53,3).
+
+| | t12_r60 | t12_r60_ent |
+|---|---|---|
+| Siege ohne Sperre (stoch., 64) | 55 | **64** |
+| Einzelsperren mit 10/10 Siegen (von 12) | 1 | 10 (ohne Sniper 9/10) |
+| ohne Dart (stoch., 10) | 2 | 0 |
+| deterministisch ohne Sperre | Runde 26 | Runde 46 |
+| Erholung det. / stoch. (50) | 27 / 43 | 33 / 41 |
+| H(Schlüssel) ohne Sperre | 5,46 bit (50) | 2,09 bit (13) |
+
+Stochastisch deutlich stärker und zuverlässiger; deterministisch besser, aber weiter schwach (in den
+meisten Sperren Runde 26-39). Vielfalt sinkt: immer zuerst Sniper (oben), dann Dart (unten).
+Offen: warum Argmax scheitert (einzelne Spiele ansehen).
+
+Nachtrag: Im Dump 57.4 ist der Crit-Abstand des Sharp Shooters fest 10 (lower = upper = 10), also
+kein Crit-Glück im echten Spiel. Die Abweichung in Runde 43/44 hat eine andere Ursache; Kandidaten:
+Sichtlinie (Bäume blocken Schüsse, die Sim kennt keine Hindernisse), Details der Zielwahl.
+
+## 2026-10-27: Kalibrierung Track-Länge und Sniper (widersprüchlich, noch keine Änderung)
+
+Echte Messungen (Monkey Meadow, Medium): Runde 1 ohne Türme dauert 50,0 s (Stoppuhr); der Bot-Build
+(Sniper 0-0-0 rechts bei (105, −41)) verliert schon in Runde 1 3 Leben.
+
+| Sim-Variante | R1 ohne Türme | Sniper R1 Leaks | Zwei-Turm erste Leaks | Leben nach R44 | Verlust R45 |
+|---|---|---|---|---|---|
+| echtes Spiel | 50,0 s | 3 | R43 | 65 | 78 |
+| voller Track (Dump, 1276 E.) | 68,6 s | 0 | R43 | 91 | 78 |
+| nur sichtbar (894 E.) | 53,3 s | 0 | R38 | 146 | 78 |
+| sichtbar + 20 E. | 54,9 s | 0 | R45 | 150 | 129 |
+
+- Der Dump-Track reicht 183 E. links und 199 E. unten über den Bildrand; die Laufzeit spricht dafür,
+  dass Bloons diese Abschnitte im Spiel nicht (voll) laufen.
+- Kürzen verschlechtert aber den Zwei-Turm-Abgleich: dessen exakte Treffer waren wohl teils Zufall (das
+  Ergebnis springt schon bei kleinen Änderungen, vgl. Crit-Abstände).
+- Die Sniper-Leaks in R1 erklärt keine Variante: der Sniper ist in der Sim stärker (Kandidaten:
+  Verzögerung vor dem ersten Schuss, echte Schussrate, Platzierung erst während der Runde).
+- Sichtlinie scheidet hier aus: 119 Hindernis-Kreise (BlockerModel) liegen nur in den Ecken, der
+  Sniper sieht 100 % des Tracks. Der Konverter ignoriert sie bisher; für andere Plätze/Karten nötig.
+- Vorschlag: Bloon-Positionen und Schüsse im echten Spiel per Mod mitschreiben und Tick für Tick
+  vergleichen, statt aus Endständen zurückzurechnen.

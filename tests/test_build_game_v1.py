@@ -169,7 +169,7 @@ def test_crit_parallel_and_clear_hits():
                   proj_extra=[T("ClearHitBloonsModel", interval=0.3)])
     m["behaviors"][0]["weapons"][0]["behaviors"] = [T("CritMultiplierModel", damage=80.0, lower=4, upper=6)]
     a = b.convert_variant(m, [0, 0, 0])["attacks"][0]
-    assert a["crit"] == {"damage": 80.0, "every": 5}
+    assert a["crit"] == {"damage": 80.0, "every": 5, "every_range": [4, 6]}
     assert a["delivery"]["emission"] == {"kind": "parallel", "count": 2, "spread": 3.0}
     assert a["delivery"]["clear_hits"] == 0.3
 

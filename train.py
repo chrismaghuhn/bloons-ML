@@ -21,6 +21,27 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from btd_sim import BTDEnv
 
 
+class EntropySchedule(BaseCallback):
+    """Entropie-Koeffizient linear von `start` auf `end` über `total` Schritte (ab dem Start dieses Laufs)."""
+
+    def __init__(self, start: float, end: float, total: int):
+        super().__init__()
+        self.start, self.end, self.total = start, end, total
+        self.first = None
+
+    def _on_rollout_start(self):
+        # self.num_timesteps wird erst in on_step aktualisiert, hier also vom Modell lesen
+        t = self.model.num_timesteps
+        if self.first is None:
+            self.first = t
+        progress = min(1.0, max(0.0, (t - self.first) / max(self.total, 1)))
+        self.model.ent_coef = self.start + (self.end - self.start) * progress
+        self.logger.record("train/ent_coef_schedule", self.model.ent_coef)
+
+    def _on_step(self):
+        return True
+
+
 class RoundLogger(BaseCallback):
     """Loggt die erreichte Runde beendeter Episoden (Mittel und Maximum der letzten 100)."""
 
@@ -53,6 +74,8 @@ if __name__ == "__main__":
                     help="Reward je gebautem Turm, z.B. -0.5 für möglichst wenige Türme (nur Rust)")
     ap.add_argument("--arch", choices=["mlp", "conv"], default=None,
                     help="conv: btd_sim.policy.GridPolicy (Standard mit --engine rust), mlp: flaches MLP")
+    ap.add_argument("--randomness", action="store_true",
+                    help="Zufall im Spiel (z.B. Crit-Abstände) statt Mittelwerten, je Episode ein Seed (nur Rust)")
     ap.add_argument("--ban-towers", type=int, default=0,
                     help="je Episode bis zu so viele Turmtypen zufällig sperren (nur Rust)")
     ap.add_argument("--start-states", type=float, default=0.0,
@@ -61,6 +84,10 @@ if __name__ == "__main__":
                     help="davon zufällige Builds im Budget (Quelle C)")
     ap.add_argument("--start-replays", nargs="*", default=[],
                     help="Replays (.jsonl) als Quelle B und für die Budgetkurve")
+    ap.add_argument("--ent-coef", type=float, default=0.01, help="Entropie-Koeffizient (Start)")
+    ap.add_argument("--ent-coef-end", type=float, default=None,
+                    help="wenn gesetzt: linear von --ent-coef auf diesen Wert über --steps (Wert je Rollout am "
+                         "Rollout-Start; mit --resume beginnt der Verlauf wieder bei --ent-coef)")
     ap.add_argument("--conv-width", type=int, default=32, help="Kanäle der Faltungs-Policy")
     ap.add_argument("--conv-blocks", type=int, default=4, help="Residual-Blöcke der Faltungs-Policy")
     ap.add_argument("--amp", action=argparse.BooleanOptionalAction, default=True,
@@ -72,24 +99,27 @@ if __name__ == "__main__":
     if args.arch is None:
         args.arch = "conv" if args.engine == "rust" else "mlp"
     if args.engine != "rust" and (args.data or args.preview or args.arch == "conv" or args.reward_tower
-                                   or args.ban_towers or args.start_states):
+                                   or args.ban_towers or args.start_states or args.randomness):
         ap.error("--data/--preview/--arch conv/--reward-tower/--ban-towers/--start-states "
                  "gibt es nur mit --engine rust")
     if args.start_states and not args.start_replays:
         ap.error("--start-states braucht --start-replays (Quelle B und Budgetkurve)")
+    if args.ent_coef < 0 or (args.ent_coef_end is not None and args.ent_coef_end < 0):
+        ap.error("--ent-coef/--ent-coef-end müssen >= 0 sein")
     if args.resume:
         print("--resume: Architektur und Seed kommen aus dem Modell, --arch/--conv-*/--seed werden ignoriert "
-              "(--amp/--compile gelten)")
+              "(--amp/--compile/--ent-coef gelten)")
 
     if args.engine == "rust":
         from btd_sim.rust_env import DEFAULT_DATA, RustVecEnv
         env = RustVecEnv(args.envs, args.data or DEFAULT_DATA, preview_rounds=args.preview,
                          reward_tower=args.reward_tower, max_banned_towers=args.ban_towers,
-                         seed=args.seed or 0)
+                         seed=args.seed or 0, randomness=args.randomness)
     else:
         env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
     if args.resume:
         model = MaskablePPO.load(args.resume, env=env, device=args.device)
+        model.ent_coef = args.ent_coef  # sonst gälte still der gespeicherte Wert
     else:
         if args.arch == "conv":
             from btd_sim.policy import GridPolicy, grid_spec
@@ -101,7 +131,7 @@ if __name__ == "__main__":
         model = MaskablePPO(
             policy, env,
             n_steps=512, batch_size=1024, n_epochs=6,
-            gamma=0.995, gae_lambda=0.95, ent_coef=0.01, learning_rate=3e-4,
+            gamma=0.995, gae_lambda=0.95, ent_coef=args.ent_coef, learning_rate=3e-4,
             policy_kwargs=policy_kwargs, seed=args.seed,
             tensorboard_log="runs", verbose=1, device=args.device,
         )
@@ -113,6 +143,8 @@ if __name__ == "__main__":
             net.try_compile(model.device)
     callbacks = [CheckpointCallback(100_000 // args.envs, "models/checkpoints", name_prefix=Path(args.out).name),
                  RoundLogger()]
+    if args.ent_coef_end is not None:
+        callbacks.append(EntropySchedule(args.ent_coef, args.ent_coef_end, args.steps))
     if args.start_states:
         import json
         from btd_sim.starts import StartPool, StartStatesCallback, budget_curve, states_from_replay

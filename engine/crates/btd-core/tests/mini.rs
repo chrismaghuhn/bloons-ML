@@ -446,7 +446,7 @@ fn crit_hits_on_every_nth_shot() {
         run(d, place(PIN, 0.0, 15.0))
     };
     assert_eq!(pin(None).pops, 0, "1 Schaden pro Schuss reicht nicht für 10 HP");
-    assert!(pin(Some(Crit { damage: 10.0, every: 2 })).pops >= 1);
+    assert!(pin(Some(Crit { damage: 10.0, every: 2, every_range: None })).pops >= 1);
 }
 
 #[test]
@@ -708,7 +708,7 @@ fn crit_frequency_matters() {
         let mut d = with_round(vec![group(0, 40, 0.0, 20.0)]);
         let a = atk(&mut d, PIN);
         a.damage = 0.0;
-        a.crit = Some(Crit { damage: 1.0, every });
+        a.crit = Some(Crit { damage: 1.0, every, every_range: None });
         run(d, place(PIN, 0.0, 15.0)).pops
     };
     let (two, four) = (pin(2), pin(4));
@@ -779,10 +779,10 @@ fn validation_rejects_zero_pierce_projectiles_and_bad_crits() {
     atk(&mut d, DART).pierce = 0;
     assert!(d.validate().is_err());
     let mut d = data();
-    atk(&mut d, PIN).crit = Some(Crit { damage: f64::NAN, every: 2 });
+    atk(&mut d, PIN).crit = Some(Crit { damage: f64::NAN, every: 2, every_range: None });
     assert!(d.validate().is_err());
     let mut d = data();
-    atk(&mut d, PIN).crit = Some(Crit { damage: 5.0, every: 0 });
+    atk(&mut d, PIN).crit = Some(Crit { damage: 5.0, every: 0, every_range: None });
     assert!(d.validate().is_err());
 }
 
@@ -794,7 +794,7 @@ fn crit_counter_restarts_each_round() {
     d.rounds[1] = vec![group(0, 1, 0.0, 0.0)];
     let a = atk(&mut d, PIN);
     (a.damage, a.cooldown) = (0.0, 1000.0);
-    a.crit = Some(Crit { damage: 1.0, every: 2 });
+    a.crit = Some(Crit { damage: 1.0, every: 2, every_range: None });
     let mut g = Game::new(Arc::new(d)).unwrap();
     g.apply(Action::Place { kind: PIN, x: 0.0, y: 15.0 }).unwrap();
     assert_eq!(g.play_round().pops, 0);
@@ -905,4 +905,37 @@ fn burst_is_cancelled_when_no_target_is_left() {
     };
     assert_eq!(pin(0.0), 2, "beide Reds gleichzeitig: beide Schüsse treffen");
     assert_eq!(pin(3.0), 1, "Salve verfällt ohne Ziel");
+}
+
+/// Pin ohne Grundschaden, Crit 1 Schaden alle 2-6 Schüsse (Mittel 4): Pops = Zahl der Crits.
+fn random_crit_pops(seed: Option<u64>) -> u32 {
+    let mut d = with_round(vec![group(0, 60, 0.0, 30.0)]);
+    let a = atk(&mut d, PIN);
+    a.damage = 0.0;
+    a.crit = Some(Crit { damage: 1.0, every: 4, every_range: Some([2, 6]) });
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.set_seed(seed);
+    g.apply(Action::Place { kind: PIN, x: 0.0, y: 15.0 }).unwrap();
+    g.play_round().pops
+}
+
+#[test]
+fn random_crits_are_seeded_and_default_to_the_mean() {
+    let fixed = random_crit_pops(None);
+    assert_eq!(fixed, random_crit_pops(None), "ohne Zufall deterministisch");
+    let runs: Vec<u32> = (0..20).map(|s| random_crit_pops(Some(s))).collect();
+    assert_eq!(runs[3], random_crit_pops(Some(3)), "gleicher Seed, gleiches Spiel");
+    assert!(runs.iter().any(|&p| p != runs[0]), "verschiedene Seeds streuen: {runs:?}");
+    // Mittel 4 wie der feste Abstand: im Schnitt etwa gleich viele Crits
+    let mean = runs.iter().sum::<u32>() as f64 / runs.len() as f64;
+    assert!((mean - fixed as f64).abs() <= 0.25 * fixed as f64, "{mean} vs {fixed}");
+}
+
+#[test]
+fn validation_rejects_bad_crit_ranges() {
+    let mut d = data();
+    atk(&mut d, PIN).crit = Some(Crit { damage: 1.0, every: 4, every_range: Some([5, 3]) });
+    assert!(d.validate().is_err());
+    atk(&mut d, PIN).crit = Some(Crit { damage: 1.0, every: 4, every_range: Some([0, 3]) });
+    assert!(d.validate().is_err());
 }

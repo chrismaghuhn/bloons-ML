@@ -72,6 +72,9 @@ pub struct EnvConfig {
     pub max_banned_towers: usize,
     /// Seed für die Sperren (VecEnv leitet daraus je Env einen eigenen ab).
     pub seed: u64,
+    /// Zufall im Spiel (z.B. Crit-Abstände): jede Episode bekommt einen eigenen Seed aus dem
+    /// Env-Zufall. Aus = Mittelwerte (deterministisch, Parität zur Python-Env).
+    pub randomness: bool,
 }
 
 impl Default for EnvConfig {
@@ -88,6 +91,7 @@ impl Default for EnvConfig {
             preview_rounds: 0,
             max_banned_towers: 0,
             seed: 0,
+            randomness: false,
         }
     }
 }
@@ -239,6 +243,12 @@ impl Env {
             return Err(DataError::Invalid("max_builds_per_round muss > 0 sein".into()));
         }
         let game = Game::new(Arc::clone(&spec.data))?;
+        if cfg.record && cfg.randomness {
+            // Replays speichern den Seed nicht und würden beim Nachspielen abweichen
+            return Err(DataError::Invalid(
+                "record und randomness zusammen werden noch nicht unterstützt".into(),
+            ));
+        }
         if cfg.max_banned_towers >= spec.data.towers.len().max(1) {
             return Err(DataError::Invalid(
                 "max_banned_towers muss kleiner als die Zahl der Türme sein".into(),
@@ -310,6 +320,10 @@ impl Env {
         }
         self.draw_bans();
         self.game.reset();
+        if self.cfg.randomness {
+            let seed = self.next_rand();
+            self.game.set_seed(Some(seed));
+        }
         self.start = EpisodeStart::default();
         if let Some(sc) = self.starts.clone().filter(|_| draw_start) {
             if self.unit() < sc.p_start {
@@ -706,6 +720,11 @@ impl Env {
     ) -> Result<Vec<replay::RoundCheck>, ReplayError> {
         let (game, checks) = replay.replay_to(&self.spec, until_round, strict)?;
         self.game = game;
+        if self.cfg.randomness {
+            // das nachgespielte Spiel läuft ab hier mit eigenem Zufall weiter
+            let seed = self.next_rand();
+            self.game.set_seed(Some(seed));
+        }
         self.builds_left = self.cfg.max_builds_per_round;
         self.last_replay = None;
         // geladenes Spiel zählt als normale Episode (kein 3-Runden-Ergebnis, kein alter Snapshot)
