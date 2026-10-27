@@ -242,6 +242,10 @@ impl World<'_> {
         if !b.alive[i] {
             return None; // schon geplatzt (z.B. durch die Explosion desselben Projektils)
         }
+        // Camo entfernen (Signal Flare) vor dem Schaden: wechselt den Typ, die Kinder kommen dann ohne Camo
+        if let Some(c) = ex.cleanse.as_ref().filter(|c| !c.only_damaged) {
+            self.cleanse(b, i, c);
+        }
         let kind = b.kind[i];
         let immune = cannot.intersects(self.props(b, i));
         let mut dmg = damage;
@@ -259,14 +263,19 @@ impl World<'_> {
         let Some(res) = res.filter(|r| r.changed) else {
             // Effekte ohne Schaden (Glue) wirken, solange der Bloon nicht immun ist
             if has_effect && !immune {
-                apply_effects(b, i, ex, self.tags[kind as usize]); // ohne Schaden kein Push
+                apply_effects(b, i, ex, self.tags[kind as usize], false); // ohne Schaden kein Push
                 return Some(HitOutcome { pops: 0, removed: 0, children: 0 });
             }
             return None;
         };
+        // "nur bei Schaden": nach dem Treffer, beim Platzen an den Kindern
+        let late = ex.cleanse.as_ref().filter(|c| c.only_damaged);
         if res.pops == 0 {
             b.hp[i] = res.rest[0].1; // Teilschaden: Bloon bleibt an seinem Platz
-            apply_effects(b, i, ex, self.tags[kind as usize]);
+            if let Some(c) = late {
+                self.cleanse(b, i, c);
+            }
+            apply_effects(b, i, ex, self.tags[b.kind[i] as usize], true);
             self.push_back(b, i, ex);
             return Some(HitOutcome { pops: 0, removed: 0, children: 0 });
         }
@@ -280,11 +289,30 @@ impl World<'_> {
             b.push(*next_id, child, flags, hp, cd, cseg, cpos, grow); // Kinder erben die Flags [KAL]
             *next_id += 1;
             let c = b.len() - 1;
+            if let Some(cl) = late {
+                self.cleanse(b, c, cl);
+            }
             parent.inherit(b, c);
-            apply_effects(b, c, ex, self.tags[child as usize]);
+            let ctags = self.tags[b.kind[c] as usize];
+            apply_effects(b, c, ex, ctags, true);
+            if let Some(sl) = &ex.pop_slow {
+                apply_slow(b, c, sl, ctags); // Pin: die Kinder stehen kurz
+            }
             self.push_back(b, c, ex);
         }
         Some(HitOutcome { pops: res.pops, removed: 1, children: res.rest.len() })
+    }
+
+    /// Camo entfernen: Typ ohne Camo (gleiche Lebenspunkte) und Instanz-Flag, außer bei ausgeschlossenem Tag.
+    fn cleanse(&self, b: &mut BloonStore, i: usize, c: &crate::tower::CleanseRt) {
+        let kind = b.kind[i] as usize;
+        if !c.camo || self.tags[kind] & c.exclude != 0 {
+            return;
+        }
+        b.flags[i].0 &= !Flags::CAMO;
+        if let Some(k) = self.defs[kind].decamo {
+            b.kind[i] = k;
+        }
     }
 
     /// Zurückstoßen entlang des Pfads (nicht hinter den Start).
@@ -311,8 +339,8 @@ impl World<'_> {
             b.dot_timer[i] -= dt;
             if b.dot_timer[i] <= 0.0 {
                 b.dot_timer[i] += b.dot_interval[i];
-                // Schaden über Zeit trifft alle Bloon-Eigenschaften (Spiel: DamageType "Normal") [KAL]
-                if let Some(h) = self.apply_hit(b, next_id, i, b.dot_damage[i], Props::default(), none) {
+                // Schaden über Zeit trifft alle Bloon-Eigenschaften außer `dot_cannot` (Feuer: Purple)
+                if let Some(h) = self.apply_hit(b, next_id, i, b.dot_damage[i], b.dot_cannot[i], none) {
                     pops += h.pops;
                     removed |= h.removed > 0;
                 }
@@ -353,6 +381,7 @@ struct Status {
     glue_layers: u32,
     chill: [Chill; CHILL_SLOTS],
     dot: (Real, Real, Real, Real, u32),
+    dot_cannot: Props,
 }
 
 impl Status {
@@ -366,6 +395,7 @@ impl Status {
             glue_layers: b.glue_layers[i],
             chill: b.chill[i],
             dot: (b.dot_damage[i], b.dot_interval[i], b.dot_timer[i], b.dot_left[i], b.dot_layers[i]),
+            dot_cannot: b.dot_cannot[i],
         }
     }
 
@@ -391,30 +421,36 @@ impl Status {
             (b.dot_damage[c], b.dot_interval[c], b.dot_timer[c], b.dot_left[c]) =
                 (dmg, interval, timer, left);
             b.dot_layers[c] = layers - 1;
+            b.dot_cannot[c] = self.dot_cannot;
         }
     }
 }
 
-fn apply_effects(b: &mut BloonStore, i: usize, ex: &ExtrasRt, tags: u32) {
+fn apply_slow(b: &mut BloonStore, i: usize, sl: &crate::tower::SlowRt, tags: u32) {
+    let mul = factor_for(&sl.multiplier_for, tags, sl.multiplier);
+    let secs = factor_for(&sl.seconds_for, tags, sl.seconds);
+    if sl.level == 0 {
+        // Verlangsamung ohne Glue (Permafrost, Stun): Slot je ID, wirkt zusätzlich [KAL: Stapeln]
+        b.chill[i][sl.slot as usize] = Chill { mul, left: secs, layers: sl.layers };
+    } else if sl.level >= b.glue[i] {
+        b.slow_mul[i] = mul;
+        b.slow_left[i] = secs;
+        b.glue[i] = sl.level;
+        b.glue_layers[i] = sl.layers;
+    }
+}
+
+/// Status-Effekte eines Treffers; `damaged`: der Treffer hat Schaden gemacht (für "nur bei Schaden").
+fn apply_effects(b: &mut BloonStore, i: usize, ex: &ExtrasRt, tags: u32, damaged: bool) {
     if let Some(f) = &ex.freeze {
         let factor = f.scale.iter().find(|(m, _)| tags & m != 0).map_or(1.0, |&(_, k)| k);
         b.frozen[i] = b.frozen[i].max(f.seconds * factor);
         b.freeze_layers[i] = f.layers;
     }
     if let Some(sl) = &ex.slow {
-        let mul = factor_for(&sl.multiplier_for, tags, sl.multiplier);
-        let secs = factor_for(&sl.seconds_for, tags, sl.seconds);
-        if sl.level == 0 {
-            // Verlangsamung ohne Glue (Permafrost, Stun): Slot je ID, wirkt zusätzlich [KAL: Stapeln]
-            b.chill[i][sl.slot as usize] = Chill { mul, left: secs, layers: sl.layers };
-        } else if sl.level >= b.glue[i] {
-            b.slow_mul[i] = mul;
-            b.slow_left[i] = secs;
-            b.glue[i] = sl.level;
-            b.glue_layers[i] = sl.layers;
-        }
+        apply_slow(b, i, sl, tags);
     }
-    if let Some(d) = &ex.dot {
+    if let Some(d) = ex.dot.as_ref().filter(|d| (damaged || !d.only_damaged) && tags & d.exclude == 0) {
         if d.level >= b.glue[i] || b.dot_left[i] <= 0.0 {
             b.dot_damage[i] = d.damage * factor_for(&d.factor_for, tags, 1.0);
             b.dot_interval[i] = d.interval;
@@ -423,6 +459,7 @@ fn apply_effects(b: &mut BloonStore, i: usize, ex: &ExtrasRt, tags: u32) {
             }
             b.dot_left[i] = d.seconds;
             b.dot_layers[i] = d.layers;
+            b.dot_cannot[i] = d.cannot_damage;
             if d.level > b.glue[i] {
                 b.glue[i] = d.level;
             }
@@ -530,7 +567,7 @@ impl Game {
         let mut slow_ids: Vec<&String> = data
             .all_extras()
             .into_iter()
-            .filter_map(|e| e.slow.as_ref())
+            .flat_map(|e| e.slow.iter().chain(e.pop_slow.iter()))
             .filter(|s| s.level == 0)
             .map(|s| &s.id)
             .collect();
@@ -1466,7 +1503,11 @@ fn step_projectiles(
             p.hit.push(bloons.id[i]);
             p.pierce -= 1.0; // auch ein immuner Bloon verbraucht Pierce [KAL]
             pops += fx.trigger(w, bloons, next_id, contacts, p, dt);
-            if p.damage > 0.0 || p.extras.has_effect() || p.extras.push.is_some() {
+            if p.damage > 0.0
+                || p.extras.has_effect()
+                || p.extras.push.is_some()
+                || p.extras.cleanse.is_some()
+            {
                 let first_child = bloons.len();
                 if let Some(h) = w.apply_hit(bloons, next_id, i, p.damage, p.cannot_damage, &p.extras) {
                     pops += h.pops;

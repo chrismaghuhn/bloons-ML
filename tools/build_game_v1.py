@@ -93,10 +93,8 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
            # Türme Schritt 1: Zielen ohne Abwurf-Versatz (die Sim zielt ohnehin von der Turmmitte)
            "CheckTargetsWithoutOffsetsModel",
            # Türme Schritt 3 (docs/design-towers-step3.md): Abwurfpunkte (wie ejectX/ejectY ignoriert; die
-           # Emission selbst wertet convert_emission aus), Kartenobjekt einer anderen Karte (Mortar-Explosion),
-           # Pin (Engineer xx2: SlowOnPop = 1 s Stopp der Kinder beim Pop; Status-Effekte beim Pop kann die Engine
-           # noch nicht, deshalb ohne Wirkung [KAL: auch `chance` 0 – immer oder nie?])
-           "EmissionWithOffsetsModel", "ThrowMarkerOffsetModel", "ChipMapBasedObjectModel", "SlowOnPopModel",
+           # Emission selbst wertet convert_emission aus), Kartenobjekt einer anderen Karte (Mortar-Explosion)
+           "EmissionWithOffsetsModel", "ThrowMarkerOffsetModel", "ChipMapBasedObjectModel",
            # Alchemist: Pfütze nur, wenn der Spritzer nichts trifft (Lebensdauer 0,05 s) [KAL]
            "AcidPoolModel"}
 
@@ -117,7 +115,9 @@ STRICT = {"InstantModel", "InstantDamageEmissionModel", "FilterAllExceptTargetMo
           "TargetTrackModel", "SmartTargetTrackModel", "AutoTargetTrackModel", "CloseTargetTrackModel",
           "RandomRotationWeaponBehaviorModel", "FadeProjectileModel", "EndOfRoundClearBypassModel",
           "ExpireProjectileOnBossSpawnedModel", "DamageModifierForBloonTypeModel", "CreateProjectileOnExpireModel",
-          "StartOfRoundRateBuffModel"}
+          "StartOfRoundRateBuffModel",
+          # Teil 2b: Pin (convert_extras)
+          "SlowOnPopModel"}
 # Buff-Anzeigen (CanBuffIndicatorModel.buffLocsName) ohne Wirkung: die der Alchemist-Tränke
 POTION_INDICATORS = {"AcidicMixtureBuff", "BeserkerBrewBuff"}
 # Türme Schritt 2 (docs/design-towers-step2.md): Auren und Rabatt (convert_supports), Einkommen
@@ -386,7 +386,15 @@ def children_counts(children) -> list:
     return out
 
 
-def build_bloons(dump: Path, needed: set, speed_factor: float = 1.0) -> list:
+def decamo_of(summary: dict, name: str):
+    """Derselbe Bloon ohne Camo (`RedRegrowCamo` -> `RedRegrow`), falls es ihn gibt."""
+    base = name[:-len("Camo")] if name.endswith("Camo") else None
+    return base if summary[name]["isCamo"] and base in summary and not summary[base]["isCamo"] else None
+
+
+def build_bloons(dump: Path, needed: set, speed_factor: float = 1.0, decamo: bool = False) -> list:
+    """`decamo`: zu jedem Camo-Bloon auch den Typ ohne Camo aufnehmen und verknüpfen (Ziel von `cleanse`,
+    Signal Flare; nur wenn ein Turm Camo entfernt, damit andere Daten gleich bleiben)."""
     summary = {b["name"]: b for b in load(dump / "summary.json")["bloons"]}
     todo, seen = list(needed), set()
     while todo:
@@ -395,6 +403,8 @@ def build_bloons(dump: Path, needed: set, speed_factor: float = 1.0) -> list:
             continue
         seen.add(n)
         todo.extend(summary[n].get("children") or [])
+        if decamo and decamo_of(summary, n):
+            todo.append(decamo_of(summary, n))
     leak_memo: dict[str, float] = {}
 
     def leak(n: str) -> float:
@@ -424,6 +434,8 @@ def build_bloons(dump: Path, needed: set, speed_factor: float = 1.0) -> list:
             "tags": list(s.get("tags") or []),
             **({"grow_rate": float(grow(model)["rate"])} if s["isGrow"] else {}),
         })
+        if decamo and decamo_of(summary, n):
+            out[-1]["decamo"] = decamo_of(summary, n)
     return out
 
 
@@ -679,6 +691,12 @@ def convert_extras(proj, filters) -> tuple:
         if b.get("damageMultiplier", 1.0) != 1.0 or b.get("mustIncludeAllTags") or b.get("ignoreTag"):
             raise Unsupported("DamageModifierForTagModel(Multiplikator/Tag-Logik)")
         bonus.append({"tag": b["tag"], "add": b["damageAddative"]})
+    for m in behaviors(proj, "DamageModifierForBloonTypeModel"):
+        # Bonus gegen einen Bloon-Typ (Spiked Balls: Ceramic), als Tag (deckt die Varianten mit ab) [KAL]
+        if m.get("damageMultiplier", 1.0) != 1.0 or not m.get("includeChildren"):
+            raise Unsupported("DamageModifierForBloonTypeModel(Multiplikator/ohne Kinder)")
+        bonus.extend({"tag": t, "add": m["damageAdditive"]} for t in m.get("bloonIds") or [m["bloonId"]])
+        use(m)
     if bonus:
         ex["damage_vs"] = bonus
     freeze = behaviors(proj, "FreezeModel")
@@ -732,6 +750,27 @@ def convert_extras(proj, filters) -> tuple:
     dot = convert_dot(proj, slow[0].get("mutationId") if slow else None)
     if dot:
         ex["dot"] = dot
+    check_remove_modifiers(proj)
+    cleanses = [b for b in behaviors(proj, "RemoveBloonModifiersModel") if b.get("cleanseCamo")]
+    if len(cleanses) > 1:
+        raise Unsupported("mehrere RemoveBloonModifiersModel")
+    if cleanses:
+        c = cleanses[0]
+        ex["cleanse"] = {"camo": True, "only_if_damaged": bool(c.get("cleanseOnlyIfDamaged")),
+                         "exclude_tags": list(c.get("bloonTagExcludeList") or [])}
+        use(c)
+    pins = behaviors(proj, "SlowOnPopModel")
+    if pins:
+        # Pin (Engineer xx2): die Kinder eines geplatzten Bloons stehen `Lifespan` Sekunden (Multiplier 0);
+        # `chance` 0 gilt als immer; `matchLayersWithDamage` ist bei 1 Schicht ohne Wirkung [KAL]
+        p = pins[0]
+        if len(pins) > 1 or p.get("glueLevel") or p.get("dontRefreshDuration") or p.get("lifespanFrames") \
+                or p.get("removeMutatorIfNotMatching") or p.get("chance", 0.0) not in (0.0, 1.0) \
+                or (p.get("matchLayersWithDamage") and int(p["layers"]) != 1):
+            raise Unsupported("SlowOnPopModel(mehrfach/Glue/Frames/Zufall)")
+        ex["pop_slow"] = {"id": p.get("mutationId") or "", "multiplier": p["Multiplier"], "seconds": p["Lifespan"],
+                          "level": 0, "layers": int(p["layers"])}
+        use(p)
     push = behaviors(proj, "PushBackModel")
     if push:
         pb = push[0]
@@ -762,20 +801,31 @@ def convert_dot(proj, slow_id):
     inner = ab.get("behaviors") or []
     if len(inner) != 1 or short(inner[0]["$type"]) != "DamageOverTimeModel":
         raise Unsupported("AddBehaviorToBloonModel ohne reines DamageOverTime")
-    if ab.get("filters") or ab.get("filter") or ab.get("chance", 0.0) or ab.get("applyOnlyIfDamaged") \
-            or ab.get("stackCount", 0) or ab.get("cascadeMutators"):
-        raise Unsupported("AddBehaviorToBloonModel(Filter/Chance/Stapel/nur bei Schaden)")
+    # Filter: nur FilterOutTagModel, die MIB abschaltet (Burny Stuff: nicht auf DDT/Black/Zebra, außer mit MIB);
+    # die Engine hebt `exclude_tags` des DoT unter MIB auf
+    filters = ab.get("filters") or []
+    if any(MIB_MUTATOR not in (f.get("disableWhenSupportMutatorIDs") or []) for f in filters):
+        raise Unsupported("AddBehaviorToBloonModel(Filter ohne MIB-Aufhebung)")
+    if ab.get("filter") or any(short(f.get("$type", "")) != "FilterOutTagModel" for f in filters) \
+            or ab.get("chance", 0.0) or ab.get("stackCount", 0) or ab.get("cascadeMutators"):
+        raise Unsupported("AddBehaviorToBloonModel(Filter/Chance/Stapel)")
     d = inner[0]
     if d.get("triggerImmediate") or d.get("initialDelay", 0.0) or d.get("damageOnDestroy") \
             or d.get("damageModifierModels") or d.get("payloadCount", 0) or not d.get("distributeToChildren", True):
         raise Unsupported("DamageOverTimeModel(sofort/Verzögerung/Modifier)")
     # Bits ab 32 kennt das Format nicht (Spiel: 64 bei Corrosive Glue, Bedeutung unbekannt) [KAL]
+    out = {"damage": d["damage"], "interval": d["interval"], "seconds": ab["lifespan"], "layers": int(ab["layers"]),
+           "level": int(ab.get("glueLevel", 0)),
+           "factor_for": [{"tag": m["tag"], "factor": m["mutatorMultiplier"]} for m in mods
+                          if m["mutatorId"] == ab.get("mutationId")]}
+    # Erweiterungen aus Teil 2b nur, wenn gesetzt (ältere Daten bleiben bytegleich)
     if d["immuneBloonProperties"] & 31:
-        raise Unsupported("DamageOverTimeModel mit Immunität")
-    return {"damage": d["damage"], "interval": d["interval"], "seconds": ab["lifespan"], "layers": int(ab["layers"]),
-            "level": int(ab.get("glueLevel", 0)),
-            "factor_for": [{"tag": m["tag"], "factor": m["mutatorMultiplier"]} for m in mods
-                           if m["mutatorId"] == ab.get("mutationId")]}
+        out["cannot_damage"] = props(d["immuneBloonProperties"])  # Feuer: Purple
+    if ab.get("applyOnlyIfDamaged"):
+        out["only_if_damaged"] = True
+    if filters:
+        out["exclude_tags"] = [f["tag"] for f in filters]
+    return out
 
 
 def convert_contact(c, nested: bool) -> dict:
@@ -845,11 +895,14 @@ def convert_weapon_behaviors(weapon, out: dict):
 
 
 def check_remove_modifiers(proj):
-    """RemoveBloonModifiersModel ist ohne gesetzte Schalter wirkungslos (Druid-Basis)."""
+    """RemoveBloonModifiersModel ist ohne gesetzte Schalter wirkungslos (Druid-Basis). Camo/Regrow entfernen
+    wertet convert_extras aus (`cleanse`); Regrow/Lead/Fortified kann die Sim nicht."""
     for b in behaviors(proj, "RemoveBloonModifiersModel"):
-        if any(b.get(k) for k in ("cleanseRegen", "cleanseCamo", "cleanseLead", "cleanseFortified")):
-            raise Unsupported("RemoveBloonModifiersModel(entfernt Eigenschaften)")
-        use(b)
+        # Camo entfernen wechselt auf den Typ ohne Camo (`decamo`); Regrow/Lead/Fortified gibt es noch nicht
+        if b.get("cleanseRegen") or b.get("cleanseLead") or b.get("cleanseFortified") or b.get("bloonTagExplicitList"):
+            raise Unsupported("RemoveBloonModifiersModel(entfernt Regrow/Lead/Fortified/nur bestimmte Bloons)")
+        if not b.get("cleanseCamo"):
+            use(b)
 
 
 def convert_homing(proj, speed: float, lifespan: float):
@@ -1091,6 +1144,19 @@ def convert_potion(tower, attack, weapon, idx) -> dict:
     }
 
 
+def use_all(node):
+    """Alle Modelle eines Teilbaums als ausgewertet markieren (z.B. eine Kopie, die gleich einer
+    ausgewerteten ist)."""
+    if isinstance(node, dict):
+        use(node)
+        for k, v in node.items():
+            if not k[:1].isupper():
+                use_all(v)
+    elif isinstance(node, list):
+        for v in node:
+            use_all(v)
+
+
 def strip_names(node):
     """Modell ohne Namen (zum Vergleich zweier sonst gleicher Projektile)."""
     if isinstance(node, dict):
@@ -1130,13 +1196,6 @@ def convert_track_lob(tower, attack, weapon, idx) -> dict:
     if not dmg or behaviors(proj, "CreateProjectileOnContactModel") or straight_travel(proj):
         raise Unsupported("Spike-Stapel ohne Schaden/mit Kontakt/Flugbahn")
     camo, extras = convert_extras(proj, all_filters(proj))
-    for m in behaviors(proj, "DamageModifierForBloonTypeModel"):
-        # Bonus gegen einen Bloon-Typ (Spiked Balls: Ceramic), als Tag (deckt die Varianten mit ab) [KAL]
-        if m.get("damageMultiplier", 1.0) != 1.0 or not m.get("includeChildren"):
-            raise Unsupported("DamageModifierForBloonTypeModel(Multiplikator/ohne Kinder)")
-        extras.setdefault("damage_vs", []).extend(
-            {"tag": t, "add": m["damageAdditive"]} for t in m.get("bloonIds") or [m["bloonId"]])
-        use(m)
     exhaust = convert_exhaust(proj, nested=False)
     expire = behaviors(proj, "CreateProjectileOnExpireModel")
     ex_models = behaviors(proj, "CreateProjectileOnExhaustFractionModel")
@@ -1150,6 +1209,8 @@ def convert_track_lob(tower, attack, weapon, idx) -> dict:
         raise Unsupported("Spike-Stapel mit Splittern")
     if ex_models and not expire:
         raise Unsupported("Spike-Stapel mit Explosion nur beim Verbrauch")
+    if expire:
+        use_all(expire[0]["projectile"])  # gleich der Explosion beim Verbrauch, die convert_exhaust auswertet
     clear = behaviors(proj, "ClearHitBloonsModel")
     ground = {"lifespan": age[0]["lifespan"] - flight[0], "radius": proj["radius"], "pierce": pierce_of(proj),
               "damage": dmg[0]["damage"], "cannot_damage": cannot_damage(proj), "camo": camo, "extras": extras}
@@ -1341,8 +1402,8 @@ def convert_supports(model) -> tuple:
             use(b)
             supports.append(s)
         elif t == "SupportRemoveFilterOutTagModel":
-            # schaltet FilterOutTag-Filter ab, die den MIB-Mutator nennen; solche Filter sperrt
-            # convert_filters, also hier ohne eigene Wirkung
+            # schaltet FilterOutTag-Filter ab, die den MIB-Mutator nennen: an Angriffen sperrt sie
+            # convert_filters, an DoTs (Burny Stuff) hebt die Engine sie unter MIB auf (`damage_all`)
             if b.get("removeScriptWithSupportMutatorId") != MIB_MUTATOR or b.get("isGlobal"):
                 raise Unsupported("SupportRemoveFilterOutTagModel (anderer Mutator)")
             support_sets(b)
@@ -1586,7 +1647,8 @@ def main():
     rounds = build_rounds(dump, args.rounds, last)
     needed = {g["bloon"] for r in rounds for g in r}
     speed = bloon_speed_factor(dump, preset["match"], args.map)
-    bloons = build_bloons(dump, needed, speed)
+    cleanses_camo = '"cleanse"' in json.dumps(towers)
+    bloons = build_bloons(dump, needed, speed, decamo=cleanses_camo)
     dropped: set = set()
     prune_tags(towers, {t for b in bloons for t in b["tags"]}, dropped)
     # Trank-Ausschlüsse nur auf Türme des Sets (game_v1 lehnt unbekannte Namen ab)

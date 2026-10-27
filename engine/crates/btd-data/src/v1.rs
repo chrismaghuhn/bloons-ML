@@ -208,6 +208,9 @@ pub struct BloonDefV1 {
     /// (docs/design-bloons-chimps.md). `grow_rate` 0 = wächst nicht (ältere Daten ohne das Feld).
     pub regrow: bool,
     pub grow_rate: f64,
+    /// Derselbe Bloon ohne Camo (im Spiel ein eigener Typ, z.B. `RedCamo` -> `Red`); Ziel von
+    /// `HitExtras.cleanse` (Signal Flare). Nur bei Camo-Typen.
+    pub decamo: Option<BloonKind>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -481,7 +484,22 @@ impl HitExtras {
                 .all(|b| tags.contains(b.tag.as_str()) && b.all.iter().all(|t| tags.contains(t.as_str())))
             && self.freeze.as_ref().map_or(true, |f| known(&f.scale))
             && self.slow.as_ref().map_or(true, |s| known(&s.multiplier_for) && known(&s.seconds_for))
-            && self.dot.as_ref().map_or(true, |d| known(&d.factor_for))
+            && self.dot.as_ref().map_or(true, |d| {
+                known(&d.factor_for)
+                    && d.exclude_tags.iter().all(|t| tags.contains(t.as_str()))
+                    && Props::parse(&d.cannot_damage, "").is_ok()
+            })
+            && self
+                .cleanse
+                .as_ref()
+                .map_or(true, |c| c.exclude_tags.iter().all(|t| tags.contains(t.as_str())))
+            && self.pop_slow.as_ref().map_or(true, |s| {
+                known(&s.multiplier_for)
+                    && known(&s.seconds_for)
+                    && s.level == 0
+                    && ok(s.seconds)
+                    && (0.0..=1.0).contains(&s.multiplier)
+            })
             && self.push.as_ref().map_or(true, |p| known(&p.factor_for))
             && self.damage_vs.iter().all(|b| b.add.is_finite())
             && self.freeze.as_ref().map_or(true, |f| ok(f.seconds) && f.scale.iter().all(|t| ok(t.factor)))
@@ -557,16 +575,22 @@ impl GameV1 {
 }
 
 impl Delivery {
-    /// Radius für `Targeting::TrackBest`: die größte Explosion eines Wurfs (sonst keiner).
+    /// Radius für `Targeting::TrackBest`: die größte Explosion eines Wurfs, die Schaden macht (sonst die
+    /// größte überhaupt; Signal Flare hat eine große Explosion ohne Schaden neben der eigentlichen).
     pub fn track_best_radius(&self) -> Option<f64> {
         let Delivery::Lob { on_arrive, .. } = self else { return None };
-        on_arrive
-            .iter()
-            .filter_map(|c| match c {
-                Contact::Explosion { radius, .. } => Some(*radius),
-                Contact::Shards { .. } => None,
-            })
-            .reduce(f64::max)
+        let radius = |with_damage: bool| {
+            on_arrive
+                .iter()
+                .filter_map(|c| match c {
+                    Contact::Explosion { radius, damage, .. } if !with_damage || *damage > 0.0 => {
+                        Some(*radius)
+                    }
+                    _ => None,
+                })
+                .reduce(f64::max)
+        };
+        radius(true).or_else(|| radius(false))
     }
 }
 
@@ -645,6 +669,20 @@ pub struct HitExtras {
     pub dot: Option<Dot>,
     /// Zurückstoßen entlang des Pfads (Bomb).
     pub push: Option<Push>,
+    /// Entfernt Eigenschaften des getroffenen Bloons (Spiel: RemoveBloonModifiersModel, z.B. Signal Flare).
+    pub cleanse: Option<Cleanse>,
+    /// Verlangsamt die Kinder, wenn der Treffer einen Bloon platzt (Spiel: SlowOnPopModel, Engineer Pin).
+    pub pop_slow: Option<Slow>,
+}
+
+/// Camo entfernen: der Bloon wechselt auf seinen Typ ohne Camo (`BloonDefV1::decamo`), wahlweise nur bei
+/// Schaden, nicht bei Bloons mit Tag. Regrow, Lead und Fortified gibt es noch nicht.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Cleanse {
+    pub camo: bool,
+    pub only_if_damaged: bool,
+    pub exclude_tags: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -661,6 +699,15 @@ pub struct Dot {
     /// Schadens-Faktor für Bloons mit Tag (Spiel: MOABs 0.375).
     #[serde(default)]
     pub factor_for: Vec<TagFactor>,
+    /// Eigenschaften, die der Schaden über Zeit nicht trifft (Feuer: Purple).
+    #[serde(default)]
+    pub cannot_damage: Vec<String>,
+    /// Nur setzen, wenn der Treffer Schaden gemacht hat (Burny Stuff).
+    #[serde(default)]
+    pub only_if_damaged: bool,
+    /// Nicht auf Bloons mit diesen Tags (Burny Stuff: DDT, Black, Zebra); unter MIB (Village) aufgehoben.
+    #[serde(default)]
+    pub exclude_tags: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -1059,6 +1106,8 @@ struct RawBloon {
     #[serde(default)]
     radius: f64,
     #[serde(default)]
+    decamo: Option<String>,
+    #[serde(default)]
     tags: Vec<String>,
 }
 
@@ -1205,6 +1254,7 @@ impl GameV1 {
                     grow_rate: b.grow_rate,
                     radius: b.radius,
                     tags: b.tags.clone(),
+                    decamo: b.decamo.as_deref().map(bloon_id).transpose()?,
                 })
             })
             .collect::<Result<Vec<_>, DataError>>()?;
@@ -1340,6 +1390,12 @@ impl GameV1 {
         }
 
         for b in &self.bloons {
+            if b.decamo.is_some_and(|k| !b.camo || self.bloons[k as usize].camo) {
+                return Err(invalid(format!(
+                    "Bloon {}: decamo nur von einem Camo- auf einen Nicht-Camo-Typ",
+                    b.name
+                )));
+            }
             if !non_neg(b.radius) {
                 return Err(invalid(format!("Bloon {}: radius >= 0 erwartet", b.name)));
             }

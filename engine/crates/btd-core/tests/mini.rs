@@ -398,7 +398,17 @@ fn place(kind: u8, x: f64, y: f64) -> impl Fn(&mut Game) {
 }
 
 fn corrosive(layers: u32) -> Dot {
-    Dot { damage: 1.0, interval: 0.5, seconds: 10.0, layers, level: 1, factor_for: vec![] }
+    Dot {
+        damage: 1.0,
+        interval: 0.5,
+        seconds: 10.0,
+        layers,
+        level: 1,
+        factor_for: vec![],
+        cannot_damage: vec![],
+        only_if_damaged: false,
+        exclude_tags: vec![],
+    }
 }
 
 #[test]

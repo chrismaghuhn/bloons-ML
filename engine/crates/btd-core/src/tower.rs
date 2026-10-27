@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use btd_data::v1::{
-    Bonus, Contact, Delivery, Emission, Ground, HitExtras, HitFilter, Props, TagFactor, Targeting,
+    Bonus, Contact, Delivery, Emission, Ground, HitExtras, HitFilter, Props, Slow, TagFactor, Targeting,
     TimedEffect, TowerDefV1, VariantV1, PATHS,
 };
 use btd_data::TowerKind;
@@ -80,6 +80,16 @@ pub struct ExtrasRt {
     pub slow: Option<SlowRt>,
     pub dot: Option<DotRt>,
     pub push: Option<PushRt>,
+    pub cleanse: Option<CleanseRt>,
+    pub pop_slow: Option<SlowRt>,
+}
+
+/// Camo entfernen (Typwechsel und Instanz-Flag), wahlweise nur bei Schaden, nicht bei Bloons mit diesen Tags.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CleanseRt {
+    pub camo: bool,
+    pub only_damaged: bool,
+    pub exclude: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -113,12 +123,28 @@ pub struct DotRt {
     pub level: u8,
     /// Schadens-Faktor je Tag
     pub factor_for: TagFactors,
+    /// Eigenschaften, die der Schaden über Zeit nicht trifft; nur bei Schaden setzen; Tags ohne Wirkung.
+    pub cannot_damage: Props,
+    pub only_damaged: bool,
+    pub exclude: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct PushRt {
     pub amount: Real,
     pub factor_for: TagFactors,
+}
+
+fn slow_rt(s: &Slow, tags: &TagTable) -> SlowRt {
+    SlowRt {
+        multiplier: real(s.multiplier),
+        seconds: real(s.seconds),
+        level: s.level,
+        layers: s.layers,
+        slot: tags.slows.get(&s.id).copied().unwrap_or(0),
+        multiplier_for: tag_factors(tags, &s.multiplier_for),
+        seconds_for: tag_factors(tags, &s.seconds_for),
+    }
 }
 
 impl ExtrasRt {
@@ -131,15 +157,7 @@ impl ExtrasRt {
                 layers: f.layers,
                 scale: tag_factors(tags, &f.scale),
             }),
-            slow: e.slow.as_ref().map(|s| SlowRt {
-                multiplier: real(s.multiplier),
-                seconds: real(s.seconds),
-                level: s.level,
-                layers: s.layers,
-                slot: tags.slows.get(&s.id).copied().unwrap_or(0),
-                multiplier_for: tag_factors(tags, &s.multiplier_for),
-                seconds_for: tag_factors(tags, &s.seconds_for),
-            }),
+            slow: e.slow.as_ref().map(|s| slow_rt(s, tags)),
             dot: e.dot.as_ref().map(|d| DotRt {
                 damage: real(d.damage),
                 interval: real(d.interval),
@@ -147,11 +165,20 @@ impl ExtrasRt {
                 layers: d.layers,
                 level: d.level,
                 factor_for: tag_factors(tags, &d.factor_for),
+                cannot_damage: Props::parse(&d.cannot_damage, "DoT").unwrap_or_default(),
+                only_damaged: d.only_if_damaged,
+                exclude: tag_mask(tags, &d.exclude_tags),
             }),
             push: e
                 .push
                 .as_ref()
                 .map(|p| PushRt { amount: real(p.amount), factor_for: tag_factors(tags, &p.factor_for) }),
+            cleanse: e.cleanse.as_ref().map(|c| CleanseRt {
+                camo: c.camo,
+                only_damaged: c.only_if_damaged,
+                exclude: tag_mask(tags, &c.exclude_tags),
+            }),
+            pop_slow: e.pop_slow.as_ref().map(|s| slow_rt(s, tags)),
         }
     }
 
@@ -473,6 +500,7 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
 /// (z.B. die Explosion der Bomb), das Tempo nur für das Projektil selbst (`top`). Zeit-Effekte geben
 /// Schaden und Bonus-Schaden auch an Kontakte weiter.
 fn buffed_def(def: &ProjectileDef, b: Buffs, t: &TimedMods, top: bool) -> ProjectileDef {
+    let mib = |e: Arc<ExtrasRt>| if b.damage_all { without_dot_exclude(&e) } else { e };
     let contact = |c: &ContactRt| match c {
         ContactRt::Explosion { radius, pierce, damage, cannot_damage, camo, extras } => {
             ContactRt::Explosion {
@@ -481,7 +509,7 @@ fn buffed_def(def: &ProjectileDef, b: Buffs, t: &TimedMods, top: bool) -> Projec
                 damage: t.damage_of(*damage),
                 cannot_damage: if b.damage_all { Props(0) } else { *cannot_damage },
                 camo: *camo || b.camo,
-                extras: t.extras_of(extras, *damage),
+                extras: mib(t.extras_of(extras, *damage)),
             }
         }
         ContactRt::Shards { def, pierce, damage, cannot_damage, camo, extras, inherit_hit } => {
@@ -491,7 +519,7 @@ fn buffed_def(def: &ProjectileDef, b: Buffs, t: &TimedMods, top: bool) -> Projec
                 damage: t.damage_of(*damage),
                 cannot_damage: if b.damage_all { Props(0) } else { *cannot_damage },
                 camo: *camo || b.camo,
-                extras: t.extras_of(extras, *damage),
+                extras: mib(t.extras_of(extras, *damage)),
                 inherit_hit: *inherit_hit,
             }
         }
@@ -504,7 +532,7 @@ fn buffed_def(def: &ProjectileDef, b: Buffs, t: &TimedMods, top: bool) -> Projec
                 damage: t.damage_of(g.damage),
                 cannot_damage: if b.damage_all { Props(0) } else { g.cannot_damage },
                 camo: g.camo || b.camo,
-                extras: t.extras_of(&g.extras, g.damage),
+                extras: mib(t.extras_of(&g.extras, g.damage)),
                 def: Arc::new(buffed_def(&g.def, b, t, false)),
                 ..(**g).clone()
             })
@@ -517,6 +545,19 @@ fn buffed_def(def: &ProjectileDef, b: Buffs, t: &TimedMods, top: bool) -> Projec
         on_exhaust: def.on_exhaust.iter().map(contact).collect(),
         lob,
         ..def.clone()
+    }
+}
+
+/// MIB (Village): Tag-Ausschlüsse des Schadens über Zeit gelten nicht (Burny Stuff brennt dann auch DDT,
+/// Black, Zebra).
+fn without_dot_exclude(e: &Arc<ExtrasRt>) -> Arc<ExtrasRt> {
+    match &e.dot {
+        Some(d) if d.exclude != 0 => {
+            let mut x = (**e).clone();
+            x.dot.as_mut().unwrap().exclude = 0;
+            Arc::new(x)
+        }
+        _ => Arc::clone(e),
     }
 }
 
@@ -863,6 +904,9 @@ impl Tower {
             a.damage = t.damage_of(base.damage);
             a.crit = base.crit.map(|(d, n)| (t.damage_of(d), n));
             a.extras = t.extras_of(&base.extras, base.damage);
+            if b.damage_all {
+                a.extras = without_dot_exclude(&a.extras);
+            }
             a.kind = match (&base.kind, base.area_radius) {
                 // gekoppelter Radius wächst um denselben Betrag wie die Reichweite
                 (AttackKind::Area { .. }, Some(r)) if ranged => {

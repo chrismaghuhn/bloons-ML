@@ -148,6 +148,8 @@ pub struct BloonStore {
     /// Regrow: Vorfahren und Zeit seit Spawn bzw. letztem Nachwachsen.
     pub grow: Vec<GrowStack>,
     pub grow_timer: Vec<Real>,
+    /// Eigenschaften, die der laufende Schaden über Zeit nicht trifft.
+    pub dot_cannot: Vec<Props>,
 }
 
 impl BloonStore {
@@ -194,6 +196,7 @@ impl BloonStore {
         self.dot_layers.push(0);
         self.grow.push(grow);
         self.grow_timer.push(0.0);
+        self.dot_cannot.push(Props::default());
     }
 
     pub fn clear(&mut self) {
@@ -220,6 +223,7 @@ impl BloonStore {
         self.dot_layers.clear();
         self.grow.clear();
         self.grow_timer.clear();
+        self.dot_cannot.clear();
     }
 
     /// Entfernt alle `alive == false`, Reihenfolge bleibt erhalten. O(n).
@@ -252,6 +256,7 @@ impl BloonStore {
                 self.dot_layers[w] = self.dot_layers[r];
                 self.grow[w] = self.grow[r];
                 self.grow_timer[w] = self.grow_timer[r];
+                self.dot_cannot[w] = self.dot_cannot[r];
                 w += 1;
             }
         }
@@ -278,6 +283,7 @@ impl BloonStore {
         self.dot_layers.truncate(w);
         self.grow.truncate(w);
         self.grow_timer.truncate(w);
+        self.dot_cannot.truncate(w);
     }
 }
 
@@ -300,6 +306,7 @@ mod tests {
             grow_rate: 0.0,
             radius: 0.0,
             tags: vec![],
+            decamo: None,
         };
         vec![
             b("red", 1.0, vec![], 0),                    // 0

@@ -732,3 +732,59 @@ Antworten auf §10:
   - Konverter-Test für Spike Factory, Spiked Balls und Directed Spikes.
   - Lokal gegen die t21-Daten: Eine Spike Factory allein lässt in den Runden 1–10 43 statt 738 Leben durch.
 - **Gemessen** (verrauscht, Training läuft parallel): t21 4,3–5,5 k Schritte/s gegen t14 5,8 k.
+
+## Stand Teil 2b (erweiterter DoT, Camo entfernen, Pin, Spiked Mines, 2026-10-27)
+
+- **btd-data:**
+  - `Dot` hat drei neue Felder: `cannot_damage` (Feuer trifft kein Purple), `only_if_damaged` und
+    `exclude_tags`.
+  - `HitExtras.cleanse`: Camo entfernen, wahlweise nur bei Schaden, nicht bei Bloons mit Tag.
+  - `BloonDefV1.decamo`: derselbe Bloon ohne Camo. In den Spiel-Daten ist Camo ein eigener Typ (`RedCamo`),
+    kein Instanz-Flag.
+  - `HitExtras.pop_slow`: Verlangsamen der Kinder beim Platzen, nur ohne Glue-Stufe.
+  - Alle Felder sind optional, ältere Daten laden und rechnen unverändert.
+- **Engine:**
+  - Ein DoT wirkt nur bei Schaden (falls verlangt) und nicht bei ausgeschlossenen Tags. Die Immunität reist
+    mit dem Bloon (`BloonStore::dot_cannot`) und geht an die Kinder.
+  - `cleanse` wechselt vor dem Schaden auf den Typ ohne Camo (gleiche Lebenspunkte) und löscht das
+    Instanz-Flag. Die Kinder kommen dann vom Typ ohne Camo. Mit "nur bei Schaden" gilt es nach einem Treffer
+    mit Schaden für den Bloon bzw. seine Kinder.
+  - Unter MIB (Village) fallen die Tag-Ausschlüsse des DoT weg: Burny Stuff brennt dann auch DDT, Black und
+    Zebra. Im Dump schaltet MIB genau diese Filter ab; DoT-Filter ohne diese Aufhebung lehnt der Konverter
+    ab.
+  - Ein brennender Bloon gibt den DoT an seine Kinder weiter, auch an solche mit ausgeschlossenem Tag (z.B.
+    Rainbow an Zebra) [KAL].
+  - `pop_slow` setzt bei jedem Kind eines geplatzten Bloons eine Verlangsamung in den Slot seiner ID.
+  - `Delivery::track_best_radius` nimmt jetzt die größte Explosion mit Schaden. Die Flare-Explosion von
+    Signal Flare (Radius 52, ohne Schaden) verschiebt den Mortar-Zielpunkt also nicht. Die Punkte auf Monkey
+    Meadow bleiben (−50,8; −19,0) bzw. (−50,8; −2,0).
+- **Konverter:**
+  - `convert_dot` wertet `applyOnlyIfDamaged`, `FilterOutTagModel`-Filter und die Immunität des DoT aus.
+  - `RemoveBloonModifiersModel` mit Camo wird `cleanse`. Der Konverter nimmt dann zu jedem Camo-Bloon den Typ
+    ohne Camo auf (`decamo`, nur in Daten mit einem solchen Turm; t21 chimps hat 63 statt 58 Bloon-Typen).
+    Regrow, Lead und Fortified entfernen bleibt gesperrt (Regrow baut main gerade neu; Lead/Fortified wären
+    weitere Typwechsel). Das betrifft Shattering Shells, Cleansing Foam und Perishing Potions.
+  - `SlowOnPopModel` wird `pop_slow` (1 s Stopp, `chance` 0 gilt als immer, `matchLayersWithDamage` nur bei
+    1 Schicht [KAL]).
+  - Die Runden-Vorschau der Observation nutzt feste Kategorien. Die zusätzlichen Bloon-Typen ändern das
+    Layout also nicht; medium60 und chimps bleiben gleich groß.
+  - `DamageModifierForBloonTypeModel` gilt überall, auch in Explosionen.
+  - Die Explosion beim Ablauf der Spiked Mines ist gleich der beim Verbrauch und wird mit ihr ausgewertet.
+- **Abdeckung t21:** 444 von 1344.
+  - Mortar **24** (neu: Burny Stuff, Signal Flare), Spike Factory **44** (neu: Spiked Mines).
+  - Engineer weiter 12, jetzt mit wirksamem Pin.
+  - t12- und t14-Daten sind bytegleich zur Ausgabe des Konverters aus Teil 2a.
+- **Nicht in diesem Teil** (Abweichung von §5, Teil 2):
+  - Cleansing Foam (Engineer x3x): braucht Lead entfernen und `track_nearest`.
+  - Acid Pool (Alchemist xx2): Säurepfütze als Bodenobjekt mit eigener Zielwahl; die Mechanik ist mit 2a da.
+  - Lead/Rubber to Gold bleiben gesperrt (§2.6).
+- **Tests:**
+  - `btd-core/tests/status.rs`: DoT-Immunität, nur bei Schaden, Tag-Ausschluss und seine Aufhebung unter
+    MIB, Camo entfernen am Camo-Typ und am Instanz-Flag (auch nur bei Schaden und mit Ausschluss), Pin hält
+    das Kind etwa 1 s, Validierung (auch `decamo`).
+  - Konverter-Test für Feuer-DoT, Flare und Pin.
+  - sim_v0-Parität und alle übrigen Tests unverändert grün.
+- **Hinweis:** main hat inzwischen eine eigene Regrow-Mechanik bekommen (`grow_rate`, `GrowStack`, Commits
+  d36c187/db862b3). Beim Rebase auf main sind Konflikte in `bloon.rs` (neues `dot_cannot`), `game.rs`
+  (`apply_hit`, `tick_dots`) und `BloonDefV1` (`decamo`) zu erwarten. Die t14-Dateien im Haupt-Checkout
+  stammen schon von diesem main (`grow_rate`) und laden nur mit einer Erweiterung mit Regrow.

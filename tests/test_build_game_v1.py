@@ -300,12 +300,13 @@ def test_random_emissions_use_their_mean():
 
 
 def test_strict_models_only_where_they_are_evaluated():
-    # Druid-Basis: RemoveBloonModifiers ohne Schalter ist wirkungslos, mit Schalter gesperrt
+    # Druid-Basis: RemoveBloonModifiers ohne Schalter ist wirkungslos; Camo/Regrow wird `cleanse`
+    # (Teil 2b), Lead/Fortified bleibt gesperrt
     rm = T("RemoveBloonModifiersModel", cleanseRegen=False, cleanseCamo=False, cleanseLead=False,
            cleanseFortified=False)
-    b.convert_variant(dart_like(proj_extra=[rm]), [0, 0, 0])
+    assert "cleanse" not in b.convert_variant(dart_like(proj_extra=[rm]), [0, 0, 0])["attacks"][0]["extras"]
     with pytest.raises(b.Unsupported, match="entfernt"):
-        b.convert_variant(dart_like(proj_extra=[dict(rm, cleanseCamo=True)]), [0, 0, 0])
+        b.convert_variant(dart_like(proj_extra=[dict(rm, cleanseLead=True)]), [0, 0, 0])
     # ein Sofort-Treffer-Modell an anderer Stelle (am Turm statt im Projektil) ist nicht unterstützt
     with pytest.raises(b.Unsupported, match="InstantModel"):
         b.convert_variant(dart_like(extra_behaviors=[T("InstantModel")]), [0, 0, 0])
@@ -755,3 +756,31 @@ def test_spike_factory_throws_piles_onto_the_track():
     expire = T("CreateProjectileOnExpireModel", projectile=T("ProjectileModel", pierce=30.0, radius=30.0))
     with pytest.raises(b.Unsupported, match="CreateProjectileOnExpireModel"):
         b.convert_variant(spike_like(proj_extra=[expire]), [4, 0, 0])
+
+
+def test_fire_dot_cleanse_and_pin():
+    mib = ["MibMutator"]
+    fire = T("AddBehaviorToBloonModel", mutationId="Dot:Mortar", layers=9999999, lifespan=3.85, applyOnlyIfDamaged=True,
+             filters=[T("FilterOutTagModel", tag="Ddt", disableWhenSupportMutatorIDs=mib),
+                      T("FilterOutTagModel", tag="Black", disableWhenSupportMutatorIDs=mib)],
+             behaviors=[T("DamageOverTimeModel", damage=1.0, interval=1.25, immuneBloonProperties=8,
+                          distributeToChildren=True)])
+    flare = T("RemoveBloonModifiersModel", cleanseCamo=True, cleanseRegen=False, cleanseLead=False,
+              cleanseFortified=False, cleanseOnlyIfDamaged=False, bloonTagExcludeList=[], bloonTagExplicitList=[])
+    pin = T("SlowOnPopModel", layers=1, glueLevel=0, mutationId="Stun:Weak", chance=0.0, lifespanFrames=0,
+            Lifespan=1.0, Multiplier=0.0)
+    ex = b.convert_variant(dart_like(proj_extra=[fire, flare, pin]), [0, 0, 0])["attacks"][0]["extras"]
+    assert ex["dot"] == {"damage": 1.0, "interval": 1.25, "seconds": 3.85, "layers": 9999999, "level": 0,
+                         "factor_for": [], "cannot_damage": ["purple"], "only_if_damaged": True,
+                         "exclude_tags": ["Ddt", "Black"]}
+    assert ex["cleanse"] == {"camo": True, "only_if_damaged": False, "exclude_tags": []}
+    assert ex["pop_slow"] == {"id": "Stun:Weak", "multiplier": 0.0, "seconds": 1.0, "level": 0, "layers": 1}
+    # Fortified/Lead entfernen kann die Sim nicht
+    with pytest.raises(b.Unsupported, match="Lead/Fortified"):
+        b.convert_variant(dart_like(proj_extra=[dict(flare, cleanseFortified=True)]), [0, 0, 0])
+    with pytest.raises(b.Unsupported, match="Regrow"):
+        b.convert_variant(dart_like(proj_extra=[dict(flare, cleanseRegen=True)]), [0, 0, 0])
+    # DoT-Filter, die MIB nicht aufhebt, kann die Sim nicht (unter MIB fallen alle Ausschlüsse weg)
+    plain = dict(fire, filters=[T("FilterOutTagModel", tag="Ddt")])
+    with pytest.raises(b.Unsupported, match="MIB"):
+        b.convert_variant(dart_like(proj_extra=[plain]), [0, 0, 0])
