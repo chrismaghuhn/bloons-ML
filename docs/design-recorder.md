@@ -122,12 +122,13 @@ Schlüssel für den Abgleich: (Runde, `createdAtRoundTime`, Nr.). Simulation: `t
 
 **Zeitbasis: fester Schritt.** Der Zähler steigt in jedem `Simulate` um genau 1. Bei 1× läuft ein Schritt je
 Unity-Frame (selten zwei), vorgespult setzt das Spiel `timeScale` 3 und rechnet 3 Schritte je Frame. Beide
-Aufnahmen sind identisch: 20 Reds, 40 096 Vergleichspunkte (gleicher Bloon, gleiche Rundenzeit), Abweichung 0.
+Aufnahmen sind identisch: 20 Reds, je Bloon jeder Schritt vom ersten Auftauchen bis zum Leak (gleicher Bloon,
+gleiche Rundenzeit), Abweichung 0.
 Zeit in Sim-Schritten zu 1/60 s; die Spawnzeiten der Runden (`groups[].start/end`) zählen in denselben Schritten
 (Abstand der Reds 55/56 Schritte = 1050,75/19).
 
-**Spawner/Pfad (Monkey Meadow, ein Pfad, 183 Segmente):** `spawnDist` 183,6, `leakDist` 1077,22. Die Polylinie
-aus dem Dump (Start x −333,6) wird also erst ab 183,6 benutzt:
+**Spawner/Pfad (Monkey Meadow, ein Pfad, 183 Segmente):** `spawnDist` 183,6, `leakDist` 1077,22. Von der
+Polylinie aus dem Dump (Start x −333,6) laufen Bloons also nur den Abschnitt von Distanz 173,6 bis 1085,67:
 - erster Schritt jedes Reds: Distanz 173,6 (= `spawnDist` − 10) bei (−160, −22,9), knapp links außerhalb des Bildes;
 - Leak bei Distanz 1085,67 (= `leakDist` + 8,45, ungefähr Bloon-Radius 8 plus Rest eines Schritts) bei (−16,6, 120,0);
 - Lauf je Red: 912,1 Einheiten in 1990 Schritten = **33,17 s**;
@@ -138,9 +139,9 @@ Faktor 1,1. Herkunft noch offen (Kandidat `trackSpeedMultiplier`; der Trace schr
 Aufnahme in `bloon_info`).
 
 **Runde 1:** `round_start` bis `round_end` 3041 Schritte = **50,68 s** (Stoppuhr 50,0 s). Rechnung: letzter
-Spawn bei Rundenschritt 1046 + 1990 Laufzeit = 3036, Runde endet 5 Schritte nach dem letzten Leak. Die Sim kommt
-auf 68,6 s, weil sie den ganzen Dump-Pfad (1276 E.) mit 25 E./s läuft; mit Spiel-Strecke (Distanz 173,6 → 1085,67)
-und 27,5 E./s ergäbe sich dieselbe Laufzeit wie im Spiel.
+Spawn bei Rundenschritt 1051 + 1990 Laufzeit = 3041; die Runde endet im Schritt des letzten Leaks. Die Sim kommt
+auf 68,6 s (1051/60 + 1276/25 = 17,5 + 51,0), weil sie den ganzen Dump-Pfad (1276 E.) mit 25 E./s läuft; mit der
+Spiel-Strecke (Distanz 173,6 → 1085,67) und 27,5 E./s ergäbe sich dieselbe Laufzeit wie im Spiel.
 
 Offen für die nächsten Schritte: Herkunft des Faktors 1,1; Sniper-Abweichung (erster Schuss/Takt) mit einer
 Aufnahme Sniper allein; Schaden/Pop-Hook.

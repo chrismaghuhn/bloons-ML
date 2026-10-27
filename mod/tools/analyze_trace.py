@@ -114,16 +114,19 @@ def summarize(path: Path, events: list[dict]) -> dict:
     if starts and ends:
         d = ends[0]["t"] - starts[0]["t"]
         print(f"  Rundendauer (erste Runde): {d} Schritte = {d / STEPS_PER_SECOND:.2f} s")
-    return {"steps": steps, "keys": bloon_keys(events), "spawns": spawns}
+    leaked_at = {e["id"]: e["rt"] for e in events if e["ev"] == "leak"}
+    return {"steps": steps, "keys": bloon_keys(events), "spawns": spawns, "leaked_at": leaked_at}
 
 
 def positions_by_key(info: dict) -> dict[tuple, dict[int, float]]:
-    """Schlüssel -> {Rundenzeit: Distanz}."""
+    """Schlüssel -> {Rundenzeit: Distanz}. Nach dem Leak bleiben Bloons noch einige Schritte mit eingefrorener
+    Distanz in der Liste; diese Punkte werden verworfen."""
     out: dict[tuple, dict[int, float]] = defaultdict(dict)
+    leaked_at = info["leaked_at"]
     for s in info["steps"]:
         for bid, _path, dist, _x, _y in s.get("b", []):
             key = info["keys"].get(bid)
-            if key is not None:
+            if key is not None and s["rt"] <= leaked_at.get(bid, s["rt"]):
                 out[key][s["rt"]] = dist
     return out
 

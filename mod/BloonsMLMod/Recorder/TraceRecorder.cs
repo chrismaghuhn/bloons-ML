@@ -85,6 +85,8 @@ public static class TraceRecorder
             .Append(",\"dt\":").Append(F(Time.deltaTime))
             .Append(",\"ff\":").Append(FastForward() ? "true" : "false");
 
+        DescribeNewBloons(sim);
+
         var every = Math.Max(1, (int)BloonsMLMod.TracePositionEvery);
         if (sim.roundTime.elapsed % every == 0) // an der Rundenzeit ausgerichtet, damit zwei Aufnahmen dieselben Punkte haben
         {
@@ -98,7 +100,6 @@ public static class TraceRecorder
                 for (var i = 0; i < list.Count; i++)
                 {
                     var bloon = list[i];
-                    if (describedBloons.Add(bloon.Id.Raw)) DescribeBloon(bloon);
                     if (!first) sb.Append(',');
                     first = false;
                     var pos = bloon.Position;
@@ -232,6 +233,22 @@ public static class TraceRecorder
         Emit(sb);
     }
 
+    /// <summary>Jeden Schritt (unabhängig von der Abtastung): neue Bloons einmal beschreiben.</summary>
+    private static void DescribeNewBloons(Simulation sim)
+    {
+        if (describedBloons.Count > 100_000) describedBloons.Clear(); // Freeplay: Speicher begrenzen, schlimmstenfalls doppelt
+        var paths = sim.map.pathManager.paths;
+        for (var p = 0; p < paths.Count; p++)
+        {
+            var list = paths[p].bloonsList.list;
+            for (var i = 0; i < list.Count; i++)
+            {
+                var bloon = list[i];
+                if (describedBloons.Add(bloon.Id.Raw)) DescribeBloon(bloon);
+            }
+        }
+    }
+
     /// <summary>Erster Schritt eines Bloons auf dem Pfad: Werte, die beim Erzeugen noch fehlen (Tempo, Leben, Radius).</summary>
     private static void DescribeBloon(Bloon bloon)
     {
@@ -251,6 +268,7 @@ public static class TraceRecorder
     public static void OnBloonLeaked(Bloon bloon, bool after)
     {
         if (!Active) return;
+        if (after) describedBloons.Remove(bloon.Id.Raw);
         var sb = Event(after ? "leak_done" : "leak");
         AppendBloon(sb, bloon);
         sb.Append(",\"health\":").Append(bloon.health)
