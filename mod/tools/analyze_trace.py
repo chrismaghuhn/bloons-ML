@@ -4,8 +4,8 @@
 
 Mit einer Datei: Zeitbasis (Sim-Schritte je Unity-Frame, Zählerverlauf, dt/timeScale), Pfade (spawnDist/leakDist),
 Spawn- und Leak-Distanz, Laufzeit je Bloon in Sim-Schritten und Sekunden (60 Schritte/s).
-Mit zwei Dateien (z.B. Runde 1 in 1× und vorgespult): vergleicht je Bloon (Schlüssel: Runde, Emission-Index,
-Abstammung) die Distanz zum selben Rundenzeitpunkt und meldet die größte Abweichung.
+Mit zwei Dateien (z.B. Runde 1 in 1× und vorgespult): vergleicht je Bloon (Schlüssel: Runde aus `round_start`,
+Rundenzeit beim Erzeugen, Nr., Abstammung) die Distanz zum selben Rundenzeitpunkt und meldet die größte Abweichung.
 Liest nur; die Traces liegen lokal unter data/raw/recordings/ (gitignored).
 """
 from __future__ import annotations

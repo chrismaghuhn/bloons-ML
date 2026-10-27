@@ -223,8 +223,9 @@ Damit sind die **[prüfen]**-Punkte aus den Abschnitten 1–4 beantwortet:
   im nächsten Frame mit **derselben** Sim-Zeit (z.B. Aufruf bei `t` 592, Callback und `tower_placed` bei `t` 592).
   Zwischen den Runden heißt das: Aktion → einen Frame warten → bestätigt, bevor die Simulation weiterläuft.
 - **Aus dem `Simulate`-Prefix: genau ein Schritt Versatz.** Aufruf im Prefix bei Rundenzeit 300 (`t` 5017):
-  Callback im selben Frame, Turm bei Rundenzeit **301** (`t` 5018), laut Recorder ebenfalls 301. Der Versatz ist
-  fest; für eine Aktion bei Rundenschritt N ruft der Player im Prefix bei N − 1 auf (gilt für `btd-replay/3`).
+  Callback im selben Frame, Turm bei Rundenzeit **301** (`t` 5018), laut Recorder ebenfalls 301. Eine Messung,
+  vorgespult (3 Schritte je Frame); für eine Aktion bei Rundenschritt N ruft der Player im Prefix bei N − 1 auf
+  (gilt für `btd-replay/3`), den Versatz prüft Schritt 4 noch einmal bei 1×.
 - **Koordinaten:** `CreateTowerAt` nimmt Sim-Koordinaten (im `UnityEngine.Vector2`); (−35, 39) und (−35,37, 59,81)
   landen exakt (Abweichung 0), nichts rastet ein. `QueryPlacementPosition` gibt die Position unverändert zurück.
 - **Fehlerfälle:** belegter Platz und Strecke: `positionValid`/`CanPlaceTowerAt` schon vorher `false`; zu wenig Geld
