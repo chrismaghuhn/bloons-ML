@@ -1,4 +1,4 @@
-# Design: mehr Türme, Schritt 3 – Alchemist, Engineer, Mortar, Dartling, Spike Factory, Heli, Ace (Entwurf 2026-10-27, wartet auf Freigabe)
+# Design: mehr Türme, Schritt 3 – Alchemist, Engineer, Mortar, Dartling, Spike Factory, Heli, Ace (freigegeben 2026-10-27 mit Anpassungen, §11)
 
 Ziel: von 14 auf 21 Türme. Das sind alle Landtürme, die für CHIMPS auf Monkey Meadow noch fehlen; Wassertürme
 (Sub, Buccaneer, Mermonkey) bleiben draußen, Beast Handler und Helden auch. Die sieben Türme brauchen
@@ -9,8 +9,8 @@ Wichtigste Befunde vorab:
 - **Engineer 0-0-0 geht schon heute** durch den Konverter (6 Kombinationen ohne neue Engine-Arbeit).
 - **Ein gemeinsamer "Wurf"-Baustein** (Projektil fliegt zu einem Punkt, ohne unterwegs zu treffen, und wirkt
   dort) trägt Alchemist, Mortar, Spike Factory, Engineer-Sentries/-Schaum und Ace-Ananas.
-- **Zielpunkte ohne neue Aktionsdimension:** Mortar zielt auf den Streckenpunkt, der dem Turm am nächsten
-  liegt, der Agent wählt das Ziel also über den Bauplatz; Dartling zielt automatisch auf den vordersten Bloon
+- **Zielpunkte ohne neue Aktionsdimension:** Mortar zielt auf einen festen besten Punkt je Karte (meiste
+  Streckenlänge im Explosionsradius, §3); Dartling zielt automatisch auf den vordersten Bloon
   (§3). Der Aktionsraum wächst nur um die neuen Turmtypen.
 - **Alles Zeitliche bleibt innerhalb der Runde** (Tränke, Spikes, Sentries, Flieger-Position) und wird zu
   Rundenbeginn zurückgesetzt, wie heute die Cooldowns. Damit ändern sich `state_hash`, Startzustände und
@@ -44,11 +44,11 @@ Sofort-Explosion behandelt; sein `AgeModel` (7 s) ist keine Liegezeit. `CanBuffI
 | x3x Unstable Concoction | `UnstableConcoctionSplashModel`, `DamageModifierUnstableConcoctionModel` | MOAB-Angriff, Explosion beim Platzen | später (A4) |
 | x4x/x5x | `AbilityModel`, `MorphTowerModel` | Ability | gesperrt |
 | xx2 Acid Pool | `AcidPoolEmissionModel`, `TargetTrackOrDefaultAcidPoolModel` | Säurepfütze auf der Strecke | **Bodenobjekt** (§2.3) |
-| xx3 Lead to Gold | `GiveCashOnPopModel` (50 $ je geplatztem Lead, `flatCashAmount`) | Cash je Pop | Cash-Bonus am Treffer (§2.6) |
-| xx4 Rubber to Gold | `RemoveBloonTypeModifierModel`, `FilterMutatedTargetModel` | Cash auf alle Bloons | A3 |
+| xx3 Lead to Gold | `GiveCashOnPopModel` (50 $ je geplatztem Lead, `flatCashAmount`) | Cash je Pop | gesperrt, bis geklärt ist, ob CHIMPS es zulässt (§2.6) |
+| xx4 Rubber to Gold | `RemoveBloonTypeModifierModel`, `FilterMutatedTargetModel` | Cash auf alle Bloons | gesperrt, bis die CHIMPS-Zulässigkeit geklärt ist (§2.6) |
 | xx5 Bloon Master Alchemist | `MorphBloonModel` | MOABs zu Rot | gesperrt |
 
-Abdeckung: Wurf allein **10**, + Tränke **22**, + Bodenobjekte/Gold **39**, + Unstable **44** von 64.
+Abdeckung: Wurf allein **10**, + Tränke **22**, + Bodenobjekte/Gold **39** (ohne Lead/Rubber to Gold 29), + Unstable **44** von 64.
 
 **Stapelregel (Vorgabe aus Schritt 2 geprüft):** Tränke stapeln nicht. Belege:
 - Brew: `mutationId` je Stufe ("BeserkerBrew", "BerserkerBrewBetter", "BerserkerBrewPerma") und
@@ -205,7 +205,8 @@ bekommt weitere Varianten, statt ein zweites Feld anzulegen; Standard bleibt `fi
 |---|---|---|
 | `first` | wie heute | alle bisherigen, Alchemist-Wurf |
 | `first_global` | vorderster sichtbarer Bloon auf der ganzen Karte; Richtung dorthin, Drehrate begrenzt | Dartling (§3) |
-| `track_nearest` | fester Streckenpunkt, der dem Turm am nächsten liegt; bei Gleichstand der mit der größeren Pfad-Distanz | Mortar (§3), Engineer-Schaum (`startWithClosestTrackPoint`) |
+| `track_nearest` | fester Streckenpunkt, der dem Turm am nächsten liegt; bei Gleichstand der mit der größeren Pfad-Distanz | Engineer-Schaum (`startWithClosestTrackPoint`) |
+| `track_best` | fester Punkt je Karte und Explosionsradius: der Streckenpunkt mit der meisten Streckenlänge im Radius; bei Gleichstand der mit der größeren Pfad-Distanz | Mortar (§3) |
 | `track_spread` | Streckenpunkt in Reichweite, über die Streckenlänge in Reichweite verteilt | Spike Factory, Acid Pool |
 | `friendly` | befreundeter Turm in Reichweite nach fester Regel (§2.4) | Alchemist-Tränke |
 | `none` | feuert, solange die Runde läuft, ohne Ziel (Richtung fest) | Ace |
@@ -293,10 +294,14 @@ Engineer-Sentries (später Comanche-Mini-Helis, Sentry Champion).
 - `GiveCashOnPopModel` (Lead to Gold): Bloon-Effekt mit Lebensdauer; platzt der Bloon in dieser Zeit, gibt es
   `flatCashAmount`. Heute wird Pop-Cash einmal am Rundenende gutgeschrieben
   (`pops_total × cash_per_pop`). Vorschlag: Summe der Gold-Beträge in der Runde mitzählen und am Rundenende im
-  selben Schritt über `Money::from_f64` gutschreiben (mitten in der Runde wird nichts gekauft; paritätssicher)
-  [KAL: ob CHIMPS-Mods diesen Bonus zulassen].
+  selben Schritt über `Money::from_f64` gutschreiben (mitten in der Runde wird nichts gekauft; paritätssicher).
+  **Zurückgestellt:** Ob CHIMPS diesen Bonus zulässt, zeigt der Dump nicht (`ChimpsModModel` im Mod `Clicks` hat
+  keine Felder; kein anderer Mod nennt Cash-Boni). Laut Spielwissen sperrt CHIMPS alle Einkommen außer Pops und
+  Rundenbonus, vermutlich also auch Lead/Rubber to Gold. Deshalb baut B6 vorerst nur das Entfernen der
+  Modifier; Lead to Gold und Rubber to Gold bleiben gesperrt, bis eine CHIMPS-Partie (Recorder) es klärt. Für
+  Medium/Hard kann Cash je Pop danach nachgezogen werden.
 - `SlowOnPopModel` (Engineer Pin): Status-Effekt an den Kindern eines geplatzten Bloons, abgebildet mit dem
-  vorhandenen Einfrieren/Verlangsamen als kurzer Stopp [KAL: Dauer]; kleiner Teil von B6, kommt aber schon in Teil 1.
+  vorhandenen Einfrieren/Verlangsamen als kurzer Stopp [KAL: Dauer]; kleiner Teil von B6, kommt aber schon in Teil 1a.
 
 ### 2.7 Flieger (B7)
 
@@ -318,13 +323,18 @@ Mortar und Dartling haben im Spiel einen frei gewählten Zielpunkt bzw. folgen d
 Ziel-Aktion würde den Aktionsraum stark vergrößern (z.B. +720 Aktionen "Ziel in Zelle c für Turm X", dazu die
 Frage, für welchen Turm). Vorschlag für diesen Schritt:
 
-- **Mortar: `track_nearest`.** Ziel ist der Streckenpunkt, der dem Mortar am nächsten liegt. Der Agent wählt das Ziel
-  also über den Bauplatz, Mortar steht dazu ohnehin oft nah an einer guten Stelle. Auf Monkey Meadow liegen viele
-  bebaubare Zellen nah an der Strecke. Für die Bridge reicht es, den Zielpunkt einmal beim Bauen zu setzen.
-  Nachteil: Ein Mortar weit weg vom Ziel (Spiel-Taktik) ist nicht darstellbar.
+- **Mortar: `track_best`** (Änderung nach Freigabe; der erste Vorschlag `track_nearest` hätte den Mortar zum
+  Nahbereichsturm gemacht, weil der nächste Streckenpunkt immer direkt neben ihm liegt). Ziel ist der Punkt der
+  Strecke mit der meisten Streckenlänge innerhalb des Explosionsradius, unabhängig vom Bauplatz. Das ist eine
+  Vorab-Tabelle je Karte und Radius (Bigger Blast vergrößert den Radius), berechnet in `Game::new` aus der
+  Strecke; Gleichstand nach größerer Pfad-Distanz. Auf Monkey Meadow ist das eine Kurve oder Schleife. So bleibt
+  der eigentliche Vorteil des Mortars erhalten (weit weg stehen, dichte Stelle treffen), und die Bridge setzt einen
+  festen Punkt je Karte und Radius. Rückfall, falls zu stark: bester Punkt innerhalb eines Radius R um den Mortar.
 - **Dartling: `first_global`.** Zielt auf den vordersten anvisierbaren Bloon der Karte, mit der Drehrate aus
   `RotateToPointerModel` (180 °/s). Das entspricht einem Spieler, der die Maus auf die Spitze hält.
-  Die Bridge müsste den Zeiger bzw. den "Locked"-Punkt laufend nachführen (Frage 2).
+  Bridge: nicht über Bridge-Aktionen (die Warteschlange hätte einen Schritt Versatz, wie die Probe gezeigt hat),
+  sondern die Mod setzt den "Locked"-Punkt im `Simulate`-Prefix je Schritt mit derselben Regel wie die Sim
+  [prüfen im Player].
 - Alternative für später (nicht in diesem Schritt): eine Aktion "Zielpunkt setzen" mit N Zellen, die für den
   zuletzt gebauten oder upgegradeten Punkt-Turm gilt (+720 Aktionen, +1 Kanal "Zielpunkte").
 - Heli und Ace: Modus fest (Lock bzw. Pursuit ab 2xx; Acht um die Startbahn), keine Aktion.
@@ -343,14 +353,14 @@ Frage, für welchen Turm). Vorschlag für diesen Schritt:
   gesperrten Türmen zulässt [Alternative: Turm erst aufnehmen, wenn seine Basis geht; dann ändert sich das Layout
   mehrmals].
 - Neue Modelle wie bisher STRICT (nur an der ausgewerteten Stelle erlaubt) mit Feld-Prüfung gegen den Dump-Standard.
-- Neue Felder (`lob`, neue `targeting`-Varianten, `ground`, `timed`/Tränke, `sub_towers`, `cleanse`, `cash_on_pop`, `unit`) sind optional;
+- Neue Felder (`lob`, neue `targeting`-Varianten, `ground`, `timed`/Tränke, `sub_towers`, `cleanse`, `unit`; `cash_on_pop` erst nach Klärung, §2.6) sind optional;
   primary-, t12- und t14-Daten bleiben unverändert (außer `data_hash`, falls sich Standardfelder ändern – vermeiden).
 - Abdeckungs-Report wie bisher je Turm, mit Hinweis auf die Vereinfachungen (Zielpunkt-Regel, Mittelwert-Streuung,
   Long Life, Flieger-Modi).
 
 ## 5. Reihenfolge und Priorität für CHIMPS
 
-Einschätzung des CHIMPS-Nutzens (Monkey Meadow, 1 Leben, kein Einkommen außer Pops):
+Einschätzung des CHIMPS-Nutzens (Monkey Meadow, 1 Leben, Einkommen nur aus Pops und Rundenbonus `end_bonus`):
 - **Alchemist** (Brew/Stronger Stimulant auf starke Primary-/Magic-Türme, Säure gegen Lead und MOAB-DoT) – hoch.
 - **Spike Factory** (Absicherung am Streckenende gegen Leaks, MOAB SHREDR, Spiked Mines) – hoch; bei 1 Leben
   besonders wertvoll.
@@ -364,13 +374,14 @@ Teilschritte (jeder mit Tests und Parität; nach Teil 2 ein t21-Lauf):
 
 | Teil | Inhalt | freigeschaltet (Obergrenze) |
 |---|---|---|
-| 0 | Konverter/btd-data t21 (alle 7 im Layout, gesperrt), Validierung, Env-Layout; Engineer-Basis frei | Engineer 6 |
-| 1 | B1 Wurf + B2 Ziel-Arten (`first`, `track_nearest`, `friendly`) + B4 Zeit-Effekte | Alchemist 18 (Perishing-Potions-Varianten 020/021/120/220 erst mit Teil 2), Mortar 29 (Signal-Flare-Varianten erst mit Teil 2), Engineer 12 (Pin, Double Gun) |
-| 2 | B3 Bodenobjekte + `track_spread` + B6 Modifier/Cash, dazu Spike S2 (Bonus, Minen) und S3 (Directed) | Spike 49, Alchemist 34 (ohne Rubber to Gold), Engineer 15 (Schaum), Mortar alle 29 |
+| 0 | Konverter/btd-data t21 (alle 7 im Layout, gesperrt), Validierung, Env-Layout; Engineer-Basis frei; **Place-Maske steigt für gesperrte Türme früh aus** (nur Nullen, keine Kollisionsprüfung), damit Heli/Ace keine Rechenzeit kosten, bevor sie etwas tun | Engineer 6 |
+| 1a | B1 Wurf + `track_best`; Pin, Double Gun (ohne Zeit-Effekte) | Mortar 29 (Signal-Flare-Varianten erst mit Teil 2), Engineer 12 |
+| 1b | B4 Zeit-Effekte + `friendly` (größtes Paritätsrisiko: effektive Werte ändern sich im Tick-Loop, deshalb allein) | Alchemist 18 (Perishing-Potions-Varianten 020/021/120/220 erst mit Teil 2) |
+| 2 | B3 Bodenobjekte + `track_spread` + `track_nearest` (Schaum) + B6 Modifier entfernen (ohne Cash je Pop), dazu Spike S2 (Bonus, Minen) und S3 (Directed) | Spike 49, Alchemist 29 (ohne Lead/Rubber to Gold, §2.6), Engineer 15 (Schaum), Mortar alle 29 |
 | – | **Lauf t21** (R60 → CHIMPS) mit Alchemist, Spike, Mortar, Engineer | |
 | 3 | B5 Sub-Türme | Engineer 39 (Sentries; 44 erst mit der Falle E4, später) |
-| 4 | Dartling (`first_global`, D1–D3), Mortar M2, Alchemist A3/A4, Spike S4 (Super Mines) | Dartling 44, Mortar 49 |
-| 5 | B7 Flieger | Ace 24–42, Heli 14–29 |
+| 4 | Dartling (`first_global`, D1–D3), Mortar M2, Alchemist A4 (A3 nur, falls Cash je Pop freigegeben wird), Spike S4 (Super Mines) | Dartling 44, Mortar 49 |
+| 5 | B7 Flieger – ob überhaupt, wird nach dem t21-Lauf entschieden (Heli/Ace bleiben im Layout) | Ace 24–42, Heli 14–29 |
 
 ## 6. Determinismus und Parität
 
@@ -398,13 +409,16 @@ Teilschritte (jeder mit Tests und Parität; nach Teil 2 ein t21-Lauf):
 - 21 Türme: Kanäle 2 + 21 + 3 + 5 = **31**, Aktionen 1 + (21 + 3 + 1) × 720 = **18 001** (t14: 24 / 12 961).
   Bestehende t14-Modelle passen nicht (neuer Lauf, wie bei t12 → t14).
 - **Keine neuen Kanäle.** Alles Neue ist entweder Rundenzustand (zwischen den Runden nicht sichtbar) oder folgt aus
-  Turmtyp, Position und Tiers (Mortar-Ziel = nächster Streckenpunkt). Brew/Dip wirken nur während der Runde; die
+  Turmtyp, Position und Tiers (Mortar-Ziel = fester Punkt je Karte). Brew/Dip wirken nur während der Runde; die
   Policy sieht, wo ein Alchemist mit welchen Tiers steht. Falls Alchemisten selten gebaut werden: optionaler
   Kanal "in Reichweite eines Brew-Alchemisten" (wie die Buff-Kanäle) [Entscheidung nach dem Lauf].
-- Zufallssperren bis 25 %: bei 21 Türmen 5 (heute 3) – oder bei 3 bleiben (Frage 6). Fest gesperrt: Farm (CHIMPS)
-  und Türme ohne Mechanik; sie zählen nicht mit.
+- Zufallssperren: höchstens ⌊25 % der **freien** Türme⌋ (Regel statt fester Zahl, gilt in jedem Teilschritt).
+  Frei = nicht fest gesperrt; fest gesperrt sind die Farm (CHIMPS bzw. bis zur Mechanik) und Türme ohne Mechanik.
+  Beispiel nach Teil 2: 21 − Farm, Dartling, Heli, Ace = 17 frei → höchstens 4. `--ban-towers` über der Grenze
+  wird abgelehnt.
 - Leistung: Die Place-Maske wächst mit den Turmtypen (t12 → t14: +11 % je Schritt). Erwartung für t21 grob +30 %
-  Schrittzeit gegenüber t14, dazu Kosten im Tick-Loop für Bodenobjekte (Spike Factory) – messen nach Teil 2.
+  Schrittzeit gegenüber t14, sobald alle Türme frei sind; gesperrte Türme kosten dank der früh aussteigenden Maske
+  fast nichts; dazu Kosten im Tick-Loop für Bodenobjekte (Spike Factory) – messen nach Teil 2.
 - `--reward-tower` bestraft auch die neuen Türme (wie die Village).
 
 ## 8. Tests und Plausibilität
@@ -412,16 +426,18 @@ Teilschritte (jeder mit Tests und Parität; nach Teil 2 ein t21-Lauf):
 Rust (btd-core), je Baustein:
 - Wurf: landet nach `time` bzw. Abstand/Tempo, trifft unterwegs nichts, Explosion am Zielpunkt, nicht am Bloon
   zum Ankunftszeitpunkt.
-- Ziel-Arten: `track_nearest` = nächster Streckenpunkt (Gleichstand → größere Pfad-Distanz); `track_spread` deterministisch
+- Ziel-Arten: `track_nearest` = nächster Streckenpunkt (Gleichstand → größere Pfad-Distanz); `track_best` =
+  Punkt mit maximaler Streckenlänge im Radius (Vergleich mit Brute Force über feines Raster, Gleichstand); `track_spread` deterministisch
   und gleichmäßig über die Strecke in Reichweite; `friendly` wählt nach `spent`, dann ID; `first_global` ignoriert
-  die Reichweite, Drehrate begrenzt; Spike-Intervalle folgen der gebufften Reichweite.
+  die Reichweite, Drehrate begrenzt; Spike-Intervalle folgen der gebufften Reichweite, und läuft ein Brew mitten
+  in der Runde ab, schrumpfen sie wieder auf die alte Reichweite.
 - Bodenobjekte: Pierce-Verbrauch mit Treffer-Reset und Kollisions-Intervall, halten die Runde nicht offen, sind
   nach der Runde weg; Distanz-Fenster gibt dasselbe Ergebnis wie die volle 2D-Prüfung (Test mit Selbstkreuzung).
 - Zeit-Effekte: Ablauf nach Zeit und nach Schüssen, Sperrzeit, stärkerer ersetzt schwächeren, zwei Alchemisten
   stapeln nicht, Brew + Village wirken zusammen, Laufzeit-Zustand (Salve, Crit) bleibt erhalten, Reset zu
   Rundenbeginn.
 - Sub-Türme: Erscheinen alle n s an deterministischen Positionen, Ablauf, Auren an der Position, nicht im Hash.
-- Modifier: Signal Flare macht Camo sichtbar, Kinder erben; Lead to Gold gibt Cash nur für Lead-Pops.
+- Modifier: Signal Flare macht Camo sichtbar, Kinder erben; Perishing Potions entfernt Fortified, aber nicht bei MOABs.
 - Flieger: Ace fliegt die Bahn mit Tempo, Heli-Pursuit erreicht den vordersten Bloon.
 - Parität: sim_v0 (f64) und t12/t14-Replays bitgleich nach jedem Teil; `state_hash` zwischen Runden unabhängig von
   Zeit-Effekten und Bodenobjekten (Rundlauf über `StartState`).
@@ -430,9 +446,11 @@ btd-data: Validierung der neuen Felder (Wertebereiche, `targeting` nur mit passe
 gesperrte Türme), unbekannte Felder werden abgelehnt.
 
 Konverter: Abdeckung je Turm wie in §1 (Obergrenzen), STRICT für alle neuen Modelle, Feld-Prüfungen (z.B.
-`RemoveBloonModifiersModel` nur mit bekannten Schaltern), `MECHANIC_LOCKED` je Teil.
+`RemoveBloonModifiersModel` nur mit bekannten Schaltern), `MECHANIC_LOCKED` je Teil; `GiveCashOnPopModel`
+bleibt unbekannt, Lead/Rubber to Gold werden also abgelehnt (Test, damit die Sperre nicht versehentlich fällt).
 
-Env: t21-Layout gleich groß, egal welche Türme gesperrt sind; Maske sperrt Türme ohne Mechanik; Python
+Env: t21-Layout gleich groß, egal welche Türme gesperrt sind; Place-Maske gesperrter Türme ohne
+Kollisionsprüfung (Zeitmessung t14 gegen t21 mit gesperrten Türmen); Sperr-Grenze aus den freien Türmen; Maske sperrt Türme ohne Mechanik; Python
 `grid_spec` stimmt.
 
 Plausibilität (`btd-tools demo`, Pops je Runde): Dart allein gegen Dart + Brew-Alchemist; Spike Factory allein an
@@ -452,7 +470,7 @@ Runde 30–40; Mortar mit Ziel auf einer Schleife gegen dieselbe Runde ohne Mort
 9. Ace-Acht: Radius, Startpunkt und Richtung; Heli-Pursuit-Abstand.
 10. Mortar-Streuung und ob die 0,5 s ab Abschuss oder ab Zielwahl zählen.
 
-## 10. Offene Fragen an dich
+## 10. Offene Fragen (beantwortet, siehe §11)
 
 1. **Layout:** Alle sieben Türme sofort ins Layout (t21, gesperrt bis zur Mechanik, mit Platzhaltern für noch nicht
    konvertierbare Basisvarianten), damit sich der Aktionsraum nur einmal ändert (Vorschlag) – oder schrittweise
@@ -470,3 +488,29 @@ Runde 30–40; Mortar mit Ziel auf einer Schleife gegen dieselbe Runde ohne Mort
 7. **Brew-Zielwahl:** Turm mit dem höchsten `spent` in Reichweite (Vorschlag), bis der Recorder die Spielregel zeigt?
 8. **Kleinere Festlegungen:** Spike Factory feuert nur bei anvisierbarem Bloon (wie im Dump); Heli-Pursuit hält
    `pursuitDistance` 32; Ace fliegt immer die ungedrehte Acht (auch ab xx2) – ok?
+
+## 11. Freigabe und Entscheidungen (2026-10-27)
+
+Der User hat das Design mit diesen Anpassungen freigegeben (eingearbeitet in §2–§8):
+- Zufallssperren als Regel: höchstens 25 % der freien Türme (§7).
+- Mortar zielt auf `track_best` (fester bester Punkt je Karte und Radius) statt `track_nearest` (§2.2, §3).
+- Lead/Rubber to Gold: Ob CHIMPS sie zulässt, zeigt der Dump nicht; vermutlich gesperrt. B6 baut zuerst nur das
+  Entfernen der Modifier, Cash je Pop wartet (§2.6). §5 nennt jetzt auch den Rundenbonus als Einkommen.
+- Teil 1 geteilt: 1a Mortar (B1 + `track_best`), 1b Alchemist (B4 + `friendly`), damit sich ein Paritätsbruch eindeutig
+  zuordnen lässt (§5).
+- Teil 0: Place-Maske steigt für gesperrte Türme früh aus (§5, §8).
+- Test: Brew läuft mitten in der Runde ab, `track_spread`-Intervalle schrumpfen wieder (§8).
+
+Antworten auf §10:
+1. Alle sieben sofort ins Layout (t21, Platzhalter), unter der Bedingung der früh aussteigenden Maske.
+2. Mortar: `track_best`. Dartling `first_global` in der Sim ok; in der Bridge setzt die Mod den "Locked"-Punkt im
+   `Simulate`-Prefix je Schritt mit derselben Regel [prüfen im Player]. Echte Ziel-Aktion später, wenn überhaupt.
+3. Reset zu Rundenbeginn ok (Sim eher zu schwach als zu stark ist die richtige Fehlerrichtung).
+4. Abilities in diesem Schritt gesperrt. Eigener Ability-Schritt danach lohnt sich (Overclock); billige erste Version
+   "Auto-Cast, sobald bereit" ohne neue Aktion. Ability-Cooldowns laufen im Spiel über das Rundenende, das wäre der
+   erste Rundenzustand in Hash und `StartState`.
+5. Reihenfolge ok mit Teil 1a/1b. Heli und Ace bleiben im Layout; ob Teil 5 kommt, wird nach dem t21-Lauf entschieden.
+6. Zufallssperren: Prozentsatz der freien Türme (siehe oben).
+7. Brew-Ziel nach höchstem `spent` als Platzhalter; der Recorder soll die echte Regel früh zeigen, weil die Policy um
+   die Heuristik herum lernt.
+8. Spike Factory nur mit anvisierbarem Bloon, Heli-Pursuit mit `pursuitDistance` 32, Ace immer die ungedrehte Acht: ok.
