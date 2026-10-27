@@ -84,7 +84,8 @@ if __name__ == "__main__":
                     help="Replays (.jsonl) als Quelle B und für die Budgetkurve")
     ap.add_argument("--ent-coef", type=float, default=0.01, help="Entropie-Koeffizient (Start)")
     ap.add_argument("--ent-coef-end", type=float, default=None,
-                    help="wenn gesetzt: linear von --ent-coef auf diesen Wert über --steps")
+                    help="wenn gesetzt: linear von --ent-coef auf diesen Wert über --steps (Wert je Rollout am "
+                         "Rollout-Start; mit --resume beginnt der Verlauf wieder bei --ent-coef)")
     ap.add_argument("--conv-width", type=int, default=32, help="Kanäle der Faltungs-Policy")
     ap.add_argument("--conv-blocks", type=int, default=4, help="Residual-Blöcke der Faltungs-Policy")
     ap.add_argument("--amp", action=argparse.BooleanOptionalAction, default=True,
@@ -101,9 +102,11 @@ if __name__ == "__main__":
                  "gibt es nur mit --engine rust")
     if args.start_states and not args.start_replays:
         ap.error("--start-states braucht --start-replays (Quelle B und Budgetkurve)")
+    if args.ent_coef < 0 or (args.ent_coef_end is not None and args.ent_coef_end < 0):
+        ap.error("--ent-coef/--ent-coef-end müssen >= 0 sein")
     if args.resume:
         print("--resume: Architektur und Seed kommen aus dem Modell, --arch/--conv-*/--seed werden ignoriert "
-              "(--amp/--compile gelten)")
+              "(--amp/--compile/--ent-coef gelten)")
 
     if args.engine == "rust":
         from btd_sim.rust_env import DEFAULT_DATA, RustVecEnv
@@ -114,6 +117,7 @@ if __name__ == "__main__":
         env = make_vec_env(BTDEnv, n_envs=args.envs, vec_env_cls=SubprocVecEnv)
     if args.resume:
         model = MaskablePPO.load(args.resume, env=env, device=args.device)
+        model.ent_coef = args.ent_coef  # sonst gälte still der gespeicherte Wert
     else:
         if args.arch == "conv":
             from btd_sim.policy import GridPolicy, grid_spec
