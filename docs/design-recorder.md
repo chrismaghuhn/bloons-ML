@@ -101,3 +101,46 @@ gezielte Kalibrier-Partien).
 1. Replay immer automatisch, Trace per Einstellung/Hotkey.
 2. Kalibrier-Partien: jeder Frame; normale Partien: 0,1 s; gzip.
 3. Abgeleitete Zahlen ins Repo, Rohdaten lokal, Skript erzeugt die Patch-Werte.
+
+## 6. Ergebnis Schritt 1: Test-Mod (2026-10-27, BTD6 57.4, Monkey Meadow, Medium, Runde 1 ohne Türme)
+
+Test-Recorder: `mod/BloonsMLMod/Recorder/` (F9), Auswertung `mod/tools/analyze_trace.py`; zwei Aufnahmen
+(1× und vorgespult) liegen lokal unter `data/raw/recordings/`.
+
+**Hooks (Mod Helper 3.6.10):** vorhanden und genutzt: `OnRoundStart/End`, `OnBloonCreated` (Postfix auf
+`Bloon.Initialise`), `PreBloonLeaked`/`PostBloonLeaked`, `OnTowerPlaced/Upgraded/Sold`, `OnWeaponFire`,
+`OnMatchEnd/OnRestart/OnMainMenu`. Kein Hook für Schaden/Pop (dafür später Harmony auf `Bloon.Damage`).
+`OnFastForwardChanged` ist veraltet und wird nicht mehr aufgerufen; Vorspulen steht in `TimeManager.FastForwardActive`.
+Pro Sim-Schritt: Harmony-Postfix auf `Simulation.Simulate`.
+
+**Felder:** Bloon: `Id` (`ObjectId.Raw`), `distanceTraveled`, `Position`, `spawnRound`, `createdAtRoundTime`,
+`emissionIndex` (in 57.4 immer 0, als Schlüssel unbrauchbar), `lineage`, `health`, `trackSpeedMultiplier`,
+`bloonModel`. Beim Erzeugen (`Initialise`) sind Distanz, Position und Leben noch 0; gültig ab dem ersten Schritt.
+Schlüssel für den Abgleich: (Runde, `createdAtRoundTime`, Nr.). Simulation: `time.elapsed` und
+`roundTime.elapsed` (ganzzahlig, +1 je Schritt). Pfad (`map.pathManager.paths[i]`): `spawnDist`, `leakDist`,
+`segments`. Turm/Waffe: `Id`, `towerModel`, `Position`, `weapon.rateFrames`.
+
+**Zeitbasis: fester Schritt.** Der Zähler steigt in jedem `Simulate` um genau 1. Bei 1× läuft ein Schritt je
+Unity-Frame (selten zwei), vorgespult setzt das Spiel `timeScale` 3 und rechnet 3 Schritte je Frame. Beide
+Aufnahmen sind identisch: 20 Reds, 40 096 Vergleichspunkte (gleicher Bloon, gleiche Rundenzeit), Abweichung 0.
+Zeit in Sim-Schritten zu 1/60 s; die Spawnzeiten der Runden (`groups[].start/end`) zählen in denselben Schritten
+(Abstand der Reds 55/56 Schritte = 1050,75/19).
+
+**Spawner/Pfad (Monkey Meadow, ein Pfad, 183 Segmente):** `spawnDist` 183,6, `leakDist` 1077,22. Die Polylinie
+aus dem Dump (Start x −333,6) wird also erst ab 183,6 benutzt:
+- erster Schritt jedes Reds: Distanz 173,6 (= `spawnDist` − 10) bei (−160, −22,9), knapp links außerhalb des Bildes;
+- Leak bei Distanz 1085,67 (= `leakDist` + 8,45, ungefähr Bloon-Radius 8 plus Rest eines Schritts) bei (−16,6, 120,0);
+- Lauf je Red: 912,1 Einheiten in 1990 Schritten = **33,17 s**;
+- Leak kostet 1 Leben (`leakDamage` 1), sichtbar zwischen `leak` und `leak_done`.
+
+**Red-Tempo:** 0,45833 Einheiten je Schritt = **27,5 E./s**, im Modell steht `speed` 25 (`mapWideBloonSpeed` 1):
+Faktor 1,1. Herkunft noch offen (Kandidat `trackSpeedMultiplier`; der Trace schreibt ihn ab der nächsten
+Aufnahme in `bloon_info`).
+
+**Runde 1:** `round_start` bis `round_end` 3041 Schritte = **50,68 s** (Stoppuhr 50,0 s). Rechnung: letzter
+Spawn bei Rundenschritt 1046 + 1990 Laufzeit = 3036, Runde endet 5 Schritte nach dem letzten Leak. Die Sim kommt
+auf 68,6 s, weil sie den ganzen Dump-Pfad (1276 E.) mit 25 E./s läuft; mit Spiel-Strecke (Distanz 173,6 → 1085,67)
+und 27,5 E./s ergäbe sich dieselbe Laufzeit wie im Spiel.
+
+Offen für die nächsten Schritte: Herkunft des Faktors 1,1; Sniper-Abweichung (erster Schuss/Takt) mit einer
+Aufnahme Sniper allein; Schaden/Pop-Hook.

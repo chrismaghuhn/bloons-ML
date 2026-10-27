@@ -112,7 +112,8 @@ Format `bloonsml-trace/0`, eine JSON-Zeile je Ereignis, `t` = interner Sim-Zähl
 |---|---|
 | `header` | Karte, Modus, Schwierigkeit, Spiel-/Mod-Version, `paths[]` mit `spawnDist`, `leakDist`, `maximumDistanceUntilSpawn/Leak`, `mapWideBloonSpeed` |
 | `step` | je Sim-Schritt: `t`, `rt`, Unity-Frame `uf`, Schritt-Nr. im Frame `sif`, `timeScale` `ts`, `deltaTime` `dt`, Vorspulen `ff`; alle N Schritte `b` = `[[id, Pfad, Distanz, x, y], …]` |
-| `spawn` | `id`, `type`, `dist`, `x`, `y`, `spawnRound`, `emissionIndex`, `createdAtRoundTime`, `health`, `lineage` (Abstammung, IDs) |
+| `spawn` | beim Erzeugen (`Bloon.Initialise`): `id`, `type`, `spawnRound`, `emissionIndex` (57.4: immer 0), `createdAtRoundTime`, `lineage`; `dist`/`x`/`y`/`health` sind hier noch 0 |
+| `bloon_info` | beim ersten Schritt eines Bloons (beim Erzeugen sind Distanz/Position/Leben noch 0): Distanz, Position, `health`, `trackSpeedMultiplier`, `totalSpeedFrames`, `modelSpeed`, `modelSpeedFrames`, `radius` |
 | `leak` / `leak_done` | vor/nach dem Leak: Bloon, `health`, `leakDamage`, `lives` |
 | `round_start` / `round_end`, `fastforward` | Runde bzw. an/aus |
 | `tower_placed` / `tower_upgraded` / `tower_sold` | Turm-ID, Name, Position, Range, Upgrade bzw. Verkaufserlös |

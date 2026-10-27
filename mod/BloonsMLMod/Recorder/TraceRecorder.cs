@@ -31,6 +31,9 @@ public static class TraceRecorder
     private static int stepsThisFrame;
     private static bool lastFastForward;
 
+    /// <summary>Bloons, deren Tempo-Werte schon geschrieben wurden (beim Erzeugen sind sie noch nicht gesetzt).</summary>
+    private static readonly System.Collections.Generic.HashSet<uint> describedBloons = new();
+
     public static bool Active => writer != null;
 
     /// <summary>Einstellung/Hotkey geändert: im Spiel sofort starten bzw. stoppen.</summary>
@@ -95,6 +98,7 @@ public static class TraceRecorder
                 for (var i = 0; i < list.Count; i++)
                 {
                     var bloon = list[i];
+                    if (describedBloons.Add(bloon.Id.Raw)) DescribeBloon(bloon);
                     if (!first) sb.Append(',');
                     first = false;
                     var pos = bloon.Position;
@@ -120,6 +124,7 @@ public static class TraceRecorder
             var file = $"{DateTime.Now:yyyyMMdd-HHmmss}_{mapName}_{mode}_{difficulty}.trace.jsonl.gz";
             writer = new TraceWriter(Path.Combine(dir, OutputPaths.Sanitize(file)));
             lastUnityFrame = -1;
+            describedBloons.Clear();
             lastFastForward = FastForward(); // Zustand steht im Header, kein Ereignis im ersten Schritt
 
             var paths = new JArray();
@@ -224,6 +229,22 @@ public static class TraceRecorder
             }
         }
         sb.Append("]}");
+        Emit(sb);
+    }
+
+    /// <summary>Erster Schritt eines Bloons auf dem Pfad: Werte, die beim Erzeugen noch fehlen (Tempo, Leben, Radius).</summary>
+    private static void DescribeBloon(Bloon bloon)
+    {
+        var model = bloon.bloonModel;
+        var sb = Event("bloon_info");
+        AppendBloon(sb, bloon);
+        sb.Append(",\"health\":").Append(bloon.health)
+            .Append(",\"trackSpeedMultiplier\":").Append(F(bloon.trackSpeedMultiplier))
+            .Append(",\"totalSpeedFrames\":").Append(F(bloon.TotalSpeedFrames))
+            .Append(",\"modelSpeed\":").Append(F(model?.speed ?? double.NaN))
+            .Append(",\"modelSpeedFrames\":").Append(F(model?.speedFrames ?? double.NaN))
+            .Append(",\"radius\":").Append(F(model?.radius ?? double.NaN))
+            .Append('}');
         Emit(sb);
     }
 
