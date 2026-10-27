@@ -14,12 +14,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: Abhängigkeiten (ohne Torch, für die Tests nicht nötig)
-        run: pip install numpy gymnasium jsonschema pytest
+        run: pip install numpy==2.5.4 gymnasium jsonschema pytest  # numpy fix: Runden-Generator hängt am RNG-Stream
       - name: Basisdaten und Sim-Export aktuell
         run: |
           python tools/normalize.py
-          git diff --exit-code data/base
-          python tools/export_sim_data.py --check
+          git status --porcelain data/base | (! grep .)  # listet Änderungen, falls vorhanden
+          python tools/export_sim_data.py --check  # Trace-Check läuft in pytest (tests/test_export.py)
       - run: python -m pytest tests -q
 
   rust:
@@ -32,11 +32,12 @@ jobs:
         working-directory: engine
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.99.1 # wie engine/rust-toolchain.toml
         with:
           components: clippy, rustfmt
       - run: cargo fmt --check
       - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --all-targets --features btd-core/f64 -- -D warnings
       - run: cargo test
       - name: Parität zur Python-Sim (f64, bit-genau)
         run: cargo test -p btd-core --features f64

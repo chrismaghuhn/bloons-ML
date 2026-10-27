@@ -333,14 +333,17 @@ impl GameData {
         if !pos(r.dt) || !pos(r.max_round_seconds) {
             return Err(invalid("rules: dt und max_round_seconds müssen > 0 sein"));
         }
+        if r.max_round_seconds / r.dt > MAX_TICKS_PER_ROUND {
+            return Err(invalid("rules: max_round_seconds / dt ergibt zu viele Ticks pro Runde"));
+        }
         if !non_neg(r.cd_eps) || !non_neg(r.child_spacing) {
             return Err(invalid("rules: cd_eps und child_spacing müssen >= 0 sein"));
         }
         if !(r.sell_ratio.is_finite() && (0.0..=1.0).contains(&r.sell_ratio)) {
             return Err(invalid("rules: sell_ratio muss in [0, 1] liegen"));
         }
-        if r.start_lives <= 0 || r.start_cash < 0 {
-            return Err(invalid("rules: start_lives > 0 und start_cash >= 0 erwartet"));
+        if r.start_lives <= 0 || !(0..=MAX_DOLLARS).contains(&r.start_cash) {
+            return Err(invalid("rules: start_lives > 0 und start_cash in [0, 1e12] erwartet"));
         }
         if r.max_second_path > r.max_tier {
             return Err(invalid("rules: max_second_path > max_tier"));
@@ -361,7 +364,16 @@ impl GameData {
         if m.points.iter().flatten().any(|v| !v.is_finite()) {
             return Err(invalid("map: points müssen endlich sein"));
         }
-        let cells = m.grid_w * m.grid_h;
+        for (i, w) in m.points.windows(2).enumerate() {
+            let len = (w[1][0] - w[0][0]).hypot(w[1][1] - w[0][1]);
+            if (m.cum[i + 1] - m.cum[i] - len).abs() > 1e-9 * len.max(1.0) {
+                return Err(invalid(format!("map: cum passt bei Segment {i} nicht zu points")));
+            }
+        }
+        let cells = m.grid_w.checked_mul(m.grid_h).filter(|&c| c > 0 && c <= u16::MAX as usize);
+        let Some(cells) = cells else {
+            return Err(invalid("map: grid_w x grid_h muss zwischen 1 und 65535 liegen"));
+        };
         if m.path_mask.len() != cells || m.buildable.len() != cells {
             return Err(invalid("map: Raster passen nicht zu grid_w x grid_h"));
         }
@@ -369,7 +381,8 @@ impl GameData {
         check_unique(self.bloons.iter().map(|b| b.name.as_str()), "Bloon")?;
         check_unique(self.towers.iter().map(|t| t.name.as_str()), "Turm")?;
         for b in &self.bloons {
-            if !pos(b.speed) || b.rbe <= 0 {
+            // Weg pro Tick muss auch in f32 > 0 sein, sonst bewegt sich der Bloon nie
+            if !pos(b.speed) || (b.speed as f32) * (r.dt as f32) <= 0.0 || b.rbe <= 0 {
                 return Err(invalid(format!("Bloon {}: speed und rbe müssen > 0 sein", b.name)));
             }
             if b.children.iter().any(|&c| c as usize >= self.bloons.len()) {
@@ -379,7 +392,8 @@ impl GameData {
         self.check_child_cycles()?;
 
         for t in &self.towers {
-            if t.cost <= 0 || !pos(t.cooldown) || !pos(t.range) || !non_neg(t.blast) {
+            if !(1..=MAX_DOLLARS).contains(&t.cost) || !pos(t.cooldown) || !pos(t.range) || !non_neg(t.blast)
+            {
                 return Err(invalid(format!(
                     "Turm {}: cost/cooldown/range > 0 und blast >= 0 erwartet",
                     t.name
@@ -393,7 +407,8 @@ impl GameData {
                     let fx = &u.fx;
                     // negative Deltas würden zwischen den Engines unterschiedlich behandelt
                     // (Python-Slicing vs. Klemmen), deshalb gar nicht erst zulassen
-                    if u.cost <= 0 || !pos(fx.rate) || fx.pierce < 0 || fx.damage < 0 {
+                    if !(1..=MAX_DOLLARS).contains(&u.cost) || !pos(fx.rate) || fx.pierce < 0 || fx.damage < 0
+                    {
                         return Err(invalid(format!(
                             "Turm {} Pfad {p}: Kosten/rate > 0, pierce/damage-Delta >= 0 erwartet",
                             t.name
@@ -442,6 +457,10 @@ impl GameData {
         Ok(())
     }
 }
+
+/// Obergrenzen gegen Überläufe bei von Hand gebauten Daten (Money rechnet in 1/1000 $ als i64).
+const MAX_DOLLARS: i64 = 1_000_000_000_000;
+const MAX_TICKS_PER_ROUND: f64 = 1e7;
 
 fn check_unique<'a>(names: impl Iterator<Item = &'a str>, what: &str) -> Result<(), DataError> {
     let mut seen = std::collections::HashSet::new();
@@ -519,6 +538,10 @@ mod tests {
         rejects(|v| v["map"]["cum"] = json!([0.0, 1.0, 2.0]), "cum");
         rejects(|v| v["map"]["cum"] = json!([0.0, 0.0]), "cum");
         rejects(|v| v["rules"]["dt"] = json!(0.0), "dt");
+        rejects(|v| v["rules"]["max_round_seconds"] = json!(1e9), "Ticks");
+        rejects(|v| v["map"]["cum"] = json!([0.0, 3.0]), "Segment 0");
+        rejects(|v| v["bloons"][0]["speed"] = json!(1e-300), "speed");
+        rejects(|v| v["towers"][0]["cost"] = json!(10_000_000_000_000i64), "cost");
         rejects(|v| v["rules"]["sell_ratio"] = json!(1.5), "sell_ratio");
         rejects(|v| v["rules"]["max_second_path"] = json!(2), "max_second_path");
         rejects(|v| v["towers"][0]["upgrades"] = json!([[]]), "2 Upgrade-Pfade");

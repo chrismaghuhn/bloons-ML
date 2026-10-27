@@ -4,7 +4,8 @@ Zufällige, aber feste (geseedete) Aktionsfolgen laufen durch die Python-Referen
 Runde werden die versuchten Aktionen, ob sie akzeptiert wurden, und der komplette Zustand
 danach festgehalten; Floats als IEEE-754-Bitmuster, damit der Vergleich bit-genau ist.
 
-    python tools/gen_parity_trace.py
+    python tools/gen_parity_trace.py           # schreiben
+    python tools/gen_parity_trace.py --check   # prüfen, ob der Trace zur aktuellen Python-Sim passt
 """
 import json
 import random
@@ -17,7 +18,7 @@ sys.path.insert(0, str(ROOT))
 from btd_sim import engine as e  # noqa: E402
 
 OUT = ROOT / "engine" / "crates" / "btd-core" / "tests" / "data" / "parity_trace.json"
-EPISODES = 12
+EPISODES = 14
 SEED = 2026
 
 
@@ -46,11 +47,12 @@ def random_actions(g: e.Game, rng: random.Random) -> list:
             a = ["place", rng.randrange(len(e.TOWERS)), rng.randrange(e.GRID_W), rng.randrange(e.GRID_H)]
             ok = g.place(a[1], a[2], a[3])
         elif r < 0.9:
-            x, y = rng.choice(cells) if rng.random() < 0.8 else (rng.randrange(e.GRID_W), rng.randrange(e.GRID_H))
+            x, y = rng.choice(cells) if rng.random() < 0.9 else (rng.randrange(e.GRID_W), rng.randrange(e.GRID_H))
             a = ["upgrade", x, y, rng.randrange(2)]
             ok = g.upgrade(x, y, a[3])
         else:
-            x, y = rng.choice(cells)
+            # gelegentlich auf eine leere Zelle verkaufen (muss abgelehnt werden)
+            x, y = rng.choice(cells) if rng.random() < 0.8 else (rng.randrange(e.GRID_W), rng.randrange(e.GRID_H))
             a = ["sell", x, y]
             ok = g.sell(x, y)
         actions.append({"action": a, "ok": ok})
@@ -60,9 +62,11 @@ def random_actions(g: e.Game, rng: random.Random) -> list:
 def main():
     rng = random.Random(SEED)
     episodes = []
-    for _ in range(EPISODES):
+    for ep_i in range(EPISODES):
         g = e.Game()
-        g.cash = rng.choice([650, 2000, 6000])  # mehr Cash = mehr Türme/Upgrades im Trace
+        # mehr Cash = mehr Türme/Upgrades; die letzten Episoden sind "reich", damit auch
+        # Tier-3-Upgrades (Bomb/Sniper) im Trace vorkommen
+        g.cash = 20_000 if ep_i >= EPISODES - 2 else rng.choice([650, 2000, 6000])
         start_cash = g.cash
         rounds = []
         while not g.over:
@@ -70,9 +74,15 @@ def main():
             report = g.play_round()
             rounds.append({"actions": actions, "after": snapshot(g, report)})
         episodes.append({"start_cash": start_cash, "rounds": rounds})
+    text = json.dumps({"format": "parity_trace/1", "data": "data/sim_v0.json", "episodes": episodes},
+                      separators=(",", ":")) + "\n"
+    if "--check" in sys.argv:
+        if not OUT.exists() or OUT.read_text() != text:
+            sys.exit(f"{OUT.relative_to(ROOT)} passt nicht zur Python-Sim: python tools/gen_parity_trace.py")
+        print(f"{OUT.relative_to(ROOT)} ist aktuell")
+        return
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps({"format": "parity_trace/1", "data": "data/sim_v0.json", "episodes": episodes},
-                              separators=(",", ":")) + "\n")
+    OUT.write_text(text)
     n = sum(len(ep["rounds"]) for ep in episodes)
     print(f"{OUT.relative_to(ROOT)}: {EPISODES} Episoden, {n} Runden, {OUT.stat().st_size // 1024} KB")
 
