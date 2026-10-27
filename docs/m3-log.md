@@ -153,3 +153,21 @@ am Ende gleichauf mit r60_bans (55,6 vs. 54,1 bei 4,7M).
   spielen weiter ein Rezept (Bomb unten + Dart unten). Ein Seed, 64 Spiele: der Abstand zur Schwelle
   liegt im Rauschen, das Kriterium bleibt trotzdem so stehen.
 - **Ohne Dart** gewinnt weiterhin kein Modell (r60_starts: Ø Runde 36).
+
+## 2026-10-27: 12 Türme (t12_r60)
+
+Daten `--towers t12` (275/768 Kombinationen), R60, 5M Schritte, Seed 1, `--reward-tower -0.5
+--ban-towers 3 --start-states 0.3`. ~1 900 Schritte/s. Normale Starts: schneller als mit 6 Türmen
+(Ø Runde 55,4 bei 1M statt 49,2), Spitze 57,3 bei 2,1M, am Ende ~53.
+
+- **Vielfalt ohne Sperre:** H = 5,46 bit, 50 Schlüssel in 64 Spielen (6 Türme: 0,82 bit). Formal weit
+  über dem Kriterium, aber nur teilweise echte Vielfalt: erster Turm in 58/64 Sniper, Sniper oben 92 %,
+  Dart unten 100 %; die Entropie kommt vor allem von wechselnden Neben-Türmen (oft ohne Upgrade).
+  Das Kriterium war für 6 Türme gedacht; für Vergleiche über Turmzahlen braucht es einen Kern-Schlüssel
+  (z.B. die zwei Türme mit den höchsten Ausgaben).
+- **Sperren** (stochastisch, von 10): keine 8, ohne Dart 2 (6-Turm-Modelle: 0), ohne Sniper 6, sonst 6-10.
+- **Deterministisch schwach:** ohne Sperre Runde 26, viele Sperren Runde 12; Erholung det. 27/50 vs.
+  stoch. 43/50; auch stochastisch ohne Sperre nur 55/64 Siege (6 Türme: 64/64). Die Policy verteilt
+  ihre Wahrscheinlichkeit breit, die wahrscheinlichste Einzelaktion ist oft schlecht.
+- Nächster Schritt: Entropie-Schedule (abklingender ent_coef) als getrennter Lauf mit sonst gleicher
+  Konfiguration.
