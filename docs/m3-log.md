@@ -312,3 +312,32 @@ Wie t12_r60_v2, nur Daten `medium60_t14` (24 Kanäle, 12 961 Aktionen) und 128 E
 Rezept wie t12_r60_v2 (Bomb ohne Upgrade, Dart unten), aber jetzt Dart zuerst (20/20). **Die Village wird nie gebaut** (0 von
 20 Spielen, auch mit Vorausschau); sperrt man sie, ändert sich nichts. Ohne Sperre deterministisch
 schlechter als t12_r60_v2, mit Vorausschau gleich gut.
+
+### t14_chimps: CHIMPS (1 Leben ab Runde 6), weitertrainiert von t14_r60
+
+5 Mio. Schritte auf `chimps_t14`, sonst wie t14_r60 (128 Envs × 256), ohne Leben-Puffer. ~55 min.
+Rezept: Ninja zuerst (10/10), dazu Dart unten und Bomb oben; die Village wird wieder nie gebaut.
+
+Danach Regrow in der Engine (docs/design-bloons-chimps.md, Schritt 1). Alle Modelle mit derselben
+Erweiterung ohne und mit Regrow ausgewertet (deterministisch, je Sperre 1 Spiel; stochastisch 20 Spiele):
+
+| | ohne Regrow | mit Regrow | mit Regrow + Vorausschau 8,2 |
+|---|---|---|---|
+| t12_r60_v2 ohne Sperre | gewonnen | gewonnen | gewonnen |
+| t12_r60_v2 Einzelsperren gewonnen | 7 von 12 | 7 von 12 | 11 von 12 |
+| t12_r60_v2 stochastisch | 64/64 | 18/20 | – |
+| t14_r60 ohne Sperre | Runde 46 | Runde 46 | gewonnen |
+| t14_r60 Einzelsperren gewonnen | 8 von 13 | 8 von 13 | 12 von 13 |
+| t14_r60 stochastisch | 20/20 | 19/20 | – |
+| t14_chimps ohne Sperre | Runde 92 | Runde 92 | Runde 92 |
+| t14_chimps stochastisch, Ø Runde | 80,2 | 76,2 | – |
+
+CHIMPS: deterministisch bis Runde 92 mit 1 Leben, mit und ohne Regrow; mit Vorausschau nicht weiter.
+Ab Runde 81 fehlt aber noch die Skalierung des Spiels (schnellere Bloons, mehr MOAB-HP, Super Ceramics),
+die Sim ist dort also zu leicht. Regrow kostet bis R60 kaum etwas; Einzelsperren ändern sich bei CHIMPS
+(ohne Druid Runde 18 statt 27, ohne Boomerang 18 statt 27).
+
+Daten: `data/local/*_t14.json` neu aus dem Konverter (nur `grow_rate` dazu). Für t12 und primary nur
+`grow_rate` in die alten Dateien übernommen, weil der Konverter inzwischen andere Turmdaten erzeugt (das
+Modell t12_r60_v2 soll mit seinen Daten verglichen werden); die Dateien ohne Regrow liegen in
+`data/local/noregrow/`.
