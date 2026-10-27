@@ -210,3 +210,26 @@ Offen: warum Argmax scheitert (einzelne Spiele ansehen).
 Nachtrag: Im Dump 57.4 ist der Crit-Abstand des Sharp Shooters fest 10 (lower = upper = 10), also
 kein Crit-Glück im echten Spiel. Die Abweichung in Runde 43/44 hat eine andere Ursache; Kandidaten:
 Sichtlinie (Bäume blocken Schüsse, die Sim kennt keine Hindernisse), Details der Zielwahl.
+
+## 2026-10-27: Kalibrierung Track-Länge und Sniper (widersprüchlich, noch keine Änderung)
+
+Echte Messungen (Monkey Meadow, Medium): Runde 1 ohne Türme dauert 50,0 s (Stoppuhr); der Bot-Build
+(Sniper 0-0-0 rechts bei (105, −41)) verliert schon in Runde 1 3 Leben.
+
+| Sim-Variante | R1 ohne Türme | Sniper R1 Leaks | Zwei-Turm erste Leaks | Leben nach R44 | Verlust R45 |
+|---|---|---|---|---|---|
+| echtes Spiel | 50,0 s | 3 | R43 | 65 | 78 |
+| voller Track (Dump, 1276 E.) | 68,6 s | 0 | R43 | 91 | 78 |
+| nur sichtbar (894 E.) | 53,3 s | 0 | R38 | 146 | 78 |
+| sichtbar + 20 E. | 54,9 s | 0 | R45 | 150 | 129 |
+
+- Der Dump-Track reicht 183 E. links und 199 E. unten über den Bildrand; die Laufzeit spricht dafür,
+  dass Bloons diese Abschnitte im Spiel nicht (voll) laufen.
+- Kürzen verschlechtert aber den Zwei-Turm-Abgleich: dessen exakte Treffer waren wohl teils Zufall (das
+  Ergebnis springt schon bei kleinen Änderungen, vgl. Crit-Abstände).
+- Die Sniper-Leaks in R1 erklärt keine Variante: der Sniper ist in der Sim stärker (Kandidaten:
+  Verzögerung vor dem ersten Schuss, echte Schussrate, Platzierung erst während der Runde).
+- Sichtlinie scheidet hier aus: 119 Hindernis-Kreise (BlockerModel) liegen nur in den Ecken, der
+  Sniper sieht 100 % des Tracks. Der Konverter ignoriert sie bisher; für andere Plätze/Karten nötig.
+- Vorschlag: Bloon-Positionen und Schüsse im echten Spiel per Mod mitschreiben und Tick für Tick
+  vergleichen, statt aus Endständen zurückzurechnen.
