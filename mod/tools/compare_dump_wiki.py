@@ -27,7 +27,12 @@ def short_type(obj) -> str:
 
 
 def latest_dump(root: Path) -> Path:
-    versions = sorted((p for p in root.iterdir() if p.is_dir()), key=lambda p: [int(x) if x.isdigit() else x for x in p.name.split(".")])
+    if not root.is_dir():
+        raise SystemExit(f"kein Dump-Ordner {root} (in einem Worktree --dump angeben)")
+    versions = sorted(
+        (p for p in root.iterdir() if p.is_dir()),
+        key=lambda p: [(int(x), "") if x.isdigit() else (-1, x) for x in p.name.split(".")],
+    )
     if not versions:
         raise SystemExit(f"kein Dump unter {root}")
     return versions[-1]
@@ -77,17 +82,22 @@ def dump_entries(tower: dict) -> list[dict]:
     return out
 
 
-def dump_camo(tower: dict) -> bool:
-    """Camo-Erkennung der Hauptattacke (erste Attacke): kein aktiver FilterInvisible*-Filter.
-    Neben-Attacken (Buffs, Sub-Intel, Tiere) werden bewusst nicht gewertet."""
-    attacks = attacks_of(tower)
-    if not attacks:
-        return False
-    filters = []
-    for b in attacks[0].get("behaviors") or []:
-        if short_type(b) == "AttackFilterModel":
-            filters += b.get("filters") or []
-    return not any(short_type(f).startswith("FilterInvisible") and f.get("isActive") for f in filters)
+def dump_camo(tower: dict) -> bool | None:
+    """Camo der Hauptattacke = erste Attacke mit DamageModel; Camo, wenn sie keinen aktiven FilterInvisible*-Filter
+    hat. Attacken ohne Schaden (Buffs, Effekte) zählen nicht. None, wenn der Turm selbst keine solche Attacke hat
+    (Village, Beast Handler: Camo kommt dort über Buffs bzw. Sub-Tower und ist so nicht prüfbar)."""
+    for a in attacks_of(tower):
+        entries: list[dict] = []
+        for w in a.get("weapons") or []:
+            projectile_entries(w.get("projectile"), w.get("rate"), a.get("range"), "", entries)
+        if not entries:
+            continue
+        filters = []
+        for b in a.get("behaviors") or []:
+            if short_type(b) == "AttackFilterModel":
+                filters += b.get("filters") or []
+        return not any(short_type(f).startswith("FilterInvisible") and f.get("isActive") for f in filters)
+    return None
 
 
 # ------------------------------------------------------------------ Vergleich
@@ -116,7 +126,8 @@ def match_attack(wiki_attack: dict, entries: list[dict]) -> tuple[str, dict | No
         return "no-dump-attack", None
     s = score(best)
     if s == len(keys):
-        return "match", best
+        # ohne damage kann jede beliebige Nebenattacke mit gleichem pierce/cooldown passen
+        return ("match" if "damage" in keys else "weak"), best
     return f"{s}/{len(keys)}", best
 
 
@@ -133,6 +144,8 @@ def compare(dump: Path, wiki_dir: Path) -> str:
         upgrades[u.get("name")] = u
     lines = [f"# Dump {dump.name} vs. Wiki ({wiki_dir})", ""]
     totals = {"cost": [0, 0], "range": [0, 0], "camo": [0, 0], "attack": [0, 0]}
+    weak = 0  # nur pierce/cooldown verglichen (Wiki ohne damage), nicht in "attack" gezählt
+    no_dump = 0  # Attacke steckt in einem Sub-Tower (z.B. Beast-Handler-Tiere), nicht in diesem TowerModel
     diffs: list[str] = []
 
     for wf in sorted(wiki_dir.glob("*.json")):
@@ -179,7 +192,7 @@ def compare(dump: Path, wiki_dir: Path) -> str:
                     totals["range"][0] += 1
                 else:
                     diffs.append(f"- {tag}: Reichweite Wiki {fmt(state['range'])} / Spiel {fmt(t.get('range'))}")
-            if isinstance(state.get("camo"), bool):
+            if isinstance(state.get("camo"), bool) and dump_camo(t) is not None:
                 totals["camo"][1] += 1
                 if state["camo"] == dump_camo(t):
                     totals["camo"][0] += 1
@@ -189,6 +202,13 @@ def compare(dump: Path, wiki_dir: Path) -> str:
             for a in state.get("attacks") or []:
                 result, best = match_attack(a, entries)
                 if result == "skip":
+                    continue
+                if result == "weak":
+                    weak += 1
+                    continue
+                if result == "no-dump-attack":
+                    no_dump += 1
+                    diffs.append(f"- {tag} `{a.get('name')}`: keine Attacke im TowerModel (Sub-Tower?)")
                     continue
                 totals["attack"][1] += 1
                 if result == "match":
@@ -202,6 +222,9 @@ def compare(dump: Path, wiki_dir: Path) -> str:
     lines.append("|---|---|---|")
     for k, (ok, n) in totals.items():
         lines.append(f"| {k} | {ok} | {n} |")
+    lines.append("")
+    lines.append(f"Nicht in `attack` gezählt: {weak} Wiki-Attacken ohne damage (nur pierce/cooldown gleich), "
+                 f"{no_dump} ohne Attacke im TowerModel (Sub-Tower, z.B. Beast-Handler-Tiere).")
     lines += ["", "## Abweichungen", ""] + (diffs or ["keine"])
     return "\n".join(lines) + "\n"
 

@@ -78,7 +78,7 @@ Referenziert werden `MelonLoader/net6/*` (MelonLoader, Harmony, Il2CppInterop, N
 | Einstellungen | Mods → BloonsML: Dump-Ordner, Hotkeys, Auto-Karten-Dump |
 
 Fortschritt und Fehler stehen im MelonLoader-Log (`BloonsTD6/MelonLoader/Latest.log`, Präfix `[BloonsML]`).
-Der Dump dauert etwa eine bis einige Minuten, das Spiel bleibt dabei bedienbar, ruckelt aber.
+Der Dump dauert etwa 35 s (57.4), das Spiel bleibt dabei bedienbar, ruckelt aber.
 
 Für **alle Karten** muss man jede Karte einmal starten (Geometrie wird erst beim Laden einer Partie erzeugt).
 Für das Projekt reicht vorerst Monkey Meadow.
@@ -138,7 +138,9 @@ python mod/tools/compare_dump_wiki.py --dump data/raw/game_dump/57.4
 ```
 
 Vergleicht Basis und reine Pfad-Tiers jedes Turms mit `data/base/towers/` (Kosten, Reichweite, Camo der
-Hauptattacke, damage/pierce/cooldown jeder Wiki-Attacke) und schreibt `compare_wiki.md` in den (gitignored)
-Dump-Ordner. Stand 57.4: Kosten 416/416 und Reichweite 416/416 gleich, Camo 413/416, Attacken 463/608.
+ersten schadensverursachenden Attacke, damage/pierce/cooldown jeder Wiki-Attacke) und schreibt `compare_wiki.md` in
+den (gitignored) Dump-Ordner. Stand 57.4: Kosten 416/416 und Reichweite 416/416 gleich, Camo 351/355
+(Village/Beast Handler nicht prüfbar), Attacken 454/569 exakt; nicht gezählt werden Wiki-Attacken ohne `damage`
+und Attacken von Sub-Towern (Beast-Handler-Tiere liegen als eigene Türme unter `towers/`).
 
 Ein Fehler bei einem einzelnen Objekt (auch eine Dateinamen-Kollision) bricht den Dump nicht ab; er steht in `manifest.json` → `errors` und im Log.
