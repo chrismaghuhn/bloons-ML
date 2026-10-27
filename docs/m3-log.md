@@ -33,15 +33,16 @@ Gleiche PPO-Einstellungen (`train.py --preview 3 --envs 64 --steps 3000000`), Se
 | 2,62M | 39,4 / 40 | **40,0 / 40** |
 | 3,01M | 39,3 / 40 | **40,0 / 40** |
 
-Auswertung der fertigen Modelle (20 Episoden, `evaluate.py`):
+Auswertung der fertigen Modelle (1 deterministische + 19 stochastische Episoden; MLP Seed 2: 20 stochastische):
 
 - **Conv:** deterministisch gewonnen (136 Leben), stochastisch 19/19 gewonnen, Ø 148,9 Leben,
   Ø 25 Türme. Besser als der feste Skript-Plan (131 Leben).
 - **MLP:** deterministisch nur Runde 8 (Ursache nicht untersucht), stochastisch
   9/19 gewonnen, Ø 48 Leben, Ø 42 Türme. Zweiter MLP-Seed: ähnliche Kurve, stochastisch 16/20 gewonnen.
 
-Durchsatz inkl. Training: MLP ~1 700, Conv ~1 100 Schritte/s (beide Läufe parallel auf einer GPU);
-3M Schritte dauern mit Conv ~45 min. Mit 64 Kanälen/6 Blöcken waren es nur ~500 Schritte/s.
+Durchsatz inkl. Training (beide Läufe parallel auf einer GPU): MLP ~1 700, Conv ~900 Schritte/s;
+3M Schritte dauerten mit Conv ~57 min. Mit 64 Kanälen/6 Blöcken waren es nur ~500 Schritte/s.
 
-Folgerung: Conv ist der neue Standard (`--arch conv`). Offen: weitere Seeds für Conv, nächste
+Folgerung: Conv ist der neue Standard mit der Rust-Engine (Python-Engine: MLP). Conv ist bisher
+nur mit einem Seed gelaufen. Offen: weitere Seeds für Conv, nächste
 Benchmark-Stufe (Runde 60), deterministisches vs. stochastisches Spielen für die Bridge.

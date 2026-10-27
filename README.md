@@ -8,7 +8,7 @@ Screen-Capture-Bridge im echten Spiel spielen.
 
 - `engine/`: Rust-Engine (`btd-data`, `btd-core`, `btd-env`, `btd-tools`, `btd-py`), im f64-Build bit-genau zur Python-Referenz
 - `btd_sim/`: Python-Referenz-Engine (vereinfachte Bloons, 4 Türme, prozedurale Runden) + Gymnasium-Env mit Action-Masking
-- `train.py` / `evaluate.py`: MaskablePPO-Training und Auswertung (bisher nur Pipeline-Test)
+- `train.py` / `evaluate.py`: MaskablePPO-Training und Auswertung (Faltungs-Policy, `btd_sim/policy.py`)
 - `data/raw/towers/`: Turm-Daten aller BTD6-Affen aus dem Wiki (Rohformat, siehe `data/raw/towers/SCHEMA.md`)
 - `data/base/towers/`: normalisierte Turm-Daten (erzeugt mit `tools/normalize.py`, Format: `data/schema/tower.schema.json`)
 - `tools/wiki/`: Skripte, mit denen die Turm-Daten erzeugt wurden
@@ -47,8 +47,8 @@ cd .. && .venv/bin/python train.py --data data/local/game_v1_tutorial_medium.jso
 
 Standard-Policy ist die Faltungs-Policy aus `btd_sim/policy.py`: Raster und Skalare gehen durch
 Residual-Faltungen, die Logits für Bauen/Upgrade/Verkaufen kommen pro Zelle direkt aus dem Netz.
-Nach 3M Schritten (~45 min) gewinnt sie Monkey Meadow Medium bis Runde 40 zuverlässig, das flache
-MLP (`--arch mlp`) nur 50–80 % der Spiele (Details in `docs/m3-log.md`). Die erreichte Runde steht
+Nach 3M Schritten (~1 h) gewann sie Monkey Meadow Medium bis Runde 40 in allen Testspielen (bisher
+ein Seed), das flache MLP (`--arch mlp`) knapp die Hälfte bzw. 80 % (zwei Seeds) (Details in `docs/m3-log.md`). Die erreichte Runde steht
 in Tensorboard unter `btd/`.
 
 Der Konverter schreibt neben der Datei einen Abdeckungs-Report (`*_coverage.md`): welche der 384
