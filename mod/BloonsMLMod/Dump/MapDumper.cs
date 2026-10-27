@@ -23,13 +23,15 @@ public static class MapDumper
     private static GameModel lastGame;
     private static MapModel lastMap;
     private static JArray lastMods;
+    private static GameModel lastModsGame;
     private static string lastMode;
     private static string lastDifficulty;
     private static string lastGameType;
     private static bool? lastReverse;
 
-    public static void RememberMods(IReadOnlyList<ModModel> mods)
+    public static void RememberMods(GameModel result, IReadOnlyList<ModModel> mods)
     {
+        lastModsGame = result;
         lastMods = new JArray();
         if (mods == null) return;
         foreach (var mod in mods)
@@ -105,7 +107,7 @@ public static class MapDumper
         try
         {
             var path = run.PathFor("maps", mapName + ".json");
-            if (force || !File.Exists(path) || (StoredReverse(path) && lastReverse == false))
+            if (force || !File.Exists(path) || (lastReverse == false && StoredReverse(path)))
             {
                 var doc = new JObject
                 {
@@ -188,7 +190,8 @@ public static class MapDumper
             ["note"] = "GameModel-Felder dieser Partie, wie das Spiel sie beim Erstellen der Partie setzt " +
                        "(Modus, Schwierigkeit und alles, was das Profil dabei einrechnet)",
             ["fields"] = fields,
-            ["mods"] = lastMods,
+            // nur, wenn die Mods zu genau diesem GameModel gehören (sonst stammen sie aus einer früheren Partie)
+            ["mods"] = ReferenceEquals(lastModsGame, lastGame) || lastModsGame?.Pointer == lastGame?.Pointer ? lastMods : null,
             ["errors"] = errors
         };
         var file = $"{lastGameType ?? "unknownType"}_{mode}_{difficulty}_{mapName}.json";

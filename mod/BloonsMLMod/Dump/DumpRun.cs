@@ -136,7 +136,10 @@ public sealed class DumpRun
             .ToList();
         if (!Directory.Exists(finalRoot))
         {
-            var newestOld = leftovers.FirstOrDefault(x => x.suffix.StartsWith(".old-"));
+            // nur nach einem Absturz zwischen den beiden Umbenennungen: dann gibt es .old-X und .tmp-X mit gleicher runId.
+            // Hat der User <version>/ selbst gelöscht, bleibt es gelöscht.
+            var newestOld = leftovers.FirstOrDefault(x => x.suffix.StartsWith(".old-") &&
+                                                          leftovers.Any(t => t.suffix == ".tmp-" + x.suffix[".old-".Length..]));
             if (newestOld.dir != null)
             {
                 Directory.Move(newestOld.dir, finalRoot);

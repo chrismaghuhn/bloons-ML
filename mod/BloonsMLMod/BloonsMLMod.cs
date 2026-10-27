@@ -69,7 +69,7 @@ public class BloonsMLMod : BloonsTD6Mod
         if (DumpMapHotkey.JustPressed()) MapDumper.DumpLast(force: true, includeMatch: true);
     }
 
-    public override void OnNewGameModel(GameModel result, IReadOnlyList<ModModel> mods) => MapDumper.RememberMods(mods);
+    public override void OnNewGameModel(GameModel result, IReadOnlyList<ModModel> mods) => MapDumper.RememberMods(result, mods);
 
     public override void OnNewGameModel(GameModel result, MapModel map)
     {
