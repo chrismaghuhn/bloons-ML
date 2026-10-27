@@ -1,4 +1,4 @@
-# Design: Replay-Player in der Mod (Entwurf, wartet auf Freigabe)
+# Design: Replay-Player in der Mod (freigegeben 2026-10-27; Schritt 1 erledigt, siehe §10)
 
 Ziel: Ein Spiel aus der Sim (Replay `btd-replay/2`, später `/3`) oder ein Startzustand (`StartState`) wird im
 echten BTD6 **exakt** ausgeführt: Türme an die exakten Koordinaten, Upgrades und Verkäufe zum richtigen Zeitpunkt,
@@ -212,3 +212,34 @@ Damit ist die Bridge im Kern "Replay, das Zeile für Zeile über den Socket komm
 3. Laden per Einstellung + Hotkey (F10/F11) oder über einen Eingangsordner?
 4. Konverter-Änderung in der Trainings-Session: `game_v1` bekommt `game_id` je Turm sowie Karte, Modus,
    Schwierigkeit und Spielversion als eigene Felder (statt Tabelle in der Mod bzw. Einstellungen im Player)?
+
+## 10. Ergebnis Schritt 1: Player-Test (2026-10-27, BTD6 57.4, Monkey Meadow, CHIMPS)
+
+Test-Mod `mod/BloonsMLMod/Player/PlayerProbe.cs` (F10), Ergebnis und Trace lokal unter `data/raw/recordings/`.
+Damit sind die **[prüfen]**-Punkte aus den Abschnitten 1–4 beantwortet:
+
+- **Ausführung über die Warteschlange, aber vor dem nächsten Sim-Schritt.** `CreateTowerAt` und `UpgradeTower` aus
+  `OnUpdate` heraus: Callback nicht während des Aufrufs, `bridge.actions` hat danach 1 Eintrag; der Callback kommt
+  im nächsten Frame mit **derselben** Sim-Zeit (z.B. Aufruf bei `t` 592, Callback und `tower_placed` bei `t` 592).
+  Zwischen den Runden heißt das: Aktion → einen Frame warten → bestätigt, bevor die Simulation weiterläuft.
+- **Aus dem `Simulate`-Prefix: genau ein Schritt Versatz.** Aufruf im Prefix bei Rundenzeit 300 (`t` 5017):
+  Callback im selben Frame, Turm bei Rundenzeit **301** (`t` 5018), laut Recorder ebenfalls 301. Der Versatz ist
+  fest; für eine Aktion bei Rundenschritt N ruft der Player im Prefix bei N − 1 auf (gilt für `btd-replay/3`).
+- **Koordinaten:** `CreateTowerAt` nimmt Sim-Koordinaten (im `UnityEngine.Vector2`); (−35, 39) und (−35,37, 59,81)
+  landen exakt (Abweichung 0), nichts rastet ein. `QueryPlacementPosition` gibt die Position unverändert zurück.
+- **Fehlerfälle:** belegter Platz und Strecke: `positionValid`/`CanPlaceTowerAt` schon vorher `false`; zu wenig Geld
+  für Turm oder Upgrade: Platz gültig, Callback `false`. In allen Fällen kein Turm/keine Stufe und kein Geld abgezogen.
+  Prüfung vorher + Callback reichen also für die Fehlererkennung aus Abschnitt 1.
+- **Preise (Hard):** Dart 215, Sharp Shots 150 (Menü-Preis × 1,08, auf 5 gerundet); `worth` danach 365 (Summe).
+- **Geld:** `SetCash` übernimmt Bruchteile (1234,5) unverändert.
+- **Leben:** `health.Value` lässt sich in CHIMPS auf 5 setzen und bleibt so (`maxHealth` 1 wird nicht erzwungen,
+  begrenzt wohl nur Effekte, die Leben geben). Der Player muss CHIMPS-Leben selbst auf 1 halten (Abschnitt 3).
+- **Runde:** intern = angezeigte Runde − 1 (CHIMPS vor dem Start: `GetCurrentRound()` 5 = Runde 6,
+  `spawner.spawnedRound` 4). `bridge.SetRound(9, false)` vor dem ersten Start → nächste Runde intern 9 = **Runde 10**
+  (102 Blue, wie im Spiel). Für einen `StartState` mit `round` geschafften Runden: `SetRound(state.round, false)`.
+  `spawner.SetRound` (Mod Helper) wurde nicht gebraucht.
+- **Nebenbefund für den Recorder:** `Bloon.spawnRound` ist hier für alle Bloons 0, also nicht die Rundennummer;
+  der Trace-Schlüssel muss die Runde aus `round_start` nehmen (`mod/tools/analyze_trace.py` nutzt bisher
+  `spawnRound`, in Runde-1-Aufnahmen fiel das nicht auf).
+
+Damit kann Schritt 2 (Player für `btd-replay/2` zwischen den Runden, Weg A) ohne offene API-Fragen beginnen.
