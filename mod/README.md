@@ -122,6 +122,14 @@ Format `bloonsml-trace/0`, eine JSON-Zeile je Ereignis, `t` = interner Sim-Zähl
 Auswertung: `.venv/bin/python mod/tools/analyze_trace.py TRACE [TRACE2]` (mit zwei Dateien: Vergleich je Bloon
 über Runde, Emission-Index und Abstammung zur selben Rundenzeit).
 
+## Player-Test (Replay-Player, Schritt 1)
+
+Test für `docs/design-replay-player.md`: in einer **Wegwerf-Partie** (Monkey Meadow, CHIMPS) vor dem ersten
+Rundenstart **F10** drücken. Der Test setzt Dart Monkeys an exakte und krumme Koordinaten, probiert Fehlerfälle
+(belegt, auf der Strecke, zu wenig Geld), ein Upgrade, setzt Geld, Leben und Runde und schreibt die Ergebnisse nach
+`data/raw/recordings/<Zeit>_probe.json` (Trace wird automatisch eingeschaltet). Danach die Runde starten: bei
+Rundenschritt 300 setzt er aus dem `Simulate`-Prefix einen weiteren Turm (Teil 2, ergänzt dieselbe Datei).
+
 ## Ausgabeformat
 
 `<DumpRoot>/<Spielversion>/` (Spielversion = `Application.version`, z.B. `57.4`):
