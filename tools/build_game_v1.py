@@ -770,7 +770,6 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
     convert_weapon_behaviors(weapon, out)
     if crit:
         c = crit[0]
-        # jeder n-te Schuss kritisch; das Spiel würfelt n in [lower, upper] [KAL: Mittelwert]
         # Abstand gleichverteilt in [lower, upper] (mit Zufall in der Sim), sonst der gerundete Mittelwert
         # [KAL: ob das Spiel upper einschließt (Unity Random.Range für ints schließt es aus)]
         out["crit"] = {"damage": c["damage"], "every": max(1, round((c["lower"] + c["upper"]) / 2)),

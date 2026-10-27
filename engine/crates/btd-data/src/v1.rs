@@ -516,7 +516,8 @@ pub struct Push {
 }
 
 /// Kritischer Treffer: jeder `every`-te Schuss macht `damage` statt des normalen Schadens. Das
-/// Spiel würfelt den Abstand je Crit in `every_range` (inklusive); ohne Zufall in der Sim gilt `every`.
+/// Spiel würfelt den Abstand je Crit aus `every_range`; die Sim würfelt inklusive der Obergrenze
+/// [KAL: ob das Spiel sie einschließt]. Ohne Zufall gilt `every`.
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Crit {

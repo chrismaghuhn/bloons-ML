@@ -1150,6 +1150,21 @@ mod tests {
     use super::*;
 
     #[test]
+    fn crit_roll_stays_in_range_and_defaults_to_every() {
+        let mut none = None;
+        assert_eq!(roll_crit(&mut none, 7, Some((2, 4))), 7, "ohne Zufall der Mittelwert");
+        let mut rng = Some(42);
+        let mut seen = [false; 5];
+        for _ in 0..200 {
+            let n = roll_crit(&mut rng, 3, Some((2, 4)));
+            assert!((2..=4).contains(&n));
+            seen[n as usize] = true;
+        }
+        assert!(seen[2] && seen[3] && seen[4], "alle Werte kommen vor");
+        assert_eq!(roll_crit(&mut rng, 5, None), 5, "ohne Bereich fest");
+    }
+
+    #[test]
     fn emission_angles() {
         let e = |count, angle| EmissionRt { count, angle, offset: 0.0, fixed: false, spread: 0.0 };
         let a = |em: EmissionRt| (0..em.count).map(|k| emission_angle(&em, k)).collect::<Vec<Real>>();
