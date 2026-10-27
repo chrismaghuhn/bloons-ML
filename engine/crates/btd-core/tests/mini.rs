@@ -885,4 +885,9 @@ fn validation_rejects_bad_homing() {
     assert!(d.validate().is_err(), "Kegel > 360°");
     set(&mut d, Homing { turn_rate: 90.0, distance: 10.0, max_angle: 90.0, retarget: true });
     assert!(d.validate().is_ok());
+    // Zielsuche und Kurvenbahn schließen sich aus
+    if let Delivery::Projectile { path, .. } = &mut d.towers[3].variants[0].attacks[0].delivery {
+        *path = Some(vec![[0.0, 0.0], [0.0, 10.0]]);
+    }
+    assert!(d.validate().is_err(), "Zielsuche mit Kurvenbahn");
 }

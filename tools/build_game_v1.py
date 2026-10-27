@@ -677,6 +677,8 @@ def convert_homing(proj, speed: float, lifespan: float):
         turn_rate = max_angle / 2.0 / max(h["timeInFrames"] / 60.0, 1e-6)
     else:
         turn_rate = h.get("TurnRate", h.get("turnRate"))
+        if turn_rate is None:
+            raise Unsupported("TrackTargetModel ohne Drehrate")
     use(h)
     return {"turn_rate": float(turn_rate), "distance": float(distance), "max_angle": float(max_angle),
             "retarget": bool(h.get("trackNewTargets"))}

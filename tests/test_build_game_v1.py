@@ -321,3 +321,14 @@ def test_homing_from_track_target_models():
     assert (h["distance"], h["max_angle"], h["turn_rate"]) == (75.0, 144.0, 72.0 / 0.05)
     with pytest.raises(b.Unsupported, match="Sonderfälle"):
         b.convert_variant(dart_like(proj_extra=[dict(wiz, constantlyAquireNewTarget=True)]), [0, 0, 0])
+
+
+def test_homing_inside_shards_is_refused():
+    wiz = T("TrackTargetModel", distance=80.0, trackNewTargets=True, maxSeekAngle=360.0, TurnRate=360.0)
+    shard = T("ProjectileModel", pierce=1.0, radius=2.0, filters=[],
+              behaviors=[T("DamageModel", damage=1.0, maxDamage=0.0, immuneBloonProperties=0),
+                         T("TravelStraitModel", speed=300.0, lifespan=0.2), wiz])
+    contact = T("CreateProjectileOnContactModel", projectile=shard, passOnCollidedWith=False,
+                emission=T("ArcEmissionModel", count=4, angle=360.0, offset=0.0, useProjectileRotation=False))
+    with pytest.raises(b.Unsupported, match="TrackTargetModel"):
+        b.convert_variant(dart_like(proj_extra=[contact]), [0, 0, 0])

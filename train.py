@@ -121,6 +121,19 @@ if __name__ == "__main__":
         pool, states_b = StartPool(), []
         for f in args.start_replays:
             states_b += states_from_replay(Path(f).read_text(), game_data["rules"]["end_round"])
+        # Zustände aus Replays anderer Daten (z.B. 6 statt 12 Türme) können hier ungültig sein
+        import btd_rs
+        check, n_all = btd_rs.Env(args.data or DEFAULT_DATA), len(states_b)
+
+        def buildable(st):
+            try:
+                check.reset_from(json.dumps(st))
+                return True
+            except ValueError:
+                return False
+        states_b = [st for st in states_b if buildable(st)]
+        if len(states_b) < n_all:
+            print(f"Startzustände: {n_all - len(states_b)} von {n_all} passen nicht zu diesen Daten, verworfen")
         for st in states_b:
             pool.add(st, "B")
         budget = budget_curve(states_b, game_data)

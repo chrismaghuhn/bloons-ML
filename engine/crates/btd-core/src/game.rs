@@ -989,7 +989,8 @@ fn steer(w: &World, b: &BloonStore, p: &mut Projectile, h: crate::tower::HomingR
     let ok = |i: usize, p: &Projectile| {
         b.alive[i] && !p.hit.contains(&b.id[i]) && w.eligible(b, i, p.camo, &p.extras)
     };
-    let mut idx = p.target.and_then(|id| b.id.iter().position(|&x| x == id)).filter(|&i| ok(i, p));
+    // IDs steigen innerhalb einer Runde streng (Kinder bekommen neue, größere IDs; compact hält die Reihenfolge)
+    let mut idx = p.target.and_then(|id| b.id.binary_search(&id).ok()).filter(|&i| ok(i, p));
     if idx.is_none() && h.retarget {
         let speed = (p.vx * p.vx + p.vy * p.vy).sqrt();
         let mut best = Real::INFINITY;
@@ -997,7 +998,7 @@ fn steer(w: &World, b: &BloonStore, p: &mut Projectile, h: crate::tower::HomingR
             let (dx, dy) = (b.x[i] - p.x, b.y[i] - p.y);
             let d2 = dx * dx + dy * dy;
             // im Kegel: cos(Winkel zwischen Flugrichtung und Ziel) >= cos_half
-            let in_cone = dx * p.vx + dy * p.vy >= h.cos_half * d2.sqrt() * speed;
+            let in_cone = h.cos_half <= -1.0 || dx * p.vx + dy * p.vy >= h.cos_half * d2.sqrt() * speed;
             if d2 <= h.dist2 && d2 < best && in_cone && ok(i, p) {
                 (best, idx) = (d2, Some(i));
             }
@@ -1013,6 +1014,9 @@ fn steer(w: &World, b: &BloonStore, p: &mut Projectile, h: crate::tower::HomingR
         diff -= 2.0 * pi;
     } else if diff < -pi {
         diff += 2.0 * pi;
+    }
+    if diff == 0.0 {
+        return; // fliegt schon aufs Ziel
     }
     let step = h.turn * dt;
     let a = cur + diff.clamp(-step, step);
