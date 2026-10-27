@@ -136,14 +136,15 @@ Polylinie aus dem Dump (Start x −333,6) laufen Bloons also nur den Abschnitt v
 
 **Bloon-Tempo: Schwierigkeit × Modell.** Red läuft 0,45833 Einheiten je Schritt = **27,5 E./s**, im
 Menü-Modell (Dump) steht `speed` 25. Den Faktor setzt die Schwierigkeit beim Erstellen der Partie über
-`GlobalSpeedModModel` (`gamedata/mods.json`): **Easy 1,0, Medium 1,1, Hard 1,25**. Impoppable und CHIMPS (`Clicks`)
-haben keinen eigenen Tempo-Mod, laufen aber zusammen mit `Hard` (CHIMPS-Partie: Mods `[Hard, Clicks]`), also
-**CHIMPS × 1,25**. Gemessen im Sandkasten (Medium, Runde 1, je ein Bloon jedes Typs, 61 Bloons): jeder Typ läuft
+`GlobalSpeedModModel` (`gamedata/mods.json`): **Medium 1,1, Hard 1,25**; Easy hat keinen Tempo-Mod (also 1,0).
+CHIMPS (`Clicks`) hat keinen eigenen Tempo-Mod, läuft aber zusammen mit `Hard` (CHIMPS-Partie: Mods `[Hard, Clicks]`),
+also **CHIMPS × 1,25**. Impoppable vermutlich ebenso (eigener Mod ohne Tempo, nicht mit einer Partie geprüft).
+Gemessen im Sandkasten (Medium, Runde 1, 60 Bloon-Typen in 61 Bloons): jeder Typ läuft
 exakt mit Menü-Tempo × 1,1, z.B. Red/Lead/MOAB 27,5, Blue 38,5, Green/Black/Zebra 49,5, White 55, Rainbow 60,5,
 Ceramic 68,75, Purple 82,5, Yellow 88, Pink 96,25, DDT 72,6, BFB 6,875, ZOMG/BAD 4,95 E./s. Camo, Regrow und
 Fortified ändern das Tempo nicht; `trackSpeedMultiplier` ist 1, `mapWideBloonSpeed` 1.
 Folge für die Sim: Tempo je Schwierigkeit skalieren. Möglicherweise erklärt das auch die Sniper-Abweichung in Runde 1 (Medium): in der
-Sim sind die Reds 10 % zu langsam.
+Sim laufen die Reds mit 25 statt 27,5 E./s.
 
 **Runde 1:** `round_start` bis `round_end` 3041 Schritte = **50,68 s** (Stoppuhr 50,0 s). Rechnung: letzter
 Spawn bei Rundenschritt 1051 + 1990 Laufzeit = 3041; die Runde endet im Schritt des letzten Leaks. Die Sim kommt
