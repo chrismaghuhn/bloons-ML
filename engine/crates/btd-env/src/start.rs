@@ -49,7 +49,7 @@ impl StartState {
     /// Verkaufswert stimmt so), danach Cash, Leben und Runde. Ungültige Zustände werden abgelehnt.
     pub fn build(&self, game: &mut Game) -> Result<(), String> {
         let rules = game.data().rules.clone();
-        if self.round + 1 < rules.start_round || self.round >= rules.end_round {
+        if self.round.saturating_add(1) < rules.start_round || self.round >= rules.end_round {
             return Err(format!(
                 "Runde {} außerhalb von {}..{}",
                 self.round,
@@ -57,8 +57,8 @@ impl StartState {
                 rules.end_round
             ));
         }
-        if self.lives <= 0 || !self.cash.is_finite() || self.cash < 0.0 {
-            return Err("Leben müssen > 0 und Cash >= 0 sein".into());
+        if self.lives <= 0 || !(0.0..=MAX_CASH).contains(&self.cash) {
+            return Err(format!("Leben müssen > 0 und Cash in 0..={MAX_CASH} sein"));
         }
         game.reset();
         game.cash = Money(i64::MAX / 4); // Preise zählen für `spent`, nicht fürs Budget
@@ -80,6 +80,28 @@ impl StartState {
         game.round = self.round;
         Ok(())
     }
+}
+
+/// Obergrenze für Cash und Budgets (schützt die Fixed-Point-Rechnung vor Überlauf).
+pub const MAX_CASH: f64 = 1e9;
+
+/// Footprint-Radius eines Turmtyps (Basis-Variante, wie beim Platzieren).
+fn footprint(game: &Game, name: &str) -> Option<f64> {
+    let d = game.data().towers.iter().find(|d| d.name == name)?;
+    Some(d.variants[d.variant_id([0; PATHS])? as usize].footprint)
+}
+
+/// Ob Turm `i` von `s` bei (x, y) stehen dürfte (Karte + die anderen Türme des Zustands).
+fn can_move(game: &Game, s: &StartState, i: usize, x: f64, y: f64) -> bool {
+    let t = &s.towers[i];
+    let Some(kind) = game.data().towers.iter().position(|d| d.name == t.tower) else { return false };
+    let Some(r) = footprint(game, &t.tower) else { return false };
+    game.map_allows(kind as u8, x, y)
+        && s.towers.iter().enumerate().filter(|&(j, _)| j != i).all(|(_, o)| {
+            let ro = footprint(game, &o.tower).unwrap_or(0.0);
+            let (dx, dy) = (x - o.x, y - o.y);
+            dx * dx + dy * dy >= (r + ro) * (r + ro)
+        })
 }
 
 /// Upgradet Turm `id` von 0-0-0 auf `tiers`; der höchste Pfad zuerst, damit jeder Zwischenstand
@@ -128,28 +150,35 @@ pub struct Perturbed {
     pub lives_perturbed: bool,
 }
 
-/// Würfelt 1–2 Störungen (Cash, Upgrade zurück mit Erstattung, Verschieben, Verkaufen) und in
-/// einem Drittel der Fälle weniger Leben. `cell` ist die Rasterweite für das Verschieben.
-/// Ob eine Verschiebung gültig ist, zeigt erst der Aufbau; der Aufrufer würfelt dann neu.
+/// Würfelt 1–2 Störungen (Cash, Upgrade zurück mit Erstattung, Verschieben, Verkaufen; nur
+/// anwendbare werden gezogen) und in einem Drittel der Fälle weniger Leben. Verschieben sucht eine
+/// bebaubare, freie Position (Nachbarzelle oder leicht versetzt); findet es keine, entfällt es.
+/// `cell` ist die Rasterweite.
 pub fn perturb(base: &StartState, game: &Game, cell: f64, dice: &mut impl Dice) -> Perturbed {
     let data = game.data();
     let mut s = base.clone();
     let mut sell = None;
     let n = 1 + dice.below(2);
     for _ in 0..n {
-        match PERTURBATIONS[dice.below(PERTURBATIONS.len())] {
+        let upgraded: Vec<usize> =
+            (0..s.towers.len()).filter(|&i| s.towers[i].tiers.iter().any(|&t| t > 0)).collect();
+        let options: Vec<Perturbation> = PERTURBATIONS
+            .into_iter()
+            .filter(|p| match p {
+                Perturbation::Cash => true,
+                Perturbation::Downgrade => !upgraded.is_empty(),
+                Perturbation::Move => !s.towers.is_empty(),
+                Perturbation::Sell => data.rules.selling && !s.towers.is_empty() && sell.is_none(),
+            })
+            .collect();
+        match options[dice.below(options.len())] {
             Perturbation::Cash => {
                 // meist kleine Abweichung (Bridge), selten große
                 let amp = if dice.unit() < 0.8 { 0.05 + 0.05 * dice.unit() } else { 0.3 };
                 let sign = if dice.below(2) == 0 { -1.0 } else { 1.0 };
-                s.cash = (s.cash * (1.0 + sign * amp)).max(0.0);
+                s.cash = (s.cash * (1.0 + sign * amp)).clamp(0.0, MAX_CASH);
             }
             Perturbation::Downgrade => {
-                let upgraded: Vec<usize> =
-                    (0..s.towers.len()).filter(|&i| s.towers[i].tiers.iter().any(|&t| t > 0)).collect();
-                if upgraded.is_empty() {
-                    continue;
-                }
                 let t = &mut s.towers[upgraded[dice.below(upgraded.len())]];
                 let paths: Vec<usize> = (0..PATHS).filter(|&p| t.tiers[p] > 0).collect();
                 let p = paths[dice.below(paths.len())];
@@ -159,26 +188,22 @@ pub fn perturb(base: &StartState, game: &Game, cell: f64, dice: &mut impl Dice) 
                 s.cash += data.cost(def.upgrade_costs[p][t.tiers[p] as usize]) as f64;
             }
             Perturbation::Move => {
-                if s.towers.is_empty() {
-                    continue;
-                }
                 let i = dice.below(s.towers.len());
-                let t = &mut s.towers[i];
-                // Nachbarzelle oder leicht versetzt (nicht auf der Zellmitte)
-                let (dx, dy) = if dice.below(2) == 0 {
-                    let d = [(-1.0, 0.0), (1.0, 0.0), (0.0, -1.0), (0.0, 1.0)][dice.below(4)];
-                    (d.0 * cell, d.1 * cell)
-                } else {
-                    ((dice.unit() - 0.5) * cell * 0.8, (dice.unit() - 0.5) * cell * 0.8)
-                };
-                t.x += dx;
-                t.y += dy;
-            }
-            Perturbation::Sell => {
-                if data.rules.selling && !s.towers.is_empty() && sell.is_none() {
-                    sell = Some(dice.below(s.towers.len()));
+                for _ in 0..6 {
+                    let (dx, dy) = if dice.below(2) == 0 {
+                        let d = [(-1.0, 0.0), (1.0, 0.0), (0.0, -1.0), (0.0, 1.0)][dice.below(4)];
+                        (d.0 * cell, d.1 * cell)
+                    } else {
+                        ((dice.unit() - 0.5) * cell * 0.8, (dice.unit() - 0.5) * cell * 0.8)
+                    };
+                    let (x, y) = (s.towers[i].x + dx, s.towers[i].y + dy);
+                    if can_move(game, &s, i, x, y) {
+                        (s.towers[i].x, s.towers[i].y) = (x, y);
+                        break;
+                    }
                 }
             }
+            Perturbation::Sell => sell = Some(dice.below(s.towers.len())),
         }
     }
     let lives_perturbed = dice.below(3) == 0;
@@ -191,9 +216,11 @@ pub fn perturb(base: &StartState, game: &Game, cell: f64, dice: &mut impl Dice) 
 /// Gemeinsame Einstellungen aller Envs für Startzustände (von Python gesetzt).
 #[derive(Clone, Debug, Default)]
 pub struct StartConfig {
-    /// Basiszustände (Quellen A und B) und ihre Gewichte.
+    /// Basiszustände (Quellen A und B), ihre Gewichte und stabile IDs (für die Ergebnisse; der
+    /// Pool kann sich ändern, während Episoden aus dem alten noch laufen). Ohne IDs gilt der Index.
     pub pool: Vec<StartState>,
     pub weights: Vec<f64>,
+    pub ids: Vec<u64>,
     /// Anteil der Episoden, die nicht in Runde 1 beginnen.
     pub p_start: f64,
     /// Davon der Anteil zufälliger Builds (Quelle C).
@@ -205,20 +232,49 @@ pub struct StartConfig {
 }
 
 impl StartConfig {
+    /// Prüft die Einstellungen: jeder Pool-Zustand muss sich aufbauen lassen (in einer Kopie von
+    /// `game`), Gewichte/IDs passen zum Pool, Budgets sind endlich und begrenzt.
+    pub fn validate(&self, game: &Game) -> Result<(), String> {
+        if self.weights.len() != self.pool.len()
+            || !(self.ids.is_empty() || self.ids.len() == self.pool.len())
+        {
+            return Err("pool, weights (und ids) brauchen gleich viele Einträge".into());
+        }
+        if self.weights.iter().any(|w| !(w.is_finite() && *w >= 0.0)) {
+            return Err("Gewichte müssen endlich und >= 0 sein".into());
+        }
+        if self.budget.iter().any(|b| !(0.0..=MAX_CASH).contains(b)) || !self.budget_spread.is_finite() {
+            return Err(format!("Budgets müssen in 0..={MAX_CASH} liegen"));
+        }
+        if self.p_start > 0.0 && self.p_random > 0.0 && self.budget.is_empty() {
+            return Err("zufällige Builds (p_random > 0) brauchen eine Budgetkurve".into());
+        }
+        let mut g = game.clone();
+        for (i, s) in self.pool.iter().enumerate() {
+            s.build(&mut g).map_err(|e| format!("Zustand {i}: {e}"))?;
+        }
+        Ok(())
+    }
+
+    /// Stabile ID des Pool-Eintrags `i`.
+    pub fn id(&self, i: usize) -> u64 {
+        self.ids.get(i).copied().unwrap_or(i as u64)
+    }
+
     /// Index eines Basiszustands, gewichtet gezogen (`None` bei leerem Pool / Gewichten 0).
     pub fn sample(&self, dice: &mut impl Dice) -> Option<usize> {
-        let total: f64 = self.weights.iter().sum();
+        let total: f64 = self.weights.iter().take(self.pool.len()).sum();
         if self.pool.is_empty() || total.is_nan() || total <= 0.0 {
             return None;
         }
         let mut x = dice.unit() * total;
-        for (i, &w) in self.weights.iter().enumerate() {
+        for (i, &w) in self.weights.iter().take(self.pool.len()).enumerate() {
             if x < w {
                 return Some(i);
             }
             x -= w;
         }
-        Some(self.weights.iter().rposition(|&w| w > 0.0).unwrap_or(0))
+        Some(self.weights.iter().take(self.pool.len()).rposition(|&w| w > 0.0).unwrap_or(0))
     }
 }
 
@@ -236,8 +292,8 @@ pub enum StartKind {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StartOutcome {
     pub kind: StartKind,
-    /// Index im Pool (nur bei `StartKind::Pool`).
-    pub base: Option<usize>,
+    /// ID des Basiszustands (`StartConfig::id`; nur bei Starts aus dem Pool, nicht bei `reset_from`).
+    pub base: Option<u64>,
     pub survived: bool,
     pub lives_perturbed: bool,
 }

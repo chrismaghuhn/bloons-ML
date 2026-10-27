@@ -225,6 +225,10 @@ pub struct Env {
     start: EpisodeStart,
     outcomes: Vec<StartOutcome>,
     snapshots: VecDeque<StartState>,
+    /// Ein zufällig gewählter Rundenbeginn der laufenden normalen Episode (Reservoir-Stichprobe).
+    candidate: Option<StartState>,
+    /// Starts aus Zuständen, die nicht geklappt haben (normale Episode statt dessen).
+    fallbacks: u64,
     recorder: Option<Recorder>,
     last_replay: Option<Replay>,
 }
@@ -257,6 +261,8 @@ impl Env {
             start: EpisodeStart::default(),
             outcomes: Vec::new(),
             snapshots: VecDeque::new(),
+            candidate: None,
+            fallbacks: 0,
             builds_left: cfg.max_builds_per_round,
             game,
             layout,
@@ -291,31 +297,43 @@ impl Env {
     }
 
     pub fn reset(&mut self, obs: &mut [f32]) {
+        self.reset_inner(true);
+        self.observe(obs);
+    }
+
+    fn reset_inner(&mut self, draw_start: bool) {
+        if let Some(c) = self.candidate.take() {
+            if self.snapshots.len() == SNAPSHOTS {
+                self.snapshots.pop_front();
+            }
+            self.snapshots.push_back(c);
+        }
         self.draw_bans();
         self.game.reset();
         self.start = EpisodeStart::default();
-        if let Some(sc) = self.starts.clone() {
+        if let Some(sc) = self.starts.clone().filter(|_| draw_start) {
             if self.unit() < sc.p_start {
                 self.start_from_config(&sc);
             }
         }
         self.builds_left = self.cfg.max_builds_per_round;
-        if self.recorder.is_some() {
-            // Episoden aus einem Startzustand lassen sich nicht ab Runde 1 nachspielen
-            self.recorder = Some(Recorder::new(&self.spec, &self.cfg));
-        }
-        self.observe(obs);
+        // Episoden aus einem Startzustand lassen sich nicht ab Runde 1 nachspielen: kein Replay
+        self.recorder = (self.cfg.record && self.start.kind == StartKind::Normal)
+            .then(|| Recorder::new(&self.spec, &self.cfg));
+        self.last_replay = None;
     }
 
     /// Neue Episode ab einem festen Startzustand (ohne Störung), z.B. für die Auswertung.
     /// Bei ungültigem Zustand bleibt die Env im normalen Startzustand.
+    /// Ohne Replay (es ließe sich nicht ab Runde 1 nachspielen).
     pub fn reset_from(&mut self, obs: &mut [f32], state: &StartState) -> Result<(), String> {
-        self.reset(obs);
+        self.reset_inner(false);
         let res = state.build(&mut self.game);
         if res.is_err() {
-            self.game.reset();
+            self.reset_inner(false);
         } else {
             self.start = EpisodeStart { kind: StartKind::Pool, ..EpisodeStart::default() };
+            self.recorder = None;
         }
         self.observe(obs);
         res
@@ -336,9 +354,15 @@ impl Env {
         std::mem::take(&mut self.outcomes)
     }
 
-    /// Zustände zu Rundenbeginn aus normalen Episoden seit dem letzten Aufruf (höchstens die letzten 8).
+    /// Zustände zu Rundenbeginn aus normalen Episoden seit dem letzten Aufruf: je beendeter Episode
+    /// ein zufällig gewählter Rundenbeginn, höchstens die letzten `SNAPSHOTS`.
     pub fn take_snapshots(&mut self) -> Vec<StartState> {
         self.snapshots.drain(..).collect()
+    }
+
+    /// Starts aus Zuständen, die seit dem letzten Aufruf nicht geklappt haben.
+    pub fn take_fallbacks(&mut self) -> u64 {
+        std::mem::take(&mut self.fallbacks)
     }
 
     fn start_from_config(&mut self, sc: &StartConfig) {
@@ -348,10 +372,14 @@ impl Env {
                 self.start.lives_perturbed = self.perturb_lives();
             } else {
                 self.game.reset();
+                self.fallbacks += 1;
             }
             return;
         }
-        let Some(base) = sc.sample(&mut RngDice(&mut self.rng)) else { return };
+        let Some(base) = sc.sample(&mut RngDice(&mut self.rng)) else {
+            self.fallbacks += 1;
+            return;
+        };
         // gestörter Zustand; ist er ungültig (z.B. Turm auf den Track verschoben), neu würfeln
         for _ in 0..8 {
             let p = start::perturb(&sc.pool[base], &self.game, self.layout.cell, &mut RngDice(&mut self.rng));
@@ -361,7 +389,7 @@ impl Env {
                 }
                 self.start = EpisodeStart {
                     kind: StartKind::Pool,
-                    base: Some(base),
+                    base: Some(sc.id(base)),
                     lives_perturbed: p.lives_perturbed,
                     rounds: 0,
                     checked: false,
@@ -370,6 +398,7 @@ impl Env {
             }
         }
         self.game.reset(); // nichts Gültiges gefunden: normaler Start
+        self.fallbacks += 1;
     }
 
     /// Zufälliger Build (Quelle C): Runde gleichverteilt über 1..=Endrunde-5, Budget aus der
@@ -430,6 +459,9 @@ impl Env {
             s.rounds += 1;
             if s.rounds >= CHECK_ROUNDS || self.game.over() {
                 s.checked = true;
+                if self.outcomes.len() >= MAX_OUTCOMES {
+                    self.outcomes.remove(0); // niemand holt ab: Älteste verwerfen
+                }
                 self.outcomes.push(StartOutcome {
                     kind: s.kind,
                     base: s.base,
@@ -439,10 +471,12 @@ impl Env {
             }
         }
         if s.kind == StartKind::Normal && self.starts.is_some() && !self.game.over() {
-            if self.snapshots.len() == 8 {
-                self.snapshots.pop_front();
+            // Reservoir-Stichprobe: jeder Rundenbeginn der Episode mit gleicher Wahrscheinlichkeit
+            s.rounds += 1;
+            let k = s.rounds as usize;
+            if RngDice(&mut self.rng).below(k) == 0 {
+                self.candidate = Some(StartState::from_game(&self.game));
             }
-            self.snapshots.push_back(StartState::from_game(&self.game));
         }
     }
 
@@ -741,12 +775,22 @@ impl VecEnv {
             });
     }
 
-    /// Startzustände für alle Envs (gilt ab dem nächsten Reset; `None` = aus).
-    pub fn set_starts(&mut self, starts: Option<StartConfig>) {
+    /// Startzustände für alle Envs (gilt ab dem nächsten Reset; `None` = aus). Ungültige
+    /// Einstellungen (z.B. ein Zustand, der sich nicht aufbauen lässt) werden abgelehnt.
+    pub fn set_starts(&mut self, starts: Option<StartConfig>) -> Result<(), String> {
+        if let (Some(sc), Some(e)) = (&starts, self.envs.first()) {
+            sc.validate(&e.game)?;
+        }
         let starts = starts.map(Arc::new);
         for e in &mut self.envs {
             e.set_starts(starts.clone());
         }
+        Ok(())
+    }
+
+    /// Fehlgeschlagene Starts aus Zuständen aller Envs seit dem letzten Aufruf.
+    pub fn take_fallbacks(&mut self) -> u64 {
+        self.envs.iter_mut().map(|e| e.take_fallbacks()).sum()
     }
 
     /// 3-Runden-Ergebnisse aller Envs seit dem letzten Aufruf.
@@ -774,11 +818,15 @@ fn splitmix64(x: u64) -> u64 {
     z ^ (z >> 31)
 }
 
-/// Herkunft und 3-Runden-Prüfung der laufenden Episode.
+/// Höchstzahl gesammelter Snapshots je Env und unabgeholter Ergebnisse.
+const SNAPSHOTS: usize = 16;
+const MAX_OUTCOMES: usize = 10_000;
+
+/// Herkunft und 3-Runden-Prüfung der laufenden Episode (`rounds`: gespielte Runden seit dem Start).
 #[derive(Clone, Copy, Debug, Default)]
 struct EpisodeStart {
     kind: StartKind,
-    base: Option<usize>,
+    base: Option<u64>,
     lives_perturbed: bool,
     rounds: u32,
     checked: bool,

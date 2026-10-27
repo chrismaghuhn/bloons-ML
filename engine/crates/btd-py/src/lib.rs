@@ -403,7 +403,8 @@ impl PyVecEnv {
     /// Startzustände für alle Envs setzen (gilt ab dem nächsten Reset). `pool`: Zustände als JSON
     /// ({round, cash, lives, towers: [{tower, x, y, tiers}]}), `weights` je Zustand, `budget` je
     /// Anzahl geschaffter Runden (Cash + Turmwert) für zufällige Builds.
-    #[pyo3(signature = (pool, weights, p_start, p_random, budget, budget_spread=0.3))]
+    #[pyo3(signature = (pool, weights, p_start, p_random, budget, budget_spread=0.3, ids=None))]
+    #[allow(clippy::too_many_arguments)]
     fn set_starts(
         &mut self,
         pool: Vec<String>,
@@ -412,31 +413,34 @@ impl PyVecEnv {
         p_random: f64,
         budget: Vec<f64>,
         budget_spread: f64,
+        ids: Option<Vec<u64>>,
     ) -> PyResult<()> {
-        if pool.len() != weights.len() {
-            return Err(value_err("pool und weights brauchen gleich viele Einträge"));
-        }
-        if weights.iter().any(|w| !(w.is_finite() && *w >= 0.0)) {
-            return Err(value_err("Gewichte müssen endlich und >= 0 sein"));
-        }
+        let ids = ids.unwrap_or_default();
         let pool = pool.iter().map(|s| parse_state(s)).collect::<PyResult<Vec<_>>>()?;
         let p = |x: f64| x.clamp(0.0, 1.0);
-        self.v.set_starts(Some(StartConfig {
-            pool,
-            weights,
-            p_start: p(p_start),
-            p_random: p(p_random),
-            budget,
-            budget_spread: budget_spread.max(0.0),
-        }));
-        Ok(())
+        self.v
+            .set_starts(Some(StartConfig {
+                pool,
+                weights,
+                ids,
+                p_start: p(p_start),
+                p_random: p(p_random),
+                budget,
+                budget_spread: budget_spread.max(0.0),
+            }))
+            .map_err(value_err)
+    }
+
+    /// Fehlgeschlagene Starts aus Zuständen seit dem letzten Aufruf (normale Episode statt dessen).
+    fn take_fallbacks(&mut self) -> u64 {
+        self.v.take_fallbacks()
     }
 
     fn clear_starts(&mut self) {
-        self.v.set_starts(None);
+        self.v.set_starts(None).expect("ohne Einstellungen nichts zu prüfen");
     }
 
-    /// 3-Runden-Ergebnisse seit dem letzten Aufruf: [(Herkunft, Pool-Index oder -1, überlebt, Leben gestört)].
+    /// 3-Runden-Ergebnisse seit dem letzten Aufruf: [(Herkunft, Pool-ID oder -1, überlebt, Leben gestört)].
     fn take_outcomes(&mut self) -> Vec<(u8, i64, bool, bool)> {
         self.v.take_outcomes().into_iter().map(outcome_tuple).collect()
     }

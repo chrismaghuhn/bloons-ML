@@ -134,13 +134,14 @@ fn pool_starts_outcomes_and_snapshots() {
     let cfg = StartConfig {
         pool: vec![base.clone()],
         weights: vec![1.0],
+        ids: vec![42],
         p_start: 1.0,
         p_random: 0.0,
         budget: vec![],
         budget_spread: 0.3,
     };
     let mut v = VecEnv::new(spec(), EnvConfig { seed: 1, ..Default::default() }, 4).unwrap();
-    v.set_starts(Some(cfg));
+    v.set_starts(Some(cfg)).unwrap();
     let n = v.layout.obs_size;
     let mut obs = vec![0.0; 4 * n];
     v.reset(&mut obs);
@@ -166,27 +167,32 @@ fn pool_starts_outcomes_and_snapshots() {
     }
     let out = v.take_outcomes();
     assert_eq!(out.len(), 4, "je Env eine 3-Runden-Prüfung");
-    assert!(out.iter().all(|o| o.base == Some(0) && o.kind == StartKind::Pool));
+    assert!(out.iter().all(|o| o.base == Some(42) && o.kind == StartKind::Pool), "stabile ID statt Index");
     assert!(v.take_outcomes().is_empty(), "abgeholt");
     assert!(v.take_snapshots().is_empty(), "Pool-Episoden liefern keine Snapshots");
 
-    // normale Episoden liefern Snapshots (Quelle A), sobald Startzustände aktiv sind
-    v.set_starts(Some(StartConfig { p_start: 0.0, ..StartConfig::default() }));
+    // normale Episoden liefern je beendeter Episode einen Snapshot (Quelle A)
+    v.set_starts(Some(StartConfig { p_start: 0.0, ..StartConfig::default() })).unwrap();
     v.reset(&mut obs);
-    v.step(
-        &[0; 4],
-        VecStepBuffers {
-            obs: &mut obs,
-            rewards: &mut rew,
-            dones: &mut done,
-            terminal_obs: &mut tobs,
-            rounds: &mut rounds,
-            start_kinds: &mut kinds,
-        },
-    );
+    let mut finished = 0;
+    while finished < 4 {
+        v.step(
+            &[0; 4],
+            VecStepBuffers {
+                obs: &mut obs,
+                rewards: &mut rew,
+                dones: &mut done,
+                terminal_obs: &mut tobs,
+                rounds: &mut rounds,
+                start_kinds: &mut kinds,
+            },
+        );
+        finished += done.iter().filter(|&&d| d).count();
+    }
+    // der Snapshot einer Episode wird beim nächsten Reset abgelegt
     let snaps = v.take_snapshots();
-    assert_eq!(snaps.len(), 4);
-    assert!(snaps.iter().all(|s| s.round == 1));
+    assert!(snaps.len() >= 4, "{}", snaps.len());
+    assert!(snaps.iter().all(|s| s.round >= 1 && s.lives > 0));
 }
 
 #[test]
@@ -218,4 +224,73 @@ fn random_builds_respect_budget_and_bans() {
         with_towers += (!g.towers.is_empty()) as u32;
     }
     assert!(with_towers > 40, "meist mit Türmen");
+}
+
+#[test]
+fn crosspath_and_sold_towers_roundtrip() {
+    let mut src = played();
+    let id = src.game.towers[0].id;
+    src.game.cash = btd_core::Money::from_dollars(100_000);
+    for p in [1u8, 1, 0] {
+        src.game.apply(Action::Upgrade { tower: id, path: p }).unwrap();
+    }
+    let sold = src.game.towers[1].id;
+    src.game.apply(Action::Sell { tower: sold }).unwrap();
+    let state = StartState::from_game(&src.game);
+    assert!(state.towers[0].tiers.iter().filter(|&&t| t > 0).count() == 2, "Crosspath");
+    let mut e = env();
+    let mut obs = vec![0.0; e.layout.obs_size];
+    e.reset_from(&mut obs, &state).unwrap();
+    let t =
+        |g: &btd_core::Game| g.towers.iter().map(|t| (t.kind, t.tiers, t.pos(), t.spent)).collect::<Vec<_>>();
+    assert_eq!(t(&e.game), t(&src.game), "gleiche Türme, Stufen, Plätze und Ausgaben");
+    assert_eq!((e.game.cash, e.game.lives, e.game.round), (src.game.cash, src.game.lives, src.game.round));
+}
+
+#[test]
+fn rounds_at_the_edges_and_invalid_configs() {
+    let mut e = env();
+    let mut obs = vec![0.0; e.layout.obs_size];
+    let end = e.game.data().rules.end_round;
+    let s = |round| StartState { round, cash: 100.0, lives: 10, towers: vec![] };
+    assert!(e.reset_from(&mut obs, &s(0)).is_ok(), "vor Runde 1");
+    assert!(e.reset_from(&mut obs, &s(end - 1)).is_ok(), "vor der letzten Runde");
+    assert!(e.reset_from(&mut obs, &s(end)).is_err());
+    assert!(e.reset_from(&mut obs, &StartState { cash: 1e12, ..s(1) }).is_err(), "Cash begrenzt");
+
+    let mut v = VecEnv::new(spec(), EnvConfig::default(), 2).unwrap();
+    let bad = StartConfig { pool: vec![s(end)], weights: vec![1.0], p_start: 1.0, ..StartConfig::default() };
+    assert!(v.set_starts(Some(bad)).unwrap_err().contains("Zustand 0"));
+    let no_budget = StartConfig { p_start: 1.0, p_random: 1.0, ..StartConfig::default() };
+    assert!(v.set_starts(Some(no_budget)).is_err());
+    let inf = StartConfig { budget: vec![f64::INFINITY], ..StartConfig::default() };
+    assert!(v.set_starts(Some(inf)).is_err());
+}
+
+#[test]
+fn failed_starts_are_counted_and_reset_from_ignores_starts() {
+    let base = StartState::from_game(&played().game);
+    // Gewicht 0: es lässt sich nichts ziehen -> normaler Start, gezählt
+    let cfg =
+        StartConfig { pool: vec![base.clone()], weights: vec![0.0], p_start: 1.0, ..StartConfig::default() };
+    let mut v = VecEnv::new(spec(), EnvConfig::default(), 3).unwrap();
+    v.set_starts(Some(cfg)).unwrap();
+    let mut obs = vec![0.0; 3 * v.layout.obs_size];
+    v.reset(&mut obs);
+    assert!(v.envs.iter().all(|e| e.start_kind() == StartKind::Normal && e.game.round == 0));
+    assert_eq!(v.take_fallbacks(), 3);
+
+    // reset_from würfelt keinen Start; ein ungültiger Zustand ergibt einen normalen Start
+    let mut e = env();
+    e.set_starts(Some(std::sync::Arc::new(StartConfig {
+        pool: vec![base.clone()],
+        weights: vec![1.0],
+        p_start: 1.0,
+        ..StartConfig::default()
+    })));
+    let mut o = vec![0.0; e.layout.obs_size];
+    let bad = StartState { round: 10_000, ..base };
+    assert!(e.reset_from(&mut o, &bad).is_err());
+    assert_eq!((e.start_kind(), e.game.round, e.game.towers.len()), (StartKind::Normal, 0, 0));
+    assert_eq!(e.take_fallbacks(), 0);
 }
