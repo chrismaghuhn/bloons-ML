@@ -1,4 +1,4 @@
-# Design: mehr Türme, Schritt 2 – Buffs & Einkommen (Entwurf 2026-10-27, nicht freigegeben)
+# Design: mehr Türme, Schritt 2 – Buffs & Einkommen (freigegeben 2026-10-27 mit Anpassungen, §8)
 
 Ziel: Monkey Village und Banana Farm als Einstieg in M4 ("Buffs & Support", `docs/engine-design.md` §10),
 also von 12 auf 14 Türme. Der Alchemist braucht andere Mechaniken als Village und Farm (siehe §1.3).
@@ -134,9 +134,18 @@ Validierung (neu, heute prüft `GameV1::validate` leere `attacks` gar nicht):
 Engine (`btd-core`):
 - `Tower` behält die Werte der Variante als **Basis** und berechnet daraus die **effektiven** Angriffe
   (`AttackRt`).
-- `Game::refresh_buffs()` läuft nach jedem Bauen, Upgraden und Verkaufen, also zwischen den Runden und nie
-  im Tick-Loop. Es baut die effektiven Werte neu: für jeden Turm alle Auren anderer Türme, deren
-  Mittelpunkt-Abstand ≤ Radius ist [KAL: zählt der Footprint des Ziels mit?].
+- `Game::refresh_buffs()` läuft nach jeder Aktion (Bauen, Upgraden, Verkaufen), wann immer sie passiert,
+  also auch mitten in der Runde: an genau dem Aktionspunkt zwischen zwei Ticks, sobald die Engine Runden
+  in Ticks mit Aktionen dazwischen spielt (`docs/design-recorder.md`, Schritt 3). Im Tick-Loop läuft es
+  nie. Außerdem läuft es nach `reset()`, nach `StartState::build()` und nach dem Laden eines Zustands.
+- `refresh_buffs` baut die Angriffe **nicht** über `set_variant` neu. Es schreibt nur die
+  buff-abhängigen Felder (`range2`, `cooldown`, `camo`, `cannot_damage`, Pierce, Flächenradius,
+  `ProjectileDef`). So bleibt der Laufzeit-Zustand vollständig erhalten. Das gilt auch für Felder, die
+  `set_variant` heute zurücksetzt: `burst_left`/`burst_cd` (laufende Salve) und `crit_next`.
+  Projektile, die schon fliegen, behalten ihre alte `ProjectileDef`. [KAL über den Recorder: setzt ein
+  Upgrade im Spiel den Cooldown zurück?]
+- Es baut die effektiven Werte neu: für jeden Turm alle Auren anderer Türme, deren Mittelpunkt-Abstand
+  ≤ Radius ist [KAL: zählt der Footprint des Ziels mit?].
 - **Radius = unbuffte Reichweite der Variante.** Eine Village, die eine andere bufft, vergrößert deren
   Aura nicht. Damit reicht ein Durchgang, ohne Fixpunkt und ohne Abhängigkeit von der Reihenfolge
   [KAL: im Spiel evtl. anders].
@@ -179,11 +188,33 @@ Schwierigkeit, auf 5 $ gerundet. Je Stapel zählen höchstens `stack_limit` Zone
 
 Folgen:
 - Der Preis hängt vom Ort ab. Statt `price(cost)` gibt es `Game::place_price(kind, x, y)` und
-  `upgrade_price(tower, path)`. Die Env-Maske und die Zufalls-Builds nutzen diese Funktionen.
+  `upgrade_price(tower, path)`. Beide nutzen `discount_at(x, y)`.
+- `check`, `place_price` und `upgrade_price` rechnen immer genau mit `discount_at`, an der echten Position.
+- **Rabatt-Raster als Cache, nur für die Place-Maske und die Observation.** `refresh_buffs` berechnet je
+  Rasterzelle den Platzier-Rabatt (Tier 0) mit `discount_at` am Zellmittelpunkt. Dort platziert die Env.
+  - Die Place-Maske (14 Türme × 720 Zellen) liest nur dieses Raster und prüft das Cash **je Zelle**. Heute
+    überspringt sie die ganze Turmart, wenn der Listenpreis zu hoch ist. Weil Raster und `check` dieselbe
+    Funktion am selben Punkt nutzen, stimmen sie für Env-Platzierungen überein.
+  - Die Upgrade-Maske nutzt wie heute `can_apply` und damit den genauen Preis an der Turmposition. Das
+    gilt auch für Türme, die nicht am Zellmittelpunkt stehen (Replays, Pools, Störung "Verschieben").
+  - Dasselbe Raster ist der Rabatt-Kanal der Observation (Platzier-Rabatt am Zellmittelpunkt; Upgrades
+    über Tier `tier_cap` sind nicht rabattiert, das sieht die Policy an den Tiers).
 - `spent` hängt jetzt von der Reihenfolge der Käufe ab. `StartState` speichert `spent` bisher nicht, und
   `build()` baut Turm für Turm komplett auf. Ein gespeicherter Zustand mit Rabatt käme so mit anderem
-  `spent` zurück (Verkaufswert, `state_hash`). Vorschlag: `spent` in `TowerState` aufnehmen (optional, ohne
-  das Feld wie bisher).
+  `spent` zurück (Verkaufswert, `state_hash`). Deshalb kommt `spent` in `TowerState` (optional). `build()`
+  setzt es nach dem Aufbau. Fehlt das Feld (alte Pools), gilt wie bisher der beim Aufbau bezahlte Preis.
+- Störung "Upgrade zurück" (`start::perturb`): Ein einzelnes `spent` reicht nicht, um genau ein Upgrade zu
+  erstatten. `perturb` arbeitet außerdem auf dem `StartState` vor dem Aufbau, ein `Game` mit diesem
+  Aufbau gibt es dort nicht. Festlegung:
+  - `perturb` merkt sich nur, welches Upgrade zurückgenommen wird (wie heute `sell` beim Verkaufen).
+  - Erst nach `build()` stuft `Game::downgrade(tower, path)` (neue Engine-Operation, nur für Startzustände)
+    am gebauten Spiel zurück. Erstattet wird der dann gültige `upgrade_price` dieses Upgrades an der
+    Turmposition. `spent` sinkt um denselben Betrag (nicht unter 0), danach `refresh_buffs`.
+  - Damit ist auch eine zurückgestufte Village sauber abgedeckt (der Rabatt der anderen Türme ändert sich
+    erst danach). Die Reihenfolge ist fest: erst alle Zustandsänderungen am `StartState` (Cash,
+    Verschieben), dann Aufbau, dann Zurückstufen und Verkaufen.
+  - Das ist eine Näherung, falls der Turm im Original zu einem anderen Rabatt gekauft wurde.
+    "Verschieben" lässt `spent` unverändert.
 
 ### 2.3 Einkommen (Farm)
 
@@ -200,8 +231,16 @@ Format:
 Die Gutschrift kommt nach jeder geschafften Runde zusammen mit `end_bonus`, in der Reihenfolge der Turm-IDs.
 
 Annahmen:
-- Alle Bananen werden eingesammelt [KAL]. Die Policy handelt ohnehin nur zwischen den Runden. Im echten
-  Spiel muss die Bridge klicken, oder die Policy nutzt Marketplace.
+- Bananen werden eingesammelt [KAL]. Ohne Zufall sind es 100 %, auch immer in der Evaluation. Mit
+  `randomness` würfelt die Env je Episode eine Einsammelquote, z.B. 85–100 %. So verlässt sich die Policy
+  nicht auf perfekte Klicks der Bridge.
+  - Betroffen sind nur Farmen, deren Bananen geklickt werden müssen: unterer Pfad < 3 (ab Marketplace
+    sammelt das Spiel selbst) und mittlerer Pfad < 3 (die Bank bekommt kein Bananen-Projektil).
+    xx1/xx2 vergrößern im Spiel den Einsammelradius bzw. erstatten abgelaufene Bananen anteilig; das
+    bildet die Sim nicht ab [KAL].
+  - Die Quote ist ein Feld in `Game` (Standard 1,0). Sie geht in `state_hash`, ins Replay-Format und
+    optional in `StartState`, damit sie deterministisch reproduzierbar ist.
+  - Teil-Einkommen wird wie anderes Einkommen über `Money::from_f64` auf 1/1000 $ gerundet.
 - Bananen-Cash fällt nicht unter die Einkommens-Stufen der späten Runden (`incomeSets`) [KAL].
 - Eine neu gebaute Farm liefert schon in der nächsten Runde voll.
 
@@ -220,8 +259,31 @@ Footprint:
 
 Gesperrte Türme bleiben in den Daten, damit Turmliste und Layout für alle Presets gleich bleiben. Für die Env:
 - Die Maske verbietet sie immer.
-- Die Sperr-Skalare der Observation zeigen sie als gesperrt.
+- Die Sperr-Skalare der Observation zeigen sie als gesperrt. Heute gibt es diese Skalare nur, wenn
+  Zufallssperren an sind (`Layout::new(.., max_banned_towers > 0)`). Damit das Layout nicht von der
+  Konfiguration abhängt, sind sie ab t14 immer im Layout (bei 0 Zufallssperren zeigen sie nur die festen
+  Sperren).
 - `draw_bans` würfelt sie nicht. Sie zählen auch nicht zur Obergrenze der Zufallssperren.
+- Startzustände oder Replays mit einem gesperrten Turm (z.B. aus einer echten Medium-Partie mit Farm)
+  werden beim Laden mit einer klaren Meldung abgelehnt.
+- Der Konverter lehnt unbekannte Sperr-Mods in den Mods des Presets ab (STRICT), z.B.
+  `LockTowerSetModModel` aus den `*Only`-Modi.
+
+**Farm von Anfang an im Layout.** Jede Änderung der Turmliste macht bestehende Modelle unbrauchbar. Die Farm
+steht deshalb ab dem ersten Village-Schritt als 14. Turm in Daten und Layout, ist aber in allen Presets
+gesperrt. Der Konverter setzt sie zusätzlich zu den Mod-Sperren auf `locked_towers`, solange
+`--towers t14` die Farm-Mechanik noch nicht freigibt. Später wird nur die Sperre für Medium/Hard
+aufgehoben. Kanäle und Aktionsraum ändern sich dabei nicht. Damit die Daten gültig sind, schreibt der
+Konverter die Farm-Varianten schon im Format aus §2.3. Gesperrt ist es egal, ob die Engine das Einkommen
+schon gutschreibt.
+
+**Verkaufen.** CHIMPS verbietet auch das Verkaufen. Das ist schon abgedeckt: `RulesV1.selling` steht im
+Preset `chimps` auf `false`. `Game::check` lehnt `Sell` dann ab, die Env-Maske schaltet die Sell-Aktionen
+ab, und die Startzustands-Störung "Verkaufen" wird nicht gezogen. Neu ist nur: Der Konverter leitet
+`selling` aus `DisableSellTowerModModel` der Partie-Mods ab (gegengeprüft mit dem Partie-Feld
+`towerSellEnabled`), wie die Turm-Sperren. Heute steht es von Hand im Preset; Werte und Verhalten bleiben
+gleich. `SellMultiplierModModel` (Verkaufsquote, in `Clicks` auf 0) wird dafür nicht genutzt. `sell_ratio`
+bleibt wie heute fest, sonst würde es sich in CHIMPS ändern.
 
 ### 2.5 Determinismus
 
@@ -229,8 +291,9 @@ Gesperrte Türme bleiben in den Daten, damit Turmliste und Layout für alle Pres
   gespeichert, Preise über dieselbe Rechnung. sim_v0-Parität und bestehende Replays bleiben bitgleich
   (Test, §5).
 - Buffs werden nur bei Aktionen neu berechnet, nicht pro Tick, und in fester Reihenfolge (Turm-ID).
-  `state_hash` braucht nichts Neues, weil die Buffs aus den Türmen folgen. Erst die Bank (Phase 2) bringt
-  neuen Zustand mit.
+  Für die Buffs braucht `state_hash` nichts Neues, weil sie aus den Türmen folgen. Neuer Zustand kommt
+  nur mit der Farm: die Einsammelquote (§2.3), später die Bank (Phase 2). Das Rabatt-Raster ist ein Cache
+  und gehört nicht in den Hash.
 - Rechnung in f64, Umwandlung in `Real` wie in `set_variant`. Die Radius-Grenze (≤) kann sich zwischen
   f32- und f64-Build in Grenzfällen unterscheiden, wie heute schon bei `collides`.
 
@@ -252,23 +315,27 @@ Gesperrte Türme bleiben in den Daten, damit Turmliste und Layout für alle Pres
 ## 4. RL-Env und Observation
 
 - 14 Türme, Reihenfolge: die bisherigen 12, dann `village`, `farm`. Ausgabe z.B. mit `--towers t14`.
-  - Kanäle: 2 + 14 + 3 = 19.
+  - Kanäle: 2 + 14 + 3 = 19, mit den Buff-Kanälen (unten) 24.
   - Aktionen: 1 + (14 + 3 + 1) × 720 = 12 961.
   - Bestehende Modelle passen nicht, es braucht neue Läufe (wie bei t12).
-- Zufallssperren bis 25 %: bei 14 Türmen weiterhin 3. In CHIMPS ist die Farm zusätzlich fest gesperrt (§2.4).
-- Was die Policy über Buffs wissen muss: Die Auren folgen aus Position und Tiers der Village. Das sieht die
-  Conv-Policy schon (Radius ≈ 4–6 Zellen). Weil Preise jetzt vom Ort abhängen und Camo-Erkennung über Buffs
-  kommt, schlage ich trotzdem **4 zusätzliche Kanäle** vor: Reichweiten-Buff, Tempo-Buff, Camo und Rabatt,
-  jeweils der wirksame Wert je Zelle. Das ergibt 23 Kanäle.
-  - Pierce, Projektiltempo und MIB lasse ich weg. Sie kommen nur aus 3xx bzw. x3x und sind aus den Tiers
-    der Village ablesbar.
-  - Alternative: keine Kanäle, nur die Maske anpassen.
-- Skalar: Farm-Einkommen der nächsten Runde, log-normiert, weil es ab 4xx schnell groß wird.
+- Zufallssperren bis 25 %: bei 14 Türmen weiterhin 3. Die Farm ist vorerst in allen Presets fest
+  gesperrt, in CHIMPS auch dauerhaft (§2.4). Sie zählt nicht zu den 3.
+- Was die Policy über Buffs wissen muss: Die Auren folgen aus Position und Tiers der Village. Die
+  Conv-Policy (Radius ≈ 4–6 Zellen) müsste sie aber erst mühsam erschließen. Außerdem bringt eine Village
+  selbst keine Pops; ihr Wert kommt verzögert über andere Türme, daran lernt PPO langsamer. Deshalb
+  **5 zusätzliche Kanäle**, jeweils der wirksame Wert je Zelle: Reichweiten-Buff, Tempo-Buff, Camo, MIB
+  (trifft alle Bloon-Arten: für CHIMPS entscheidend bei Lead/Purple/Black) und Rabatt (das Raster aus
+  §2.2). Das ergibt 2 + 14 + 3 + 5 = **24 Kanäle**. Pierce und Projektiltempo bekommen keinen Kanal.
+- Beobachten: Im Festhäng-Histogramm bzw. in der Turmstatistik der Auswertung gezielt prüfen, ob Villages
+  überhaupt gebaut werden.
+- Skalar: Farm-Einkommen der nächsten Runde, log-normiert, weil es ab 4xx schnell groß wird. Er steht
+  von Anfang an im Layout (solange die Farm gesperrt ist, immer 0).
 - Benchmark: Nach dem R60-Lauf mit Village kommt ein CHIMPS-Lauf. Preset `chimps`, die Farm per
   `locked_towers` gesperrt, Curriculum aus engine-design §5 (erst Leben-Puffer, dann 1 Leben). Erwartung:
   Die Village macht vor allem die Camo-Runden und die späten MOAB-Runden leichter.
 - `--reward-tower` bestraft auch Village und Farm. Das ist ok, beim Vergleich der Läufe aber beachten.
-- Startzustände: `TowerState` verweist per Name, alte Pools laden also auch mit t14. Zufalls-Builds nutzen
+- Startzustände: `TowerState` verweist per Name, alte Pools laden also auch mit t14 (außer sie enthalten
+  einen gesperrten Turm, §2.4). Zufalls-Builds nutzen
   die neuen Preisfunktionen und respektieren `locked_towers`.
 
 ## 5. Tests und Plausibilität
@@ -294,47 +361,84 @@ btd-data: Validierung (Variante ohne Angriff nur mit Support/Rabatt/Einkommen, W
 
 Konverter:
 - Abdeckung wie oben (Village 29, Farm 49).
-- `locked_towers` im CHIMPS-Preset.
+- `locked_towers`: Farm in allen Presets, in CHIMPS zusätzlich aus `LockTowerModModel`.
+- `selling` aus den Mods ist gleich dem bisherigen Preset-Wert (Medium an, CHIMPS aus).
 - STRICT für die neuen Modelle (nur an der ausgewerteten Stelle erlaubt).
 - Filter, deren `disableWhenSupportMutatorIDs` den MIB-Mutator nennt, werden abgelehnt (Ice bleibt
   unverändert abgedeckt).
 
-Startzustände: Rundlauf mit Rabatt (`spent` bleibt gleich).
+Weitere Tests:
+- Startzustände: Rundlauf mit Rabatt (`spent` bleibt gleich).
+- "Upgrade zurück" mit Rabatt erstattet den Preis am Ort, auch wenn eine Village zurückgestuft wird.
+- Ein Refresh mitten in der Runde ohne Buff-Änderung ändert nichts am Zustand (Salve, Crit, Cooldown).
+- Das Rabatt-Raster ist gleich `discount_at` an allen Zellmittelpunkten.
+- Die Einsammelquote ist deterministisch und reist im Replay mit.
+- Das t14-Layout ist gleich groß, egal ob die Farm gesperrt ist und ob Zufallssperren an sind.
 
 Plausibilität:
 - `btd-tools demo`: Dart allein gegen Dart + Jungle Drums (Pops je Runde).
 - Farm-Cash über 10 Runden gegen die Regel Bananen × Wert.
 
-Im echten Spiel (wenn du Lust hast):
-- Rabatt beim Platzieren
+Abgleich mit dem Spiel über den Recorder statt per Auge: Die Mod dumpt nach jedem Bauen, Upgraden und
+Verkaufen die effektiven Werte jedes Turms aus dem Spiel. Das sind Reichweite, Rate, Camo,
+Schadensarten und der Preis des nächsten Upgrades, dazu der Platzierpreis an der Position. Ein einziger
+Testaufbau beantwortet damit mehrere Fragen:
 - Zählt der Footprint des gebufften Turms zur Reichweite?
 - Bufft eine Village die Reichweite einer anderen?
-- Monkey Town in CHIMPS
-- Verrechnung von Basis- und Primary-Training-Reichweite
+- Wie verrechnen sich Basis- und Primary-Training-Reichweite?
+- Gilt der Rabatt beim Platzieren, und wie wird mit Hard gerundet?
+
+Der Sim-Test vergleicht dieselben Werte (`btd-tools`, gleiche Aktionsfolge). Das ist eine Erweiterung der
+Mod (eigener Teilschritt, Ordner `mod/`). Nur "Monkey Town in CHIMPS" braucht eine echte Partie (Phase 2).
 
 ## 6. Reihenfolge
 
 1. Konverter und btd-data:
    - Support-Türme (Waffe leer bzw. Einkommens-Waffe)
    - `supports`/`discount`/`income`/`sell_bonus`/`set`/`radius_offset`/`locked_towers`
+   - `selling` und `locked_towers` aus den Partie-Mods; Farm in allen Presets gesperrt
    - Validierung
    - Noch ohne Wirkung in der Engine, die Parität ist damit sicher.
 2. Engine: Auren und Rabatt (Village 29/64), Tests, Parität.
-3. Env: 14 Türme (Farm zunächst gesperrt oder mit 3.), Buff-Kanäle, Preis-Maske, feste Sperren. Danach
-   Lauf R60 und CHIMPS.
-4. Farm: Einkommen, Footprint, Verkaufswert (Farm 49/64), nachrangig, für Medium/Hard.
-5. Später/optional:
+3. Env: 14 Türme (Farm im Layout, überall gesperrt), 5 Buff-Kanäle, Einkommens-Skalar, Rabatt-Raster
+   und Preis-Maske, feste Sperren, `spent` in Startzuständen. Danach Lauf R60 und CHIMPS.
+4. Recorder-Erweiterung: effektive Werte nach jeder Aktion dumpen, Abgleich mit der Sim (Kalibrierpunkte §5).
+5. Farm: Einkommen, Footprint, Verkaufswert, Einsammelquote (Farm 49/64). Erst wenn CHIMPS mit Village
+   läuft, dann Sperre für Medium/Hard aufheben.
+6. Später/optional:
    - Monkey Town (Pops je Turm)
    - Bank (Zustand und automatisches Abheben)
    - Alchemist als Schritt 3 (geworfene Projektile, Säurepfützen, `timed_effects`)
 
-## 7. Offene Fragen
+## 7. Offene Fragen (beantwortet, siehe §8)
 
 1. Alchemist als eigenen Schritt 3 (Vorschlag) statt jetzt?
 2. Farm nachrangig und nur für Medium/Hard (Vorschlag), oder ganz weglassen, bis CHIMPS läuft?
 3. Ist die Annahme "alle Bananen werden eingesammelt" ok? Die Bridge müsste dann klicken.
 4. Monkey Town und Bank gleich mit (dann 34 bzw. 54 Varianten) oder erst gesperrt lassen?
-5. Buff-Kanäle in der Observation (4 zusätzliche) oder nur über die Maske?
+5. Buff-Kanäle in der Observation (ursprünglich 4 vorgeschlagen; Entscheidung in §8: 5) oder nur über die Maske?
 6. Magst du im Spiel die Kalibrierpunkte aus §5 prüfen?
 7. Rabatte stapeln laut Dump nur begrenzt (großer Rabatt einmal, kleiner bis zu einer Obergrenze). So
    übernehmen, oder sollen Rabatte unbegrenzt stapeln?
+
+## 8. Freigabe und Entscheidungen (2026-10-27)
+
+Der User hat das Design mit diesen Anpassungen freigegeben (eingearbeitet in §2–§6):
+- Verkaufen in CHIMPS: über das vorhandene `RulesV1.selling` abgedeckt, künftig aus den Mods abgeleitet (§2.4).
+- Farm ab sofort als 14. Turm in Daten und Layout, überall gesperrt, bis die Mechanik kommt (§2.4, §6).
+- Störung "Upgrade zurück": Erstattung = aktueller `upgrade_price` am Ort, nach dem Aufbau am gebauten
+  Spiel; `spent` in `TowerState` (§2.2).
+- `refresh_buffs` nach jeder Aktion, auch mitten in der Runde, nie im Tick-Loop (§2.1).
+- Rabatt-Raster als Cache für Place-Maske und Observation (§2.2).
+- Villages bringen selbst keine Pops: Buff-Kanäle und gezielte Beobachtung, ob Villages gebaut werden (§4).
+
+Antworten auf §7:
+1. Alchemist: eigener Schritt 3 (Timed Effects, geworfene Projektile, eigener Paritätsschritt).
+2. Farm: jetzt in Layout und Daten, die Mechanik erst, wenn CHIMPS mit Village läuft.
+3. Bananen: Annahme ok; Einsammelquote als Domain Randomization (z.B. 85–100 %), nur Medium/Hard.
+4. Monkey Town und Bank: gesperrt lassen, bis der Rest kalibriert ist.
+5. Buff-Kanäle: ja, mit MIB als fünftem Kanal; Pierce und Projektiltempo ohne Kanal.
+6. Kalibrierung über die Recorder-Mod (effektive Werte nach jeder Aktion), nur Monkey Town in CHIMPS
+   braucht eine echte Partie.
+7. Rabatt-Stapel wie im Dump (begrenzt). Unbegrenztes Stapeln würde Village-Ketten belohnen, die im Spiel
+   nichts bringen.
