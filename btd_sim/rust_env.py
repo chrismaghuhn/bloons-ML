@@ -50,8 +50,8 @@ class RustBTDEnv(gym.Env):
     def save_replay(self, path: str, last: bool = False):
         self.env.save_replay(path, last)
 
-    def load_replay(self, path: str, until_round: int | None = None):
-        return self.env.load_replay(path, until_round)
+    def load_replay(self, path: str, until_round: int | None = None, strict: bool = True):
+        return self.env.load_replay(path, until_round, strict)
 
 
 class RustVecEnv(VecEnv):
@@ -72,7 +72,7 @@ class RustVecEnv(VecEnv):
         return self.venv.reset()
 
     def step_async(self, actions):
-        self._actions = np.asarray(actions, dtype=np.int64).reshape(self.num_envs)
+        self._actions = np.ascontiguousarray(actions, dtype=np.int64).reshape(self.num_envs)
 
     def step_wait(self):
         obs, rewards, dones, terminal_obs, rounds = self.venv.step(self._actions)

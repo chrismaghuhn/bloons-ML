@@ -22,10 +22,8 @@ use crate::{EnvConfig, EnvSpec};
 
 pub const FORMAT: &str = "btd-replay/1";
 
-#[cfg(feature = "f64")]
-pub const FLOAT: &str = "f64";
-#[cfg(not(feature = "f64"))]
-pub const FLOAT: &str = "f32";
+/// Float-Build der Engine ("f32"/"f64"), kommt aus btd-core (dessen Feature entscheidet).
+pub use btd_core::FLOAT;
 
 #[derive(Debug, Error)]
 pub enum ReplayError {
@@ -39,6 +37,13 @@ pub enum ReplayError {
     Action { round: u32, action: ReplayAction, err: btd_core::ActionError },
     #[error("Runde {round}: Ergebnis weicht ab, erwartet {expected:?}, bekommen {got:?}")]
     Mismatch { round: u32, expected: Box<RoundResult>, got: Box<RoundResult> },
+    #[error(
+        "Replay wurde mit dem {replay}-Build aufgezeichnet, diese Engine ist {ours}: Ergebnisse sind \
+         nur im gleichen Build reproduzierbar (nicht-strikt vergleichen oder passend bauen)"
+    )]
+    FloatMismatch { replay: String, ours: &'static str },
+    #[error("Spiel endet nach Runde {ended}, das Protokoll hat aber {total} Runden")]
+    TrailingRounds { ended: u32, total: u32 },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -140,6 +145,11 @@ pub struct RoundCheck {
     pub expected: RoundResult,
     pub got: RoundResult,
     pub matches: bool,
+    /// Aktionen, die die Sim nicht ausführen konnte (nur im nicht-strikten Modus; dort werden
+    /// sie übersprungen, z.B. weil im echten Spiel mehr Cash da war).
+    pub action_errors: Vec<String>,
+    /// Aktionen, die tatsächlich ausgeführt wurden (ohne die übersprungenen).
+    pub applied: Vec<ReplayAction>,
 }
 
 impl Replay {
@@ -210,18 +220,21 @@ impl Replay {
         until_round: Option<u32>,
         mut on_round: impl FnMut(&RoundCheck),
     ) -> Result<Game, ReplayError> {
-        let (game, checks) = self.run(spec, until_round, true)?;
+        let (game, checks) = self.replay_to(spec, until_round, true)?;
         checks.iter().for_each(&mut on_round);
         Ok(game)
     }
 
     /// Spielt alles nach und sammelt die Abweichungen, statt abzubrechen (Kalibrierung gegen
-    /// das echte Spiel: dort weichen die Werte erwartungsgemäß ab).
+    /// das echte Spiel: dort weichen die Werte erwartungsgemäß ab). Aktionen, die die Sim nicht
+    /// ausführen kann, werden übersprungen und in `RoundCheck::action_errors` vermerkt.
     pub fn compare(&self, spec: &EnvSpec) -> Result<Vec<RoundCheck>, ReplayError> {
-        self.run(spec, None, false).map(|(_, checks)| checks)
+        self.replay_to(spec, None, false).map(|(_, checks)| checks)
     }
 
-    fn run(
+    /// Nachspielen bis einschließlich Runde `until`. `strict`: Abbruch bei abweichendem
+    /// Ergebnis, unmöglicher Aktion oder anderem Float-Build; sonst wird alles gesammelt.
+    pub fn replay_to(
         &self,
         spec: &EnvSpec,
         until: Option<u32>,
@@ -236,6 +249,11 @@ impl Replay {
                 )));
             }
         }
+        if let Some(f) = self.header.float.as_deref().filter(|&f| f != FLOAT) {
+            if strict {
+                return Err(ReplayError::FloatMismatch { replay: f.to_string(), ours: FLOAT });
+            }
+        }
         let compare_hash = self.header.float.as_deref() == Some(FLOAT);
         let mut game = Game::new(spec.data.clone()).map_err(|e| ReplayError::DataMismatch(e.to_string()))?;
         let mut checks = Vec::new();
@@ -243,19 +261,28 @@ impl Replay {
             if until.is_some_and(|u| entry.round > u) {
                 break;
             }
+            let mut action_errors = Vec::new();
+            let mut applied = Vec::new();
             for a in &entry.actions {
-                let action = to_action(&spec.data, a).ok_or_else(|| {
-                    ReplayError::DataMismatch(format!("Runde {}: unbekannter Turm in {a:?}", entry.round))
-                })?;
-                game.apply(action).map_err(|err| ReplayError::Action {
-                    round: entry.round,
-                    action: a.clone(),
-                    err,
-                })?;
+                let Some(action) = to_action(&spec.data, a) else {
+                    let msg = format!("Runde {}: unbekannter Turm in {a:?}", entry.round);
+                    if strict {
+                        return Err(ReplayError::DataMismatch(msg));
+                    }
+                    action_errors.push(msg);
+                    continue;
+                };
+                match game.apply(action) {
+                    Ok(()) => applied.push(a.clone()),
+                    Err(err) if strict => {
+                        return Err(ReplayError::Action { round: entry.round, action: a.clone(), err })
+                    }
+                    Err(err) => action_errors.push(format!("{a:?}: {err:?}")),
+                }
             }
             let report = game.play_round();
             let got = RoundResult::from_game(&game, &report);
-            let matches = entry.result.matches(&got, compare_hash);
+            let matches = action_errors.is_empty() && entry.result.matches(&got, compare_hash);
             if strict && !matches {
                 return Err(ReplayError::Mismatch {
                     round: entry.round,
@@ -263,7 +290,21 @@ impl Replay {
                     got: Box::new(got),
                 });
             }
-            checks.push(RoundCheck { round: entry.round, expected: entry.result.clone(), got, matches });
+            checks.push(RoundCheck {
+                round: entry.round,
+                expected: entry.result.clone(),
+                got,
+                matches,
+                action_errors,
+                applied,
+            });
+            if game.over() {
+                let total = self.rounds.last().map_or(0, |r| r.round);
+                if strict && until.map_or(true, |u| u > entry.round) && total > entry.round {
+                    return Err(ReplayError::TrailingRounds { ended: entry.round, total });
+                }
+                break;
+            }
         }
         Ok((game, checks))
     }
@@ -314,10 +355,16 @@ impl Recorder {
         }
     }
 
-    /// Weiter aufzeichnen ab einem geladenen Spielstand (Runden bis `upto` übernehmen).
-    pub fn resume(spec: &EnvSpec, cfg: &EnvConfig, from: &Replay, upto: u32) -> Self {
+    /// Weiter aufzeichnen ab einem nachgespielten Spielstand. Übernommen wird, was die Sim
+    /// tatsächlich gemacht hat (ausgeführte Aktionen, eigene Ergebnisse), nicht der Inhalt der
+    /// Quelldatei: nach einem nicht-strikten Laden (echtes Spiel) bleibt das Protokoll so in
+    /// sich stimmig und strikt nachspielbar.
+    pub fn resume(spec: &EnvSpec, cfg: &EnvConfig, checks: &[RoundCheck]) -> Self {
         let mut r = Self::new(spec, cfg);
-        r.replay.rounds = from.rounds.iter().filter(|e| e.round <= upto).cloned().collect();
+        r.replay.rounds = checks
+            .iter()
+            .map(|c| RoundEntry { round: c.round, actions: c.applied.clone(), result: c.got.clone() })
+            .collect();
         r
     }
 
@@ -334,6 +381,8 @@ impl Recorder {
         });
     }
 
+    /// Bisheriges Protokoll. Bauaktionen seit der letzten Runde fehlen noch: sie werden erst
+    /// mit dem Ergebnis der nächsten Runde als Eintrag geschrieben.
     pub fn replay(&self) -> &Replay {
         &self.replay
     }

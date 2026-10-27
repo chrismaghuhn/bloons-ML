@@ -25,7 +25,9 @@ def test_spaces_match():
 
 @pytest.mark.skipif(not EXACT, reason="bit-genauer Vergleich nur im f64-Build")
 @pytest.mark.parametrize("seed", range(6))
-def test_step_by_step_parity(seed):
+@pytest.mark.parametrize("masked", [True, False])
+def test_step_by_step_parity(seed, masked):
+    """masked=False: auch ungültige Aktionen und Aktionen am Bau-Limit (Masken nur vergleichen)."""
     rng = np.random.default_rng(seed)
     py, rs = BTDEnv(), RustBTDEnv()
     o1, _ = py.reset()
@@ -36,7 +38,7 @@ def test_step_by_step_parity(seed):
         assert np.array_equal(o1, o2), f"Observation weicht ab (Schritt {steps})"
         assert np.array_equal(m1, m2), f"Maske weicht ab (Schritt {steps})"
         # Runde starten etwas seltener als bauen, damit Türme zusammenkommen
-        valid = np.flatnonzero(m1)
+        valid = np.flatnonzero(m1) if masked else np.arange(len(m1))
         a = 0 if rng.random() < 0.25 else int(rng.choice(valid))
         o1, r1, d1, _, i1 = py.step(a)
         o2, r2, d2, _, i2 = rs.step(a)
@@ -83,3 +85,31 @@ def test_vec_env_with_maskable_ppo():
     masks = np.stack(venv.env_method("action_masks"))
     actions, _ = model.predict(obs, action_masks=masks, deterministic=True)
     assert all(masks[i, a] for i, a in enumerate(actions))
+
+
+def test_vec_env_terminal_observation_and_episode_info():
+    venv = RustVecEnv(2)
+    obs = venv.reset()
+    for _ in range(200):
+        obs, rewards, dones, infos = venv.step(np.zeros(2, dtype=np.int64))  # nur Runden starten
+        assert rewards.dtype == np.float32 and dones.dtype == bool
+        if dones.any():
+            i = int(np.flatnonzero(dones)[0])
+            info = infos[i]
+            assert info["terminal_observation"].shape == obs[i].shape
+            assert not np.array_equal(info["terminal_observation"], obs[i]), "obs ist nach Auto-Reset neu"
+            assert info["episode"]["l"] > 0 and info["round"] >= 0
+            return
+    pytest.fail("keine Episode beendet")
+
+
+def test_strided_actions_are_accepted():
+    venv = RustVecEnv(3)
+    venv.reset()
+    venv.step(np.zeros((3, 2), dtype=np.int64)[:, 0])  # nicht zusammenhängender View
+
+
+def test_load_replay_errors():
+    env = RustBTDEnv()
+    with pytest.raises(OSError):
+        env.load_replay("/gibt/es/nicht.jsonl")

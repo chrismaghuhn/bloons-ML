@@ -115,7 +115,7 @@ fn resume_from_round_continues_identically() {
     assert!(full.rounds.len() > 6);
 
     let mut b = env(true);
-    b.load_replay(&full, Some(5)).unwrap();
+    b.load_replay(&full, Some(5), true).unwrap();
     assert_eq!(b.game.round, 5);
     assert_eq!(b.replay().unwrap().rounds.len(), 5);
     // Rest des Originals von Runde 6 an anwenden -> gleiches Ende
@@ -184,7 +184,11 @@ fn malformed_replays_are_rejected() {
     let bad_action = "{\"type\":\"header\",\"format\":\"btd-replay/1\",\"data\":\"d\"}\n\
         {\"type\":\"round\",\"round\":1,\"actions\":[{\"place\":{\"tower\":\"dart\",\"x\":0,\"y\":5}}]}";
     let r = Replay::from_jsonl(bad_action).unwrap();
-    assert!(matches!(r.compare(&spec()), Err(ReplayError::Action { round: 1, .. })));
+    // strikt: Abbruch; nicht-strikt: Aktion übersprungen und vermerkt
+    assert!(matches!(r.play(&spec(), None, |_| {}), Err(ReplayError::Action { round: 1, .. })));
+    let checks = r.compare(&spec()).unwrap();
+    assert_eq!(checks.len(), 1);
+    assert!(!checks[0].matches && checks[0].action_errors[0].contains("NotBuildable"));
     let _ = RoundResult::default();
 }
 
@@ -228,4 +232,90 @@ fn vec_env_auto_resets_and_matches_single_env() {
         }
         assert!(steps < 100);
     }
+}
+
+#[test]
+fn compare_continues_after_impossible_actions() {
+    // echtes Spiel mit mehr Cash als in der Sim: Bomb in Runde 1 ist nicht bezahlbar (Dart schon gekauft)
+    let text = r#"
+{"type":"header","format":"btd-replay/1","data":"sim_v0.json"}
+{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7,"y":4}},{"place":{"tower":"bomb","x":8,"y":4}}]}
+{"type":"round","round":2,"actions":[{"place":{"tower":"dart","x":5,"y":6}}],"result":{"lives":150,"round":2}}
+"#;
+    let checks = Replay::from_jsonl(text).unwrap().compare(&spec()).unwrap();
+    assert_eq!(checks.len(), 2, "Vergleich läuft trotz unmöglicher Aktion weiter");
+    assert!(!checks[0].matches && checks[0].action_errors.len() == 1);
+    assert!(checks[1].matches && checks[1].action_errors.is_empty());
+}
+
+#[test]
+fn resume_after_loss_keeps_losing_round() {
+    let mut a = env(true);
+    let mut obs = vec![0.0; a.layout.obs_size];
+    a.reset(&mut obs);
+    while !a.step(0, &mut obs).terminated {}
+    let lost = a.last_replay().unwrap().clone();
+    let n = lost.rounds.len();
+
+    for until in [None, Some(n as u32), Some(999)] {
+        let mut b = env(true);
+        let checks = b.load_replay(&lost, until, true).unwrap();
+        assert_eq!(checks.len(), n);
+        assert!(b.game.over());
+        assert_eq!(b.replay().unwrap().rounds.len(), n, "verlorene Runde bleibt im Protokoll");
+        assert_eq!(b.last_replay().unwrap(), &lost);
+        assert!(b.step(0, &mut obs).terminated);
+    }
+}
+
+#[test]
+fn replays_from_other_float_build_need_non_strict_mode() {
+    let mut e = env(true);
+    random_episode(&mut e, 5);
+    let mut replay = e.last_replay().unwrap().clone();
+    replay.header.float = Some(if btd_env::replay::FLOAT == "f32" { "f64" } else { "f32" }.into());
+    assert!(matches!(replay.play(e.spec(), None, |_| {}), Err(ReplayError::FloatMismatch { .. })));
+    assert!(replay.compare(e.spec()).is_ok());
+}
+
+#[test]
+fn rejects_zero_build_limit() {
+    assert!(Env::new(spec(), EnvConfig { max_builds_per_round: 0, ..Default::default() }).is_err());
+}
+
+#[test]
+fn resume_after_non_strict_load_records_only_what_happened() {
+    let text = r#"
+{"type":"header","format":"btd-replay/1","data":"sim_v0.json"}
+{"type":"round","round":1,"actions":[{"place":{"tower":"dart","x":7,"y":4}},{"place":{"tower":"bomb","x":8,"y":4}}],"result":{"cash":9999}}
+{"type":"round","round":2,"result":{"lives":150}}
+"#;
+    let real_game = Replay::from_jsonl(text).unwrap();
+    let mut e = env(true);
+    assert!(e.load_replay(&real_game, None, true).is_err(), "strikt geht das nicht");
+    let checks = e.load_replay(&real_game, None, false).unwrap();
+    assert_eq!(checks[0].action_errors.len(), 1);
+    let recorded = e.replay().unwrap().clone();
+    assert_eq!(recorded.rounds[0].actions.len(), 1, "übersprungene Bomb ist nicht im Protokoll");
+    assert_ne!(recorded.rounds[0].result.cash, Some(9999), "eigenes Ergebnis statt fremdem");
+    // das fortgesetzte Protokoll ist in sich stimmig und strikt nachspielbar
+    let game = recorded.play(e.spec(), None, |_| {}).unwrap();
+    assert_eq!(game.state_hash(), e.game.state_hash());
+}
+
+#[test]
+fn strict_play_rejects_rounds_after_game_end() {
+    let mut a = env(true);
+    let mut obs = vec![0.0; a.layout.obs_size];
+    a.reset(&mut obs);
+    while !a.step(0, &mut obs).terminated {}
+    let mut lost = a.last_replay().unwrap().clone();
+    let extra = btd_env::replay::RoundEntry {
+        round: lost.rounds.len() as u32 + 1,
+        actions: vec![],
+        result: Default::default(),
+    };
+    lost.rounds.push(extra);
+    assert!(matches!(lost.play(a.spec(), None, |_| {}), Err(ReplayError::TrailingRounds { .. })));
+    assert_eq!(lost.compare(a.spec()).unwrap().len(), lost.rounds.len() - 1);
 }

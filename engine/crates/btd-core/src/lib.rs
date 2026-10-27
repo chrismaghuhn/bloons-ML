@@ -20,6 +20,12 @@ pub type Real = f64;
 #[cfg(not(feature = "f64"))]
 pub type Real = f32;
 
+/// Name des Float-Builds, z.B. für Replay-Header.
+#[cfg(feature = "f64")]
+pub const FLOAT: &str = "f64";
+#[cfg(not(feature = "f64"))]
+pub const FLOAT: &str = "f32";
+
 /// Konvertierung aus den f64-Daten in den Sim-Typ.
 #[inline]
 pub(crate) fn real(x: f64) -> Real {

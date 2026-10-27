@@ -154,6 +154,9 @@ pub struct Env {
 
 impl Env {
     pub fn new(spec: EnvSpec, cfg: EnvConfig) -> Result<Self, DataError> {
+        if cfg.max_builds_per_round == 0 {
+            return Err(DataError::Invalid("max_builds_per_round muss > 0 sein".into()));
+        }
         let game = Game::new(Arc::clone(&spec.data))?;
         let layout = Layout::new(&spec.data);
         let recorder = cfg.record.then(|| Recorder::new(&spec, &cfg));
@@ -288,14 +291,29 @@ impl Env {
 
     /// Setzt die Env auf einen Spielstand: Replay bis einschließlich Runde `until_round` abspielen.
     /// Das Protokoll läuft danach weiter, sodass ab dort neu aufgezeichnet wird.
-    pub fn load_replay(&mut self, replay: &Replay, until_round: Option<u32>) -> Result<(), ReplayError> {
-        let game = replay.play(&self.spec, until_round, |_| {})?;
+    ///
+    /// `strict = false` erlaubt Protokolle, deren Ergebnisse von der Sim abweichen (z.B. ein von
+    /// Hand aufgeschriebenes echtes Spiel); unmögliche Aktionen werden dann übersprungen.
+    /// Gibt die nachgespielten Runden zurück. Endet das Protokoll mit Spielende, ist die Env
+    /// danach `terminated` und `last_replay` gesetzt.
+    pub fn load_replay(
+        &mut self,
+        replay: &Replay,
+        until_round: Option<u32>,
+        strict: bool,
+    ) -> Result<Vec<replay::RoundCheck>, ReplayError> {
+        let (game, checks) = replay.replay_to(&self.spec, until_round, strict)?;
         self.game = game;
         self.builds_left = self.cfg.max_builds_per_round;
+        self.last_replay = None;
         if self.recorder.is_some() {
-            self.recorder = Some(Recorder::resume(&self.spec, &self.cfg, replay, self.game.round));
+            let r = Recorder::resume(&self.spec, &self.cfg, &checks);
+            if self.game.over() {
+                self.last_replay = Some(r.replay().clone());
+            }
+            self.recorder = Some(r);
         }
-        Ok(())
+        Ok(checks)
     }
 }
 
@@ -332,11 +350,18 @@ impl VecEnv {
 
     pub fn reset(&mut self, obs: &mut [f32]) {
         let n = self.layout.obs_size;
+        assert_eq!(obs.len(), self.envs.len() * n, "Observation-Buffer: n_envs * obs_size");
         self.envs.par_iter_mut().zip(obs.par_chunks_mut(n)).for_each(|(e, o)| e.reset(o));
     }
 
     pub fn step(&mut self, actions: &[usize], b: VecStepBuffers) {
-        let n = self.layout.obs_size;
+        let (k, n) = (self.envs.len(), self.layout.obs_size);
+        assert_eq!(actions.len(), k, "eine Aktion pro Env");
+        assert!(
+            b.obs.len() == k * n && b.terminal_obs.len() == k * n,
+            "Observation-Buffer: n_envs * obs_size"
+        );
+        assert!(b.rewards.len() == k && b.dones.len() == k && b.rounds.len() == k, "Buffer: n_envs");
         self.envs
             .par_iter_mut()
             .zip(actions.par_iter())
@@ -359,6 +384,7 @@ impl VecEnv {
 
     pub fn action_masks(&self, masks: &mut [bool]) {
         let n = self.layout.n_actions;
+        assert_eq!(masks.len(), self.envs.len() * n, "Masken-Buffer: n_envs * n_actions");
         self.envs.par_iter().zip(masks.par_chunks_mut(n)).for_each(|(e, m)| e.action_mask(m));
     }
 }

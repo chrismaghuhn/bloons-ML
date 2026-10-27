@@ -46,6 +46,7 @@ name = "btd-py"
 version = "0.1.0"
 dependencies = [
  "btd-core",
+ "btd-data",
  "btd-env",
  "numpy",
  "pyo3",

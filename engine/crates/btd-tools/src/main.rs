@@ -87,9 +87,16 @@ fn replay(args: &[String]) -> Result<(), String> {
         let checks = replay.compare(&spec).map_err(|e| e.to_string())?;
         for c in &checks {
             println!("Runde {:>3}: {}", c.round, show(&c.got, &c.expected, c.matches));
+            for e in &c.action_errors {
+                println!("           übersprungen: {e}");
+            }
         }
         let bad = checks.iter().filter(|c| !c.matches).count();
         println!("{} Runden, {bad} mit Abweichung", checks.len());
+        let total = replay.rounds.len();
+        if checks.len() < total {
+            println!("Achtung: Das Sim-Spiel endete nach {} von {total} Runden des Protokolls", checks.len());
+        }
     } else {
         let game = replay
             .play(&spec, None, |c| println!("Runde {:>3}: {}", c.round, show(&c.got, &c.expected, c.matches)))
@@ -166,12 +173,16 @@ fn bench(args: &[String]) -> Result<(), String> {
     let mut actions = vec![0usize; n_envs];
     let mut rngs: Vec<Rng> = (0..n_envs as u64).map(|i| Rng(1000 + i)).collect();
     v.reset(&mut obs);
-    let (start, mut steps) = (Instant::now(), 0u64);
+    let (start, mut steps, mut env_time) = (Instant::now(), 0u64, 0.0f64);
     while start.elapsed().as_secs_f64() < 3.0 {
+        let t0 = Instant::now();
         v.action_masks(&mut masks);
+        env_time += t0.elapsed().as_secs_f64();
+        // Zufallspolicy (seriell, gehört nicht zur Env-Zeit)
         for (i, a) in actions.iter_mut().enumerate() {
             *a = rngs[i].pick(&masks[i * na..(i + 1) * na]);
         }
+        let t0 = Instant::now();
         v.step(
             &actions,
             VecStepBuffers {
@@ -182,10 +193,12 @@ fn bench(args: &[String]) -> Result<(), String> {
                 rounds: &mut rnd,
             },
         );
+        env_time += t0.elapsed().as_secs_f64();
         steps += n_envs as u64;
     }
     let total = start.elapsed().as_secs_f64();
     println!("VecEnv mit {n_envs} Envs (rayon, {} Threads):", rayon::current_num_threads());
     println!("  Env-Schritte/s gesamt    {:>12.0}", steps as f64 / total);
+    println!("  davon nur Env (step+mask){:>12.0}", steps as f64 / env_time.max(1e-9));
     Ok(())
 }

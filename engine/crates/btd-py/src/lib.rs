@@ -4,7 +4,7 @@
 //! (mit `--features f64` für den bit-genauen Paritätsmodus). Die gymnasium-/sb3-Wrapper
 //! liegen in Python unter `btd_sim/rust_env.py`.
 
-use btd_env::replay::{RoundCheck, FLOAT, FORMAT};
+use btd_env::replay::{ReplayError, RoundCheck, FLOAT, FORMAT};
 use btd_env::{Env, EnvConfig, EnvSpec, Replay, VecEnv, VecStepBuffers};
 use numpy::{PyArray1, PyArray2, PyArrayMethods, PyReadonlyArray1};
 use pyo3::exceptions::{PyIOError, PyValueError};
@@ -15,8 +15,22 @@ fn value_err(e: impl std::fmt::Display) -> PyErr {
     PyValueError::new_err(e.to_string())
 }
 
+fn data_err(e: btd_data::DataError) -> PyErr {
+    match e {
+        btd_data::DataError::Io { .. } => PyIOError::new_err(e.to_string()),
+        _ => value_err(e),
+    }
+}
+
+fn replay_err(e: ReplayError) -> PyErr {
+    match e {
+        ReplayError::Io(..) => PyIOError::new_err(e.to_string()),
+        _ => value_err(e),
+    }
+}
+
 fn load_spec(path: &str) -> PyResult<EnvSpec> {
-    EnvSpec::load(path).map_err(|e| PyIOError::new_err(e.to_string()))
+    EnvSpec::load(path).map_err(data_err)
 }
 
 fn config(
@@ -68,7 +82,7 @@ impl PyEnv {
         record: bool,
     ) -> PyResult<Self> {
         let cfg = config(max_builds_per_round, reward_round, reward_life, reward_win, reward_loss, record)?;
-        let env = Env::new(load_spec(data_path)?, cfg).map_err(value_err)?;
+        let env = Env::new(load_spec(data_path)?, cfg).map_err(data_err)?;
         let (obs, mask) = (vec![0.0; env.layout.obs_size], vec![false; env.layout.n_actions]);
         Ok(PyEnv { env, obs, mask })
     }
@@ -154,19 +168,21 @@ impl PyEnv {
     fn save_replay(&self, path: &str, last: bool) -> PyResult<()> {
         let r = if last { self.env.last_replay() } else { self.env.replay() };
         let r = r.ok_or_else(|| value_err("kein Protokoll vorhanden (record=True? Episode beendet?)"))?;
-        r.save(path).map_err(|e| PyIOError::new_err(e.to_string()))
+        r.save(path).map_err(replay_err)
     }
 
     /// Spielstand aus einem Protokoll laden (bis einschließlich `until_round`), danach weiterspielen.
-    #[pyo3(signature = (path, until_round=None))]
+    /// `strict=False` für Protokolle, die von der Sim abweichen dürfen (echte Spiele).
+    #[pyo3(signature = (path, until_round=None, strict=true))]
     fn load_replay<'py>(
         &mut self,
         py: Python<'py>,
         path: &str,
         until_round: Option<u32>,
+        strict: bool,
     ) -> PyResult<Bound<'py, PyArray1<f32>>> {
-        let replay = Replay::load(path).map_err(value_err)?;
-        self.env.load_replay(&replay, until_round).map_err(value_err)?;
+        let replay = Replay::load(path).map_err(replay_err)?;
+        self.env.load_replay(&replay, until_round, strict).map_err(replay_err)?;
         self.env.observe(&mut self.obs);
         Ok(PyArray1::from_slice(py, &self.obs))
     }
@@ -203,7 +219,7 @@ impl PyVecEnv {
             return Err(value_err("n_envs muss > 0 sein"));
         }
         let cfg = config(max_builds_per_round, reward_round, reward_life, reward_win, reward_loss, false)?;
-        let v = VecEnv::new(load_spec(data_path)?, cfg, n_envs).map_err(value_err)?;
+        let v = VecEnv::new(load_spec(data_path)?, cfg, n_envs).map_err(data_err)?;
         let (no, na) = (v.layout.obs_size, v.layout.n_actions);
         Ok(PyVecEnv {
             obs: vec![0.0; n_envs * no],
@@ -292,8 +308,8 @@ fn replay_compare<'py>(
     replay_path: &str,
 ) -> PyResult<Vec<Bound<'py, PyDict>>> {
     let spec = load_spec(data_path)?;
-    let replay = Replay::load(replay_path).map_err(value_err)?;
-    let checks = replay.compare(&spec).map_err(value_err)?;
+    let replay = Replay::load(replay_path).map_err(replay_err)?;
+    let checks = replay.compare(&spec).map_err(replay_err)?;
     checks.iter().map(|c| check_dict(py, c)).collect()
 }
 
@@ -311,6 +327,7 @@ fn check_dict<'py>(py: Python<'py>, c: &RoundCheck) -> PyResult<Bound<'py, PyDic
     let d = PyDict::new(py);
     d.set_item("round", c.round)?;
     d.set_item("matches", c.matches)?;
+    d.set_item("action_errors", c.action_errors.clone())?;
     d.set_item("expected", result(&c.expected)?)?;
     d.set_item("got", result(&c.got)?)?;
     Ok(d)
