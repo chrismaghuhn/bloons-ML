@@ -44,8 +44,10 @@ def test_budget_curve_interpolates_missing_rounds():
     assert curve[1] == pytest.approx((650 + 450) / 2)
     assert curve[5] == curve[2], "nach dem letzten Wert konstant"
     chimps = dict(DATA, rules=dict(DATA["rules"], start_round=3))
-    c2 = budget_curve(states, chimps)
-    assert c2[2] == 450 and c2[1] == 450, "Startgeld vor der ersten Runde, davor konstant"
+    late = [dict(states[0], round=4)]
+    c2 = budget_curve(late, chimps)
+    assert c2[2] == 650 and c2[0] == 650, "Startgeld vor der ersten gespielten Runde, davor konstant"
+    assert c2[3] == pytest.approx((650 + 450) / 2) and c2[4] == 450
 
 
 def test_pool_weights_shares_quality_and_eviction():
