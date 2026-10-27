@@ -9,7 +9,10 @@ use xxhash_rust::xxh3::Xxh3;
 
 use crate::bloon::{hit, BloonStore};
 use crate::map::{placeable, Track};
-use crate::tower::{AttackKind, ContactRt, EmissionRt, ExtrasRt, PathRt, TagTable, Tower, TowerId};
+use crate::tower::{
+    factor_for, AttackKind, ContactRt, EmissionRt, ExtrasRt, FilterRt, ProjectileDef, TagTable, Tower,
+    TowerId,
+};
 use crate::{real, Money, Real};
 
 /// Fester Seed für `state_hash`, damit Hashes über Läufe und Versionen vergleichbar bleiben.
@@ -94,9 +97,13 @@ struct Projectile {
     cannot_damage: Props,
     camo: bool,
     extras: ExtrasRt,
-    contacts: Arc<[ContactRt]>,
+    /// Kontakt-/Ablauf-Effekte, Kurve und Treffer-Reset des Angriffs (Splitter haben keine).
+    def: Option<Arc<ProjectileDef>>,
     /// Kurvenbahn: Ursprung, Drehung (cos, sin) und zurückgelegte Strecke.
-    path: Option<(Arc<PathRt>, Real, Real, Real, Real, Real)>,
+    path: Option<(Real, Real, Real, Real, Real)>,
+    /// Treffer-Set leeren alle `clear_every` Ticks (0 = nie); Ticks bis zum nächsten Leeren.
+    clear_every: u32,
+    clear_left: u32,
     /// IDs der Bloons, die dieses Projektil schon getroffen hat (inkl. Kindern davon).
     hit: SmallVec<[u32; 8]>,
 }
@@ -132,13 +139,18 @@ impl World<'_> {
     }
 
     /// Ob ein Angriff diesen Bloon anvisieren bzw. treffen darf (Camo, Tags, Status, Immunität).
-    fn eligible(&self, b: &BloonStore, i: usize, camo: bool, cannot: Props, ex: &ExtrasRt) -> bool {
+    fn eligible(&self, b: &BloonStore, i: usize, camo: bool, ex: &ExtrasRt) -> bool {
         b.alive[i]
             && (camo || !self.is_camo(b, i))
-            && self.tags[b.kind[i] as usize] & ex.exclude_tags == 0
-            && (!ex.skip_frozen || b.frozen[i] <= 0.0)
-            && (ex.skip_glue_level == 0 || b.glue[i] < ex.skip_glue_level)
-            && (!ex.skip_immune || !cannot.intersects(self.props(b, i)))
+            && self.passes(b, i, &ex.filter)
+            && (ex.filter.skip_props.0 == 0 || !ex.filter.skip_props.intersects(self.props(b, i)))
+    }
+
+    /// Tag- und Status-Filter (ohne Immunität).
+    fn passes(&self, b: &BloonStore, i: usize, f: &FilterRt) -> bool {
+        self.tags[b.kind[i] as usize] & f.exclude_tags == 0
+            && (!f.skip_frozen || b.frozen[i] <= 0.0)
+            && (f.skip_glue_level == 0 || b.glue[i] < f.skip_glue_level)
     }
 
     /// Wendet einen Treffer auf Bloon `i` an. Kinder werden hinten angehängt (leicht versetzt,
@@ -165,14 +177,14 @@ impl World<'_> {
                 dmg += add;
             }
         }
-        let has_effect = ex.freeze.is_some() || ex.slow.is_some();
+        let has_effect = ex.has_effect();
         // eingefrorene Bloons sind für Angriffe mit Frozen-Immunität unverwundbar
         let frozen_block = b.frozen[i] > 0.0 && cannot.0 & Props::FROZEN != 0;
         let res = if frozen_block { None } else { Some(hit(self.defs, kind, b.hp[i], dmg, cannot)) };
         let Some(res) = res.filter(|r| r.changed) else {
             // Effekte ohne Schaden (Glue) wirken, solange der Bloon nicht immun ist
             if has_effect && !immune {
-                apply_effects(b, i, ex, self.tags[kind as usize]);
+                apply_effects(b, i, ex, self.tags[kind as usize]); // ohne Schaden kein Push
                 return Some(HitOutcome { pops: 0, removed: 0, children: 0 });
             }
             return None;
@@ -180,6 +192,7 @@ impl World<'_> {
         if res.pops == 0 {
             b.hp[i] = res.rest[0].1; // Teilschaden: Bloon bleibt an seinem Platz
             apply_effects(b, i, ex, self.tags[kind as usize]);
+            self.push_back(b, i, ex);
             return Some(HitOutcome { pops: 0, removed: 0, children: 0 });
         }
         b.alive[i] = false;
@@ -193,9 +206,64 @@ impl World<'_> {
             let c = b.len() - 1;
             parent.inherit(b, c);
             apply_effects(b, c, ex, self.tags[child as usize]);
+            self.push_back(b, c, ex);
         }
         Some(HitOutcome { pops: res.pops, removed: 1, children: res.rest.len() })
     }
+
+    /// Zurückstoßen entlang des Pfads (nicht hinter den Start).
+    fn push_back(&self, b: &mut BloonStore, i: usize, ex: &ExtrasRt) {
+        if let Some(p) = &ex.push {
+            let d = p.amount * factor_for(&p.factor_for, self.tags[b.kind[i] as usize], 1.0);
+            if d > 0.0 {
+                b.dist[i] = (b.dist[i] - d).max(0.0);
+                b.seg[i] = self.track.segment(b.dist[i], b.seg[i] as usize) as u16;
+            }
+        }
+    }
+
+    /// Schaden über Zeit für alle Bloons mit laufendem Effekt (vor dem Tick angelegte; Kinder
+    /// erben den Effekt mit dem Rest-Timer). Gibt (Pops, ob ein Bloon platzte) zurück.
+    fn tick_dots(&self, b: &mut BloonStore, next_id: &mut u32, dt: Real, none: &ExtrasRt) -> (u32, bool) {
+        let (mut pops, mut removed) = (0, false);
+        for i in 0..b.len() {
+            if !b.alive[i] || b.dot_left[i] <= 0.0 {
+                continue;
+            }
+            b.dot_left[i] -= dt;
+            b.dot_timer[i] -= dt;
+            if b.dot_timer[i] <= 0.0 {
+                b.dot_timer[i] += b.dot_interval[i];
+                // Schaden über Zeit trifft alle Bloon-Eigenschaften (Spiel: DamageType "Normal") [KAL]
+                if let Some(h) = self.apply_hit(b, next_id, i, b.dot_damage[i], Props::default(), none) {
+                    pops += h.pops;
+                    removed |= h.removed > 0;
+                }
+            }
+            if b.alive[i] && b.dot_left[i] <= 0.0 {
+                b.dot_left[i] = 0.0;
+                b.dot_layers[i] = 0;
+            }
+        }
+        (pops, removed)
+    }
+}
+
+/// Speed-Faktor durch Verlangsamungs-Zonen (der stärkste zählt).
+fn zone_scale(w: &World, b: &BloonStore, i: usize, zones: &[(Real, Real, crate::tower::ZoneRt)]) -> Real {
+    let (x, y) = w.track.pos(b.dist[i], b.seg[i] as usize);
+    let br = real(w.defs[b.kind[i] as usize].radius);
+    let mut s: Real = 1.0;
+    for (cx, cy, z) in zones {
+        let rr = z.radius + br;
+        if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= rr * rr
+            && (z.camo || !w.is_camo(b, i))
+            && w.passes(b, i, &z.filter)
+        {
+            s = s.min(z.speed_scale);
+        }
+    }
+    s
 }
 
 /// Status-Effekte eines Bloons, die beim Platzen an die Kinder gehen.
@@ -206,6 +274,8 @@ struct Status {
     slow_left: Real,
     glue: u8,
     glue_layers: u32,
+    chill: (Real, Real, u32),
+    dot: (Real, Real, Real, Real, u32),
 }
 
 impl Status {
@@ -217,6 +287,8 @@ impl Status {
             slow_left: b.slow_left[i],
             glue: b.glue[i],
             glue_layers: b.glue_layers[i],
+            chill: (b.chill_mul[i], b.chill_left[i], b.chill_layers[i]),
+            dot: (b.dot_damage[i], b.dot_interval[i], b.dot_timer[i], b.dot_left[i], b.dot_layers[i]),
         }
     }
 
@@ -232,6 +304,16 @@ impl Status {
             b.glue[c] = self.glue;
             b.glue_layers[c] = self.glue_layers - 1;
         }
+        let (mul, left, layers) = self.chill;
+        if layers > 1 && left > 0.0 {
+            (b.chill_mul[c], b.chill_left[c], b.chill_layers[c]) = (mul, left, layers - 1);
+        }
+        let (dmg, interval, timer, left, layers) = self.dot;
+        if layers > 1 && left > 0.0 {
+            (b.dot_damage[c], b.dot_interval[c], b.dot_timer[c], b.dot_left[c]) =
+                (dmg, interval, timer, left);
+            b.dot_layers[c] = layers - 1;
+        }
     }
 }
 
@@ -242,12 +324,32 @@ fn apply_effects(b: &mut BloonStore, i: usize, ex: &ExtrasRt, tags: u32) {
         b.freeze_layers[i] = f.layers;
     }
     if let Some(sl) = &ex.slow {
-        if sl.level >= b.glue[i] {
-            b.slow_mul[i] =
-                sl.multiplier_for.iter().find(|(m, _)| tags & m != 0).map_or(sl.multiplier, |&(_, k)| k);
-            b.slow_left[i] = sl.seconds;
+        let mul = factor_for(&sl.multiplier_for, tags, sl.multiplier);
+        let secs = factor_for(&sl.seconds_for, tags, sl.seconds);
+        if sl.level == 0 {
+            // Verlangsamung ohne Glue (Permafrost): eigener Slot, wirkt zusätzlich [KAL: Stapeln]
+            b.chill_mul[i] = mul;
+            b.chill_left[i] = secs;
+            b.chill_layers[i] = sl.layers;
+        } else if sl.level >= b.glue[i] {
+            b.slow_mul[i] = mul;
+            b.slow_left[i] = secs;
             b.glue[i] = sl.level;
             b.glue_layers[i] = sl.layers;
+        }
+    }
+    if let Some(d) = &ex.dot {
+        if d.level >= b.glue[i] || b.dot_left[i] <= 0.0 {
+            b.dot_damage[i] = d.damage * factor_for(&d.factor_for, tags, 1.0);
+            b.dot_interval[i] = d.interval;
+            if b.dot_left[i] <= 0.0 {
+                b.dot_timer[i] = d.interval; // erster Schadens-Tick nach einem Intervall
+            }
+            b.dot_left[i] = d.seconds;
+            b.dot_layers[i] = d.layers;
+            if d.level > b.glue[i] {
+                b.glue[i] = d.level;
+            }
         }
     }
 }
@@ -484,7 +586,6 @@ impl Game {
         let dt = real(rules.dt());
         let eps = real(rules.cd_eps);
         let defs = &data.bloons;
-        let bloon_tags = std::mem::take(&mut self.bloon_tags);
 
         let lives_before = self.lives;
         let mut pops_total: u32 = 0;
@@ -501,9 +602,18 @@ impl Game {
         }
         let mut in_range: Vec<usize> = Vec::new();
         let mut hit_list: Vec<usize> = Vec::new();
+        // Zonen ändern sich während der Runde nicht
+        let zones: Vec<(Real, Real, crate::tower::ZoneRt)> =
+            self.towers.iter().flat_map(|t| t.zones.iter().map(|z| (t.x, t.y, z.clone()))).collect();
+        let no_extras = ExtrasRt::default();
 
         while t < rules.max_round_seconds {
-            let w = World { defs, tags: &bloon_tags, track: &self.track, spacing: real(rules.child_spacing) };
+            let w = World {
+                defs,
+                tags: &self.bloon_tags,
+                track: &self.track,
+                spacing: real(rules.child_spacing),
+            };
 
             // Spawnen
             while si < spawns.len() && spawns[si].0 <= t {
@@ -530,6 +640,16 @@ impl Game {
                             (b.slow_left[i], b.slow_mul[i], b.glue[i], b.glue_layers[i]) = (0.0, 1.0, 0, 0);
                         }
                     }
+                    if b.chill_left[i] > 0.0 {
+                        mul *= b.chill_mul[i];
+                        b.chill_left[i] -= dt;
+                        if b.chill_left[i] <= 0.0 {
+                            (b.chill_left[i], b.chill_mul[i], b.chill_layers[i]) = (0.0, 1.0, 0);
+                        }
+                    }
+                    if !zones.is_empty() {
+                        mul *= zone_scale(&w, b, i, &zones);
+                    }
                     b.dist[i] += self.speed_dt[b.kind[i] as usize] * mul;
                     if b.dist[i] >= self.track.length {
                         b.alive[i] = false;
@@ -545,6 +665,15 @@ impl Game {
                         self.lives = 0;
                         break;
                     }
+                }
+            }
+
+            // Schaden über Zeit
+            if !self.bloons.is_empty() {
+                let (pops, removed) = w.tick_dots(&mut self.bloons, &mut next_id, dt, &no_extras);
+                pops_total += pops;
+                if removed {
+                    self.bloons.compact();
                 }
             }
 
@@ -571,7 +700,7 @@ impl Game {
                         in_range.clear();
                         let mut first = usize::MAX;
                         for i in 0..b.len() {
-                            if !w.eligible(b, i, atk.camo, atk.cannot_damage, &atk.extras) {
+                            if !w.eligible(b, i, atk.camo, &atk.extras) {
                                 continue;
                             }
                             let (x, y) = self.track.pos(b.dist[i], b.seg[i] as usize);
@@ -586,34 +715,46 @@ impl Game {
                             self.towers[ti].attacks[ai].cd_left = 0.0; // bereit, aber kein Ziel
                             continue;
                         }
-                        let (damage, cannot, cooldown, pierce) =
-                            (atk.damage, atk.cannot_damage, atk.cooldown, atk.pierce);
+                        // jeder n-te Schuss ist kritisch
+                        let shots = atk.shots + 1;
+                        let (damage, shots) = match atk.crit {
+                            Some((crit, every)) if shots % every == 0 => (crit, 0),
+                            Some(_) => (atk.damage, shots),
+                            None => (atk.damage, 0),
+                        };
+                        let (cannot, cooldown, pierce) = (atk.cannot_damage, atk.cooldown, atk.pierce);
                         let extras = atk.extras.clone();
                         let (fx, fy) = self.track.pos(b.dist[first], b.seg[first] as usize);
                         hit_list.clear();
                         match &atk.kind {
-                            AttackKind::Projectile { speed, lifespan, radius, emission, contacts, path } => {
-                                let base = if emission.fixed { 0.0 } else { atan2(fy - cy, fx - cx) };
-                                for k in 0..emission.count {
-                                    let a = base + emission_angle(emission, k).to_radians();
+                            AttackKind::Projectile(def) => {
+                                let em = &def.emission;
+                                let base = if em.fixed { 0.0 } else { atan2(fy - cy, fx - cx) };
+                                let clear_every = def.clear_hits.map_or(0, |c| ticks_of(c, dt));
+                                for k in 0..em.count {
+                                    let a = base + emission_angle(em, k).to_radians();
+                                    let (ca, sa) = (cos(a), sin(a));
+                                    // parallele Projektile: quer zur Schussrichtung versetzt
+                                    let off = em.spread * (k as Real - (em.count - 1) as Real / 2.0);
+                                    let (ox, oy) = (cx - off * sa, cy + off * ca);
                                     // lokale +y-Achse der Kurve zeigt in Schussrichtung: Drehung um a - 90°
                                     let rot = a - std::f64::consts::FRAC_PI_2 as Real;
                                     self.projectiles.push(Projectile {
-                                        x: cx,
-                                        y: cy,
-                                        vx: *speed * cos(a),
-                                        vy: *speed * sin(a),
-                                        ttl: ticks_of(*lifespan, dt),
+                                        x: ox,
+                                        y: oy,
+                                        vx: def.speed * ca,
+                                        vy: def.speed * sa,
+                                        ttl: ticks_of(def.lifespan, dt),
                                         pierce: pierce as Real,
-                                        radius: *radius,
+                                        radius: def.radius,
                                         damage,
                                         cannot_damage: cannot,
                                         camo: atk.camo,
                                         extras: extras.clone(),
-                                        contacts: Arc::clone(contacts),
-                                        path: path
-                                            .as_ref()
-                                            .map(|p| (Arc::clone(p), cx, cy, cos(rot), sin(rot), 0.0)),
+                                        path: def.path.as_ref().map(|_| (ox, oy, cos(rot), sin(rot), 0.0)),
+                                        def: Some(Arc::clone(def)),
+                                        clear_every,
+                                        clear_left: clear_every,
                                         hit: SmallVec::new(),
                                     });
                                 }
@@ -629,13 +770,13 @@ impl Game {
                                     }
                                 }
                             }
-                            AttackKind::Area { range } => {
+                            AttackKind::Area { radius } => {
                                 for i in 0..b.len() {
-                                    if !w.eligible(b, i, atk.camo, cannot, &extras) {
+                                    if !w.eligible(b, i, atk.camo, &extras) {
                                         continue;
                                     }
                                     let (x, y) = self.track.pos(b.dist[i], b.seg[i] as usize);
-                                    let rr = *range + real(defs[b.kind[i] as usize].radius);
+                                    let rr = *radius + real(defs[b.kind[i] as usize].radius);
                                     if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= rr * rr {
                                         hit_list.push(i);
                                     }
@@ -647,8 +788,9 @@ impl Game {
                         hit_list.sort_by(|&a, &c| b.dist[c].total_cmp(&b.dist[a]));
                         hit_list.truncate(pierce as usize);
 
-                        let cd = &mut self.towers[ti].attacks[ai].cd_left;
-                        *cd = cd.max(-dt) + cooldown;
+                        let a = &mut self.towers[ti].attacks[ai];
+                        a.cd_left = a.cd_left.max(-dt) + cooldown;
+                        a.shots = shots;
 
                         for &i in &hit_list {
                             if let Some(h) =
@@ -679,7 +821,6 @@ impl Game {
             }
         }
 
-        self.bloon_tags = bloon_tags;
         self.cash += Money::from_f64(pops_total as f64 * income.cash_per_pop);
         if self.lives > 0 {
             self.round += 1;
@@ -710,8 +851,8 @@ impl Game {
     }
 }
 
-/// Ein Tick für alle Projektile: bewegen, Kollisionen in Bloon-Reihenfolge, Kontakt-Effekte.
-/// Gibt die Pops zurück.
+/// Ein Tick für alle Projektile: bewegen, Kollisionen in Bloon-Reihenfolge, Kontakt-Effekte,
+/// bei verbrauchtem Pierce die Verbrauchs-Effekte. Gibt die Pops zurück.
 fn step_projectiles(
     w: &World,
     bloons: &mut BloonStore,
@@ -720,11 +861,19 @@ fn step_projectiles(
     next_id: &mut u32,
 ) -> u32 {
     let mut pops = 0;
-    let mut targets: Vec<usize> = Vec::new();
-    let mut spawned: Vec<Projectile> = Vec::new();
+    let mut fx = Effects { targets: Vec::new(), spawned: Vec::new() };
     for p in projectiles.iter_mut() {
         p.ttl = p.ttl.saturating_sub(1);
-        if let Some((path, ox, oy, rc, rs, s)) = &mut p.path {
+        if p.clear_every > 0 {
+            p.clear_left -= 1;
+            if p.clear_left == 0 {
+                p.hit.clear(); // darf dieselben Bloons erneut treffen
+                p.clear_left = p.clear_every;
+            }
+        }
+        if let (Some((ox, oy, rc, rs, s)), Some(path)) =
+            (&mut p.path, p.def.as_ref().and_then(|d| d.path.as_ref()))
+        {
             *s += (p.vx * p.vx + p.vy * p.vy).sqrt() * dt; // sqrt ist IEEE-exakt, hypot nicht
             if *s >= path.length() {
                 p.ttl = 0; // Ende der Kurve
@@ -736,11 +885,13 @@ fn step_projectiles(
             p.x += p.vx * dt;
             p.y += p.vy * dt;
         }
+        let def = p.def.clone();
+        let contacts = def.as_ref().map_or(&[][..], |d| &d.contacts[..]);
         for i in 0..bloons.len() {
             if p.pierce <= 0.0 {
                 break;
             }
-            if p.hit.contains(&bloons.id[i]) || !w.eligible(bloons, i, p.camo, p.cannot_damage, &p.extras) {
+            if p.hit.contains(&bloons.id[i]) || !w.eligible(bloons, i, p.camo, &p.extras) {
                 continue;
             }
             let (x, y) = w.track.pos(bloons.dist[i], bloons.seg[i] as usize);
@@ -750,68 +901,8 @@ fn step_projectiles(
             }
             p.hit.push(bloons.id[i]);
             p.pierce -= 1.0; // auch ein immuner Bloon verbraucht Pierce [KAL]
-            for c in p.contacts.iter() {
-                match c {
-                    ContactRt::Explosion { radius, pierce, damage, cannot_damage, camo, extras } => {
-                        // sofortiger Flächentreffer an der Kontaktstelle, weiteste Bloons zuerst
-                        targets.clear();
-                        for j in 0..bloons.len() {
-                            if !w.eligible(bloons, j, *camo, *cannot_damage, extras) {
-                                continue;
-                            }
-                            let (x, y) = w.track.pos(bloons.dist[j], bloons.seg[j] as usize);
-                            let rr = *radius + real(w.defs[bloons.kind[j] as usize].radius);
-                            if (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) <= rr * rr {
-                                targets.push(j);
-                            }
-                        }
-                        targets.sort_by(|&a, &c| bloons.dist[c].total_cmp(&bloons.dist[a]));
-                        targets.truncate(*pierce as usize);
-                        for &j in &targets {
-                            if let Some(h) = w.apply_hit(bloons, next_id, j, *damage, *cannot_damage, extras)
-                            {
-                                pops += h.pops;
-                            }
-                        }
-                    }
-                    ContactRt::Shards {
-                        emission,
-                        speed,
-                        lifespan,
-                        radius,
-                        pierce,
-                        damage,
-                        cannot_damage,
-                        camo,
-                        extras,
-                        inherit_hit,
-                    } => {
-                        // neue Projektile ab der Kontaktstelle, Richtungen relativ zur Flugrichtung
-                        let base = if emission.fixed { 0.0 } else { atan2(p.vy, p.vx) };
-                        for k in 0..emission.count {
-                            let a = base + emission_angle(emission, k).to_radians();
-                            spawned.push(Projectile {
-                                x: p.x,
-                                y: p.y,
-                                vx: *speed * cos(a),
-                                vy: *speed * sin(a),
-                                ttl: ticks_of(*lifespan, dt),
-                                pierce: *pierce as Real,
-                                radius: *radius,
-                                damage: *damage,
-                                cannot_damage: *cannot_damage,
-                                camo: *camo,
-                                extras: extras.clone(),
-                                contacts: Arc::from([]),
-                                path: None,
-                                // Spiel: passOnCollidedWith -> Splitter treffen nichts, was das Projektil schon traf
-                                hit: if *inherit_hit { p.hit.clone() } else { SmallVec::new() },
-                            });
-                        }
-                    }
-                }
-            }
-            if p.damage > 0.0 || p.extras.freeze.is_some() || p.extras.slow.is_some() {
+            pops += fx.trigger(w, bloons, next_id, contacts, p, dt);
+            if p.damage > 0.0 || p.extras.has_effect() || p.extras.push.is_some() {
                 let first_child = bloons.len();
                 if let Some(h) = w.apply_hit(bloons, next_id, i, p.damage, p.cannot_damage, &p.extras) {
                     pops += h.pops;
@@ -820,10 +911,90 @@ fn step_projectiles(
                 }
             }
         }
+        if p.pierce <= 0.0 {
+            if let Some(d) = def.as_ref().filter(|d| !d.on_exhaust.is_empty()) {
+                pops += fx.trigger(w, bloons, next_id, &d.on_exhaust, p, dt);
+            }
+        }
     }
     projectiles.retain(|p| p.pierce > 0.0 && p.ttl > 0);
-    projectiles.extend(spawned); // fliegen ab dem nächsten Tick
+    projectiles.extend(fx.spawned); // fliegen ab dem nächsten Tick
     pops
+}
+
+/// Puffer für Kontakt- und Verbrauchs-Effekte eines Ticks.
+struct Effects {
+    targets: Vec<usize>,
+    spawned: Vec<Projectile>,
+}
+
+impl Effects {
+    /// Löst die Effekte an der Position des Projektils aus. Gibt die Pops zurück.
+    fn trigger(
+        &mut self,
+        w: &World,
+        bloons: &mut BloonStore,
+        next_id: &mut u32,
+        contacts: &[ContactRt],
+        p: &Projectile,
+        dt: Real,
+    ) -> u32 {
+        let mut pops = 0;
+        for c in contacts {
+            match c {
+                ContactRt::Explosion { radius, pierce, damage, cannot_damage, camo, extras } => {
+                    // sofortiger Flächentreffer an der Kontaktstelle, weiteste Bloons zuerst
+                    let targets = &mut self.targets;
+                    targets.clear();
+                    for j in 0..bloons.len() {
+                        if !w.eligible(bloons, j, *camo, extras) {
+                            continue;
+                        }
+                        let (x, y) = w.track.pos(bloons.dist[j], bloons.seg[j] as usize);
+                        let rr = *radius + real(w.defs[bloons.kind[j] as usize].radius);
+                        if (x - p.x) * (x - p.x) + (y - p.y) * (y - p.y) <= rr * rr {
+                            targets.push(j);
+                        }
+                    }
+                    targets.sort_by(|&a, &c| bloons.dist[c].total_cmp(&bloons.dist[a]));
+                    targets.truncate(*pierce as usize);
+                    for &j in targets.iter() {
+                        if let Some(h) = w.apply_hit(bloons, next_id, j, *damage, *cannot_damage, extras) {
+                            pops += h.pops;
+                        }
+                    }
+                }
+                ContactRt::Shards { def, pierce, damage, cannot_damage, camo, extras, inherit_hit } => {
+                    let emission = &def.emission;
+                    // neue Projektile ab der Kontaktstelle, Richtungen relativ zur Flugrichtung
+                    let base = if emission.fixed { 0.0 } else { atan2(p.vy, p.vx) };
+                    for k in 0..emission.count {
+                        let a = base + emission_angle(emission, k).to_radians();
+                        self.spawned.push(Projectile {
+                            x: p.x,
+                            y: p.y,
+                            vx: def.speed * cos(a),
+                            vy: def.speed * sin(a),
+                            ttl: ticks_of(def.lifespan, dt),
+                            pierce: *pierce as Real,
+                            radius: def.radius,
+                            damage: *damage,
+                            cannot_damage: *cannot_damage,
+                            camo: *camo,
+                            extras: extras.clone(),
+                            def: Some(Arc::clone(def)),
+                            path: None,
+                            clear_every: 0,
+                            clear_left: 0,
+                            // Spiel: passOnCollidedWith -> Splitter treffen nichts, was das Projektil schon traf
+                            hit: if *inherit_hit { p.hit.clone() } else { SmallVec::new() },
+                        });
+                    }
+                }
+            }
+        }
+        pops
+    }
 }
 
 #[cfg(test)]
@@ -832,7 +1003,7 @@ mod tests {
 
     #[test]
     fn emission_angles() {
-        let e = |count, angle| EmissionRt { count, angle, offset: 0.0, fixed: false };
+        let e = |count, angle| EmissionRt { count, angle, offset: 0.0, fixed: false, spread: 0.0 };
         let a = |em: EmissionRt| (0..em.count).map(|k| emission_angle(&em, k)).collect::<Vec<Real>>();
         assert_eq!(a(e(3, 30.0)), vec![-15.0, 0.0, 15.0], "Teilfächer um die Zielrichtung");
         assert_eq!(a(e(4, 360.0)), vec![0.0, 90.0, 180.0, 270.0], "Rundum ohne doppelte Richtung");

@@ -38,7 +38,7 @@ COSMETIC_PARTS = ("Display", "Sound", "Effect", "Sprite", "Prefab", "Audio", "An
 COSMETIC_TYPES = {"UpgradePathModel", "ApplyModModel", "TargetType", "RotateToTargetModel",
                   "TargetFirstModel", "TargetLastModel", "TargetCloseModel", "TargetStrongModel",
                   "TargetFirstPrioCamoModel", "TargetLastPrioCamoModel", "TargetClosePrioCamoModel",
-                  "TargetStrongPrioCamoModel"}
+                  "TargetStrongPrioCamoModel", "ShowTextOnHitModel"}
 
 
 def cosmetic(t: str) -> bool:
@@ -62,7 +62,15 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
            # ohne Wirkung in der Sim: Regrow ist noch nicht simuliert (GrowBlock verhindert es nur),
            # Drehung/Spiegelung nur Darstellung [KAL: FlipFollowPath spiegelt evtl. die Kurve],
            # Wasser einfrieren gibt es auf Monkey Meadow nicht
-           "GrowBlockModel", "RotateModel", "FlipFollowPathModel", "FreezeNearbyWaterModel"}
+           "GrowBlockModel", "RotateModel", "FlipFollowPathModel", "FreezeNearbyWaterModel",
+           # M2c: Zufallsreichweite, Verbrauchs-Projektile (Cluster), Schaden über Zeit, Zurückstoßen,
+           # Treffer-Reset, kritische Treffer, parallele Emission, Verlangsamungs-Zone
+           "RandomRangeTravelStraitModel", "CreateProjectileOnExhaustFractionModel", "AddBehaviorToBloonModel",
+           "DamageOverTimeModel", "AddBehaviorModifierForTagModel", "PushBackModel", "ClearHitBloonsModel",
+           "CritMultiplierModel", "ParallelEmissionModel", "SlowBloonsZoneModel"}
+
+# Bloon-Tags der MOAB-Klassen für PushBackModel-Multiplikatoren
+PUSH_TAGS = (("Moab", "multiplierMOAB"), ("Bfb", "multiplierBFB"), ("Ddt", "multiplierDDT"), ("Zomg", "multiplierZOMG"))
 
 PRESETS = {
     # Medium-Standard; Benchmark (a): Runde 1-40
@@ -297,6 +305,13 @@ def convert_emission(em, fixed: bool) -> dict:
             raise Unsupported("ArcEmissionModel(offsetStart/sliceSize/AirUnit)")
         return {"kind": "arc", "count": em["count"], "angle": em["angle"], "offset": em.get("offset", 0.0),
                 "fixed": fixed}
+    if et == "ParallelEmissionModel":
+        n, width = em["count"], em["spreadLength"]
+        # Projektile gleichmäßig auf spreadLength quer zur Schussrichtung, mittig; yOffset (Versatz nach
+        # vorn, ~1 Einheit) ignoriert [KAL]
+        if em.get("linear") or abs(em.get("offsetStart", 0.0) + width / 2) > 1e-9 or n < 1:
+            raise Unsupported("ParallelEmissionModel(linear/asymmetrisch)")
+        return {"kind": "parallel", "count": n, "spread": width / (n - 1) if n > 1 else 0.0}
     raise Unsupported(f"Emission {et}")
 
 
@@ -317,6 +332,28 @@ def rotates(tower) -> bool:
                 walk(v)
     walk(tower)
     return bool(found)
+
+
+def pierce_of(proj) -> int:
+    """Pierce mit Obergrenze: maxPierce > 0 deckelt ihn (Spiel: CappedPierce, z.B. Glue-Klumpen 4 -> 1)."""
+    p = proj["pierce"]
+    if proj.get("maxPierce", 0.0) > 0.0:
+        p = min(p, proj["maxPierce"])
+    return int(p)
+
+
+def straight_travel(proj):
+    """-> (speed, lifespan) einer geraden Flugbahn oder None."""
+    fixed, rnd = behaviors(proj, "TravelStraitModel"), behaviors(proj, "RandomRangeTravelStraitModel")
+    if len(fixed) + len(rnd) > 1:
+        raise Unsupported("mehrere Flugbahnen")
+    if fixed:
+        return fixed[0]["speed"], fixed[0]["lifespan"]
+    if rnd:
+        r = rnd[0]
+        # Zufallsreichweite (Cluster-Splitter): Mittelwert statt Zufall, die Sim ist deterministisch [KAL]
+        return r["speed"], (r["minRange"] + r["maxRange"]) / 2 / r["speed"]
+    return None
 
 
 def check_damage(proj):
@@ -354,7 +391,11 @@ def convert_filters(filters) -> tuple:
             if x["tag"] not in f["exclude_tags"]:
                 f["exclude_tags"].append(x["tag"])
         elif t == "FilterBloonIfDamageTypeModel":
-            f["skip_immune"] = True
+            # eigene Maske (Ice: nur Lead), nicht das cannot_damage des Angriffs (Ice: Lead + White)
+            for name in props(x["ifCantHitBloonProperties"]):
+                f.setdefault("skip_props", [])
+                if name not in f["skip_props"]:
+                    f["skip_props"].append(name)
         elif t == "FilterFrozenBloonsModel":
             f["skip_frozen"] = True
         elif t == "FilterGlueLevelModel":
@@ -392,53 +433,144 @@ def convert_extras(proj, filters) -> tuple:
     if bonus:
         ex["damage_vs"] = bonus
     freeze = behaviors(proj, "FreezeModel")
+    if len(freeze) > 1:
+        raise Unsupported("mehrere FreezeModel")
     if freeze:
         fz = freeze[0]
         if fz.get("enablePercentChanceToFreeze") or fz.get("canFreezeMoabs") or fz.get("speed", 0.0) != 0.0:
             raise Unsupported("FreezeModel(Chance/MOABs/Teil-Verlangsamung)")
-        scale = [{"tag": t, "factor": m["freezeTimeMultiplier"]}
-                 for m in behaviors(proj, "FreezeModifierForTagsModel") for t in m["tags"]]
+        if not fz.get("applyAfterDamage", True):
+            raise Unsupported("FreezeModel(vor dem Schaden)")
+        own = (fz.get("damageModel") or {}).get("immuneBloonProperties")
+        if own is not None and props(own) != cannot_damage(proj):
+            raise Unsupported("FreezeModel mit eigener Immunität")
+        mods = behaviors(proj, "FreezeModifierForTagsModel")
+        if any(m.get("preventMutation") for m in mods):
+            raise Unsupported("FreezeModifierForTagsModel(preventMutation)")
+        scale = [{"tag": t, "factor": m["freezeTimeMultiplier"]} for m in mods for t in m["tags"]]
         ex["freeze"] = {"seconds": fz["lifespan"], "layers": int(fz["layers"]), "scale": scale}
     slow = behaviors(proj, "SlowModel")
+    if len(slow) > 1:
+        raise Unsupported("mehrere SlowModel")
     if slow:
         sl = slow[0]
         if sl.get("chance", 0.0) not in (0.0, 1.0):
             raise Unsupported("SlowModel(Zufall)")
-        over = [{"tag": m["tag"], "factor": m["slowMultiplier"]} for m in behaviors(proj, "SlowModifierForTagModel")
-                if not m.get("makeNotTag")]
+        # cascadeMutators (Permafrost/Freeze true, Glue false) bleibt unausgewertet: Kinder erben in
+        # der Sim über `layers` [KAL]
+        if sl.get("dontRefreshDuration") or sl.get("matchLayersWithDamage") or sl.get("removeMutatorIfNotMatching"):
+            raise Unsupported("SlowModel(dontRefresh/matchLayers)")
+        over, secs = [], []
+        for m in behaviors(proj, "SlowModifierForTagModel"):
+            if m.get("makeNotTag") or m.get("slowId", sl.get("mutationId")) != sl.get("mutationId"):
+                raise Unsupported("SlowModifierForTagModel(makeNotTag/fremder Slow)")
+            if m.get("resetToUnmodified") or m.get("preventMutation"):
+                over.append({"tag": m["tag"], "factor": 1.0})  # Bloons mit dem Tag werden nicht verlangsamt
+                continue
+            # sonst skaliert slowMultiplier den Faktor (MOAB Glue: 0.25 * 2.5 = 0.625)
+            f = sl["multiplier"] * m["slowMultiplier"]
+            if f > 1.0:
+                raise Unsupported("SlowModifierForTagModel(beschleunigt)")
+            over.append({"tag": m["tag"], "factor": f})
+            if m.get("lifespanOverride", 0.0) > 0.0:
+                secs.append({"tag": m["tag"], "factor": m["lifespanOverride"]})
         ex["slow"] = {"multiplier": sl["multiplier"], "seconds": sl["lifespan"], "level": int(sl.get("glueLevel", 0)),
                       "layers": int(sl["layers"]), "multiplier_for": over}
+        if secs:
+            ex["slow"]["seconds_for"] = secs
     elif behaviors(proj, "SlowModifierForTagModel"):
         raise Unsupported("SlowModifierForTagModel ohne SlowModel")
+    dot = convert_dot(proj, slow[0].get("mutationId") if slow else None)
+    if dot:
+        ex["dot"] = dot
+    push = behaviors(proj, "PushBackModel")
+    if push:
+        pb = push[0]
+        if len(push) > 1 or pb.get("tag") or not pb.get("onlyIfDamaged"):
+            raise Unsupported("PushBackModel(mehrfach/Tag/ohne Schaden)")
+        ex["push"] = {"amount": pb["pushAmount"],
+                      "factor_for": [{"tag": t, "factor": pb[k]} for t, k in PUSH_TAGS if pb.get(k, 1.0) != 1.0]}
     return camo, ex
 
 
+def convert_dot(proj, slow_id):
+    """AddBehaviorToBloonModel mit DamageOverTimeModel -> dot (Corrosive Glue)."""
+    adds = []
+    for a in behaviors(proj, "AddBehaviorToBloonModel"):
+        # Glue 201 enthält denselben Effekt zweimal (nur Name/collisionPass verschieden)
+        key = {k: v for k, v in a.items() if k not in ("name", "collisionPass")}
+        if key not in [{k: v for k, v in x.items() if k not in ("name", "collisionPass")} for x in adds]:
+            adds.append(a)
+    mods = behaviors(proj, "AddBehaviorModifierForTagModel")
+    if any(m["mutatorId"] == slow_id for m in mods):
+        raise Unsupported("AddBehaviorModifierForTagModel für einen Slow")
+    if not adds:
+        # Modifier ohne passenden Effekt (MOAB Glue ohne Corrosive) wirken nicht
+        return None
+    if len(adds) > 1:
+        raise Unsupported("mehrere AddBehaviorToBloonModel")
+    ab = adds[0]
+    inner = ab.get("behaviors") or []
+    if len(inner) != 1 or short(inner[0]["$type"]) != "DamageOverTimeModel":
+        raise Unsupported("AddBehaviorToBloonModel ohne reines DamageOverTime")
+    if ab.get("filters") or ab.get("filter") or ab.get("chance", 0.0) or ab.get("applyOnlyIfDamaged") \
+            or ab.get("stackCount", 0) or ab.get("cascadeMutators"):
+        raise Unsupported("AddBehaviorToBloonModel(Filter/Chance/Stapel/nur bei Schaden)")
+    d = inner[0]
+    if d.get("triggerImmediate") or d.get("initialDelay", 0.0) or d.get("damageOnDestroy") \
+            or d.get("damageModifierModels") or d.get("payloadCount", 0) or not d.get("distributeToChildren", True):
+        raise Unsupported("DamageOverTimeModel(sofort/Verzögerung/Modifier)")
+    # Bits ab 32 kennt das Format nicht (Spiel: 64 bei Corrosive Glue, Bedeutung unbekannt) [KAL]
+    if d["immuneBloonProperties"] & 31:
+        raise Unsupported("DamageOverTimeModel mit Immunität")
+    return {"damage": d["damage"], "interval": d["interval"], "seconds": ab["lifespan"], "layers": int(ab["layers"]),
+            "level": int(ab.get("glueLevel", 0)),
+            "factor_for": [{"tag": m["tag"], "factor": m["mutatorMultiplier"]} for m in mods
+                           if m["mutatorId"] == ab.get("mutationId")]}
+
+
+def convert_contact(c, nested: bool) -> dict:
+    """Ein CreateProjectileOn*Model -> Explosion (ohne Flugbahn) oder Splitter (mit Flugbahn).
+    `nested`: innerhalb von Splittern sind nur Explosionen erlaubt."""
+    if c.get("dontCreateAtBloon") or c.get("useChance") or c.get("passOnDirectionToContact"):
+        raise Unsupported("CreateProjectileOn*Model(dontCreateAtBloon/Chance/Richtung)")
+    sub = c["projectile"]
+    check_pierce_reduction(sub)
+    check_damage(sub)
+    if behaviors(sub, "CreateProjectileOnContactModel"):
+        raise Unsupported("verschachtelte Kontakt-Projektile")
+    sub_dmg = behaviors(sub, "DamageModel")
+    sub_camo, sub_ex = convert_extras(sub, all_filters(sub))
+    common = {"pierce": pierce_of(sub), "damage": sub_dmg[0]["damage"] if sub_dmg else 0.0,
+              "cannot_damage": cannot_damage(sub), "camo": sub_camo, "extras": sub_ex}
+    travel = straight_travel(sub)
+    exhaust = convert_exhaust(sub, nested=True)
+    if travel:
+        if nested:
+            raise Unsupported("Splitter aus Splittern")
+        em = c["emission"]
+        # ohne useProjectileRotation zeigen die Splitter-Richtungen nicht mit der Flugrichtung mit
+        return {"kind": "shards", "emission": convert_emission(em, not em.get("useProjectileRotation", False)),
+                "speed": travel[0], "lifespan": travel[1], "radius": sub["radius"],
+                "inherit_hit": bool(c.get("passOnCollidedWith")), "on_exhaust": exhaust, **common}
+    if exhaust:
+        raise Unsupported("Explosion mit Verbrauchs-Projektilen")
+    if short(c["emission"]["$type"]) != "SingleEmissionModel":
+        raise Unsupported("Explosion mit Mehrfach-Emission")
+    return {"kind": "explosion", "radius": sub["radius"], **common}
+
+
 def convert_contacts(proj) -> list:
-    """CreateProjectileOnContactModel -> Explosion (ohne Flugbahn) oder Splitter (mit Flugbahn)."""
+    return [convert_contact(c, nested=False) for c in behaviors(proj, "CreateProjectileOnContactModel")]
+
+
+def convert_exhaust(proj, nested: bool) -> list:
+    """CreateProjectileOnExhaustFractionModel mit fraction 1: Effekt, sobald der Pierce verbraucht ist."""
     out = []
-    for c in behaviors(proj, "CreateProjectileOnContactModel"):
-        if c.get("dontCreateAtBloon") or c.get("useChance") or c.get("passOnDirectionToContact"):
-            raise Unsupported("CreateProjectileOnContactModel(dontCreateAtBloon/Chance/Richtung)")
-        sub = c["projectile"]
-        check_pierce_reduction(sub)
-        check_damage(sub)
-        if behaviors(sub, "CreateProjectileOnContactModel"):
-            raise Unsupported("verschachtelte Kontakt-Projektile")
-        sub_dmg = behaviors(sub, "DamageModel")
-        sub_camo, sub_ex = convert_extras(sub, all_filters(sub))
-        common = {"pierce": int(sub["pierce"]), "damage": sub_dmg[0]["damage"] if sub_dmg else 0.0,
-                  "cannot_damage": cannot_damage(sub), "camo": sub_camo, "extras": sub_ex}
-        travel = behaviors(sub, "TravelStraitModel")
-        if travel:
-            em = c["emission"]
-            # ohne useProjectileRotation zeigen die Splitter-Richtungen nicht mit der Flugrichtung mit
-            out.append({"kind": "shards", "emission": convert_emission(em, not em.get("useProjectileRotation", False)),
-                        "speed": travel[0]["speed"], "lifespan": travel[0]["lifespan"], "radius": sub["radius"],
-                        "inherit_hit": bool(c.get("passOnCollidedWith")), **common})
-        else:
-            if short(c["emission"]["$type"]) != "SingleEmissionModel":
-                raise Unsupported("Explosion mit Mehrfach-Emission")
-            out.append({"kind": "explosion", "radius": sub["radius"], **common})
+    for c in behaviors(proj, "CreateProjectileOnExhaustFractionModel"):
+        if c.get("fraction") != 1.0 or c.get("durationfraction", -1.0) >= 0.0:
+            raise Unsupported("CreateProjectileOnExhaustFractionModel(Teil-Verbrauch/Dauer)")
+        out.append(convert_contact(c, nested))
     return out
 
 
@@ -447,9 +579,10 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
     check_pierce_reduction(proj)
     check_damage(proj)
     dmg = behaviors(proj, "DamageModel")
-    travel = behaviors(proj, "TravelStraitModel")
+    travel = straight_travel(proj)
     follow = behaviors(proj, "FollowPathModel")
     age = behaviors(proj, "AgeModel")
+    clear = behaviors(proj, "ClearHitBloonsModel")
     camo, extras = convert_extras(proj, all_filters(proj, attack))
     if travel and age:
         raise Unsupported("AgeModel an einem geraden Projektil")
@@ -457,31 +590,49 @@ def convert_attack(tower, attack, weapon, idx) -> dict:
         emission = convert_emission(weapon["emission"], not rotates(tower))
         if follow:
             fp = follow[0]
+            if fp.get("easePath") or not fp.get("destroyAtEndOfPath", True):
+                raise Unsupported("FollowPathModel(easePath/bleibt am Ende)")
             path = [[v["x"], v["y"]] for v in fp["path"]]
             lifespan = age[0]["lifespan"] if age else 60.0
             delivery = {"kind": "projectile", "speed": fp["speed"], "lifespan": lifespan, "radius": proj["radius"],
-                        "emission": emission, "path": path, "on_contact": convert_contacts(proj)}
+                        "emission": emission, "path": path}
         else:
-            delivery = {"kind": "projectile", "speed": travel[0]["speed"], "lifespan": travel[0]["lifespan"],
-                        "radius": proj["radius"], "emission": emission, "on_contact": convert_contacts(proj)}
+            delivery = {"kind": "projectile", "speed": travel[0], "lifespan": travel[1],
+                        "radius": proj["radius"], "emission": emission}
+        delivery["on_contact"] = convert_contacts(proj)
+        delivery["on_exhaust"] = convert_exhaust(proj, nested=False)
+        if clear:
+            delivery["clear_hits"] = clear[0]["interval"]
     else:
-        # kein Flug: Flächentreffer um den Turm (Ice), Radius = Reichweite
-        if behaviors(proj, "CreateProjectileOnContactModel"):
+        # kein Flug: Flächentreffer um den Turm (Ice, Ring of Fire). Der Radius steht im Projektil
+        # (LinkProjectileRadiusToTowerRange hat ihn im Dump schon auf Reichweite + Versatz gesetzt).
+        if behaviors(proj, "CreateProjectileOnContactModel") or behaviors(proj, "CreateProjectileOnExhaustFractionModel"):
             raise Unsupported("Flächentreffer mit Kontakt-Projektilen")
         if short(weapon["emission"]["$type"]) != "SingleEmissionModel":
             raise Unsupported("Flächentreffer mit Mehrfach-Emission")
-        delivery = {"kind": "area"}
-    return {
+        if clear:
+            raise Unsupported("Flächentreffer mit ClearHitBloons")
+        link = behaviors(proj, "LinkProjectileRadiusToTowerRangeModel")
+        if link and abs(proj["radius"] - (attack["range"] + link[0].get("projectileRadiusOffset", 0.0))) > 1e-3:
+            raise Unsupported("LinkProjectileRadiusToTowerRange passt nicht zum Radius")
+        delivery = {"kind": "area", "radius": proj["radius"]}
+    crit = [b for b in weapon.get("behaviors") or [] if short(b.get("$type", "")) == "CritMultiplierModel"]
+    out = {
         "tag": f"{attack.get('name', 'attack')}-{idx}".replace(" ", "_"),
         "range": attack["range"] if attack["range"] != tower["range"] else None,
         "cooldown": weapon["rate"],
         "damage": dmg[0]["damage"] if dmg else 0.0,
-        "pierce": int(proj["pierce"]),
+        "pierce": pierce_of(proj),
         "cannot_damage": cannot_damage(proj),
         "camo": camo,
         "delivery": delivery,
         "extras": extras,
     }
+    if crit:
+        c = crit[0]
+        # jeder n-te Schuss kritisch; das Spiel würfelt n in [lower, upper] [KAL: Mittelwert]
+        out["crit"] = {"damage": c["damage"], "every": max(1, round((c["lower"] + c["upper"]) / 2))}
+    return out
 
 
 def convert_variant(model, tiers) -> dict:
@@ -498,7 +649,38 @@ def convert_variant(model, tiers) -> dict:
     for a in attacks:
         if a["range"] is None:
             del a["range"]
-    return {"tiers": tiers, "range": model["range"], "footprint": model["footprint"]["radius"], "attacks": attacks}
+    zones = []
+    for z in behaviors(model, "SlowBloonsZoneModel"):
+        if z.get("speedChange", 0.0) or z.get("bloonTag") or z.get("bloonTags"):
+            raise Unsupported("SlowBloonsZoneModel(speedChange/Tags)")
+        camo, filt = convert_filters(z.get("filters") or [])
+        radius = model["range"] + z.get("radiusOffset", 0.0) if z.get("bindRadiusToTowerRange") else z["zoneRadius"]
+        zones.append({"radius": radius, "speed_scale": z["speedScale"], "camo": camo, "filter": filt})
+    v = {"tiers": tiers, "range": model["range"], "footprint": model["footprint"]["radius"], "attacks": attacks}
+    if zones:
+        v["zones"] = zones
+    return v
+
+
+TAG_LISTS = ("damage_vs", "scale", "multiplier_for", "seconds_for", "factor_for")
+
+
+def prune_tags(node, known: set, dropped: set):
+    """Entfernt Tags, die kein Bloon der Konfiguration hat (z.B. "Boss" auf Monkey Meadow): game_v1
+    lehnt unbekannte Tags ab, damit Tippfehler auffallen."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k == "exclude_tags":
+                dropped.update(t for t in v if t not in known)
+                v[:] = [t for t in v if t in known]
+            elif k in TAG_LISTS and isinstance(v, list):
+                dropped.update(e["tag"] for e in v if e["tag"] not in known)
+                v[:] = [e for e in v if e["tag"] in known]
+            else:
+                prune_tags(v, known, dropped)
+    elif isinstance(node, list):
+        for v in node:
+            prune_tags(v, known, dropped)
 
 
 def build_tower(dump: Path, base: str, coverage: list) -> dict:
@@ -545,13 +727,16 @@ def main():
     last = preset["end_round"]
     rounds = build_rounds(dump, args.rounds, last)
     needed = {g["bloon"] for r in rounds for g in r}
+    bloons = build_bloons(dump, needed)
+    dropped: set = set()
+    prune_tags(towers, {t for b in bloons for t in b["tags"]}, dropped)
     data = {
         "format": "game_v1",
         "name": f"{args.map}-{args.preset}-{dump.name}",
         "rules": {"tick_rate": 60.0, "cd_eps": 1e-9, "max_round_seconds": 900.0, "child_spacing": 0.0,
                   "sell_ratio": 0.7, "cost_rounding": 5, **preset},
         "map": build_map(dump, args.map, footprint),
-        "bloons": build_bloons(dump, needed),
+        "bloons": bloons,
         "towers": towers,
         "rounds": rounds,
         "income": build_income(dump, args.rounds, last),
@@ -566,7 +751,11 @@ def main():
              "- Keine Sichtlinie: Bäume/Blocker halten im Spiel Schüsse auf, in der Sim nicht.",
              "- Targeting immer \"First\"; Explosionen wirken sofort statt 0,1 s.",
              "- Fähigkeiten (AbilityModel) sind bewusst nicht simuliert (Design: M4); "
-             "Kombinationen damit bleiben gesperrt.", ""]
+             "Kombinationen damit bleiben gesperrt.",
+             "- Projektile starten in der Turmmitte (Abwurf-Versatz der Waffe ignoriert); Boomerang-Kurven "
+             "werden nicht gespiegelt (FlipFollowPath).",
+             "- Zufall durch Mittelwerte ersetzt: Cluster-Reichweite, Crit-Intervall.",
+             f"- Tags ohne Bloon in dieser Konfiguration entfernt: {', '.join(sorted(dropped)) or '-'}.", ""]
     for base in TOWERS:
         rows = [c for c in coverage if c[0] == base]
         ok = sum(1 for c in rows if c[2] is None)

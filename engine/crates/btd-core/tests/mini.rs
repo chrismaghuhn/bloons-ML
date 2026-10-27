@@ -367,3 +367,278 @@ fn shards_can_inherit_the_hit_set() {
     assert_eq!(run(false).pops, 1);
     assert_eq!(run(true).pops, 0);
 }
+
+// ---------------------------------------------------------------- M2c: Effekte
+
+use btd_data::v1::{Contact, Crit, Delivery, Dot, Emission, Freeze, Push, Slow, TagFactor, Zone};
+
+fn atk(d: &mut GameV1, kind: u8) -> &mut btd_data::v1::AttackV1 {
+    &mut d.towers[kind as usize].variants[0].attacks[0]
+}
+
+fn run(d: GameV1, build: impl Fn(&mut Game)) -> btd_core::RoundReport {
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.cash = Money::from_dollars(10_000);
+    build(&mut g);
+    g.play_round()
+}
+
+fn with_round(groups: Vec<btd_data::v1::SpawnGroup>) -> GameV1 {
+    let mut d = data();
+    d.rounds[0] = groups;
+    d
+}
+
+fn place(kind: u8, x: f64, y: f64) -> impl Fn(&mut Game) {
+    move |g: &mut Game| {
+        g.apply(Action::Place { kind, x, y }).unwrap();
+    }
+}
+
+fn corrosive(layers: u32) -> Dot {
+    Dot { damage: 1.0, interval: 0.5, seconds: 10.0, layers, level: 1, factor_for: vec![] }
+}
+
+#[test]
+fn damage_over_time_pops_and_passes_to_children() {
+    // Glue macht keinen Direktschaden; Schaden über Zeit platzt den Blue und danach sein Kind
+    let glue = |layers: Option<u32>| {
+        let mut d = with_round(vec![group(1, 1, 0.0, 0.0)]);
+        atk(&mut d, GLUE).extras.dot = layers.map(corrosive);
+        run(d, place(GLUE, -40.0, 15.0))
+    };
+    assert_eq!(glue(None).pops, 0);
+    assert_eq!((glue(Some(9)).pops, glue(Some(9)).leaked), (2, 0), "Kind erbt den Effekt");
+    assert_eq!((glue(Some(1)).pops, glue(Some(1)).leaked), (1, 1), "nur eine Schicht");
+}
+
+#[test]
+fn damage_over_time_factor_per_tag() {
+    let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
+    atk(&mut d, GLUE).extras.dot =
+        Some(Dot { factor_for: vec![TagFactor { tag: "Red".into(), factor: 0.0 }], ..corrosive(9) });
+    assert_eq!(run(d, place(GLUE, -40.0, 15.0)).pops, 0);
+}
+
+#[test]
+fn push_back_delays_damaged_bloons() {
+    // Pin gegen eine Ceramic (10 HP): jeder Treffer schiebt sie zurück
+    let pin = |push: Option<Push>| {
+        let mut d = with_round(vec![group(3, 1, 0.0, 0.0)]);
+        atk(&mut d, PIN).extras.push = push;
+        run(d, place(PIN, 0.0, 15.0))
+    };
+    let base = pin(None);
+    let pushed = pin(Some(Push { amount: 5.0, factor_for: vec![] }));
+    let immune =
+        pin(Some(Push { amount: 5.0, factor_for: vec![TagFactor { tag: "Ceramic".into(), factor: 0.0 }] }));
+    assert!(pushed.seconds > base.seconds + 0.5, "{pushed:?} vs {base:?}");
+    assert_eq!(immune.seconds, base.seconds);
+}
+
+#[test]
+fn crit_hits_on_every_nth_shot() {
+    let pin = |crit: Option<Crit>| {
+        let mut d = with_round(vec![group(3, 1, 0.0, 0.0)]);
+        atk(&mut d, PIN).crit = crit;
+        run(d, place(PIN, 0.0, 15.0))
+    };
+    assert_eq!(pin(None).pops, 0, "1 Schaden pro Schuss reicht nicht für 10 HP");
+    assert!(pin(Some(Crit { damage: 10.0, every: 2 })).pops >= 1);
+}
+
+#[test]
+fn parallel_emission_fires_several_projectiles() {
+    let dart = |emission: Emission| {
+        let mut d = with_round(vec![group(0, 12, 0.0, 0.6)]);
+        if let Delivery::Projectile { emission: e, .. } = &mut atk(&mut d, DART).delivery {
+            *e = emission;
+        }
+        single_shot(d, DART, 0.0, 15.0)
+    };
+    assert!(dart(Emission::Single {}).pops <= 2, "Pierce 2");
+    assert!(dart(Emission::Parallel { count: 3, spread: 3.0 }).pops > 2);
+}
+
+#[test]
+fn clear_hits_lets_the_projectile_hit_again() {
+    // langsamer Dart gegen einen Blue: ohne Reset gilt das Kind als getroffen
+    let dart = |clear: Option<f64>| {
+        let mut d = with_round(vec![group(1, 1, 0.0, 0.0)]);
+        if let Delivery::Projectile { speed, lifespan, clear_hits, .. } = &mut atk(&mut d, DART).delivery {
+            (*speed, *lifespan, *clear_hits) = (60.0, 1.0, clear);
+        }
+        single_shot(d, DART, 0.0, 15.0)
+    };
+    assert_eq!((dart(None).pops, dart(None).leaked), (1, 1));
+    assert_eq!((dart(Some(1.0 / 60.0)).pops, dart(Some(1.0 / 60.0)).leaked), (2, 0));
+}
+
+#[test]
+fn zone_slows_bloons_in_radius() {
+    // Leads (Pin kann sie nicht beschädigen) laufen durch die Zone
+    let pin = |zone: Option<Zone>| {
+        let mut d = with_round(vec![group(2, 1, 0.0, 0.0)]);
+        d.towers[PIN as usize].variants[0].zones = zone.into_iter().collect();
+        run(d, place(PIN, 0.0, 15.0))
+    };
+    let z = |exclude: Vec<String>| Zone {
+        radius: 30.0,
+        speed_scale: 0.5,
+        camo: false,
+        filter: btd_data::v1::HitFilter { exclude_tags: exclude, ..Default::default() },
+    };
+    let base = pin(None);
+    assert!(pin(Some(z(vec![]))).seconds > base.seconds + 0.5);
+    assert_eq!(pin(Some(z(vec!["Lead".into()]))).seconds, base.seconds, "Filter");
+}
+
+#[test]
+fn shards_explode_when_their_pierce_is_used_up() {
+    // Cluster: Splitter ohne Schaden, die beim Verbrauch explodieren
+    let frag = |exhaust: bool| {
+        let mut d = with_round(vec![group(0, 12, 0.0, 1.0)]);
+        if let Delivery::Projectile { on_contact, .. } = &mut atk(&mut d, FRAG).delivery {
+            if let Contact::Shards { damage, on_exhaust, .. } = &mut on_contact[0] {
+                *damage = 0.0;
+                if exhaust {
+                    on_exhaust.push(Contact::Explosion {
+                        radius: 8.0,
+                        pierce: 10,
+                        damage: 1.0,
+                        cannot_damage: vec![],
+                        camo: false,
+                        extras: Default::default(),
+                    });
+                }
+            }
+        }
+        single_shot(d, FRAG, 0.0, 18.0)
+    };
+    assert_eq!(frag(false).pops, 0);
+    assert!(frag(true).pops >= 2, "{:?}", frag(true));
+}
+
+fn slow(level: u8, seconds: f64) -> Slow {
+    Slow { multiplier: 0.5, seconds, level, layers: 3, multiplier_for: vec![], seconds_for: vec![] }
+}
+
+#[test]
+fn permafrost_and_glue_use_separate_slots() {
+    // Pin ohne Schaden mit Permafrost (Slow ohne Glue-Stufe), dazu Glue mit kurzer Dauer
+    let build = |perma: bool, glue: bool| {
+        let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
+        let a = atk(&mut d, PIN);
+        a.damage = 0.0;
+        a.extras.slow = perma.then(|| slow(0, 1000.0));
+        atk(&mut d, GLUE).extras.slow = Some(slow(1, 1.0));
+        run(d, move |g: &mut Game| {
+            g.apply(Action::Place { kind: PIN, x: -40.0, y: 15.0 }).unwrap();
+            if glue {
+                g.apply(Action::Place { kind: GLUE, x: -40.0, y: -15.0 }).unwrap();
+            }
+        })
+    };
+    let (perma, glue, both) = (build(true, false), build(false, true), build(true, true));
+    assert!(both.seconds > perma.seconds + 0.2, "Glue wirkt zusätzlich: {both:?} vs {perma:?}");
+    assert!(both.seconds > glue.seconds + 0.5, "Permafrost überlebt das Glue: {both:?} vs {glue:?}");
+}
+
+/// Ice friert nur ein (kein Schaden); Reichweite 25, damit sie vom Rand aus den Spawn-Punkt erreicht.
+fn ice_only_freeze(d: &mut GameV1, layers: u32, scale: f64) {
+    d.towers[ICE as usize].variants[0].range = 25.0;
+    let a = atk(d, ICE);
+    a.damage = 0.0;
+    a.extras.freeze = Some(Freeze {
+        seconds: 1.5,
+        layers,
+        scale: vec![TagFactor { tag: "Ceramic".into(), factor: scale }],
+    });
+}
+
+#[test]
+fn freeze_passes_to_children_by_layers() {
+    // je ein Schuss: Ice friert ein (kein Schaden), direkt danach platzt der Pin den Blue; mit
+    // 2 Schichten bleibt das Kind eingefroren stehen
+    let build = |layers: u32| {
+        let mut d = with_round(vec![group(1, 1, 0.0, 0.0)]);
+        ice_only_freeze(&mut d, layers, 1.0);
+        atk(&mut d, ICE).cooldown = 1000.0;
+        atk(&mut d, PIN).cooldown = 1000.0;
+        run(d, |g: &mut Game| {
+            // beide haben den Spawn-Punkt in Reichweite und schießen im ersten Tick, Ice zuerst
+            g.apply(Action::Place { kind: ICE, x: -44.0, y: 14.0 }).unwrap();
+            g.apply(Action::Place { kind: PIN, x: -44.0, y: -15.0 }).unwrap();
+        })
+    };
+    let (one, two) = (build(1), build(2));
+    assert_eq!((one.pops, one.leaked, two.pops, two.leaked), (1, 1, 1, 1));
+    assert!(two.seconds > one.seconds + 1.0, "{two:?} vs {one:?}");
+}
+
+#[test]
+fn freeze_duration_scales_per_tag() {
+    let build = |scale: f64| {
+        let mut d = with_round(vec![group(3, 1, 0.0, 0.0)]);
+        ice_only_freeze(&mut d, 2, scale);
+        single_shot(d, ICE, -40.0, 14.0)
+    };
+    let (full, half) = (build(1.0), build(0.5));
+    assert!(full.seconds > half.seconds + 0.5, "{full:?} vs {half:?}");
+}
+
+#[test]
+fn frozen_bloons_resist_attacks_that_cannot_hit_frozen() {
+    // je ein Schuss, Ice zuerst: der Pin trifft einen eingefrorenen Red
+    let build = |pin_cannot_frozen: bool| {
+        let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
+        ice_only_freeze(&mut d, 2, 1.0);
+        atk(&mut d, ICE).cooldown = 1000.0;
+        atk(&mut d, PIN).cooldown = 1000.0;
+        if pin_cannot_frozen {
+            atk(&mut d, PIN).cannot_damage = btd_data::v1::Props(btd_data::v1::Props::FROZEN);
+        }
+        run(d, |g: &mut Game| {
+            // beide haben den Spawn-Punkt in Reichweite und schießen im ersten Tick, Ice zuerst
+            g.apply(Action::Place { kind: ICE, x: -44.0, y: 14.0 }).unwrap();
+            g.apply(Action::Place { kind: PIN, x: -44.0, y: -15.0 }).unwrap();
+        })
+    };
+    assert_eq!(build(false).pops, 1);
+    assert_eq!(build(true).pops, 0);
+}
+
+#[test]
+fn ice_does_not_fire_at_bloons_it_skips() {
+    // Lead vorn, Red 1 s dahinter, Ice mit langem Cooldown: wird der Lead übersprungen, bleibt
+    // der Schuss für den Red übrig
+    let build = |skip: bool| {
+        let mut d = with_round(vec![group(2, 1, 0.0, 0.0), group(0, 1, 1.0, 1.0)]);
+        let a = atk(&mut d, ICE);
+        a.cooldown = 1000.0;
+        if !skip {
+            a.extras.filter.skip_props.clear();
+        }
+        run(d, place(ICE, -40.0, 14.0))
+    };
+    assert_eq!(build(true).pops, 1);
+    assert_eq!(build(false).pops, 0, "Schuss auf den immunen Lead verbraucht den Cooldown");
+}
+
+#[test]
+fn area_radius_can_differ_from_range() {
+    let build = |radius: Option<f64>| {
+        let mut d = with_round(vec![group(0, 1, 0.0, 0.0)]);
+        atk(&mut d, ICE).delivery = Delivery::Area { radius };
+        run(d, place(ICE, -40.0, 14.0))
+    };
+    assert_eq!(build(None).pops, 1);
+    assert_eq!(build(Some(5.0)).pops, 0, "Ziel in Reichweite, aber außerhalb des Radius");
+}
+
+#[test]
+fn unknown_tags_are_rejected() {
+    let mut d = data();
+    atk(&mut d, GLUE).extras.filter.exclude_tags = vec!["Ceramics".into()];
+    assert!(d.validate().is_err());
+}

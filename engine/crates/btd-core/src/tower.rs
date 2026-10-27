@@ -3,7 +3,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use btd_data::v1::{Contact, Delivery, Emission, HitExtras, Props, TowerDefV1, VariantV1, PATHS};
+use btd_data::v1::{
+    Contact, Delivery, Emission, HitExtras, HitFilter, Props, TagFactor, TowerDefV1, VariantV1, PATHS,
+};
 use btd_data::TowerKind;
 use smallvec::SmallVec;
 
@@ -18,24 +20,55 @@ pub fn tag_mask(table: &TagTable, names: &[String]) -> u32 {
     names.iter().filter_map(|n| table.get(n)).fold(0, |m, b| m | b)
 }
 
+/// (Tag-Maske, Faktor)-Paare.
+pub type TagFactors = SmallVec<[(u32, Real); 2]>;
+
+fn tag_factors(tags: &TagTable, list: &[TagFactor]) -> TagFactors {
+    list.iter().map(|t| (tag_mask(tags, std::slice::from_ref(&t.tag)), real(t.factor))).collect()
+}
+
+/// Faktor für einen Bloon mit diesen Tags (erster Treffer), sonst `default`.
+pub fn factor_for(list: &TagFactors, tags: u32, default: Real) -> Real {
+    list.iter().find(|(m, _)| tags & m != 0).map_or(default, |&(_, k)| k)
+}
+
+/// Ziel-/Treffer-Filter im Sim-Typ.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct FilterRt {
+    pub exclude_tags: u32,
+    pub skip_props: Props,
+    pub skip_frozen: bool,
+    pub skip_glue_level: u8,
+}
+
+impl FilterRt {
+    fn new(f: &HitFilter, tags: &TagTable) -> Self {
+        FilterRt {
+            exclude_tags: tag_mask(tags, &f.exclude_tags),
+            skip_props: Props::parse(&f.skip_props, "Filter").unwrap_or_default(),
+            skip_frozen: f.skip_frozen,
+            skip_glue_level: f.skip_glue_level,
+        }
+    }
+}
+
 /// Treffer-Extras im Sim-Typ (Tags als Bitmasken).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ExtrasRt {
-    pub exclude_tags: u32,
-    pub skip_immune: bool,
-    pub skip_frozen: bool,
-    pub skip_glue_level: u8,
-    pub damage_vs: SmallVec<[(u32, Real); 2]>,
+    pub filter: FilterRt,
+    pub damage_vs: TagFactors,
     pub freeze: Option<FreezeRt>,
     pub slow: Option<SlowRt>,
+    pub dot: Option<DotRt>,
+    pub push: Option<PushRt>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FreezeRt {
     pub seconds: Real,
     pub layers: u32,
-    /// (Tag-Maske, Dauer-Faktor)
-    pub scale: SmallVec<[(u32, Real); 1]>,
+    /// Dauer-Faktor je Tag
+    pub scale: TagFactors,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -44,17 +77,33 @@ pub struct SlowRt {
     pub seconds: Real,
     pub level: u8,
     pub layers: u32,
-    /// (Tag-Maske, abweichender Faktor)
-    pub multiplier_for: SmallVec<[(u32, Real); 1]>,
+    /// abweichender Geschwindigkeitsfaktor je Tag
+    pub multiplier_for: TagFactors,
+    /// abweichende Dauer je Tag
+    pub seconds_for: TagFactors,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DotRt {
+    pub damage: Real,
+    pub interval: Real,
+    pub seconds: Real,
+    pub layers: u32,
+    pub level: u8,
+    /// Schadens-Faktor je Tag
+    pub factor_for: TagFactors,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PushRt {
+    pub amount: Real,
+    pub factor_for: TagFactors,
 }
 
 impl ExtrasRt {
     pub fn new(e: &HitExtras, tags: &TagTable) -> Self {
         ExtrasRt {
-            exclude_tags: tag_mask(tags, &e.filter.exclude_tags),
-            skip_immune: e.filter.skip_immune,
-            skip_frozen: e.filter.skip_frozen,
-            skip_glue_level: e.filter.skip_glue_level,
+            filter: FilterRt::new(&e.filter, tags),
             damage_vs: e
                 .damage_vs
                 .iter()
@@ -64,24 +113,34 @@ impl ExtrasRt {
             freeze: e.freeze.as_ref().map(|f| FreezeRt {
                 seconds: real(f.seconds),
                 layers: f.layers,
-                scale: f
-                    .scale
-                    .iter()
-                    .map(|t| (tag_mask(tags, std::slice::from_ref(&t.tag)), real(t.factor)))
-                    .collect(),
+                scale: tag_factors(tags, &f.scale),
             }),
             slow: e.slow.as_ref().map(|s| SlowRt {
                 multiplier: real(s.multiplier),
                 seconds: real(s.seconds),
                 level: s.level,
                 layers: s.layers,
-                multiplier_for: s
-                    .multiplier_for
-                    .iter()
-                    .map(|t| (tag_mask(tags, std::slice::from_ref(&t.tag)), real(t.factor)))
-                    .collect(),
+                multiplier_for: tag_factors(tags, &s.multiplier_for),
+                seconds_for: tag_factors(tags, &s.seconds_for),
             }),
+            dot: e.dot.as_ref().map(|d| DotRt {
+                damage: real(d.damage),
+                interval: real(d.interval),
+                seconds: real(d.seconds),
+                layers: d.layers,
+                level: d.level,
+                factor_for: tag_factors(tags, &d.factor_for),
+            }),
+            push: e
+                .push
+                .as_ref()
+                .map(|p| PushRt { amount: real(p.amount), factor_for: tag_factors(tags, &p.factor_for) }),
         }
+    }
+
+    /// Ob der Treffer Status-Effekte setzt, die auch ohne Schaden wirken.
+    pub fn has_effect(&self) -> bool {
+        self.freeze.is_some() || self.slow.is_some() || self.dot.is_some()
     }
 }
 
@@ -97,6 +156,9 @@ pub struct AttackRt {
     pub camo: bool,
     pub kind: AttackKind,
     pub extras: ExtrasRt,
+    /// Kritischer Treffer: (Schaden, jeder n-te Schuss)
+    pub crit: Option<(Real, u32)>,
+    pub shots: u32,
     pub cd_left: Real,
 }
 
@@ -107,18 +169,23 @@ pub enum AttackKind {
     Hitscan,
     /// Sofort am vordersten Ziel explodieren, Radius zum Quadrat (sim_v0-Bomb).
     Splash { r2: Real },
-    /// Sofortiger Flächentreffer um den Turm (Ice), Radius = Reichweite.
-    Area { range: Real },
+    /// Sofortiger Flächentreffer um den Turm (Ice, Ring of Fire).
+    Area { radius: Real },
     /// Fliegende Projektile.
-    Projectile {
-        speed: Real,
-        lifespan: Real,
-        radius: Real,
-        emission: EmissionRt,
-        /// geteilt: jedes Projektil eines Schusses verweist auf dieselbe Liste
-        contacts: Arc<[ContactRt]>,
-        path: Option<Arc<PathRt>>,
-    },
+    Projectile(Arc<ProjectileDef>),
+}
+
+/// Unveränderliche Daten eines Projektil-Angriffs (geteilt von allen Projektilen eines Schusses).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ProjectileDef {
+    pub speed: Real,
+    pub lifespan: Real,
+    pub radius: Real,
+    pub emission: EmissionRt,
+    pub contacts: Vec<ContactRt>,
+    pub on_exhaust: Vec<ContactRt>,
+    pub path: Option<PathRt>,
+    pub clear_hits: Option<Real>,
 }
 
 /// Kurvenbahn (Boomerang) in lokalen Koordinaten, +y = Richtung zum Ziel.
@@ -165,9 +232,11 @@ pub struct EmissionRt {
     pub offset: Real,
     /// Richtung unabhängig vom Ziel (Turm dreht sich nicht).
     pub fixed: bool,
+    /// > 0: parallele Projektile mit diesem Abstand quer zur Schussrichtung
+    pub spread: Real,
 }
 
-/// Effekt bei Kontakt (Sim-Typ, aus `Contact`).
+/// Effekt bei Kontakt oder Ablauf (Sim-Typ, aus `Contact`).
 #[derive(Clone, Debug, PartialEq)]
 pub enum ContactRt {
     Explosion {
@@ -178,11 +247,9 @@ pub enum ContactRt {
         camo: bool,
         extras: ExtrasRt,
     },
+    /// Splitter; Flug und eigene Verbrauchs-Effekte stecken in `def`.
     Shards {
-        emission: EmissionRt,
-        speed: Real,
-        lifespan: Real,
-        radius: Real,
+        def: Arc<ProjectileDef>,
         pierce: u32,
         damage: Real,
         cannot_damage: Props,
@@ -203,30 +270,61 @@ fn contact_rt(c: &Contact, tags: &TagTable) -> ContactRt {
             camo: *camo,
             extras,
         },
-        Contact::Shards { emission, speed, lifespan, radius, pierce, damage, camo, inherit_hit, .. } => {
-            ContactRt::Shards {
-                emission: emission_rt(emission),
+        Contact::Shards {
+            emission,
+            speed,
+            lifespan,
+            radius,
+            pierce,
+            damage,
+            camo,
+            inherit_hit,
+            on_exhaust,
+            ..
+        } => ContactRt::Shards {
+            def: Arc::new(ProjectileDef {
                 speed: real(*speed),
                 lifespan: real(*lifespan),
                 radius: real(*radius),
-                pierce: *pierce,
-                damage: real(*damage),
-                cannot_damage: c.cannot_damage_props(),
-                camo: *camo,
-                extras,
-                inherit_hit: *inherit_hit,
-            }
-        }
+                emission: emission_rt(emission),
+                contacts: Vec::new(),
+                on_exhaust: on_exhaust.iter().map(|c| contact_rt(c, tags)).collect(),
+                path: None,
+                clear_hits: None,
+            }),
+            pierce: *pierce,
+            damage: real(*damage),
+            cannot_damage: c.cannot_damage_props(),
+            camo: *camo,
+            extras,
+            inherit_hit: *inherit_hit,
+        },
     }
 }
 
 fn emission_rt(e: &Emission) -> EmissionRt {
     match e {
-        Emission::Single {} => EmissionRt { count: 1, angle: 0.0, offset: 0.0, fixed: false },
-        Emission::Arc { count, angle, offset, fixed } => {
-            EmissionRt { count: *count, angle: real(*angle), offset: real(*offset), fixed: *fixed }
+        Emission::Single {} => EmissionRt { count: 1, angle: 0.0, offset: 0.0, fixed: false, spread: 0.0 },
+        Emission::Arc { count, angle, offset, fixed } => EmissionRt {
+            count: *count,
+            angle: real(*angle),
+            offset: real(*offset),
+            fixed: *fixed,
+            spread: 0.0,
+        },
+        Emission::Parallel { count, spread } => {
+            EmissionRt { count: *count, angle: 0.0, offset: 0.0, fixed: false, spread: real(*spread) }
         }
     }
+}
+
+/// Verlangsamungs-Zone um den Turm (Arctic Wind).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ZoneRt {
+    pub radius: Real,
+    pub speed_scale: Real,
+    pub camo: bool,
+    pub filter: FilterRt,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -240,6 +338,7 @@ pub struct Tower {
     /// Insgesamt ausgegeben (Basis + Upgrades), Grundlage für den Verkaufswert.
     pub spent: Money,
     pub attacks: SmallVec<[AttackRt; 2]>,
+    pub zones: SmallVec<[ZoneRt; 1]>,
 }
 
 impl Tower {
@@ -262,6 +361,7 @@ impl Tower {
             footprint: v.footprint,
             spent: cost,
             attacks: SmallVec::new(),
+            zones: SmallVec::new(),
         };
         t.set_variant(v, tags);
         t
@@ -271,13 +371,14 @@ impl Tower {
     pub fn set_variant(&mut self, v: &VariantV1, tags: &TagTable) {
         self.tiers = v.tiers;
         self.footprint = v.footprint;
-        let old: SmallVec<[Real; 2]> = self.attacks.iter().map(|a| a.cd_left).collect();
+        let old: SmallVec<[(Real, u32); 2]> = self.attacks.iter().map(|a| (a.cd_left, a.shots)).collect();
         self.attacks = v
             .attacks
             .iter()
             .enumerate()
             .map(|(i, a)| {
                 let range = real(a.range.unwrap_or(v.range));
+                let (cd_left, shots) = old.get(i).copied().unwrap_or((0.0, 0));
                 AttackRt {
                     range2: range * range,
                     cooldown: real(a.cooldown),
@@ -291,25 +392,42 @@ impl Tower {
                             let r = real(*radius);
                             AttackKind::Splash { r2: r * r }
                         }
-                        Delivery::Area {} => AttackKind::Area { range },
-                        Delivery::Projectile { speed, lifespan, radius, emission, on_contact, path } => {
-                            AttackKind::Projectile {
-                                speed: real(*speed),
-                                lifespan: real(*lifespan),
-                                radius: real(*radius),
-                                emission: emission_rt(emission),
-                                contacts: on_contact
-                                    .iter()
-                                    .map(|c| contact_rt(c, tags))
-                                    .collect::<Vec<_>>()
-                                    .into(),
-                                path: path.as_ref().map(|p| Arc::new(PathRt::new(p))),
-                            }
-                        }
+                        Delivery::Area { radius } => AttackKind::Area { radius: radius.map_or(range, real) },
+                        Delivery::Projectile {
+                            speed,
+                            lifespan,
+                            radius,
+                            emission,
+                            on_contact,
+                            path,
+                            clear_hits,
+                            on_exhaust,
+                        } => AttackKind::Projectile(Arc::new(ProjectileDef {
+                            speed: real(*speed),
+                            lifespan: real(*lifespan),
+                            radius: real(*radius),
+                            emission: emission_rt(emission),
+                            contacts: on_contact.iter().map(|c| contact_rt(c, tags)).collect(),
+                            on_exhaust: on_exhaust.iter().map(|c| contact_rt(c, tags)).collect(),
+                            path: path.as_ref().map(|p| PathRt::new(p)),
+                            clear_hits: clear_hits.map(real),
+                        })),
                     },
                     extras: ExtrasRt::new(&a.extras, tags),
-                    cd_left: old.get(i).copied().unwrap_or(0.0),
+                    crit: a.crit.map(|c| (real(c.damage), c.every.max(1))),
+                    shots,
+                    cd_left,
                 }
+            })
+            .collect();
+        self.zones = v
+            .zones
+            .iter()
+            .map(|z| ZoneRt {
+                radius: real(z.radius),
+                speed_scale: real(z.speed_scale),
+                camo: z.camo,
+                filter: FilterRt::new(&z.filter, tags),
             })
             .collect();
     }

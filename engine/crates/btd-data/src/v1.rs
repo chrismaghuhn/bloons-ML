@@ -7,6 +7,7 @@
 //! sim_v0 (die M1-Referenz) ist ein Datensatz in diesem Format: Hitscan-Angriffe, 1 HP pro
 //! Schicht, Raster-Koordinaten, 20 Ticks/s.
 
+use std::collections::HashSet;
 use std::path::Path;
 
 use serde::Deserialize;
@@ -36,7 +37,7 @@ impl Props {
         self.0 & other.0 != 0
     }
 
-    fn parse(names: &[String], what: &str) -> Result<Props, DataError> {
+    pub fn parse(names: &[String], what: &str) -> Result<Props, DataError> {
         let mut m = 0;
         for n in names {
             m |= match n.as_str() {
@@ -220,7 +221,11 @@ pub enum Delivery {
     HitscanSplash { radius: f64 },
     /// Sofortiger Flächentreffer um den Turm (Ice): bis zu `pierce` Bloons in Reichweite,
     /// weiteste zuerst. Feuert nur, wenn ein Ziel in Reichweite ist.
-    Area {},
+    Area {
+        /// Radius des Flächentreffers; ohne Angabe die Reichweite des Angriffs.
+        #[serde(default)]
+        radius: Option<f64>,
+    },
     /// Fliegendes Projektil. Trifft jeden Bloon höchstens einmal, bis `pierce` verbraucht ist
     /// oder `lifespan` abläuft. `radius` + Bloon-Radius = Kollisionsabstand. Mit `path` fliegt es
     /// eine Kurve (Boomerang): Punkte relativ zum Turm, lokale +y-Achse = Richtung zum Ziel;
@@ -232,6 +237,13 @@ pub enum Delivery {
         emission: Emission,
         #[serde(default)]
         path: Option<Vec<[f64; 2]>>,
+        /// Treffer-Set alle n Sekunden leeren, damit dasselbe Projektil erneut treffen kann.
+        #[serde(default)]
+        clear_hits: Option<f64>,
+        /// Was passiert, sobald der Pierce verbraucht ist (Spiel: CreateProjectileOnExhaustFraction
+        /// mit fraction 1); beim bloßen Ablaufen der Lebensdauer nichts.
+        #[serde(default)]
+        on_exhaust: Vec<Contact>,
         /// Was bei jedem Kontakt mit einem Bloon zusätzlich passiert (Bomb: Explosion,
         /// Frag Bombs: Explosion + Splitter).
         #[serde(default)]
@@ -273,6 +285,10 @@ pub enum Contact {
         /// treffen also z.B. den Kontakt-Bloon nicht noch einmal.
         #[serde(default)]
         inherit_hit: bool,
+        /// Effekte, sobald der Pierce eines Splitters verbraucht ist (Cluster Bombs: Explosion).
+        /// Nur Explosionen, keine weiteren Splitter.
+        #[serde(default)]
+        on_exhaust: Vec<Contact>,
     },
 }
 
@@ -292,22 +308,89 @@ pub enum Emission {
         #[serde(default)]
         fixed: bool,
     },
+    /// `count` Projektile nebeneinander in dieselbe Richtung, `spread` Abstand quer dazu.
+    Parallel { count: u32, spread: f64 },
+}
+
+impl Emission {
+    fn valid(&self) -> bool {
+        match self {
+            Emission::Single {} => true,
+            Emission::Arc { count, angle, offset, .. } => {
+                (1..=1000).contains(count)
+                    && angle.is_finite()
+                    && (0.0..=360.0).contains(angle)
+                    && offset.is_finite()
+            }
+            Emission::Parallel { count, spread } => {
+                (1..=100).contains(count) && spread.is_finite() && *spread >= 0.0
+            }
+        }
+    }
+}
+
+impl HitFilter {
+    fn valid(&self, tags: &HashSet<&str>) -> bool {
+        self.exclude_tags.iter().all(|t| tags.contains(t.as_str()))
+            && Props::parse(&self.skip_props, "").is_ok()
+    }
 }
 
 impl HitExtras {
-    fn valid(&self) -> bool {
+    /// Werte im gültigen Bereich und nur Tags, die ein Bloon der Daten hat (Tippfehler würden
+    /// sonst still zur leeren Maske).
+    fn valid(&self, tags: &HashSet<&str>) -> bool {
         let ok = |x: f64| x.is_finite() && x >= 0.0;
-        self.damage_vs.iter().all(|b| b.add.is_finite())
+        let known = |list: &[TagFactor]| list.iter().all(|t| tags.contains(t.tag.as_str()));
+        self.filter.valid(tags)
+            && self.damage_vs.iter().all(|b| tags.contains(b.tag.as_str()))
+            && self.freeze.as_ref().map_or(true, |f| known(&f.scale))
+            && self.slow.as_ref().map_or(true, |s| known(&s.multiplier_for) && known(&s.seconds_for))
+            && self.dot.as_ref().map_or(true, |d| known(&d.factor_for))
+            && self.push.as_ref().map_or(true, |p| known(&p.factor_for))
+            && self.damage_vs.iter().all(|b| b.add.is_finite())
             && self.freeze.as_ref().map_or(true, |f| ok(f.seconds) && f.scale.iter().all(|t| ok(t.factor)))
+            && self.dot.as_ref().map_or(true, |d| {
+                ok(d.damage)
+                    && ok(d.interval)
+                    && d.interval > 0.0
+                    && ok(d.seconds)
+                    && d.factor_for.iter().all(|t| ok(t.factor))
+            })
+            && self.push.as_ref().map_or(true, |p| ok(p.amount) && p.factor_for.iter().all(|t| ok(t.factor)))
             && self.slow.as_ref().map_or(true, |s| {
                 ok(s.seconds)
                     && (0.0..=1.0).contains(&s.multiplier)
                     && s.multiplier_for.iter().all(|t| (0.0..=1.0).contains(&t.factor))
+                    && s.seconds_for.iter().all(|t| ok(t.factor))
             })
     }
 }
 
 impl Contact {
+    /// Werte, Eigenschaften und Extras gültig; Splitter (nur mit `shards_ok`) dürfen beim
+    /// Verbrauch höchstens 8 Explosionen auslösen.
+    fn valid(&self, shards_ok: bool, tags: &HashSet<&str>) -> bool {
+        let pos = |x: f64| x.is_finite() && x > 0.0;
+        let non_neg = |x: f64| x.is_finite() && x >= 0.0;
+        let (Contact::Explosion { cannot_damage, .. } | Contact::Shards { cannot_damage, .. }) = self;
+        Props::parse(cannot_damage, "").is_ok()
+            && self.extras().valid(tags)
+            && match self {
+                Contact::Explosion { radius, damage, .. } => pos(*radius) && non_neg(*damage),
+                Contact::Shards { emission, speed, lifespan, radius, damage, on_exhaust, .. } => {
+                    shards_ok
+                        && pos(*speed)
+                        && pos(*lifespan)
+                        && non_neg(*radius)
+                        && non_neg(*damage)
+                        && emission.valid()
+                        && on_exhaust.len() <= 8
+                        && on_exhaust.iter().all(|c| c.valid(false, tags))
+                }
+            }
+    }
+
     pub fn extras(&self) -> &HitExtras {
         let (Contact::Explosion { extras, .. } | Contact::Shards { extras, .. }) = self;
         extras
@@ -338,6 +421,7 @@ pub struct AttackV1 {
     pub camo: bool,
     pub delivery: Delivery,
     pub extras: HitExtras,
+    pub crit: Option<Crit>,
 }
 
 /// Zusätzliche Treffer-Regeln (aus den Filter-, Bonus- und Status-Models des Spiels).
@@ -351,6 +435,56 @@ pub struct HitExtras {
     pub freeze: Option<Freeze>,
     /// Verlangsamen (Glue).
     pub slow: Option<Slow>,
+    /// Schaden über Zeit (Corrosive Glue, Tack-Feuer).
+    pub dot: Option<Dot>,
+    /// Zurückstoßen entlang des Pfads (Bomb).
+    pub push: Option<Push>,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Dot {
+    pub damage: f64,
+    /// Sekunden zwischen zwei Schadens-Ticks; der erste kommt nach einem Intervall.
+    pub interval: f64,
+    pub seconds: f64,
+    pub layers: u32,
+    /// Glue-Stufe, die der Effekt setzt (0 = keine).
+    #[serde(default)]
+    pub level: u8,
+    /// Schadens-Faktor für Bloons mit Tag (Spiel: MOABs 0.375).
+    #[serde(default)]
+    pub factor_for: Vec<TagFactor>,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Push {
+    /// Strecke zurück entlang des Pfads.
+    pub amount: f64,
+    /// Faktor für Bloons mit Tag (Spiel: MOAB-Klassen 0).
+    #[serde(default)]
+    pub factor_for: Vec<TagFactor>,
+}
+
+/// Kritischer Treffer: jeder `every`-te Schuss macht `damage` statt des normalen Schadens.
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Crit {
+    pub damage: f64,
+    pub every: u32,
+}
+
+/// Verlangsamungs-Zone um den Turm (Arctic Wind).
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Zone {
+    pub radius: f64,
+    pub speed_scale: f64,
+    #[serde(default)]
+    pub camo: bool,
+    #[serde(default)]
+    pub filter: HitFilter,
 }
 
 /// Welche Bloons ein Angriff gar nicht erst anvisiert oder trifft.
@@ -359,8 +493,9 @@ pub struct HitExtras {
 pub struct HitFilter {
     /// Bloons mit einem dieser Tags auslassen (z.B. "Moabs").
     pub exclude_tags: Vec<String>,
-    /// Bloons auslassen, die der Angriff nicht beschädigen kann (Spiel: FilterBloonIfDamageType).
-    pub skip_immune: bool,
+    /// Bloons mit einer dieser Eigenschaften auslassen (Spiel: FilterBloonIfDamageType mit
+    /// `ifCantHitBloonProperties`; kann von `cannot_damage` abweichen).
+    pub skip_props: Vec<String>,
     pub skip_frozen: bool,
     /// Bloons auslassen, die schon mindestens diese Glue-Stufe haben (0 = kein Filter).
     pub skip_glue_level: u8,
@@ -402,6 +537,9 @@ pub struct Slow {
     /// Abweichender Geschwindigkeitsfaktor für Bloons mit Tag (Spiel: MOABs 1.0 = nicht verlangsamt).
     #[serde(default)]
     pub multiplier_for: Vec<TagFactor>,
+    /// Abweichende Dauer in Sekunden für Bloons mit Tag (`factor` = Sekunden; Spiel: lifespanOverride).
+    #[serde(default)]
+    pub seconds_for: Vec<TagFactor>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -410,6 +548,7 @@ pub struct VariantV1 {
     pub range: f64,
     pub footprint: f64,
     pub attacks: Vec<AttackV1>,
+    pub zones: Vec<Zone>,
 }
 
 #[derive(Clone, Debug)]
@@ -554,6 +693,8 @@ struct RawVariant {
     range: f64,
     footprint: f64,
     attacks: Vec<RawAttack>,
+    #[serde(default)]
+    zones: Vec<Zone>,
 }
 
 #[derive(Deserialize)]
@@ -574,6 +715,8 @@ struct RawAttack {
     delivery: Delivery,
     #[serde(default)]
     extras: HitExtras,
+    #[serde(default)]
+    crit: Option<Crit>,
 }
 
 fn first() -> Targeting {
@@ -791,6 +934,8 @@ impl GameV1 {
         }
         // Kollision Projektil/Bloon braucht einen Radius > 0 auf mindestens einer Seite
         let min_bloon_radius = self.bloons.iter().map(|b| b.radius).fold(f64::INFINITY, f64::min);
+        let tags: HashSet<&str> =
+            self.bloons.iter().flat_map(|b| b.tags.iter().map(String::as_str)).collect();
 
         for t in &self.towers {
             if !(1..=crate::MAX_DOLLARS).contains(&t.cost)
@@ -813,15 +958,32 @@ impl GameV1 {
                 if !pos(v.range) || !non_neg(v.footprint) {
                     return Err(invalid(format!("{what}: range > 0, footprint >= 0 erwartet")));
                 }
+                for z in &v.zones {
+                    if !pos(z.radius) || !(0.0..=1.0).contains(&z.speed_scale) || !z.filter.valid(&tags) {
+                        return Err(invalid(format!("{what}: ungültige Zone")));
+                    }
+                }
                 for a in &v.attacks {
                     let ok = pos(a.cooldown)
                         && non_neg(a.damage)
                         && a.range.map_or(true, pos)
                         && match &a.delivery {
-                            Delivery::Hitscan {} | Delivery::Area {} => true,
+                            Delivery::Hitscan {} => true,
+                            Delivery::Area { radius } => radius.map_or(true, pos),
                             Delivery::HitscanSplash { radius } => pos(*radius),
-                            Delivery::Projectile { speed, lifespan, radius, emission, on_contact, path } => {
-                                on_contact.len() <= 8
+                            Delivery::Projectile {
+                                speed,
+                                lifespan,
+                                radius,
+                                emission,
+                                on_contact,
+                                path,
+                                clear_hits,
+                                on_exhaust,
+                            } => {
+                                clear_hits.map_or(true, |c| c > 0.0)
+                                    && on_exhaust.len() <= 8
+                                    && on_contact.len() <= 8
                                     && (*radius > 0.0 || min_bloon_radius > 0.0)
                                     && path.as_ref().map_or(true, |p| {
                                         p.len() >= 2
@@ -831,71 +993,18 @@ impl GameV1 {
                                     && pos(*speed)
                                     && pos(*lifespan)
                                     && non_neg(*radius)
-                                    && match emission {
-                                        Emission::Single {} => true,
-                                        Emission::Arc { count, angle, offset, .. } => {
-                                            (1..=1000).contains(count)
-                                                && non_neg(*angle)
-                                                && offset.is_finite()
-                                        }
-                                    }
-                                    && on_contact.iter().all(|c| {
-                                        let ok_props = Props::parse(
-                                            match c {
-                                                Contact::Explosion { cannot_damage, .. }
-                                                | Contact::Shards { cannot_damage, .. } => cannot_damage,
-                                            },
-                                            &what,
-                                        )
-                                        .is_ok();
-                                        ok_props
-                                            && match c {
-                                                Contact::Explosion { radius, damage, .. } => {
-                                                    pos(*radius) && non_neg(*damage)
-                                                }
-                                                Contact::Shards {
-                                                    emission,
-                                                    speed,
-                                                    lifespan,
-                                                    radius,
-                                                    damage,
-                                                    ..
-                                                } => {
-                                                    pos(*speed)
-                                                        && pos(*lifespan)
-                                                        && non_neg(*radius)
-                                                        && non_neg(*damage)
-                                                        && match emission {
-                                                            Emission::Single {} => true,
-                                                            Emission::Arc {
-                                                                count, angle, offset, ..
-                                                            } => {
-                                                                (1..=1000).contains(count)
-                                                                    && non_neg(*angle)
-                                                                    && offset.is_finite()
-                                                            }
-                                                        }
-                                                }
-                                            }
-                                    })
+                                    && emission.valid()
+                                    && on_contact
+                                        .iter()
+                                        .chain(on_exhaust.iter())
+                                        .all(|c| c.valid(true, &tags))
                             }
                         };
                     if !ok {
                         return Err(invalid(format!("{what} Angriff {}: ungültige Werte", a.tag)));
                     }
-                    let contact_extras = match &a.delivery {
-                        Delivery::Projectile { on_contact, .. } => on_contact
-                            .iter()
-                            .map(|c| match c {
-                                Contact::Explosion { extras, .. } | Contact::Shards { extras, .. } => extras,
-                            })
-                            .collect(),
-                        _ => vec![],
-                    };
-                    for e in std::iter::once(&a.extras).chain(contact_extras) {
-                        if !e.valid() {
-                            return Err(invalid(format!("{what} Angriff {}: ungültige extras", a.tag)));
-                        }
+                    if !a.extras.valid(&tags) {
+                        return Err(invalid(format!("{what} Angriff {}: ungültige extras", a.tag)));
                     }
                 }
             }
@@ -989,6 +1098,7 @@ fn resolve_tower(t: &RawTower) -> Result<TowerDefV1, DataError> {
             tiers: v.tiers,
             range: v.range,
             footprint: v.footprint,
+            zones: v.zones.clone(),
             attacks: v
                 .attacks
                 .iter()
@@ -1004,6 +1114,7 @@ fn resolve_tower(t: &RawTower) -> Result<TowerDefV1, DataError> {
                         camo: a.camo,
                         delivery: a.delivery.clone(),
                         extras: a.extras.clone(),
+                        crit: a.crit,
                     })
                 })
                 .collect::<Result<_, DataError>>()?,

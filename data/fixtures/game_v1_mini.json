@@ -687,7 +687,9 @@
        "extras": {
         "filter": {
          "skip_frozen": true,
-         "skip_immune": true
+         "skip_props": [
+          "lead"
+         ]
         },
         "freeze": {
          "seconds": 1.5,

@@ -73,6 +73,16 @@ pub struct BloonStore {
     pub slow_left: Vec<Real>,
     pub glue: Vec<u8>,
     pub glue_layers: Vec<u32>,
+    /// Zweiter Slow-Slot für Verlangsamungen ohne Glue-Stufe (Permafrost); wirkt zusätzlich zum Glue.
+    pub chill_mul: Vec<Real>,
+    pub chill_left: Vec<Real>,
+    pub chill_layers: Vec<u32>,
+    /// Schaden über Zeit: Schaden pro Tick, Intervall, Zeit bis zum nächsten Tick, Restdauer, Schichten.
+    pub dot_damage: Vec<Real>,
+    pub dot_interval: Vec<Real>,
+    pub dot_timer: Vec<Real>,
+    pub dot_left: Vec<Real>,
+    pub dot_layers: Vec<u32>,
 }
 
 impl BloonStore {
@@ -98,6 +108,14 @@ impl BloonStore {
         self.slow_left.push(0.0);
         self.glue.push(0);
         self.glue_layers.push(0);
+        self.chill_mul.push(1.0);
+        self.chill_left.push(0.0);
+        self.chill_layers.push(0);
+        self.dot_damage.push(0.0);
+        self.dot_interval.push(0.0);
+        self.dot_timer.push(0.0);
+        self.dot_left.push(0.0);
+        self.dot_layers.push(0);
     }
 
     pub fn clear(&mut self) {
@@ -114,6 +132,14 @@ impl BloonStore {
         self.slow_left.clear();
         self.glue.clear();
         self.glue_layers.clear();
+        self.chill_mul.clear();
+        self.chill_left.clear();
+        self.chill_layers.clear();
+        self.dot_damage.clear();
+        self.dot_interval.clear();
+        self.dot_timer.clear();
+        self.dot_left.clear();
+        self.dot_layers.clear();
     }
 
     /// Entfernt alle `alive == false`, Reihenfolge bleibt erhalten. O(n).
@@ -134,6 +160,14 @@ impl BloonStore {
                 self.slow_left[w] = self.slow_left[r];
                 self.glue[w] = self.glue[r];
                 self.glue_layers[w] = self.glue_layers[r];
+                self.chill_mul[w] = self.chill_mul[r];
+                self.chill_left[w] = self.chill_left[r];
+                self.chill_layers[w] = self.chill_layers[r];
+                self.dot_damage[w] = self.dot_damage[r];
+                self.dot_interval[w] = self.dot_interval[r];
+                self.dot_timer[w] = self.dot_timer[r];
+                self.dot_left[w] = self.dot_left[r];
+                self.dot_layers[w] = self.dot_layers[r];
                 w += 1;
             }
         }
@@ -150,6 +184,14 @@ impl BloonStore {
         self.slow_left.truncate(w);
         self.glue.truncate(w);
         self.glue_layers.truncate(w);
+        self.chill_mul.truncate(w);
+        self.chill_left.truncate(w);
+        self.chill_layers.truncate(w);
+        self.dot_damage.truncate(w);
+        self.dot_interval.truncate(w);
+        self.dot_timer.truncate(w);
+        self.dot_left.truncate(w);
+        self.dot_layers.truncate(w);
     }
 }
 

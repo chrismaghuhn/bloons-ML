@@ -103,7 +103,9 @@ fn state(g: &Game, data: &GameV1, r: &btd_core::RoundReport) -> State {
                 let blast = match v.attacks[0].delivery {
                     Delivery::Hitscan {} => 0.0,
                     Delivery::HitscanSplash { radius } => radius,
-                    Delivery::Projectile { .. } | Delivery::Area {} => unreachable!("sim_v0 hat nur Hitscan"),
+                    Delivery::Projectile { .. } | Delivery::Area { .. } => {
+                        unreachable!("sim_v0 hat nur Hitscan")
+                    }
                 };
                 (
                     t.kind,
