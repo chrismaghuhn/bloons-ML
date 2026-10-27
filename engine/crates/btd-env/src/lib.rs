@@ -338,6 +338,23 @@ impl Env {
         res
     }
 
+    /// Ein gestörter Zustand als fester Zustand (z.B. für einen Eval-Satz): Störungen wie beim
+    /// Training, aber mit eigenem Seed; ein verkaufter Turm ist danach schon weg. Ändert die Env nicht.
+    pub fn perturbed_state(&self, base: &StartState, seed: u64) -> Result<StartState, String> {
+        let mut rng = splitmix64(seed);
+        let mut g = self.game.clone();
+        for _ in 0..8 {
+            let p = start::perturb(base, &g, self.layout.cell, &mut RngDice(&mut rng));
+            if p.state.build(&mut g).is_ok() {
+                if let Some(i) = p.sell {
+                    let _ = g.apply(Action::Sell { tower: i as btd_core::TowerId });
+                }
+                return Ok(StartState::from_game(&g));
+            }
+        }
+        Err("keine gültige Störung gefunden".into())
+    }
+
     /// Einstellungen für Startzustände (VecEnv: für alle Envs gemeinsam).
     pub fn set_starts(&mut self, starts: Option<Arc<StartConfig>>) {
         self.starts = starts;
@@ -688,6 +705,9 @@ impl Env {
         self.game = game;
         self.builds_left = self.cfg.max_builds_per_round;
         self.last_replay = None;
+        // geladenes Spiel zählt als normale Episode (kein 3-Runden-Ergebnis, kein alter Snapshot)
+        self.start = EpisodeStart::default();
+        self.candidate = None;
         if self.cfg.record {
             let r = Recorder::resume(&self.spec, &self.cfg, &checks);
             if self.game.over() {

@@ -97,3 +97,8 @@ uv pip install --python .venv/bin/python -r requirements.txt
 ```
 
 Datenquelle: [bloonswiki.com](https://www.bloonswiki.com) (Stand der Spieldaten ≈ v55–56).
+
+**Startzustände** (docs/design-start-states.md): `--start-states 0.3 --start-replays data/local/starts/*/*.jsonl`
+lässt 30 % der Episoden aus gestörten Spielständen beginnen (eigene Rollouts, Replays anderer Läufe,
+zufällige Builds im Budget). Replays aufzeichnen: `tools/record_games.py`; fester Eval-Satz
+"Erholung": `tools/make_recovery_set.py`, ausgewertet mit `tools/analyze_policy.py --recovery`.

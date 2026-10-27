@@ -173,6 +173,12 @@ impl PyEnv {
         Ok(PyArray1::from_slice(py, &self.obs))
     }
 
+    /// Gestörter Zustand (Störungen wie im Training, eigener Seed) als JSON, z.B. für Eval-Sätze.
+    fn perturb_state(&self, state: &str, seed: u64) -> PyResult<String> {
+        let s = self.env.perturbed_state(&parse_state(state)?, seed).map_err(value_err)?;
+        Ok(serde_json::to_string(&s).expect("serialisierbar"))
+    }
+
     /// Aktueller Spielstand als Startzustand (JSON).
     fn state(&self) -> String {
         serde_json::to_string(&StartState::from_game(&self.env.game)).expect("serialisierbar")

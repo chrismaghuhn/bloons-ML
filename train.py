@@ -55,6 +55,12 @@ if __name__ == "__main__":
                     help="conv: btd_sim.policy.GridPolicy (Standard mit --engine rust), mlp: flaches MLP")
     ap.add_argument("--ban-towers", type=int, default=0,
                     help="je Episode bis zu so viele Turmtypen zufällig sperren (nur Rust)")
+    ap.add_argument("--start-states", type=float, default=0.0,
+                    help="Anteil der Episoden aus Startzuständen (docs/design-start-states.md), z.B. 0.3")
+    ap.add_argument("--start-random", type=float, default=0.2,
+                    help="davon zufällige Builds im Budget (Quelle C)")
+    ap.add_argument("--start-replays", nargs="*", default=[],
+                    help="Replays (.jsonl) als Quelle B und für die Budgetkurve")
     ap.add_argument("--conv-width", type=int, default=32, help="Kanäle der Faltungs-Policy")
     ap.add_argument("--conv-blocks", type=int, default=4, help="Residual-Blöcke der Faltungs-Policy")
     ap.add_argument("--amp", action=argparse.BooleanOptionalAction, default=True,
@@ -66,8 +72,11 @@ if __name__ == "__main__":
     if args.arch is None:
         args.arch = "conv" if args.engine == "rust" else "mlp"
     if args.engine != "rust" and (args.data or args.preview or args.arch == "conv" or args.reward_tower
-                                   or args.ban_towers):
-        ap.error("--data/--preview/--arch conv/--reward-tower/--ban-towers gibt es nur mit --engine rust")
+                                   or args.ban_towers or args.start_states):
+        ap.error("--data/--preview/--arch conv/--reward-tower/--ban-towers/--start-states "
+                 "gibt es nur mit --engine rust")
+    if args.start_states and not args.start_replays:
+        ap.error("--start-states braucht --start-replays (Quelle B und Budgetkurve)")
     if args.resume:
         print("--resume: Architektur und Seed kommen aus dem Modell, --arch/--conv-*/--seed werden ignoriert "
               "(--amp/--compile gelten)")
@@ -102,8 +111,23 @@ if __name__ == "__main__":
         net.amp = args.amp  # auch beim Fortsetzen; ändert keine Gewichte
         if args.compile and model.device.type == "cuda":
             net.try_compile(model.device)
+    callbacks = [CheckpointCallback(100_000 // args.envs, "models/checkpoints", name_prefix=Path(args.out).name),
+                 RoundLogger()]
+    if args.start_states:
+        import json
+        from btd_sim.starts import StartPool, StartStatesCallback, budget_curve, states_from_replay
+        with open(args.data or DEFAULT_DATA) as f:
+            game_data = json.load(f)
+        pool, states_b = StartPool(), []
+        for f in args.start_replays:
+            states_b += states_from_replay(Path(f).read_text(), game_data["rules"]["end_round"])
+        for st in states_b:
+            pool.add(st, "B")
+        budget = budget_curve(states_b, game_data)
+        print(f"Startzustände: {len(states_b)} aus {len(args.start_replays)} Replays (Quelle B)")
+        callbacks.append(StartStatesCallback(pool, budget, args.start_states, args.start_random))
     model.learn(total_timesteps=args.steps,
-                callback=[CheckpointCallback(100_000 // args.envs, "models/checkpoints", name_prefix=Path(args.out).name), RoundLogger()],
+                callback=callbacks,
                 reset_num_timesteps=not args.resume, tb_log_name=Path(args.out).name)
     model.save(args.out)
     print("gespeichert:", args.out)

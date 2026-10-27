@@ -102,3 +102,21 @@ Modell, gleiche Daten (Medium R60):
 
 Überleben je Sperr-Kombination (keine, 6 Einzel-, 15 Zweier-Sperren): erreichte Runde und Leben
 deterministisch (1 Spiel) sowie Ø Runde und Siegquote stochastisch (10 Spiele).
+
+### Ergebnis (r60_base vs. r60_bans, beide Conv, `--reward-tower -0.5`, Seed 1)
+
+`r60_bans`: 5M Schritte, `--ban-towers 2`. Vielfalt ohne Sperre (64 Spiele, stochastisch):
+
+| | H(Schlüssel) | häufigster Build | Anteil |
+|---|---|---|---|
+| r60_base | 0,35 bit | erst Dart; Dart unten + Bomb unten | 61/64 |
+| r60_bans | 0,53 bit | erst Boomerang; Boomerang unten + Dart unten | 58/64 |
+
+**+0,18 bit < 0,5 bit: nach dem Kriterium nur Notfallpläne.** Die Sperren haben das Lieblingsrezept
+gewechselt, nicht vervielfacht.
+
+Überleben je Sperr-Kombination (stochastisch, 10 Spiele): r60_base gewinnt 11 von 22 Kombinationen
+(genau die mit Dart und Bomb), r60_bans 15 von 22. Ohne Dart gewinnt keiner (r60_bans kommt bis
+Runde 36, r60_base bis 3); ohne Bomb gewinnt r60_bans stochastisch 10/10, deterministisch aber nur bis
+Runde 29. Fazit: Sperren machen robuster, aber nicht vielfältiger. Nächster Hebel: Startzustände
+(docs/design-start-states.md).

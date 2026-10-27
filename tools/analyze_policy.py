@@ -7,6 +7,9 @@ Teil 1 (Vielfalt): Spiele ohne Sperre, stochastische Policy. Je Episode der Schl
 (erster Turmtyp, {(Turmtyp, Haupt-Pfad)}); ausgegeben werden die Entropie H dieser Schlüssel und
 Verteilungen von erstem Turm, Haupt-Pfaden, Runde des ersten Turms je Typ und belegten Zellen.
 
+Teil 3 (Erholung, mit `--recovery DATEI`): aus jedem Zustand des festen Eval-Satzes weiterspielen
+(tools/make_recovery_set.py); Siege und erreichte Runde, deterministisch und stochastisch.
+
 Teil 2 (Robustheit): jede Sperr-Kombination mit 0, 1 und 2 gesperrten Türmen, deterministisch
 (erreichte Runde, Leben) und stochastisch (Ø Runde, Siege).
 
@@ -79,6 +82,8 @@ def main():
     ap.add_argument("--per-set", type=int, default=10, help="stochastische Spiele je Sperr-Kombination")
     ap.add_argument("--max-banned", type=int, default=2, help="Kombinationen bis zu so vielen Sperren")
     ap.add_argument("--json", default=None, help="Ergebnisse zusätzlich als JSON speichern")
+    ap.add_argument("--recovery", default=None, help="Eval-Satz 'Erholung' (JSON-Liste von Zuständen)")
+    ap.add_argument("--skip-bans", action="store_true", help="Teil 2 auslassen")
     args = ap.parse_args()
 
     from sb3_contrib import MaskablePPO
@@ -112,6 +117,31 @@ def main():
     print("erster Turm je Typ, Ø Runde:", {t: f"{np.mean(r):.1f} ({len(r)}×)" for t, r in first_rounds.items()})
     print(f"belegte Zellen: {len(cells)} verschiedene, häufigste:", dict(cells.most_common(5)))
 
+    recovery = None
+    if args.recovery:
+        states = json.load(open(args.recovery))
+        det_r, sto_r = [], []
+        for s in states:
+            for det, acc in ((True, det_r), (False, sto_r)):
+                obs = env.env.reset_from(json.dumps(s))
+                done, info = False, {}
+                while not done:
+                    a = model.predict(obs, action_masks=env.action_masks(), deterministic=det)[0]
+                    obs, _, done, _, info = env.step(a)
+                acc.append((info["round"], info["lives"] > 0, info["round"] - s["round"]))
+        recovery = {}
+        print(f"\n== Erholung ({len(states)} gestörte Zustände, Startrunde Ø {np.mean([s['round'] for s in states]):.1f})")
+        for name, acc in (("deterministisch", det_r), ("stochastisch", sto_r)):
+            wins = sum(w for _, w, _ in acc)
+            gained = float(np.mean([g for _, _, g in acc]))
+            recovery[name] = dict(siege=wins, runden_weiter=gained)
+            print(f"{name:<16} Siege {wins}/{len(acc)}, Ø {gained:.1f} Runden weitergespielt")
+
+    if args.skip_bans:
+        if args.json:
+            Path(args.json).write_text(json.dumps(dict(model=args.model, entropy=h, recovery=recovery), indent=1))
+        return
+
     # Teil 2: Robustheit je Sperr-Kombination
     print(f"\n== Überleben je Sperre (det. Runde/Leben | stochastisch Ø Runde, Siege von {args.per_set})")
     table = []
@@ -129,7 +159,8 @@ def main():
     if args.json:
         Path(args.json).write_text(json.dumps(dict(
             model=args.model, entropy=h, keys={f"{k[0]}|{k[1]}": n for k, n in keys.items()},
-            first=dict(firsts), paths=dict(paths), rounds=rounds, survival=table), indent=1))
+            first=dict(firsts), paths=dict(paths), rounds=rounds, survival=table, recovery=recovery),
+            indent=1))
 
 
 if __name__ == "__main__":

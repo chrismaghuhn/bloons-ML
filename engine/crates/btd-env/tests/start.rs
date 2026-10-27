@@ -320,3 +320,16 @@ fn record_and_start_states() {
     e.load_replay(&rep, None, true).unwrap();
     assert!(e.replay().is_some(), "Aufnahme läuft nach load_replay weiter");
 }
+
+#[test]
+fn perturbed_state_is_reproducible_and_buildable() {
+    let base = StartState::from_game(&played().game);
+    let e = env();
+    let a = e.perturbed_state(&base, 5).unwrap();
+    assert_eq!(a, e.perturbed_state(&base, 5).unwrap(), "gleicher Seed, gleicher Zustand");
+    let differ = (0..20).filter(|&s| e.perturbed_state(&base, s).unwrap() != base).count();
+    assert!(differ >= 18, "fast immer gestört ({differ})");
+    let mut f = env();
+    let mut obs = vec![0.0; f.layout.obs_size];
+    f.reset_from(&mut obs, &a).unwrap();
+}
