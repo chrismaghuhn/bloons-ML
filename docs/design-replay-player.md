@@ -138,8 +138,7 @@ wird **einen Schritt später** wirksam, noch im selben Frame (Aufruf im Prefix d
 Turm zwischen dem 2. und 3. Schritt). Die Warteschlange wird also vor jedem Sim-Schritt geleert, nicht erst einmal
 je Frame nach der Schritt-Schleife; dann ist der Versatz immer 1, und der Player ruft für Schritt N im Prefix bei
 N − 1 auf.
-Bestätigung steht noch aus: vorgespult an drei aufeinanderfolgenden Rundenschritten messen, also an jeder Position
-im Frame einmal (Player-Test, Teil 2). Der Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt
+Bestätigt an allen drei Positionen im Frame (§10, zweiter Lauf): Versatz immer 1, auch über die Frame-Grenze. Der Recorder protokolliert den tatsächlichen Schritt jeder Aktion, so fällt
 eine Abweichung sofort auf. Karte, Modus,
 Schwierigkeit und Spielversion braucht der `/3`-Header nicht: sie stehen in `meta` der Datendatei (Abschnitt 3).
 
@@ -199,7 +198,7 @@ Damit ist die Bridge im Kern "Replay, das Zeile für Zeile über den Socket komm
 
 1. **Test-Mod (wie beim Recorder), erledigt (§10):** `CreateTowerAt` mit Sim-Koordinaten, Ausführungsschritt von
    Bridge-Aktionen (auch aus einem `Simulate`-Prefix), `SetRound`-Zählung, `SetCash`/Leben in CHIMPS,
-   Callback-Verhalten bei Fehlern. Offen: Prefix-Versatz an allen drei Positionen im Frame (Player-Test Teil 2).
+   Callback-Verhalten bei Fehlern, Prefix-Versatz an allen drei Positionen im Frame.
 2. **Player für `btd-replay/2` zwischen den Runden** (Weg A, Abschnitt 4), mit Ergebnisdatei; Test: ein Sim-Replay
    aus `data/local/starts/` im Spiel abspielen, `btd-tools replay --compare` auf die Ergebnisse.
 3. **Startzustände** (`StartState`) und Export eines `StartState` aus einer echten Partie.
@@ -233,9 +232,18 @@ Damit sind die offenen Punkte aus den Abschnitten 1, 2, 3 (Weg A) und 4 beantwor
   (`t` 5018) direkt auf den `step` dieses Postfix und kommt vor dem `step` des 3. Schritts (`t` 5019): der Turm
   entstand zwischen dem 2. und 3. Schritt, bevor der 3. die Zeit erhöhte. Würde die Warteschlange
   nur einmal je Frame nach der Schritt-Schleife geleert, stünde der Turm erst bei `t` 5019; die Messung spricht also
-  für einen festen Versatz von 1. Eine Messung; die Bestätigung an allen drei Positionen im Frame macht der
-  erweiterte Player-Test (Teil 2 setzt Türme bei Rundenzeit 300, 301 und 302 und zählt die Position im Frame im
-  Prefix, `stepInFrameAtCall`).
+  für einen festen Versatz von 1.
+- **Bestätigung an allen drei Positionen im Frame** (zweiter Lauf, vorgespult, 3 Schritte je Frame; Player-Test
+  Teil 2 setzt bei Rundenzeit 300, 301, 302 je einen Turm und zählt die Position im Frame im Prefix):
+
+  | Aufruf (Rundenzeit) | Position im Frame | Turm laut Callback und Trace |
+  |---|---|---|
+  | 300 | 2. von 3 | 301, zwischen 2. und 3. Schritt desselben Frames |
+  | 301 | 3. von 3 | 302, im nächsten Frame vor dessen 1. Schritt |
+  | 302 | 1. von 3 | 303, zwischen 1. und 2. Schritt |
+
+  Jeder Aufruf geht in die Warteschlange (`queuedActionsAfterCall` 1, kein Callback während des Aufrufs); die
+  Warteschlange wird vor jedem Sim-Schritt geleert, unabhängig von der Frame-Grenze. Der Versatz ist fest 1.
 - **Koordinaten:** `CreateTowerAt` nimmt Sim-Koordinaten (im `UnityEngine.Vector2`); (−35, 39) und (−35,37, 59,81)
   landen exakt (Abweichung 0), nichts rastet ein. `QueryPlacementPosition` gibt die Position unverändert zurück.
 - **Fehlerfälle:** belegter Platz und Strecke: `positionValid`/`CanPlaceTowerAt` schon vorher `false`; zu wenig Geld
