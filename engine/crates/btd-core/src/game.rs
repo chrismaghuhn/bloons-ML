@@ -7,7 +7,7 @@ use btd_data::{DataError, TowerKind};
 use smallvec::SmallVec;
 use xxhash_rust::xxh3::Xxh3;
 
-use crate::bloon::{hit, BloonStore, Chill, CHILL_SLOTS};
+use crate::bloon::{hit, BloonStore, Chill, GrowStack, CHILL_SLOTS};
 use crate::map::{placeable, Track};
 use crate::tower::{
     factor_for, AttackKind, Buffs, ContactRt, EmissionRt, ExtrasRt, FilterRt, ProjectileDef, TagTable, Tower,
@@ -237,7 +237,8 @@ impl World<'_> {
         let has_effect = ex.has_effect();
         // eingefrorene Bloons sind für Angriffe mit Frozen-Immunität unverwundbar
         let frozen_block = b.frozen[i] > 0.0 && cannot.0 & Props::FROZEN != 0;
-        let res = if frozen_block { None } else { Some(hit(self.defs, kind, b.hp[i], dmg, cannot)) };
+        let res =
+            if frozen_block { None } else { Some(hit(self.defs, kind, b.hp[i], dmg, cannot, b.grow[i])) };
         let Some(res) = res.filter(|r| r.changed) else {
             // Effekte ohne Schaden (Glue) wirken, solange der Bloon nicht immun ist
             if has_effect && !immune {
@@ -255,11 +256,11 @@ impl World<'_> {
         b.alive[i] = false;
         let (d, seg, flags) = (b.dist[i], b.seg[i] as usize, b.flags[i]);
         let parent = Status::of(b, i);
-        for (j, &(child, hp)) in res.rest.iter().enumerate() {
+        for (j, &(child, hp, grow)) in res.rest.iter().enumerate() {
             let cd = d - self.spacing * j as Real;
             let cseg = self.track.segment(cd, seg) as u16;
             let cpos = self.track.pos(cd, cseg as usize);
-            b.push(*next_id, child, flags, hp, cd, cseg, cpos); // Kinder erben die Flags [KAL]
+            b.push(*next_id, child, flags, hp, cd, cseg, cpos, grow); // Kinder erben die Flags [KAL]
             *next_id += 1;
             let c = b.len() - 1;
             parent.inherit(b, c);
@@ -942,12 +943,14 @@ impl Game {
             while si < spawns.len() && spawns[si].0 <= t {
                 let g = &groups[spawns[si].1];
                 let pos = self.track.pos(0.0, 0);
-                self.bloons.push(next_id, g.kind, g.flags, real(defs[g.kind as usize].hp), 0.0, 0, pos);
+                let hp = real(defs[g.kind as usize].hp);
+                self.bloons.push(next_id, g.kind, g.flags, hp, 0.0, 0, pos, GrowStack::default());
                 next_id += 1;
                 si += 1;
             }
 
-            // Bewegen + Durchgelassene (Eingefrorene stehen, Verlangsamte bewegen sich langsamer)
+            // Bewegen + Durchgelassene (Eingefrorene stehen und wachsen nicht nach, Verlangsamte bewegen
+            // sich langsamer); Regrow-Bloons wachsen alle `grow_rate` Sekunden eine Stufe zurück
             if !self.bloons.is_empty() {
                 let b = &mut self.bloons;
                 let mut leaked = 0;
@@ -955,6 +958,14 @@ impl Game {
                     if b.frozen[i] > 0.0 {
                         b.frozen[i] = (b.frozen[i] - dt).max(0.0);
                         continue;
+                    }
+                    if !b.grow[i].is_empty() {
+                        b.grow_timer[i] += dt;
+                        let rate = defs[b.kind[i] as usize].grow_rate;
+                        if rate > 0.0 && b.grow_timer[i] >= real(rate) {
+                            let k = b.grow[i].pop().expect("nicht leer");
+                            (b.kind[i], b.hp[i], b.grow_timer[i]) = (k, real(defs[k as usize].hp), 0.0);
+                        }
                     }
                     let mut mul: Real = 1.0;
                     if b.slow_left[i] > 0.0 {

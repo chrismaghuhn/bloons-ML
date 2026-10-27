@@ -6,22 +6,69 @@ use smallvec::SmallVec;
 
 use crate::{real, Real};
 
+/// Höchstzahl Regrow-Vorfahren je Bloon (längste Kette im Spiel: Ceramic bzw. Lead bis Red, 8).
+pub const GROW_DEPTH: usize = 9;
+
+/// Regrow-Vorfahren eines Bloons, der jüngste oben: Beim Nachwachsen wird er wieder zum obersten
+/// (docs/design-bloons-chimps.md §2). Leer = wächst nicht (mehr).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct GrowStack {
+    kinds: [BloonKind; GROW_DEPTH],
+    len: u8,
+}
+
+impl GrowStack {
+    /// Mit `kind` als neuem jüngsten Vorfahren; ist der Stapel voll, fällt der älteste weg.
+    pub fn with(mut self, kind: BloonKind) -> Self {
+        if self.len as usize == GROW_DEPTH {
+            self.kinds.copy_within(1.., 0);
+            self.len -= 1;
+        }
+        self.kinds[self.len as usize] = kind;
+        self.len += 1;
+        self
+    }
+
+    pub fn pop(&mut self) -> Option<BloonKind> {
+        self.len = self.len.checked_sub(1)?;
+        Some(self.kinds[self.len as usize])
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    pub fn as_slice(&self) -> &[BloonKind] {
+        &self.kinds[..self.len as usize]
+    }
+}
+
 /// Ergebnis eines Treffers auf einen Bloon.
 pub struct HitResult {
-    /// Übrig gebliebene Bloons mit Rest-HP. Bei `pops == 0` und `changed` ist das der getroffene
-    /// Bloon selbst mit weniger HP; bei `pops > 0` sind es seine Kinder (leer = komplett zerplatzt).
-    pub rest: SmallVec<[(BloonKind, Real); 4]>,
+    /// Übrig gebliebene Bloons mit Rest-HP und Regrow-Vorfahren. Bei `pops == 0` und `changed` ist
+    /// das der getroffene Bloon selbst mit weniger HP; bei `pops > 0` sind es seine Kinder (leer =
+    /// komplett zerplatzt).
+    pub rest: SmallVec<[(BloonKind, Real, GrowStack); 4]>,
     /// Anzahl geplatzter Schichten (Grundlage für Cash).
     pub pops: u32,
     /// Hat der Treffer überhaupt etwas bewirkt (sonst immun oder 0 Schaden)?
     pub changed: bool,
 }
 
-/// Wendet `damage` auf einen Bloon mit `hp` an. Überschuss-Schaden geht an die Kinder weiter,
-/// jedes Kind bekommt ihn voll (wie `btd_sim.engine.pop`, dort mit 1 HP pro Schicht).
-pub fn hit(defs: &[BloonDefV1], kind: BloonKind, hp: Real, damage: Real, cannot: Props) -> HitResult {
+/// Wendet `damage` auf einen Bloon mit `hp` und Regrow-Vorfahren `grow` an. Überschuss-Schaden
+/// geht an die Kinder weiter, jedes Kind bekommt ihn voll (wie `btd_sim.engine.pop`, dort mit 1 HP
+/// pro Schicht). Kinder eines Regrow-Bloons bekommen ihn als jüngsten Vorfahren dazu, Kinder eines
+/// Bloons ohne Regrow (DDT) einen leeren Stapel.
+pub fn hit(
+    defs: &[BloonDefV1],
+    kind: BloonKind,
+    hp: Real,
+    damage: Real,
+    cannot: Props,
+    grow: GrowStack,
+) -> HitResult {
     let mut res = HitResult { rest: SmallVec::new(), pops: 0, changed: false };
-    hit_into(defs, kind, hp, damage, cannot, &mut res);
+    hit_into(defs, kind, hp, damage, cannot, grow, &mut res);
     res
 }
 
@@ -31,24 +78,26 @@ fn hit_into(
     hp: Real,
     damage: Real,
     cannot: Props,
+    grow: GrowStack,
     out: &mut HitResult,
 ) {
     let def = &defs[kind as usize];
     if damage <= 0.0 || cannot.intersects(def.props) {
-        out.rest.push((kind, hp));
+        out.rest.push((kind, hp, grow));
         return;
     }
     out.changed = true;
     if damage < hp {
-        out.rest.push((kind, hp - damage));
+        out.rest.push((kind, hp - damage, grow));
         return;
     }
     out.pops += 1;
     let overflow = damage - hp;
+    let child_grow = if def.regrow { grow.with(kind) } else { GrowStack::default() };
     for &(child, count) in &def.children {
         let child_hp = real(defs[child as usize].hp);
         for _ in 0..count {
-            hit_into(defs, child, child_hp, overflow, cannot, out);
+            hit_into(defs, child, child_hp, overflow, cannot, child_grow, out);
         }
     }
 }
@@ -96,6 +145,9 @@ pub struct BloonStore {
     pub dot_timer: Vec<Real>,
     pub dot_left: Vec<Real>,
     pub dot_layers: Vec<u32>,
+    /// Regrow: Vorfahren und Zeit seit Spawn bzw. letztem Nachwachsen.
+    pub grow: Vec<GrowStack>,
+    pub grow_timer: Vec<Real>,
 }
 
 impl BloonStore {
@@ -117,6 +169,7 @@ impl BloonStore {
         dist: Real,
         seg: u16,
         (x, y): (Real, Real),
+        grow: GrowStack,
     ) {
         self.id.push(id);
         self.kind.push(kind);
@@ -139,6 +192,8 @@ impl BloonStore {
         self.dot_timer.push(0.0);
         self.dot_left.push(0.0);
         self.dot_layers.push(0);
+        self.grow.push(grow);
+        self.grow_timer.push(0.0);
     }
 
     pub fn clear(&mut self) {
@@ -163,6 +218,8 @@ impl BloonStore {
         self.dot_timer.clear();
         self.dot_left.clear();
         self.dot_layers.clear();
+        self.grow.clear();
+        self.grow_timer.clear();
     }
 
     /// Entfernt alle `alive == false`, Reihenfolge bleibt erhalten. O(n).
@@ -193,6 +250,8 @@ impl BloonStore {
                 self.dot_timer[w] = self.dot_timer[r];
                 self.dot_left[w] = self.dot_left[r];
                 self.dot_layers[w] = self.dot_layers[r];
+                self.grow[w] = self.grow[r];
+                self.grow_timer[w] = self.grow_timer[r];
                 w += 1;
             }
         }
@@ -217,6 +276,8 @@ impl BloonStore {
         self.dot_timer.truncate(w);
         self.dot_left.truncate(w);
         self.dot_layers.truncate(w);
+        self.grow.truncate(w);
+        self.grow_timer.truncate(w);
     }
 }
 
@@ -236,6 +297,7 @@ mod tests {
             classes: Classes::default(),
             camo: false,
             regrow: false,
+            grow_rate: 0.0,
             radius: 0.0,
             tags: vec![],
         };
@@ -253,54 +315,107 @@ mod tests {
     const EXPLOSIVE: Props = Props(Props::BLACK);
 
     fn kinds(r: &HitResult) -> Vec<u8> {
-        r.rest.iter().map(|&(k, _)| k).collect()
+        r.rest.iter().map(|&(k, _, _)| k).collect()
     }
 
     #[test]
     fn single_layer_and_overkill() {
         let d = defs();
-        let r = hit(&d, 1, 1.0, 1.0, SHARP);
+        let r = hit(&d, 1, 1.0, 1.0, SHARP, GrowStack::default());
         assert_eq!((kinds(&r), r.pops), (vec![0], 1));
-        let r = hit(&d, 1, 1.0, 5.0, SHARP);
+        let r = hit(&d, 1, 1.0, 5.0, SHARP, GrowStack::default());
         assert_eq!((r.rest.len(), r.pops), (0, 2));
     }
 
     #[test]
     fn splitting_with_excess_damage() {
         let d = defs();
-        let r = hit(&d, 3, 1.0, 1.0, SHARP);
+        let r = hit(&d, 3, 1.0, 1.0, SHARP, GrowStack::default());
         assert_eq!((kinds(&r), r.pops), (vec![2, 2], 1));
-        let r = hit(&d, 3, 1.0, 2.0, SHARP);
+        let r = hit(&d, 3, 1.0, 2.0, SHARP, GrowStack::default());
         assert_eq!((kinds(&r), r.pops), (vec![1, 1], 3));
     }
 
     #[test]
     fn immunities() {
         let d = defs();
-        let r = hit(&d, 4, 1.0, 3.0, SHARP);
+        let r = hit(&d, 4, 1.0, 3.0, SHARP, GrowStack::default());
         assert_eq!((kinds(&r), r.pops, r.changed), (vec![4], 0, false));
-        let r = hit(&d, 3, 1.0, 3.0, EXPLOSIVE);
+        let r = hit(&d, 3, 1.0, 3.0, EXPLOSIVE, GrowStack::default());
         assert!(!r.changed);
         // Lead -> 2x Black per Explosion, die Blacks sind gegen den Überschuss immun
-        let r = hit(&d, 4, 1.0, 2.0, EXPLOSIVE);
+        let r = hit(&d, 4, 1.0, 2.0, EXPLOSIVE, GrowStack::default());
         assert_eq!((kinds(&r), r.pops), (vec![3, 3], 1));
     }
 
     #[test]
     fn multi_hp_bloons_take_partial_damage() {
         let d = defs();
-        let r = hit(&d, 5, 10.0, 3.0, SHARP);
-        assert_eq!((r.rest.as_slice(), r.pops, r.changed), (&[(5u8, 7.0 as Real)][..], 0, true));
+        let r = hit(&d, 5, 10.0, 3.0, SHARP, GrowStack::default());
+        assert_eq!((r.rest[0].0, r.rest[0].1, r.pops, r.changed), (5u8, 7.0 as Real, 0, true));
         // 12 Schaden auf 10 HP: Ceramic platzt, 2 Überschuss gehen an beide Pinks
-        let r = hit(&d, 5, 10.0, 12.0, SHARP);
+        let r = hit(&d, 5, 10.0, 12.0, SHARP, GrowStack::default());
         assert_eq!((kinds(&r), r.pops), (vec![0, 0], 5));
+    }
+
+    /// Regrow-Typen: Zebra -> Black + White -> je 2 Pink, Lead -> 2 Black, DDT (ohne Regrow) -> 2 Pink.
+    fn regrow_defs() -> Vec<BloonDefV1> {
+        let mut d = defs();
+        let mut b = |name: &str, children: Vec<(u8, u16)>, props: u8, regrow: bool| {
+            let mut def = d[0].clone();
+            (def.name, def.children, def.props, def.regrow) = (name.into(), children, Props(props), regrow);
+            def.grow_rate = if regrow { 3.0 } else { 0.0 };
+            d.push(def);
+        };
+        b("pink_r", vec![], 0, true); // 6
+        b("black_r", vec![(6, 2)], Props::BLACK, true); // 7
+        b("white_r", vec![(6, 2)], 0, true); // 8
+        b("zebra_r", vec![(7, 1), (8, 1)], Props::BLACK, true); // 9
+        b("lead_r", vec![(7, 2)], Props::LEAD, true); // 10
+        b("ddt", vec![(6, 2)], 0, false); // 11
+        d
+    }
+
+    fn stacks(r: &HitResult) -> Vec<Vec<u8>> {
+        r.rest.iter().map(|(_, _, g)| g.as_slice().to_vec()).collect()
+    }
+
+    #[test]
+    fn regrow_children_remember_their_ancestors() {
+        let d = regrow_defs();
+        let none = Props::default();
+        // Zebra -> Black + White, beide mit dem Zebra als Vorfahren
+        let r = hit(&d, 9, 1.0, 1.0, none, GrowStack::default());
+        assert_eq!((kinds(&r), stacks(&r)), (vec![7, 8], vec![vec![9], vec![9]]));
+        // Überschuss bis Pink: der Stapel enthält Lead und Black, Nachwachsen geht über Black zu Lead
+        let r = hit(&d, 10, 1.0, 2.0, none, GrowStack::default());
+        assert_eq!(kinds(&r), vec![6, 6, 6, 6]);
+        let mut g = r.rest[0].2;
+        assert_eq!((g.pop(), g.pop(), g.pop()), (Some(7), Some(10), None));
+        // vorhandene Vorfahren bleiben unten im Stapel
+        let r = hit(&d, 7, 1.0, 1.0, none, GrowStack::default().with(10));
+        assert_eq!(stacks(&r), vec![vec![10, 7], vec![10, 7]]);
+        // Kinder eines Bloons ohne Regrow (DDT) wachsen nur bis zum eigenen Typ
+        let r = hit(&d, 11, 1.0, 1.0, none, GrowStack::default());
+        assert_eq!(stacks(&r), vec![Vec::<u8>::new(), vec![]]);
+        // Teilschaden und Immunität behalten den Stapel
+        let r = hit(&d, 10, 1.0, 5.0, SHARP, GrowStack::default().with(3));
+        assert_eq!((r.changed, stacks(&r)), (false, vec![vec![3]]));
+    }
+
+    #[test]
+    fn full_grow_stack_drops_the_oldest() {
+        let mut g = (0..GROW_DEPTH as u8 + 2).fold(GrowStack::default(), |g, k| g.with(k));
+        assert_eq!(g.as_slice(), &(2..GROW_DEPTH as u8 + 2).collect::<Vec<_>>()[..]);
+        assert_eq!(g.pop(), Some(GROW_DEPTH as u8 + 1));
+        assert!(!g.is_empty());
     }
 
     #[test]
     fn compact_keeps_order() {
         let mut s = BloonStore::default();
         for k in 0..5 {
-            s.push(k as u32, k, Flags::default(), 1.0, k as Real, 0, (k as Real, 0.0));
+            s.push(k as u32, k, Flags::default(), 1.0, k as Real, 0, (k as Real, 0.0), GrowStack::default());
         }
         s.alive[1] = false;
         s.alive[3] = false;

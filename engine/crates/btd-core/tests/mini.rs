@@ -939,3 +939,37 @@ fn validation_rejects_bad_crit_ranges() {
     atk(&mut d, PIN).crit = Some(Crit { damage: 1.0, every: 4, every_range: Some([0, 3]) });
     assert!(d.validate().is_err());
 }
+
+/// Red und Blue der Fixture als Regrow-Typen mit `rate` Sekunden.
+fn regrow(mut d: GameV1, rate: f64) -> GameV1 {
+    for b in &mut d.bloons[..2] {
+        (b.regrow, b.grow_rate) = (true, rate);
+    }
+    d
+}
+
+#[test]
+fn regrow_bloons_grow_back_to_their_spawn_type() {
+    // ein Schuss platzt den Blue zum Red; mit Regrow wächst der Red wieder zum Blue und leakt als Blue
+    let shot =
+        |rate: f64| single_shot(regrow(with_round(vec![group(1, 1, 0.0, 0.0)]), rate), DART, 0.0, 15.0);
+    assert_eq!((shot(0.0).pops, shot(0.0).leaked), (1, 1), "ohne Rate kein Nachwachsen (ältere Daten)");
+    assert_eq!((shot(0.5).pops, shot(0.5).leaked), (1, 2), "wächst zum Blue (Leak 2)");
+    // ein gespawnter Red wächst nicht über seinen Spawntyp hinaus
+    let red = run(regrow(with_round(vec![group(0, 1, 0.0, 0.0)]), 0.5), |_| {});
+    assert_eq!(red.leaked, 1, "{red:?}");
+}
+
+#[test]
+fn frozen_bloons_do_not_grow_and_their_timer_pauses() {
+    // Ice platzt den Blue zum Red und friert ihn ein. Hält der Regrow-Timer beim Einfrieren an, wächst
+    // der Red immer 2 s nach dem Auftauen; ein längerer Frost verschiebt dann nur alles um die Differenz
+    let iced = |seconds: f64| {
+        let mut d = regrow(with_round(vec![group(1, 1, 0.0, 0.0)]), 2.0);
+        atk(&mut d, ICE).extras.freeze.as_mut().unwrap().seconds = seconds;
+        single_shot(d, ICE, -40.0, 14.0)
+    };
+    let (short, long) = (iced(1.5), iced(4.5));
+    assert_eq!((short.leaked, long.leaked), (2, 2), "{short:?} {long:?}");
+    assert!(((long.seconds - short.seconds) - 3.0).abs() < 0.02, "{short:?} vs {long:?}");
+}

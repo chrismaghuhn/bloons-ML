@@ -204,8 +204,10 @@ pub struct BloonDefV1 {
     pub radius: f64,
     /// Tags des Spiels (z.B. "Ceramic", "Moabs", "Fortified") für Bonus-Schaden und Filter.
     pub tags: Vec<String>,
-    /// Typ wächst nach (Regrow). Stand M2b: geladen, noch ohne Wirkung (kommt in M2c).
+    /// Typ wächst nach (Regrow): alle `grow_rate` Sekunden eine Stufe zurück zum Vorfahren
+    /// (docs/design-bloons-chimps.md). `grow_rate` 0 = wächst nicht (ältere Daten ohne das Feld).
     pub regrow: bool,
+    pub grow_rate: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -900,6 +902,8 @@ struct RawBloon {
     #[serde(default)]
     regrow: bool,
     #[serde(default)]
+    grow_rate: f64,
+    #[serde(default)]
     radius: f64,
     #[serde(default)]
     tags: Vec<String>,
@@ -1023,6 +1027,12 @@ impl GameV1 {
             .iter()
             .map(|b| {
                 let what = format!("Bloon {}", b.name);
+                if !(b.grow_rate.is_finite() && b.grow_rate >= 0.0) || (b.grow_rate > 0.0 && !b.regrow) {
+                    return Err(invalid(format!(
+                        "{what}: grow_rate {} (nur >= 0 und nur mit regrow)",
+                        b.grow_rate
+                    )));
+                }
                 Ok(BloonDefV1 {
                     name: b.name.clone(),
                     hp: b.hp,
@@ -1037,6 +1047,7 @@ impl GameV1 {
                     classes: Classes::parse(&b.classes, &what)?,
                     camo: b.camo,
                     regrow: b.regrow,
+                    grow_rate: b.grow_rate,
                     radius: b.radius,
                     tags: b.tags.clone(),
                 })

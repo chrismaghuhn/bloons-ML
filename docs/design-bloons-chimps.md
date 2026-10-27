@@ -1,4 +1,4 @@
-# Design: Bloons für CHIMPS (Regrow, Runden 81–100) — Entwurf, reviewt, wartet auf Freigabe
+# Design: Bloons für CHIMPS (Regrow, Runden 81–100) — freigegeben, Schritt 1 umgesetzt
 
 Anlass: Die Sim kennt zwei Bloon-Mechaniken nicht, die CHIMPS deutlich schwerer machen. CHIMPS-Ergebnisse
 der Sim sind darum zu optimistisch, ab Runde 81 vermutlich stark.

@@ -73,7 +73,8 @@ HANDLED = {"TowerModel", "CircleFootprintModel", "AttackModel", "WeaponModel", "
            "SlowModifierForTagModel",
            # Kurvenbahn (Boomerang) und Flächentreffer mit Turm-Reichweite (Ice)
            "FollowPathModel", "LinkProjectileRadiusToTowerRangeModel",
-           # ohne Wirkung in der Sim: Regrow ist noch nicht simuliert (GrowBlock verhindert es nur),
+           # GrowBlock am Frost: gefrorene Bloons wachsen in der Sim ohnehin nicht nach (frozen > 0);
+           # ohne Wirkung in der Sim:
            # Drehung/Spiegelung nur Darstellung [KAL: FlipFollowPath spiegelt evtl. die Kurve],
            # Wasser einfrieren gibt es auf Monkey Meadow nicht
            "GrowBlockModel", "RotateModel", "FlipFollowPathModel", "FreezeNearbyWaterModel",
@@ -374,10 +375,15 @@ def build_bloons(dump: Path, needed: set, speed_factor: float = 1.0) -> list:
             leak_memo[n] = s["leakDamage"] + sum(leak(c) for c in s.get("children") or [])
         return leak_memo[n]
 
+    def grow(model) -> dict:
+        g = [b for b in model.get("behaviors") or [] if short(b.get("$type", "")) == "GrowModel"]
+        return g[0] if g else {}
+
+    models = {n: load(dump / "bloons" / summary[n]["baseId"] / f"{n}.json") for n in sorted(seen)}
+    check_regrow(summary, models, grow)
     out = []
     for n in sorted(seen):
-        s = summary[n]
-        model = load(dump / "bloons" / s["baseId"] / f"{n}.json")
+        s, model = summary[n], models[n]
         out.append({
             "name": n, "hp": float(s["maxHealth"]), "speed": float(s["speed"]) * speed_factor,
             "leak": int(round(leak(n))),
@@ -387,8 +393,32 @@ def build_bloons(dump: Path, needed: set, speed_factor: float = 1.0) -> list:
                        + (["boss"] if s["isBoss"] else []),
             "camo": bool(s["isCamo"]), "regrow": bool(s["isGrow"]), "radius": float(model["radius"]),
             "tags": list(s.get("tags") or []),
+            **({"grow_rate": float(grow(model)["rate"])} if s["isGrow"] else {}),
         })
     return out
+
+
+def check_regrow(summary: dict, models: dict, grow) -> None:
+    """Regrow simuliert die Engine über die Vorfahren (docs/design-bloons-chimps.md §2). Hier nur prüfen,
+    dass das zum Spiel passt: Jedes Regrow-Kind eines Regrow-Elternteils wächst laut `growToId` zum
+    Elternteil (Vergleich ohne Fortified) oder der Elternteil setzt `overrideChildWithColor` auf die
+    Farbe des Kinds. Außerdem hat jeder Regrow-Typ ein `GrowModel` mit positiver Rate."""
+    def plain(n: str) -> str:
+        return n.replace("Fortified", "")
+
+    for n, model in models.items():
+        s = summary[n]
+        if not s["isGrow"]:
+            continue
+        g = grow(model)
+        if not g or not g.get("rate", 0) > 0:
+            raise Unsupported(f"Bloon {n}: Regrow ohne GrowModel/Rate")
+        for c in s.get("children") or []:
+            if not summary[c]["isGrow"]:
+                raise Unsupported(f"Bloon {n}: Kind {c} ohne Regrow")
+            to = grow(models[c]).get("growToId") or ""
+            if plain(to) != plain(n) and g.get("overrideChildWithColor") != summary[c]["baseId"]:
+                raise Unsupported(f"Bloon {n}: Kind {c} wächst zu {to or '-'}, nicht zum Elternteil")
 
 
 def build_rounds(dump: Path, round_set: str, last: int):
@@ -968,7 +998,7 @@ def convert_supports(model) -> tuple:
                              "stack_limit": int(b["stackLimit"]), "affect_self": bool(b.get("affectSelf"))})
             use(b)
         elif t == "AddBehaviorToBloonInZoneModel":
-            # Grow Blocker: Regrow wird nicht simuliert, also ohne Wirkung (wie GrowBlockModel)
+            # Grow Blocker der Village: noch ohne Wirkung (docs/design-bloons-chimps.md, Schritt 2)
             if any(short(x.get("$type", "")) != "GrowBlockModel" for x in b.get("behaviors") or []):
                 raise Unsupported("AddBehaviorToBloonInZoneModel (außer GrowBlock)")
             use(b)
@@ -1208,6 +1238,8 @@ def main():
              "- Zufall durch Mittelwerte ersetzt: Cluster-Reichweite, Crit-Intervall.",
              "- Auren, Rabatte und Einkommen (Village, Farm) stehen in den Daten, wirken in der Engine aber noch "
              "nicht (docs/design-towers-step2.md, Schritt 1).",
+             "- Regrow ohne Grow Blocker der Village; Bloons ab Runde 81 ohne die stärkere Skalierung des Spiels "
+             "(docs/design-bloons-chimps.md).",
              f"- Gesperrte Türme (rules.locked_towers): {', '.join(locked) or '-'}.",
              f"- Tags ohne Bloon in dieser Konfiguration entfernt: {', '.join(sorted(dropped)) or '-'}.", ""]
     for base in TOWER_SETS[args.towers]:
