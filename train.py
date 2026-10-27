@@ -21,6 +21,27 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from btd_sim import BTDEnv
 
 
+class EntropySchedule(BaseCallback):
+    """Entropie-Koeffizient linear von `start` auf `end` über `total` Schritte (ab dem Start dieses Laufs)."""
+
+    def __init__(self, start: float, end: float, total: int):
+        super().__init__()
+        self.start, self.end, self.total = start, end, total
+        self.first = None
+
+    def _on_rollout_start(self):
+        # self.num_timesteps wird erst in on_step aktualisiert, hier also vom Modell lesen
+        t = self.model.num_timesteps
+        if self.first is None:
+            self.first = t
+        progress = min(1.0, max(0.0, (t - self.first) / max(self.total, 1)))
+        self.model.ent_coef = self.start + (self.end - self.start) * progress
+        self.logger.record("train/ent_coef_schedule", self.model.ent_coef)
+
+    def _on_step(self):
+        return True
+
+
 class RoundLogger(BaseCallback):
     """Loggt die erreichte Runde beendeter Episoden (Mittel und Maximum der letzten 100)."""
 
@@ -61,6 +82,9 @@ if __name__ == "__main__":
                     help="davon zufällige Builds im Budget (Quelle C)")
     ap.add_argument("--start-replays", nargs="*", default=[],
                     help="Replays (.jsonl) als Quelle B und für die Budgetkurve")
+    ap.add_argument("--ent-coef", type=float, default=0.01, help="Entropie-Koeffizient (Start)")
+    ap.add_argument("--ent-coef-end", type=float, default=None,
+                    help="wenn gesetzt: linear von --ent-coef auf diesen Wert über --steps")
     ap.add_argument("--conv-width", type=int, default=32, help="Kanäle der Faltungs-Policy")
     ap.add_argument("--conv-blocks", type=int, default=4, help="Residual-Blöcke der Faltungs-Policy")
     ap.add_argument("--amp", action=argparse.BooleanOptionalAction, default=True,
@@ -101,7 +125,7 @@ if __name__ == "__main__":
         model = MaskablePPO(
             policy, env,
             n_steps=512, batch_size=1024, n_epochs=6,
-            gamma=0.995, gae_lambda=0.95, ent_coef=0.01, learning_rate=3e-4,
+            gamma=0.995, gae_lambda=0.95, ent_coef=args.ent_coef, learning_rate=3e-4,
             policy_kwargs=policy_kwargs, seed=args.seed,
             tensorboard_log="runs", verbose=1, device=args.device,
         )
@@ -113,6 +137,8 @@ if __name__ == "__main__":
             net.try_compile(model.device)
     callbacks = [CheckpointCallback(100_000 // args.envs, "models/checkpoints", name_prefix=Path(args.out).name),
                  RoundLogger()]
+    if args.ent_coef_end is not None:
+        callbacks.append(EntropySchedule(args.ent_coef, args.ent_coef_end, args.steps))
     if args.start_states:
         import json
         from btd_sim.starts import StartPool, StartStatesCallback, budget_curve, states_from_replay
