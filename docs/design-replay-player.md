@@ -201,7 +201,8 @@ Damit ist die Bridge im Kern "Replay, das Zeile für Zeile über den Socket komm
 2. **Player für `btd-replay/2` zwischen den Runden** (Weg A, Abschnitt 4), mit Ergebnisdatei; Test: ein Sim-Replay
    aus `data/local/starts/` im Spiel abspielen, `btd-tools replay --compare` auf die Ergebnisse.
 3. **Startzustände** (`StartState`) und Export eines `StartState` aus einer echten Partie.
-4. **Frames** (`btd-replay/3`), zusammen mit Recorder-Schritt 2 und dem Engine-Umbau für Aktionen mitten in der Runde.
+4. **Frames** (`btd-replay/3`), zusammen mit Recorder-Schritt 2 und dem Engine-Umbau für Aktionen mitten in der Runde;
+   dabei den Ein-Schritt-Versatz aus dem `Simulate`-Prefix (§10) bei 1× nachmessen.
 5. **Headless** (Weg D) für viele Vergleiche hintereinander, falls Schritt 1 dafür grünes Licht gibt.
 6. **Live-Bridge** (Socket als Quelle).
 
