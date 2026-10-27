@@ -151,7 +151,8 @@ bis der gewünschte Typ eingestellt ist (Kontrolle über den Turm).
   `data/local/replay_inbox/` (gitignored wie `data/local/`) und der Player bietet die neueste an. Unterstützt: `btd-replay/2` (`.jsonl`) und
   `StartState` (`.json`, ein Objekt); ein Replay kann mit einem Startzustand beginnen.
 - **Datendatei:** das Replay nennt sie im Header (`data`, z.B. `game_v1_tutorial_chimps.json`); der Player sucht sie
-  in `data/local/` (Einstellung "Datenordner", Standard neben dem Dump-Ordner) und prüft `data_hash`, falls gesetzt.
+  im Datenordner (Einstellung, Standard `data/local/`) und prüft `data_hash`, falls gesetzt: xxh3_64 mit Seed
+  `0xDA7A` über den Dateitext mit CRLF → LF, als 16 Hex-Ziffern klein (wie `engine/crates/btd-env/src/lib.rs`).
 - **Prüfen vor dem Start:** Format; Karte (`map.name` der Datendatei) gegen die Partie; Modus/Schwierigkeit kommen
   aus den Einstellungen und werden bei einer schon laufenden Partie gegen diese geprüft; Spielversion gegen die
   Version im Namen der Datendatei, sofern vorhanden (z.B. `…-57.4`, siehe Abschnitt 3); alle Turmnamen bekannt.
