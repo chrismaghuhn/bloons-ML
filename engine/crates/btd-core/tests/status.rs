@@ -154,3 +154,50 @@ fn invalid_status_data_is_refused() {
     let glue_pin = json!({"pop_slow": {"multiplier": 0.0, "seconds": 1.0, "level": 1, "layers": 1}});
     assert!(load(glue_pin).is_err(), "Pin ohne Glue-Stufe");
 }
+
+/// Regrow und Camo entfernen: Ein Kind eines Camo-Regrow-Bloons, dem die Camo genommen wird, wächst zum
+/// Vorfahren ohne Camo nach (Spiel: RedRegrow wächst zu BlueRegrow), nicht zurück zum Camo-Typ.
+#[test]
+fn cleansed_regrow_bloons_grow_back_without_camo() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../data/fixtures/game_v1_mini.json");
+    let mut v: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    v["rounds"][0] = one("bluerc");
+    let bloon = |name: &str, children: Value, camo: bool, decamo: Option<&str>| {
+        let mut b = json!({"name": name, "hp": 1.0, "speed": 25.0, "leak": 1, "children": children, "camo": camo,
+                           "regrow": true, "grow_rate": 1.0, "radius": 4.0, "tags": ["Regrow"]});
+        if let Some(d) = decamo {
+            b["decamo"] = json!(d);
+        }
+        b
+    };
+    for b in [
+        bloon("redr", json!([]), false, None),
+        bloon("bluer", json!([["redr", 1]]), false, None),
+        bloon("redrc", json!([]), true, Some("redr")),
+        bloon("bluerc", json!([["redrc", 1]]), true, Some("bluer")),
+    ] {
+        v["bloons"].as_array_mut().unwrap().push(b);
+    }
+    let tower = |name: &str, damage: f64, camo: bool, cooldown: f64, extras: Value| {
+        json!({"name": name, "cost": 100, "upgrade_costs": [[], [], []],
+               "variants": [{"tiers": [0, 0, 0], "range": 30.0, "footprint": 5.0, "attacks": [{
+                   "tag": "a", "cooldown": cooldown, "damage": damage, "pierce": 1, "camo": camo,
+                   "delivery": {"kind": "hitscan"}, "extras": extras}]}]})
+    };
+    // a: platzt den Camo-Blue einmal (Kind: Camo-Red mit Vorfahre Camo-Blue); b: entfernt einmal die Camo;
+    // c (ohne Camo-Erkennung, weiter hinten): sieht den nachgewachsenen Bloon nur, wenn er keine Camo hat
+    let towers = v["towers"].as_array_mut().unwrap();
+    towers.push(tower("a", 1.0, true, 100.0, json!({})));
+    towers.push(tower("b", 0.0, true, 100.0, json!({"cleanse": {"camo": true}}))); // nur einmal
+    towers.push(tower("c", 1.0, false, 0.1, json!({})));
+    let d = GameV1::from_json(&v.to_string()).unwrap();
+    let (a, b, c) = (T1, T2, T2 + 1);
+    let mut g = Game::new(Arc::new(d)).unwrap();
+    g.cash = Money::from_dollars(10_000);
+    g.apply(Action::Place { kind: a, x: -45.0, y: 15.0 }).unwrap();
+    g.apply(Action::Place { kind: b, x: -15.0, y: 15.0 }).unwrap();
+    g.apply(Action::Place { kind: c, x: 40.0, y: 15.0 }).unwrap();
+    let r = g.play_round();
+    assert_eq!(r.leaked, 0, "c platzt den nachgewachsenen Blue ohne Camo und sein Kind");
+    assert!(r.pops >= 3, "{}", r.pops);
+}

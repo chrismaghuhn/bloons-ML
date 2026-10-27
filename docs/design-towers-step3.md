@@ -790,8 +790,12 @@ Antworten auf §10:
     `dot_cannot`) und `BloonDefV1` (`grow_rate` neben `decamo`). Beide sind übernommen.
   - Jeder Commit des Branches kompiliert (`cargo check --all-targets`). Alle Tests (f32/f64, sim_v0-Parität,
     Python) und clippy sind grün.
-  - Die t14-Dateien des Konverters sind bytegleich zu denen im Haupt-Checkout (main mit `grow_rate`). t21
+  - Die t14-JSON-Dateien des Konverters sind bytegleich zu denen im Haupt-Checkout (main mit `grow_rate`); der
+    Abdeckungs-Report weicht nur in Begründungstexten ab, weil der Branch mehr Modelle auswertet. t21
     hat dieselbe Abdeckung (444/1344) und jetzt Regrow; die lokalen Tests gegen t21 laufen (Alchemist 4-0-1
     neben einem Dart: 72 statt 136 durch, mit Regrow).
-  - Camo entfernen und Regrow: Ein entfernter Camo-Typ wächst über seinen Vorfahren-Stapel wieder zu einem
-    Camo-Vorfahren nach (z.B. `RedRegrow` zurück zu `BlueRegrowCamo`) [KAL: im Spiel wohl ohne Camo].
+  - Camo entfernen und Regrow: `cleanse` wandelt auch den Vorfahren-Stapel in die Typen ohne Camo um
+    (`GrowStack::map`). Ein `RedRegrow`, dem die Camo genommen wurde, wächst also zu `BlueRegrow` nach, wie im
+    Dump (`growToId`). Test `cleansed_regrow_bloons_grow_back_without_camo`.
+  - `decamo` verlangt jetzt gleiche Werte (Lebenspunkte, Tempo, Leben, Eigenschaften, Regrow, Kinderzahl),
+    weil `cleanse` die Lebenspunkte behält.

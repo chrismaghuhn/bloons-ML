@@ -303,7 +303,8 @@ impl World<'_> {
         Some(HitOutcome { pops: res.pops, removed: 1, children: res.rest.len() })
     }
 
-    /// Camo entfernen: Typ ohne Camo (gleiche Lebenspunkte) und Instanz-Flag, außer bei ausgeschlossenem Tag.
+    /// Camo entfernen: Typ ohne Camo (gleiche Lebenspunkte) samt Regrow-Vorfahren und Instanz-Flag, außer bei
+    /// ausgeschlossenem Tag.
     fn cleanse(&self, b: &mut BloonStore, i: usize, c: &crate::tower::CleanseRt) {
         let kind = b.kind[i] as usize;
         if !c.camo || self.tags[kind] & c.exclude != 0 {
@@ -312,6 +313,9 @@ impl World<'_> {
         b.flags[i].0 &= !Flags::CAMO;
         if let Some(k) = self.defs[kind].decamo {
             b.kind[i] = k;
+            // Regrow: auch die Vorfahren ohne Camo, sonst wüchse er zu einem Camo-Typ nach (Spiel: RedRegrow
+            // wächst zu BlueRegrow)
+            b.grow[i] = b.grow[i].map(|v| self.defs[v as usize].decamo.unwrap_or(v));
         }
     }
 

@@ -1390,11 +1390,18 @@ impl GameV1 {
         }
 
         for b in &self.bloons {
-            if b.decamo.is_some_and(|k| !b.camo || self.bloons[k as usize].camo) {
-                return Err(invalid(format!(
-                    "Bloon {}: decamo nur von einem Camo- auf einen Nicht-Camo-Typ",
-                    b.name
-                )));
+            // Camo entfernen behält die Lebenspunkte: beide Typen dürfen sich nur in der Camo unterscheiden
+            if let Some(d) = b.decamo.map(|k| &self.bloons[k as usize]) {
+                if !b.camo
+                    || d.camo
+                    || (d.hp, d.speed, d.leak, d.props, d.regrow, d.grow_rate, d.children.len())
+                        != (b.hp, b.speed, b.leak, b.props, b.regrow, b.grow_rate, b.children.len())
+                {
+                    return Err(invalid(format!(
+                        "Bloon {}: decamo nur auf denselben Typ ohne Camo (gleiche Werte)",
+                        b.name
+                    )));
+                }
             }
             if !non_neg(b.radius) {
                 return Err(invalid(format!("Bloon {}: radius >= 0 erwartet", b.name)));

@@ -41,6 +41,14 @@ impl GrowStack {
     pub fn as_slice(&self) -> &[BloonKind] {
         &self.kinds[..self.len as usize]
     }
+
+    /// Jeder Vorfahre durch `f` ersetzt (z.B. Camo entfernen: auch die Vorfahren ohne Camo).
+    pub fn map(mut self, f: impl Fn(BloonKind) -> BloonKind) -> Self {
+        for k in &mut self.kinds[..self.len as usize] {
+            *k = f(*k);
+        }
+        self
+    }
 }
 
 /// Ergebnis eines Treffers auf einen Bloon.
